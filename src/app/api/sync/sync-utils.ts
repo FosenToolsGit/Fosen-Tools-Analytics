@@ -41,8 +41,13 @@ export async function syncPlatform(
     const startDate = subDays(endDate, 30);
 
     // Fetch and upsert metrics
-    const metrics = await service.fetchDailyMetrics(startDate, endDate);
+    const rawMetrics = await service.fetchDailyMetrics(startDate, endDate);
     let recordsSynced = 0;
+
+    // Strip any extra fields not in the DB schema
+    const metrics = rawMetrics.map(({ platform: p, metric_date, impressions, reach, engagement, clicks, followers, sessions, pageviews, users_total, bounce_rate }) => ({
+      platform: p, metric_date, impressions, reach, engagement, clicks, followers, sessions, pageviews, users_total, bounce_rate,
+    }));
 
     if (metrics.length > 0) {
       const { error: metricsError } = await admin
@@ -51,7 +56,10 @@ export async function syncPlatform(
           onConflict: "platform,metric_date",
         });
 
-      if (metricsError) throw metricsError;
+      if (metricsError) {
+        console.error("Metrics upsert error:", JSON.stringify(metricsError));
+        throw metricsError;
+      }
       recordsSynced += metrics.length;
     }
 

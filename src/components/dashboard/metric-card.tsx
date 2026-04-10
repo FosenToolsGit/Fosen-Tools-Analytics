@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 import { formatCompact, formatPercent, formatDelta } from "@/lib/utils/format";
@@ -12,6 +13,7 @@ interface MetricCardProps {
   previousValue?: number;
   format?: "number" | "percent";
   icon: LucideIcon;
+  tooltip?: string;
 }
 
 export function MetricCard({
@@ -20,8 +22,11 @@ export function MetricCard({
   previousValue,
   format = "number",
   icon: Icon,
+  tooltip,
 }: MetricCardProps) {
-  const formatted = format === "percent" ? formatPercent(value) : formatCompact(value);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const formatted =
+    format === "percent" ? formatPercent(value) : formatCompact(value);
 
   let trend: "up" | "down" | "flat" = "flat";
   let deltaText = "";
@@ -32,11 +37,27 @@ export function MetricCard({
   }
 
   return (
-    <Card className="flex flex-col gap-3">
+    <Card className="flex flex-col gap-3 relative">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-400">{title}</span>
+        <span
+          className={cn(
+            "text-sm text-gray-400",
+            tooltip &&
+              "border-b border-dotted border-gray-600 cursor-help"
+          )}
+          onMouseEnter={() => tooltip && setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
+          {title}
+        </span>
         <Icon className="w-5 h-5 text-gray-500" />
       </div>
+
+      {showTooltip && tooltip && (
+        <div className="absolute top-0 left-0 right-0 -translate-y-full mb-1 z-50 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-300 shadow-lg">
+          {tooltip}
+        </div>
+      )}
 
       <div className="flex items-end gap-3">
         <span className="text-3xl font-bold text-white">{formatted}</span>

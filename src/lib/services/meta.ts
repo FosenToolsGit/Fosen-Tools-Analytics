@@ -1,7 +1,7 @@
-import { format } from "date-fns";
+import { format, eachDayOfInterval } from "date-fns";
 import type { PlatformService, DailyMetric, PlatformPost } from "./types";
 
-const GRAPH_API_BASE = "https://graph.facebook.com/v19.0";
+const GRAPH_API_BASE = "https://graph.facebook.com/v22.0";
 
 export class MetaService implements PlatformService {
   private accessToken: string;
@@ -35,82 +35,80 @@ export class MetaService implements PlatformService {
     const since = Math.floor(startDate.getTime() / 1000).toString();
     const until = Math.floor(endDate.getTime() / 1000).toString();
 
-    // Fetch Facebook Page insights
-    const fbInsights = await this.graphGet(`/${this.pageId}/insights`, {
-      metric:
-        "page_impressions,page_post_engagements,page_fans,page_views_total",
-      period: "day",
-      since,
-      until,
+    // Get page followers
+    const pageInfo = await this.graphGet(`/${this.pageId}`, {
+      fields: "fan_count,followers_count",
     });
+    const followers = pageInfo.followers_count || pageInfo.fan_count || 0;
 
-    // Build date map from FB insights
+    // Initialize all days
     const dateMap = new Map<string, DailyMetric>();
-
-    for (const metric of fbInsights.data || []) {
-      for (const val of metric.values || []) {
-        const date = format(new Date(val.end_time), "yyyy-MM-dd");
-        const existing = dateMap.get(date) || this.emptyMetric(date);
-
-        switch (metric.name) {
-          case "page_impressions":
-            existing.impressions += val.value || 0;
-            existing.reach += val.value || 0;
-            break;
-          case "page_post_engagements":
-            existing.engagement += val.value || 0;
-            break;
-          case "page_fans":
-            existing.followers = val.value || 0;
-            break;
-          case "page_views_total":
-            existing.clicks += val.value || 0;
-            break;
-        }
-
-        dateMap.set(date, existing);
-      }
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    for (const day of days) {
+      const date = format(day, "yyyy-MM-dd");
+      dateMap.set(date, this.emptyMetric(date, followers));
     }
 
-    // Try Instagram insights if account ID is set
-    if (this.igAccountId) {
-      try {
-        const igInsights = await this.graphGet(
-          `/${this.igAccountId}/insights`,
-          {
-            metric: "impressions,reach,follower_count",
-            period: "day",
-            since,
-            until,
-          }
-        );
+    // Fetch Page Insights (real data)
+    try {
+      const insights = await this.graphGet(`/${this.pageId}/insights`, {
+        metric:
+          "page_post_engagements,page_views_total,page_impressions_unique",
+        period: "day",
+        since,
+        until,
+      });
 
-        for (const metric of igInsights.data || []) {
-          for (const val of metric.values || []) {
-            const date = format(new Date(val.end_time), "yyyy-MM-dd");
-            const existing = dateMap.get(date) || this.emptyMetric(date);
-
+      for (const metric of insights.data || []) {
+        for (const val of metric.values || []) {
+          const date = format(new Date(val.end_time), "yyyy-MM-dd");
+          const existing = dateMap.get(date);
+          if (existing && val.value) {
             switch (metric.name) {
-              case "impressions":
-                existing.impressions += val.value || 0;
+              case "page_post_engagements":
+                existing.engagement = val.value;
                 break;
-              case "reach":
-                existing.reach += val.value || 0;
+              case "page_views_total":
+                existing.pageviews = val.value;
+                existing.clicks = val.value;
                 break;
-              case "follower_count":
-                existing.followers = Math.max(
-                  existing.followers,
-                  val.value || 0
-                );
+              case "page_impressions_unique":
+                existing.reach = val.value;
+                existing.impressions = val.value;
                 break;
             }
-
-            dateMap.set(date, existing);
           }
         }
-      } catch {
-        // Instagram insights may fail if not connected
       }
+    } catch (err) {
+      console.error("Page insights error:", err);
+    }
+
+    // Enrich with post-level engagement data
+    try {
+      const postsResponse = await this.graphGet(`/${this.pageId}/posts`, {
+        fields:
+          "id,created_time,likes.summary(true),comments.summary(true),shares",
+        since,
+        until,
+        limit: "100",
+      });
+
+      for (const post of postsResponse.data || []) {
+        const date = format(new Date(post.created_time), "yyyy-MM-dd");
+        const existing = dateMap.get(date);
+        if (existing) {
+          const likes = post.likes?.summary?.total_count || 0;
+          const comments = post.comments?.summary?.total_count || 0;
+          const shares = post.shares?.count || 0;
+          // Use post data as fallback if insights are empty
+          if (existing.engagement === 0) {
+            existing.engagement = likes + comments + shares;
+          }
+        }
+      }
+    } catch {
+      // Posts endpoint may fail without proper permissions
     }
 
     return Array.from(dateMap.values());
@@ -119,53 +117,62 @@ export class MetaService implements PlatformService {
   async fetchTopPosts(limit: number): Promise<PlatformPost[]> {
     const response = await this.graphGet(`/${this.pageId}/posts`, {
       fields:
-        "id,message,created_time,full_picture,permalink_url,insights.metric(post_impressions,post_engaged_users,post_clicks){values}",
+        "id,message,created_time,full_picture,permalink_url,likes.summary(true),comments.summary(true),shares",
       limit: limit.toString(),
     });
 
-    return (response.data || []).map((post: Record<string, unknown>) => {
-      const insights = (post.insights as Record<string, unknown[]>)?.data || [];
-      let impressions = 0;
-      let engagement = 0;
-      let clicks = 0;
+    const posts = response.data || [];
 
-      for (const insight of insights as Array<Record<string, unknown>>) {
-        const values = (insight.values as Array<Record<string, number>>) || [];
-        const value = values[0]?.value || 0;
-        switch (insight.name) {
-          case "post_impressions":
-            impressions = value;
-            break;
-          case "post_engaged_users":
-            engagement = value;
-            break;
-          case "post_clicks":
-            clicks = value;
-            break;
+    // Fetch post_clicks for each post in parallel
+    const postsWithClicks = await Promise.all(
+      posts.map(async (post: Record<string, unknown>) => {
+        let clicks = 0;
+        try {
+          const insightsRes = await this.graphGet(
+            `/${post.id}/insights/post_clicks`
+          );
+          clicks =
+            insightsRes.data?.[0]?.values?.[0]?.value || 0;
+        } catch {
+          // post_clicks may fail for some posts
         }
-      }
 
-      return {
-        platform: "meta" as const,
-        platform_post_id: post.id as string,
-        published_at: post.created_time as string,
-        title: null,
-        content_snippet: ((post.message as string) || "").slice(0, 200),
-        post_url: post.permalink_url as string,
-        thumbnail_url: (post.full_picture as string) || null,
-        post_type: "post",
-        impressions,
-        reach: impressions,
-        likes: engagement,
-        comments: 0,
-        shares: 0,
-        clicks,
-        video_views: 0,
-      };
-    });
+        const likesData = post.likes as
+          | { summary?: { total_count?: number } }
+          | undefined;
+        const commentsData = post.comments as
+          | { summary?: { total_count?: number } }
+          | undefined;
+        const sharesData = post.shares as { count?: number } | undefined;
+
+        const likes = likesData?.summary?.total_count || 0;
+        const comments = commentsData?.summary?.total_count || 0;
+        const shares = sharesData?.count || 0;
+
+        return {
+          platform: "meta" as const,
+          platform_post_id: post.id as string,
+          published_at: post.created_time as string,
+          title: null,
+          content_snippet: ((post.message as string) || "").slice(0, 200),
+          post_url: post.permalink_url as string,
+          thumbnail_url: (post.full_picture as string) || null,
+          post_type: "post",
+          impressions: clicks, // use clicks as proxy for visibility
+          reach: likes + comments + shares + clicks,
+          likes,
+          comments,
+          shares,
+          clicks,
+          video_views: 0,
+        };
+      })
+    );
+
+    return postsWithClicks;
   }
 
-  private emptyMetric(date: string): DailyMetric {
+  private emptyMetric(date: string, followers: number = 0): DailyMetric {
     return {
       platform: "meta",
       metric_date: date,
@@ -173,7 +180,7 @@ export class MetaService implements PlatformService {
       reach: 0,
       engagement: 0,
       clicks: 0,
-      followers: 0,
+      followers,
       sessions: 0,
       pageviews: 0,
       users_total: 0,

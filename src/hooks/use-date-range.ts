@@ -1,32 +1,63 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   getPresetRange,
   type DatePreset,
   type DateRange,
 } from "@/lib/utils/date";
-import { format } from "date-fns";
+import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 export function useDateRange() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
+  // Derive all state from URL params (single source of truth)
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
   const presetParam = (searchParams.get("preset") as DatePreset) || "30d";
-  const compareParam = searchParams.get("compare") === "true";
+  const compare = searchParams.get("compare") === "true";
 
-  const [preset, setPresetState] = useState<DatePreset>(presetParam);
-  const [compare, setCompareState] = useState(compareParam);
+  const preset: DatePreset =
+    fromParam && toParam ? "custom" : presetParam;
 
-  const dateRange: DateRange = getPresetRange(preset);
+  const dateRange: DateRange = useMemo(() => {
+    if (preset === "custom" && fromParam && toParam) {
+      return {
+        from: startOfDay(parseISO(fromParam)),
+        to: endOfDay(parseISO(toParam)),
+      };
+    }
+    return getPresetRange(preset);
+  }, [preset, fromParam, toParam]);
 
-  const updateParams = useCallback(
-    (newPreset: DatePreset, newCompare: boolean) => {
+  const setPreset = useCallback(
+    (p: DatePreset) => {
+      const params = new URLSearchParams();
+      params.set("preset", p);
+      if (compare) params.set("compare", "true");
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [compare, router, pathname]
+  );
+
+  const setCustomRange = useCallback(
+    (from: Date, to: Date) => {
+      const params = new URLSearchParams();
+      params.set("from", from.toISOString().split("T")[0]);
+      params.set("to", to.toISOString().split("T")[0]);
+      if (compare) params.set("compare", "true");
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [compare, router, pathname]
+  );
+
+  const setCompare = useCallback(
+    (c: boolean) => {
       const params = new URLSearchParams(searchParams.toString());
-      params.set("preset", newPreset);
-      if (newCompare) {
+      if (c) {
         params.set("compare", "true");
       } else {
         params.delete("compare");
@@ -36,27 +67,12 @@ export function useDateRange() {
     [searchParams, router, pathname]
   );
 
-  const setPreset = useCallback(
-    (p: DatePreset) => {
-      setPresetState(p);
-      updateParams(p, compare);
-    },
-    [compare, updateParams]
-  );
-
-  const setCompare = useCallback(
-    (c: boolean) => {
-      setCompareState(c);
-      updateParams(preset, c);
-    },
-    [preset, updateParams]
-  );
-
   return {
     dateRange,
     preset,
     compare,
     setPreset,
     setCompare,
+    setCustomRange,
   };
 }

@@ -10,7 +10,7 @@ import { useDateRange } from "@/hooks/use-date-range";
 import { useCampaigns } from "@/hooks/use-campaigns";
 
 function AnnonserContent() {
-  const { dateRange, preset, setPreset } = useDateRange();
+  const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useCampaigns(dateRange);
 
   const uniqueCampaigns = data
@@ -34,14 +34,15 @@ function AnnonserContent() {
           dateRange={dateRange}
           activePreset={preset}
           onPresetChange={setPreset}
+          onCustomRange={setCustomRange}
         />
       </div>
 
       <MetricGrid loading={isLoading}>
-        <MetricCard title="Kampanjer" value={uniqueCampaigns} icon={Megaphone} />
-        <MetricCard title="Sesjoner" value={totalSessions} icon={MousePointerClick} />
-        <MetricCard title="Brukere" value={totalUsers} icon={Users} />
-        <MetricCard title="Konverteringer" value={totalConversions} icon={Target} />
+        <MetricCard title="Kampanjer" value={uniqueCampaigns} icon={Megaphone} tooltip="Antall aktive Google Ads-kampanjer i perioden" />
+        <MetricCard title="Sesjoner" value={totalSessions} icon={MousePointerClick} tooltip="Totalt antall besøk generert fra Google Ads" />
+        <MetricCard title="Brukere" value={totalUsers} icon={Users} tooltip="Antall unike brukere fra Google Ads" />
+        <MetricCard title="Konverteringer" value={totalConversions} icon={Target} tooltip="Antall måloppnåelser fra annonseklikk (f.eks. kjøp, skjema utfylt)" />
       </MetricGrid>
 
       <CampaignTable data={data || []} loading={isLoading} />

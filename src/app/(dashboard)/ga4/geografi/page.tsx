@@ -10,7 +10,7 @@ import { useDateRange } from "@/hooks/use-date-range";
 import { useGeo } from "@/hooks/use-geo";
 
 function GeografiContent() {
-  const { dateRange, preset, setPreset } = useDateRange();
+  const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useGeo(dateRange);
 
   const uniqueCountries = data
@@ -32,13 +32,14 @@ function GeografiContent() {
           dateRange={dateRange}
           activePreset={preset}
           onPresetChange={setPreset}
+          onCustomRange={setCustomRange}
         />
       </div>
 
       <MetricGrid loading={isLoading}>
-        <MetricCard title="Land" value={uniqueCountries} icon={Globe} />
-        <MetricCard title="Sesjoner" value={totalSessions} icon={MapPin} />
-        <MetricCard title="Brukere" value={totalUsers} icon={Users} />
+        <MetricCard title="Land" value={uniqueCountries} icon={Globe} tooltip="Antall unike land besøkende kommer fra" />
+        <MetricCard title="Sesjoner" value={totalSessions} icon={MapPin} tooltip="Totalt antall økter fra alle land i perioden" />
+        <MetricCard title="Brukere" value={totalUsers} icon={Users} tooltip="Antall unike brukere fra alle land" />
       </MetricGrid>
 
       <GeoMap data={data || []} loading={isLoading} />

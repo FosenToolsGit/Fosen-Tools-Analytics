@@ -10,7 +10,7 @@ import { useDateRange } from "@/hooks/use-date-range";
 import { useKeywords } from "@/hooks/use-keywords";
 
 function SokeordContent() {
-  const { dateRange, preset, setPreset } = useDateRange();
+  const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useKeywords(dateRange);
 
   const totalClicks = data?.reduce((sum, r) => sum + r.clicks, 0) || 0;
@@ -37,22 +37,25 @@ function SokeordContent() {
           dateRange={dateRange}
           activePreset={preset}
           onPresetChange={setPreset}
+          onCustomRange={setCustomRange}
         />
       </div>
 
       <MetricGrid loading={isLoading}>
-        <MetricCard title="Klikk" value={totalClicks} icon={MousePointerClick} />
-        <MetricCard title="Visninger" value={totalImpressions} icon={Eye} />
+        <MetricCard title="Klikk" value={totalClicks} icon={MousePointerClick} tooltip="Antall ganger noen klikket på nettsiden din fra Google-søk" />
+        <MetricCard title="Visninger" value={totalImpressions} icon={Eye} tooltip="Antall ganger nettsiden din ble vist i Google-søkeresultater" />
         <MetricCard
           title="Snittposisjon"
           value={Math.round(avgPosition * 10) / 10}
           icon={Hash}
+          tooltip="Gjennomsnittlig plassering i Google-søkeresultater (lavere er bedre)"
         />
         <MetricCard
           title="Snitt CTR"
           value={Math.round(avgCtr * 10000) / 100}
           format="percent"
           icon={Search}
+          tooltip="Andel av visninger som resulterte i klikk (Click-Through Rate)"
         />
       </MetricGrid>
 

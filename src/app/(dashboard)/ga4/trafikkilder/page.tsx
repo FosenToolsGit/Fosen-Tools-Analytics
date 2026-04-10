@@ -10,7 +10,7 @@ import { useDateRange } from "@/hooks/use-date-range";
 import { useSources } from "@/hooks/use-sources";
 
 function TrafikkilderContent() {
-  const { dateRange, preset, setPreset } = useDateRange();
+  const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useSources(dateRange);
 
   const totalSessions = data?.reduce((sum, r) => sum + r.sessions, 0) || 0;
@@ -39,12 +39,13 @@ function TrafikkilderContent() {
           dateRange={dateRange}
           activePreset={preset}
           onPresetChange={setPreset}
+          onCustomRange={setCustomRange}
         />
       </div>
 
       <MetricGrid loading={isLoading}>
-        <MetricCard title="Sesjoner" value={totalSessions} icon={MousePointerClick} />
-        <MetricCard title="Brukere" value={totalUsers} icon={Users} />
+        <MetricCard title="Sesjoner" value={totalSessions} icon={MousePointerClick} tooltip="Totalt antall økter fra alle trafikkilder i perioden" />
+        <MetricCard title="Brukere" value={totalUsers} icon={Users} tooltip="Antall unike brukere fra alle trafikkilder" />
       </MetricGrid>
 
       {!isLoading && (

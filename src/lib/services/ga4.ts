@@ -115,44 +115,74 @@ export class GA4Service implements PlatformService {
     endDate: Date
   ): Promise<SearchKeywordRow[]> {
     try {
-      const [response] = await this.client.runReport({
-        property: this.propertyId,
-        dateRanges: [
-          {
+      // Use Google Search Console API directly
+      const siteUrl = process.env.SEARCH_CONSOLE_SITE_URL || "sc-domain:fosen-tools.no";
+      const accessToken = await this.getAccessToken();
+
+      const response = await fetch(
+        `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             startDate: format(startDate, "yyyy-MM-dd"),
             endDate: format(endDate, "yyyy-MM-dd"),
-          },
-        ],
-        dimensions: [{ name: "query" }],
-        metrics: [
-          { name: "organicGoogleSearchClicks" },
-          { name: "organicGoogleSearchImpressions" },
-          { name: "organicGoogleSearchClickThroughRate" },
-          { name: "organicGoogleSearchAveragePosition" },
-        ],
-        orderBys: [
-          {
-            metric: { metricName: "organicGoogleSearchClicks" },
-            desc: true,
-          },
-        ],
-        limit: 500,
-      });
+            dimensions: ["query"],
+            rowLimit: 500,
+            type: "web",
+          }),
+        }
+      );
 
-      if (!response.rows) return [];
+      if (!response.ok) {
+        const err = await response.text();
+        console.error("Search Console API error:", response.status, err);
+        return [];
+      }
 
-      return response.rows.map((row) => ({
-        query: row.dimensionValues?.[0]?.value || "",
-        clicks: parseInt(row.metricValues?.[0]?.value || "0"),
-        impressions: parseInt(row.metricValues?.[1]?.value || "0"),
-        ctr: parseFloat(row.metricValues?.[2]?.value || "0"),
-        position: parseFloat(row.metricValues?.[3]?.value || "0"),
-        metric_date: format(endDate, "yyyy-MM-dd"),
-      }));
-    } catch {
-      console.error("Search keywords not available (Search Console not linked?)");
+      const data = await response.json();
+
+      if (!data.rows) return [];
+
+      return data.rows.map(
+        (row: {
+          keys: string[];
+          clicks: number;
+          impressions: number;
+          ctr: number;
+          position: number;
+        }) => ({
+          query: row.keys[0],
+          clicks: row.clicks,
+          impressions: row.impressions,
+          ctr: row.ctr,
+          position: Math.round(row.position * 10) / 10,
+          metric_date: format(endDate, "yyyy-MM-dd"),
+        })
+      );
+    } catch (err) {
+      console.error("Search Console fetch failed:", err);
       return [];
     }
+  }
+
+  private async getAccessToken(): Promise<string> {
+    const { GoogleAuth } = await import("google-auth-library");
+    const auth = new GoogleAuth({
+      credentials: {
+        client_email: process.env.GA4_CLIENT_EMAIL!,
+        private_key: process.env.GA4_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+      },
+      scopes: [
+        "https://www.googleapis.com/auth/webmasters.readonly",
+      ],
+    });
+    const client = await auth.getClient();
+    const tokenResponse = await client.getAccessToken();
+    return tokenResponse.token || "";
   }
 
   async fetchGeoData(

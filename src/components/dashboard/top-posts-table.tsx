@@ -47,10 +47,13 @@ export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
                 Plattform
               </th>
               <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                Visninger
+                Klikk
               </th>
               <th className="text-right px-4 py-3 text-gray-400 font-medium">
                 Engasjement
+              </th>
+              <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                Likes
               </th>
               <th className="text-right px-4 py-3 text-gray-400 font-medium">
                 Dato
@@ -106,10 +109,13 @@ export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right text-gray-300">
-                    {formatCompact(post.impressions)}
+                    {formatCompact(post.clicks)}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-300">
                     {formatCompact(totalEngagement)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-gray-300">
+                    {formatCompact(post.likes)}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">
                     {post.published_at

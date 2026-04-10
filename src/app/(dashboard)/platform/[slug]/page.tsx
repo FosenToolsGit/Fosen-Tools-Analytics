@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, use } from "react";
-import { Eye, MousePointerClick, Users, Monitor } from "lucide-react";
+import { Eye, MousePointerClick, Users, Monitor, UserPlus, BarChart3 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { ChannelChart } from "@/components/dashboard/channel-chart";
@@ -14,7 +14,7 @@ import { PLATFORMS, type PlatformKey } from "@/lib/utils/platforms";
 
 function PlatformContent({ slug }: { slug: PlatformKey }) {
   const platform = PLATFORMS[slug];
-  const { dateRange, preset, setPreset } = useDateRange();
+  const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data: metricsData, isLoading } = useMetrics(dateRange, slug);
   const { data: postsData, isLoading: postsLoading } = usePosts(slug, 10);
 
@@ -45,6 +45,7 @@ function PlatformContent({ slug }: { slug: PlatformKey }) {
           dateRange={dateRange}
           activePreset={preset}
           onPresetChange={setPreset}
+          onCustomRange={setCustomRange}
         />
       </div>
 
@@ -57,21 +58,25 @@ function PlatformContent({ slug }: { slug: PlatformKey }) {
                   title="Sesjoner"
                   value={aggregated.sessions}
                   icon={Monitor}
+                  tooltip="Antall økter på nettsiden din i perioden"
                 />
                 <MetricCard
                   title="Sidevisninger"
                   value={aggregated.pageviews}
                   icon={Eye}
+                  tooltip="Totalt antall sider som er lastet inn"
                 />
                 <MetricCard
                   title="Brukere"
                   value={aggregated.users_total}
                   icon={Users}
+                  tooltip="Antall unike besøkende på nettsiden"
                 />
                 <MetricCard
                   title="Engasjement"
                   value={aggregated.engagement}
                   icon={MousePointerClick}
+                  tooltip="Totalt antall engasjerende handlinger (klikk, scroll, tid brukt)"
                 />
               </>
             ) : (
@@ -80,21 +85,25 @@ function PlatformContent({ slug }: { slug: PlatformKey }) {
                   title="Rekkevidde"
                   value={aggregated.reach}
                   icon={Eye}
-                />
-                <MetricCard
-                  title="Visninger"
-                  value={aggregated.impressions}
-                  icon={Eye}
+                  tooltip="Antall unike personer som har sett innholdet fra siden din"
                 />
                 <MetricCard
                   title="Engasjement"
                   value={aggregated.engagement}
                   icon={MousePointerClick}
+                  tooltip="Totalt antall interaksjoner — likes, kommentarer, delinger og klikk på innlegg"
                 />
                 <MetricCard
-                  title="Klikk"
-                  value={aggregated.clicks}
-                  icon={MousePointerClick}
+                  title="Sidevisninger"
+                  value={aggregated.pageviews}
+                  icon={BarChart3}
+                  tooltip="Antall ganger Facebook-siden din har blitt besøkt"
+                />
+                <MetricCard
+                  title="Følgere"
+                  value={aggregated.followers}
+                  icon={UserPlus}
+                  tooltip="Totalt antall personer som følger Facebook-siden din"
                 />
               </>
             )}

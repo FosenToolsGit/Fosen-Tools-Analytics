@@ -1,8 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
-import { formatDateNorwegian } from "@/lib/utils/date";
+import { formatDateNorwegian, formatDateISO } from "@/lib/utils/date";
 import type { DatePreset, DateRange } from "@/lib/utils/date";
 
 const presets: { label: string; value: DatePreset }[] = [
@@ -15,14 +16,33 @@ interface DateRangePickerProps {
   dateRange: DateRange;
   activePreset: DatePreset;
   onPresetChange: (preset: DatePreset) => void;
-  onCustomRange?: (from: string, to: string) => void;
+  onCustomRange?: (from: Date, to: Date) => void;
 }
 
 export function DateRangePicker({
   dateRange,
   activePreset,
   onPresetChange,
+  onCustomRange,
 }: DateRangePickerProps) {
+  const handleFromChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.value && onCustomRange) {
+        onCustomRange(new Date(e.target.value), dateRange.to);
+      }
+    },
+    [dateRange.to, onCustomRange]
+  );
+
+  const handleToChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.value && onCustomRange) {
+        onCustomRange(dateRange.from, new Date(e.target.value));
+      }
+    },
+    [dateRange.from, onCustomRange]
+  );
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <span className="text-sm text-gray-400 mr-1">Periode:</span>
@@ -36,10 +56,34 @@ export function DateRangePicker({
           {preset.label}
         </Button>
       ))}
-      <span className="text-sm text-gray-500 ml-2">
-        {formatDateNorwegian(dateRange.from)} &ndash;{" "}
-        {formatDateNorwegian(dateRange.to)}
-      </span>
+
+      {/* Custom date inputs */}
+      <div className="flex items-center gap-1 ml-2">
+        <input
+          type="date"
+          value={formatDateISO(dateRange.from)}
+          onChange={handleFromChange}
+          max={formatDateISO(dateRange.to)}
+          className={cn(
+            "bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300",
+            "focus:border-blue-500 focus:outline-none",
+            activePreset === "custom" && "border-blue-500"
+          )}
+        />
+        <span className="text-gray-500 text-xs">–</span>
+        <input
+          type="date"
+          value={formatDateISO(dateRange.to)}
+          onChange={handleToChange}
+          min={formatDateISO(dateRange.from)}
+          max={formatDateISO(new Date())}
+          className={cn(
+            "bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300",
+            "focus:border-blue-500 focus:outline-none",
+            activePreset === "custom" && "border-blue-500"
+          )}
+        />
+      </div>
     </div>
   );
 }
