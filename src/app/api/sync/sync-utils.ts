@@ -1,0 +1,161 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PlatformKey } from "@/lib/utils/platforms";
+import type { PlatformService } from "@/lib/services/types";
+import { GA4Service } from "@/lib/services/ga4";
+import { MetaService } from "@/lib/services/meta";
+import { LinkedInService } from "@/lib/services/linkedin";
+import { subDays } from "date-fns";
+
+function getService(platform: PlatformKey): PlatformService {
+  switch (platform) {
+    case "ga4":
+      return new GA4Service();
+    case "meta":
+      return new MetaService();
+    case "linkedin":
+      return new LinkedInService();
+    default:
+      throw new Error(`Unknown platform: ${platform}`);
+  }
+}
+
+export async function syncPlatform(
+  admin: SupabaseClient,
+  platform: PlatformKey,
+  triggeredBy: string
+) {
+  // Insert sync log
+  const { data: syncLog } = await admin
+    .from("sync_logs")
+    .insert({
+      platform,
+      status: "running",
+      triggered_by: triggeredBy,
+    })
+    .select()
+    .single();
+
+  try {
+    const service = getService(platform);
+    const endDate = new Date();
+    const startDate = subDays(endDate, 30);
+
+    // Fetch and upsert metrics
+    const metrics = await service.fetchDailyMetrics(startDate, endDate);
+    let recordsSynced = 0;
+
+    if (metrics.length > 0) {
+      const { error: metricsError } = await admin
+        .from("analytics_metrics")
+        .upsert(metrics, {
+          onConflict: "platform,metric_date",
+        });
+
+      if (metricsError) throw metricsError;
+      recordsSynced += metrics.length;
+    }
+
+    // Fetch and upsert posts
+    const posts = await service.fetchTopPosts(50);
+
+    if (posts.length > 0) {
+      const { error: postsError } = await admin
+        .from("platform_posts")
+        .upsert(posts, {
+          onConflict: "platform,platform_post_id",
+        });
+
+      if (postsError) throw postsError;
+      recordsSynced += posts.length;
+    }
+
+    // GA4-specific: sync keywords, geo, sources, campaigns
+    if (platform === "ga4") {
+      const ga4 = service as GA4Service;
+
+      const keywords = await ga4.fetchSearchKeywords(startDate, endDate);
+      if (keywords.length > 0) {
+        await admin
+          .from("search_keywords")
+          .upsert(keywords, { onConflict: "query,metric_date" });
+        recordsSynced += keywords.length;
+      }
+
+      const geo = await ga4.fetchGeoData(startDate, endDate);
+      if (geo.length > 0) {
+        const geoRows = geo.map((g) => ({
+          ...g,
+          city: g.city || "",
+        }));
+        await admin
+          .from("geo_data")
+          .upsert(geoRows, { onConflict: "country,city,metric_date" });
+        recordsSynced += geo.length;
+      }
+
+      const sources = await ga4.fetchTrafficSources(startDate, endDate);
+      if (sources.length > 0) {
+        const sourceRows = sources.map((s) => ({
+          ...s,
+          source: s.source || "",
+          medium: s.medium || "",
+        }));
+        await admin
+          .from("traffic_sources")
+          .upsert(sourceRows, {
+            onConflict: "channel,source,medium,metric_date",
+          });
+        recordsSynced += sources.length;
+      }
+
+      const campaigns = await ga4.fetchAdCampaigns(startDate, endDate);
+      if (campaigns.length > 0) {
+        const campaignRows = campaigns.map((c) => ({
+          ...c,
+          ad_group: c.ad_group || "",
+          keyword: c.keyword || "",
+        }));
+        await admin
+          .from("ad_campaigns")
+          .upsert(campaignRows, {
+            onConflict: "campaign_name,ad_group,keyword,metric_date",
+          });
+        recordsSynced += campaigns.length;
+      }
+    }
+
+    // Update sync log
+    await admin
+      .from("sync_logs")
+      .update({
+        status: "success",
+        finished_at: new Date().toISOString(),
+        records_synced: recordsSynced,
+      })
+      .eq("id", syncLog?.id);
+
+    return {
+      platform,
+      status: "success" as const,
+      records_synced: recordsSynced,
+    };
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Unknown error";
+
+    await admin
+      .from("sync_logs")
+      .update({
+        status: "error",
+        finished_at: new Date().toISOString(),
+        error_message: errorMessage,
+      })
+      .eq("id", syncLog?.id);
+
+    return {
+      platform,
+      status: "error" as const,
+      error: errorMessage,
+    };
+  }
+}
