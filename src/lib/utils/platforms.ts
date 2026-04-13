@@ -1,7 +1,7 @@
-import { Globe, Share2, Briefcase } from "lucide-react";
+import { Globe, Share2, Briefcase, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export type PlatformKey = "ga4" | "meta" | "linkedin";
+export type PlatformKey = "ga4" | "meta" | "linkedin" | "mailchimp";
 
 export interface PlatformInfo {
   label: string;
@@ -28,6 +28,12 @@ export const PLATFORMS: Record<PlatformKey, PlatformInfo> = {
     color: "#0A66C2",
     icon: Briefcase,
     slug: "linkedin",
+  },
+  mailchimp: {
+    label: "Mailchimp",
+    color: "#FFE01B",
+    icon: Mail,
+    slug: "mailchimp",
   },
 } as const;
 

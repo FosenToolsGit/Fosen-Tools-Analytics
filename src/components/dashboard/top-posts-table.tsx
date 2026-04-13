@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PLATFORMS, type PlatformKey } from "@/lib/utils/platforms";
-import { formatCompact } from "@/lib/utils/format";
+import { formatCompact, formatPercent } from "@/lib/utils/format";
 import { formatDateNorwegian } from "@/lib/utils/date";
 import type { PostRow } from "@/hooks/use-posts";
 import { ExternalLink } from "lucide-react";
@@ -11,9 +11,14 @@ import { ExternalLink } from "lucide-react";
 interface TopPostsTableProps {
   posts: PostRow[];
   loading?: boolean;
+  platformFilter?: PlatformKey;
 }
 
-export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
+export function TopPostsTable({
+  posts,
+  loading,
+  platformFilter,
+}: TopPostsTableProps) {
   if (loading) {
     return (
       <Card>
@@ -34,6 +39,9 @@ export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
     );
   }
 
+  const isMailchimp = platformFilter === "mailchimp";
+  const isGA4 = platformFilter === "ga4";
+
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -41,20 +49,48 @@ export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
           <thead>
             <tr className="border-b border-gray-800">
               <th className="text-left px-4 py-3 text-gray-400 font-medium">
-                Innlegg
+                {isMailchimp ? "Kampanje" : "Innlegg"}
               </th>
               <th className="text-left px-4 py-3 text-gray-400 font-medium">
                 Plattform
               </th>
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                Klikk
-              </th>
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                Engasjement
-              </th>
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                Likes
-              </th>
+              {isMailchimp ? (
+                <>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Sendt
+                  </th>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Åpninger
+                  </th>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Klikk
+                  </th>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Åpningsrate
+                  </th>
+                </>
+              ) : isGA4 ? (
+                <>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Visninger
+                  </th>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Brukere
+                  </th>
+                </>
+              ) : (
+                <>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Klikk
+                  </th>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Engasjement
+                  </th>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Likes
+                  </th>
+                </>
+              )}
               <th className="text-right px-4 py-3 text-gray-400 font-medium">
                 Dato
               </th>
@@ -65,6 +101,8 @@ export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
               const platform = PLATFORMS[post.platform];
               const totalEngagement =
                 post.likes + post.comments + post.shares;
+              const openRate =
+                post.reach > 0 ? post.impressions / post.reach : 0;
 
               return (
                 <tr
@@ -86,12 +124,20 @@ export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
                         </p>
                         {post.post_url && (
                           <a
-                            href={post.post_url}
+                            href={
+                              isGA4
+                                ? `https://fosen-tools.no${post.post_url}`
+                                : post.post_url
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-400 hover:text-blue-300 text-xs inline-flex items-center gap-1"
                           >
-                            Se innlegg
+                            {isMailchimp
+                              ? "Se rapport"
+                              : isGA4
+                                ? post.post_url
+                                : "Se innlegg"}
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         )}
@@ -108,15 +154,43 @@ export function TopPostsTable({ posts, loading }: TopPostsTableProps) {
                       {platform?.label || post.platform}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-300">
-                    {formatCompact(post.clicks)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-300">
-                    {formatCompact(totalEngagement)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-300">
-                    {formatCompact(post.likes)}
-                  </td>
+                  {isMailchimp ? (
+                    <>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(post.reach)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(post.impressions)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(post.clicks)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatPercent(openRate)}
+                      </td>
+                    </>
+                  ) : isGA4 ? (
+                    <>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(post.impressions)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(post.reach)}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(post.clicks)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(totalEngagement)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-300">
+                        {formatCompact(post.likes)}
+                      </td>
+                    </>
+                  )}
                   <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">
                     {post.published_at
                       ? formatDateNorwegian(new Date(post.published_at))

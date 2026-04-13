@@ -8,6 +8,7 @@ import {
   Globe,
   Share2,
   Briefcase,
+  Mail,
   FileText,
   Settings,
   X,
@@ -50,6 +51,7 @@ const navItems: NavItem[] = [
     ],
   },
   { label: "Meta", href: "/platform/meta", icon: Share2 },
+  { label: "Mailchimp", href: "/platform/mailchimp", icon: Mail },
   { label: "LinkedIn", href: "/platform/linkedin", icon: Briefcase },
   { label: "Innlegg", href: "/posts", icon: FileText },
   { label: "Innstillinger", href: "/settings", icon: Settings },
@@ -86,9 +88,11 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">FT</span>
-            </div>
+            <img
+              src="/logo.png"
+              alt="Fosen Tools Analytics"
+              className="w-8 h-8 rounded-lg"
+            />
             <span className="text-white font-semibold text-lg">
               Fosen Tools
             </span>

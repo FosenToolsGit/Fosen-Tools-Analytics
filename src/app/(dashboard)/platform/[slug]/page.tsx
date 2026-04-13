@@ -25,6 +25,7 @@ function PlatformContent({ slug }: { slug: PlatformKey }) {
   }
 
   const isGA4 = slug === "ga4";
+  const isMailchimp = slug === "mailchimp";
 
   return (
     <div className="space-y-6">
@@ -52,7 +53,34 @@ function PlatformContent({ slug }: { slug: PlatformKey }) {
       <MetricGrid loading={isLoading}>
         {aggregated && (
           <>
-            {isGA4 ? (
+            {isMailchimp ? (
+              <>
+                <MetricCard
+                  title="Mottakere"
+                  value={aggregated.reach}
+                  icon={Users}
+                  tooltip="Totalt antall e-postmottakere i perioden"
+                />
+                <MetricCard
+                  title="Åpninger"
+                  value={aggregated.impressions}
+                  icon={Eye}
+                  tooltip="Antall ganger e-postene ble åpnet"
+                />
+                <MetricCard
+                  title="Klikk"
+                  value={aggregated.clicks}
+                  icon={MousePointerClick}
+                  tooltip="Antall klikk på lenker i e-postene"
+                />
+                <MetricCard
+                  title="Abonnenter"
+                  value={aggregated.followers}
+                  icon={UserPlus}
+                  tooltip="Totalt antall aktive abonnenter på e-postlisten"
+                />
+              </>
+            ) : isGA4 ? (
               <>
                 <MetricCard
                   title="Sesjoner"
@@ -116,23 +144,23 @@ function PlatformContent({ slug }: { slug: PlatformKey }) {
           <ChannelChart
             data={metricsData}
             platform={slug}
-            metric={isGA4 ? "sessions" : "reach"}
-            title={isGA4 ? "Sesjoner over tid" : "Rekkevidde over tid"}
+            metric={isGA4 ? "sessions" : isMailchimp ? "impressions" : "reach"}
+            title={isGA4 ? "Sesjoner over tid" : isMailchimp ? "Åpninger over tid" : "Rekkevidde over tid"}
           />
           <ChannelChart
             data={metricsData}
             platform={slug}
-            metric="engagement"
-            title="Engasjement over tid"
+            metric={isMailchimp ? "clicks" : "engagement"}
+            title={isMailchimp ? "Klikk over tid" : "Engasjement over tid"}
           />
         </div>
       )}
 
       <div>
         <h2 className="text-lg font-semibold mb-4">
-          {isGA4 ? "Topp sider" : "Topp innlegg"}
+          {isGA4 ? "Topp sider" : isMailchimp ? "Siste kampanjer" : "Topp innlegg"}
         </h2>
-        <TopPostsTable posts={postsData || []} loading={postsLoading} />
+        <TopPostsTable posts={postsData || []} loading={postsLoading} platformFilter={slug} />
       </div>
     </div>
   );

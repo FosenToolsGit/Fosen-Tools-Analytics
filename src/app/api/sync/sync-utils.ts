@@ -4,6 +4,7 @@ import type { PlatformService } from "@/lib/services/types";
 import { GA4Service } from "@/lib/services/ga4";
 import { MetaService } from "@/lib/services/meta";
 import { LinkedInService } from "@/lib/services/linkedin";
+import { MailchimpService } from "@/lib/services/mailchimp";
 import { subDays } from "date-fns";
 
 function getService(platform: PlatformKey): PlatformService {
@@ -14,6 +15,8 @@ function getService(platform: PlatformKey): PlatformService {
       return new MetaService();
     case "linkedin":
       return new LinkedInService();
+    case "mailchimp":
+      return new MailchimpService();
     default:
       throw new Error(`Unknown platform: ${platform}`);
   }
