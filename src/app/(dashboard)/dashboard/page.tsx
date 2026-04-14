@@ -1,17 +1,18 @@
 "use client";
 
-import { Suspense } from "react";
 import { Eye, Users, MousePointerClick, UserPlus } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
+import { SyncStatusCard } from "@/components/dashboard/sync-status-card";
+import { TagOverviewCard } from "@/components/dashboard/tag-overview-card";
 import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { ComparisonToggle } from "@/components/filters/comparison-toggle";
 import { useDateRange } from "@/hooks/use-date-range";
 import { useMetrics, aggregateMetrics } from "@/hooks/use-metrics";
 import { getPreviousPeriod } from "@/lib/utils/date";
 
-function DashboardContent() {
+export default function DashboardPage() {
   const { dateRange, preset, compare, setPreset, setCompare, setCustomRange } = useDateRange();
   const { data: currentData, isLoading } = useMetrics(dateRange);
 
@@ -86,14 +87,11 @@ function DashboardContent() {
           />
         </div>
       )}
-    </div>
-  );
-}
 
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<MetricGrid loading />}>
-      <DashboardContent />
-    </Suspense>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <TagOverviewCard />
+        <SyncStatusCard />
+      </div>
+    </div>
   );
 }

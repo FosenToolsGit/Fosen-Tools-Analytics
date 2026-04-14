@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { TagBadge } from "@/components/tags/tag-badge";
+import { TagRulesPanel } from "@/components/tags/tag-rules-panel";
 import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import type { Tag } from "@/lib/types/tags";
@@ -131,6 +132,8 @@ export default function TagDetailPage({ params }: { params: Promise<{ id: string
           tooltip="Likes + kommentarer + delinger på taggede innlegg"
         />
       </MetricGrid>
+
+      <TagRulesPanel tagId={id} />
 
       <Card className="p-4">
         <h3 className="text-lg font-semibold text-white mb-4">Trend over tid</h3>

@@ -11,6 +11,21 @@ interface GeoRow {
   metric_date: string;
 }
 
+// Land som typisk genererer bot-trafikk mot lokale norske SMB-sider.
+// Brukeren kan utvide listen ved behov.
+const BOT_SUSPECTED_CC = new Set([
+  "SG", // Singapore
+  "CN", // China
+  "HK", // Hong Kong
+  "IN", // India
+  "VN", // Vietnam
+  "PK", // Pakistan
+  "BD", // Bangladesh
+  "ID", // Indonesia
+  "RU", // Russia
+  "BY", // Belarus
+]);
+
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -24,6 +39,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const excludeBots = searchParams.get("exclude_bots") === "true";
 
   if (!from || !to) {
     return NextResponse.json(
@@ -54,7 +70,9 @@ export async function GET(request: NextRequest) {
     offset += pageSize;
   }
 
-  const rows = allRows;
+  const rows = excludeBots
+    ? allRows.filter((r) => !BOT_SUSPECTED_CC.has(r.country_code))
+    : allRows;
 
   // Aggregate by country + city
   const map = new Map<string, GeoRow>();

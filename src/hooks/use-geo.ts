@@ -7,12 +7,13 @@ import type { GeoDataRow } from "@/lib/services/types";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function useGeo(dateRange: DateRange) {
+export function useGeo(dateRange: DateRange, excludeBots = false) {
   const from = formatDateISO(dateRange.from);
   const to = formatDateISO(dateRange.to);
+  const botParam = excludeBots ? "&exclude_bots=true" : "";
 
   const { data, error, isLoading, mutate } = useSWR<GeoDataRow[]>(
-    `/api/geo?from=${from}&to=${to}`,
+    `/api/geo?from=${from}&to=${to}${botParam}`,
     fetcher
   );
 

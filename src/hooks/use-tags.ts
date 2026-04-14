@@ -1,7 +1,13 @@
 "use client";
 
 import useSWR, { useSWRConfig } from "swr";
-import type { Tag, TagAssignmentWithTag, TaggableEntity } from "@/lib/types/tags";
+import type {
+  Tag,
+  TagAssignmentWithTag,
+  TaggableEntity,
+  TagRule,
+  RuleMatchMode,
+} from "@/lib/types/tags";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -119,6 +125,87 @@ export function useAssignTag() {
   };
 
   return { assignTag };
+}
+
+export function useTagRules(tagId?: string) {
+  const url = tagId ? `/api/tag-rules?tag_id=${tagId}` : "/api/tag-rules";
+  const { data, error, isLoading, mutate } = useSWR<TagRule[]>(url, fetcher);
+  return { data, error, isLoading, mutate };
+}
+
+export function useAddTagRule() {
+  const { mutate } = useSWRConfig();
+
+  const addRule = async (rule: {
+    tag_id: string;
+    entity_type: TaggableEntity;
+    pattern: string;
+    mode?: RuleMatchMode;
+    case_sensitive?: boolean;
+  }) => {
+    const res = await fetch("/api/tag-rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(rule),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to add rule");
+    }
+    mutate(
+      (key) => typeof key === "string" && key.startsWith("/api/tag-rules"),
+      undefined,
+      { revalidate: true }
+    );
+    return res.json() as Promise<TagRule>;
+  };
+
+  return { addRule };
+}
+
+export function useDeleteTagRule() {
+  const { mutate } = useSWRConfig();
+
+  const deleteRule = async (id: string) => {
+    const res = await fetch(`/api/tag-rules?id=${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to delete rule");
+    }
+    mutate(
+      (key) => typeof key === "string" && key.startsWith("/api/tag-rules"),
+      undefined,
+      { revalidate: true }
+    );
+    mutate(
+      (key) => typeof key === "string" && key.startsWith("/api/taggings"),
+      undefined,
+      { revalidate: true }
+    );
+  };
+
+  return { deleteRule };
+}
+
+export function useApplyTagRules() {
+  const { mutate } = useSWRConfig();
+
+  const applyRules = async () => {
+    const res = await fetch("/api/tag-rules/apply", { method: "POST" });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to apply rules");
+    }
+    const data = (await res.json()) as { applied: number; rules_evaluated: number };
+    mutate(
+      (key) => typeof key === "string" && key.startsWith("/api/taggings"),
+      undefined,
+      { revalidate: true }
+    );
+    return data;
+  };
+
+  return { applyRules };
 }
 
 export function useUnassignTag() {

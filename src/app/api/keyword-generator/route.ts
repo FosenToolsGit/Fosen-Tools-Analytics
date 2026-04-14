@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
 import * as XLSX from "xlsx";
+import { ruleMatches, type TagRule } from "@/lib/types/tags";
 
 interface AdsKeyword {
   type: string;
@@ -20,7 +21,7 @@ interface OrganicKeyword {
   ctr: number;
 }
 
-const KONKURRENT_MERKER = [
+const KONKURRENT_FALLBACK = [
   "luna",
   "flex tools",
   "bosch",
@@ -33,6 +34,36 @@ const KONKURRENT_MERKER = [
   "hilti",
   "festool",
 ];
+
+async function getCompetitorRules(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<TagRule[] | null> {
+  // Finn "Konkurrent"-tag (case-insensitive)
+  const { data: tags } = await supabase
+    .from("tags")
+    .select("id, name")
+    .ilike("name", "konkurrent");
+  if (!tags || tags.length === 0) return null;
+  const tagIds = tags.map((t) => t.id);
+  const { data: rules } = await supabase
+    .from("tag_rules")
+    .select("*")
+    .in("tag_id", tagIds)
+    .eq("entity_type", "keyword")
+    .eq("enabled", true);
+  return (rules as TagRule[] | null) ?? null;
+}
+
+function makeCompetitorMatcher(rules: TagRule[] | null): (kw: string) => boolean {
+  if (rules && rules.length > 0) {
+    return (kw: string) => rules.some((r) => ruleMatches(r, kw));
+  }
+  // Fallback til hardkodet liste hvis tag ikke finnes
+  return (kw: string) => {
+    const lower = kw.toLowerCase();
+    return KONKURRENT_FALLBACK.some((m) => lower.includes(m));
+  };
+}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -182,14 +213,17 @@ export async function POST(request: NextRequest) {
     const totalCost = adsKeywords.reduce((s, k) => s + k.cost, 0);
     const avgCpc = totalClicks > 0 ? totalCost / totalClicks : 0;
 
+    // Hent konkurrent-regler fra tag-systemet
+    const competitorRules = await getCompetitorRules(supabase);
+    const isCompetitor = makeCompetitorMatcher(competitorRules);
+
     // Categorize
     const cuts: Array<AdsKeyword & { reason: string }> = [];
     const keeps: AdsKeyword[] = [];
     const reviews: AdsKeyword[] = [];
 
     for (const k of adsKeywords) {
-      const lower = k.keyword.toLowerCase();
-      if (KONKURRENT_MERKER.some((m) => lower.includes(m))) {
+      if (isCompetitor(k.keyword)) {
         cuts.push({
           ...k,
           reason: "Konkurrent-merke (folk vil ikke kjøpe Fosen Tools)",

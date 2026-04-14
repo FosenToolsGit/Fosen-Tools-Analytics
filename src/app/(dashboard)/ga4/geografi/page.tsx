@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
-import { MapPin, Globe, Users } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Globe, Users, Bot } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { GeoMap } from "@/components/dashboard/geo-map";
@@ -9,9 +9,10 @@ import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import { useGeo } from "@/hooks/use-geo";
 
-function GeografiContent() {
+export default function GeografiPage() {
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
-  const { data, isLoading } = useGeo(dateRange);
+  const [excludeBots, setExcludeBots] = useState(false);
+  const { data, isLoading } = useGeo(dateRange, excludeBots);
 
   const uniqueCountries = data
     ? new Set(data.map((r) => r.country)).size
@@ -36,6 +37,26 @@ function GeografiContent() {
         />
       </div>
 
+      <div className="flex items-center justify-end">
+        <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-300">
+          <Bot className="w-4 h-4 text-orange-400" />
+          <span>Ekskluder bot-trafikk (SG, CN, HK, IN, VN, PK, BD, ID, RU, BY)</span>
+          <input
+            type="checkbox"
+            checked={excludeBots}
+            onChange={(e) => setExcludeBots(e.target.checked)}
+            className="sr-only peer"
+          />
+          <span className="relative inline-block w-10 h-5 rounded-full bg-gray-700 peer-checked:bg-blue-600 transition">
+            <span
+              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition ${
+                excludeBots ? "translate-x-5" : ""
+              }`}
+            />
+          </span>
+        </label>
+      </div>
+
       <MetricGrid loading={isLoading}>
         <MetricCard title="Land" value={uniqueCountries} icon={Globe} tooltip="Antall unike land besøkende kommer fra" />
         <MetricCard title="Sesjoner" value={totalSessions} icon={MapPin} tooltip="Totalt antall økter fra alle land i perioden" />
@@ -44,13 +65,5 @@ function GeografiContent() {
 
       <GeoMap data={data || []} loading={isLoading} />
     </div>
-  );
-}
-
-export default function GeografiPage() {
-  return (
-    <Suspense fallback={<MetricGrid loading />}>
-      <GeografiContent />
-    </Suspense>
   );
 }
