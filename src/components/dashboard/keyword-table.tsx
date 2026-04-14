@@ -6,6 +6,10 @@ import { formatCompact, formatPercent } from "@/lib/utils/format";
 import { formatDateNorwegian } from "@/lib/utils/date";
 import { ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
 import type { SearchKeywordRow } from "@/lib/services/types";
+import { TagCell } from "@/components/tags/tag-cell";
+import { TagFilter } from "@/components/tags/tag-filter";
+import { useTaggingsForEntityType } from "@/hooks/use-tags";
+import { keywordEntityKey, type Tag } from "@/lib/types/tags";
 
 interface KeywordTableProps {
   data: SearchKeywordRow[];
@@ -19,10 +23,31 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("clicks");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const { data: taggings } = useTaggingsForEntityType("keyword");
+
+  const tagsByKey = useMemo(() => {
+    const map = new Map<string, Tag[]>();
+    taggings?.forEach((t) => {
+      const list = map.get(t.entity_key) ?? [];
+      list.push(t.tag);
+      map.set(t.entity_key, list);
+    });
+    return map;
+  }, [taggings]);
+
+  const filtered = useMemo(() => {
+    if (!data?.length) return [];
+    if (!tagFilter) return data;
+    return data.filter((row) => {
+      const tags = tagsByKey.get(keywordEntityKey(row.query));
+      return tags?.some((t) => t.id === tagFilter);
+    });
+  }, [data, tagFilter, tagsByKey]);
 
   const sorted = useMemo(() => {
-    if (!data?.length) return [];
-    return [...data].sort((a, b) => {
+    if (!filtered.length) return [];
+    return [...filtered].sort((a, b) => {
       const aVal = a[sortColumn];
       const bVal = b[sortColumn];
       if (typeof aVal === "string" && typeof bVal === "string") {
@@ -34,7 +59,7 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
-  }, [data, sortColumn, sortDirection]);
+  }, [filtered, sortColumn, sortDirection]);
 
   function handleSort(column: SortColumn) {
     if (sortColumn === column) {
@@ -97,7 +122,11 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
   ];
 
   return (
-    <Card className="overflow-hidden">
+    <div className="space-y-3">
+      <div className="flex items-center justify-end">
+        <TagFilter value={tagFilter} onChange={setTagFilter} />
+      </div>
+      <Card className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -117,6 +146,7 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
                   </span>
                 </th>
               ))}
+              <th className="px-4 py-3 text-left text-gray-400 font-medium">Tags</th>
             </tr>
           </thead>
           <tbody>
@@ -161,10 +191,17 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
                     <td className="px-4 py-3 text-right text-gray-300">
                       {formatPercent(row.ctr)}
                     </td>
+                    <td className="px-4 py-3">
+                      <TagCell
+                        tags={tagsByKey.get(keywordEntityKey(row.query)) ?? []}
+                        entityType="keyword"
+                        entityKey={keywordEntityKey(row.query)}
+                      />
+                    </td>
                   </tr>
                   {isExpanded && row.daily && (
                     <tr className="bg-gray-900/50">
-                      <td colSpan={6} className="px-12 py-3">
+                      <td colSpan={7} className="px-12 py-3">
                         <div className="text-xs text-gray-500 mb-2">
                           Daglig fordeling:
                         </div>
@@ -212,6 +249,7 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
           </tbody>
         </table>
       </div>
-    </Card>
+      </Card>
+    </div>
   );
 }

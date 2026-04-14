@@ -1,9 +1,8 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { TopPostsTable } from "@/components/dashboard/top-posts-table";
 import { usePosts } from "@/hooks/use-posts";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import type { PlatformKey } from "@/lib/utils/platforms";
 
@@ -16,7 +15,7 @@ const filters: { label: string; value: FilterValue }[] = [
   { label: "LinkedIn", value: "linkedin" },
 ];
 
-function PostsContent() {
+export default function PostsPage() {
   const [filter, setFilter] = useState<FilterValue>("all");
   const { data: posts, isLoading } = usePosts(
     filter === "all" ? undefined : filter,
@@ -50,13 +49,5 @@ function PostsContent() {
         platformFilter={filter === "all" ? undefined : filter}
       />
     </div>
-  );
-}
-
-export default function PostsPage() {
-  return (
-    <Suspense fallback={<Skeleton className="h-[400px]" />}>
-      <PostsContent />
-    </Suspense>
   );
 }

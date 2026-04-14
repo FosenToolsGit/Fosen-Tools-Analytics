@@ -18,6 +18,7 @@ import {
   Megaphone,
   Swords,
   Sparkles,
+  Tag as TagIcon,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -56,6 +57,7 @@ const navItems: NavItem[] = [
   { label: "LinkedIn", href: "/platform/linkedin", icon: Briefcase },
   { label: "Innlegg", href: "/posts", icon: FileText },
   { label: "Søkeord-generator", href: "/sokeord-generator", icon: Sparkles },
+  { label: "Tags", href: "/tags", icon: TagIcon },
   { label: "Innstillinger", href: "/settings", icon: Settings },
 ];
 

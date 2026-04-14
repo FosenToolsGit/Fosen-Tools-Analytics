@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { ArrowUpRight, Users, MousePointerClick } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
@@ -9,7 +8,7 @@ import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import { useSources } from "@/hooks/use-sources";
 
-function TrafikkilderContent() {
+export default function TrafikkilderPage() {
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useSources(dateRange);
 
@@ -59,13 +58,5 @@ function TrafikkilderContent() {
 
       <SourceChart data={data || []} loading={isLoading} />
     </div>
-  );
-}
-
-export default function TrafikkilderPage() {
-  return (
-    <Suspense fallback={<MetricGrid loading />}>
-      <TrafikkilderContent />
-    </Suspense>
   );
 }

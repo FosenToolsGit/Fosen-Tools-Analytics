@@ -2,8 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { formatCompact, formatPercent, formatNumber } from "@/lib/utils/format";
+import { formatPercent, formatNumber } from "@/lib/utils/format";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { TagCell } from "@/components/tags/tag-cell";
+import { TagFilter } from "@/components/tags/tag-filter";
+import { useTaggingsForEntityType } from "@/hooks/use-tags";
+import { sourceEntityKey, type Tag } from "@/lib/types/tags";
 import {
   PieChart,
   Pie,
@@ -48,10 +52,31 @@ interface ChannelAggregate {
 export function SourceChart({ data, loading }: SourceChartProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("sessions");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const { data: taggings } = useTaggingsForEntityType("source");
+
+  const tagsByKey = useMemo(() => {
+    const map = new Map<string, Tag[]>();
+    taggings?.forEach((t) => {
+      const list = map.get(t.entity_key) ?? [];
+      list.push(t.tag);
+      map.set(t.entity_key, list);
+    });
+    return map;
+  }, [taggings]);
+
+  const filteredData = useMemo(() => {
+    if (!data?.length) return [];
+    if (!tagFilter) return data;
+    return data.filter((row) => {
+      const tags = tagsByKey.get(sourceEntityKey(row.channel, row.source, row.medium));
+      return tags?.some((t) => t.id === tagFilter);
+    });
+  }, [data, tagFilter, tagsByKey]);
 
   const sortedData = useMemo(() => {
-    if (!data?.length) return [];
-    return [...data].sort((a, b) => {
+    if (!filteredData.length) return [];
+    return [...filteredData].sort((a, b) => {
       const aVal = a[sortColumn] ?? "";
       const bVal = b[sortColumn] ?? "";
       if (typeof aVal === "string" && typeof bVal === "string") {
@@ -63,7 +88,7 @@ export function SourceChart({ data, loading }: SourceChartProps) {
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
-  }, [data, sortColumn, sortDirection]);
+  }, [filteredData, sortColumn, sortDirection]);
 
   function handleSort(column: SortColumn) {
     if (sortColumn === column) {
@@ -128,7 +153,10 @@ export function SourceChart({ data, loading }: SourceChartProps) {
 
   return (
     <Card>
-      <h3 className="text-lg font-semibold text-white mb-4">Trafikkkilder</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">Trafikkkilder</h3>
+        <TagFilter value={tagFilter} onChange={setTagFilter} />
+      </div>
 
       {/* Donut chart */}
       <div className="h-64 mb-6">
@@ -225,6 +253,7 @@ export function SourceChart({ data, loading }: SourceChartProps) {
                 Engasjement
                 <SortIcon column="engagement_rate" />
               </th>
+              <th className="text-left px-4 py-3 text-gray-400 font-medium">Tags</th>
             </tr>
           </thead>
           <tbody>
@@ -259,6 +288,17 @@ export function SourceChart({ data, loading }: SourceChartProps) {
                 </td>
                 <td className="px-4 py-3 text-right text-gray-300">
                   {formatPercent(row.engagement_rate)}
+                </td>
+                <td className="px-4 py-3">
+                  <TagCell
+                    tags={
+                      tagsByKey.get(
+                        sourceEntityKey(row.channel, row.source, row.medium)
+                      ) ?? []
+                    }
+                    entityType="source"
+                    entityKey={sourceEntityKey(row.channel, row.source, row.medium)}
+                  />
                 </td>
               </tr>
             ))}

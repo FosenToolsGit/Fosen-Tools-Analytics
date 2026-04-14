@@ -5,6 +5,10 @@ import { Card } from "@/components/ui/card";
 import { formatCompact, formatPercent, formatNumber } from "@/lib/utils/format";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import type { AdCampaignRow } from "@/lib/services/types";
+import { TagCell } from "@/components/tags/tag-cell";
+import { TagFilter } from "@/components/tags/tag-filter";
+import { useTaggingsForEntityType } from "@/hooks/use-tags";
+import { campaignEntityKey, type Tag } from "@/lib/types/tags";
 
 interface CampaignTableProps {
   data: AdCampaignRow[];
@@ -24,10 +28,33 @@ type SortDirection = "asc" | "desc";
 export function CampaignTable({ data, loading }: CampaignTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("sessions");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const { data: taggings } = useTaggingsForEntityType("campaign");
+
+  const tagsByKey = useMemo(() => {
+    const map = new Map<string, Tag[]>();
+    taggings?.forEach((t) => {
+      const list = map.get(t.entity_key) ?? [];
+      list.push(t.tag);
+      map.set(t.entity_key, list);
+    });
+    return map;
+  }, [taggings]);
+
+  const filtered = useMemo(() => {
+    if (!data?.length) return [];
+    if (!tagFilter) return data;
+    return data.filter((row) => {
+      const tags = tagsByKey.get(
+        campaignEntityKey(row.campaign_name, row.ad_group, row.keyword)
+      );
+      return tags?.some((t) => t.id === tagFilter);
+    });
+  }, [data, tagFilter, tagsByKey]);
 
   const sorted = useMemo(() => {
-    if (!data?.length) return [];
-    return [...data].sort((a, b) => {
+    if (!filtered.length) return [];
+    return [...filtered].sort((a, b) => {
       const aVal = a[sortColumn] ?? "";
       const bVal = b[sortColumn] ?? "";
       if (typeof aVal === "string" && typeof bVal === "string") {
@@ -39,7 +66,7 @@ export function CampaignTable({ data, loading }: CampaignTableProps) {
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
-  }, [data, sortColumn, sortDirection]);
+  }, [filtered, sortColumn, sortDirection]);
 
   function handleSort(column: SortColumn) {
     if (sortColumn === column) {
@@ -97,7 +124,11 @@ export function CampaignTable({ data, loading }: CampaignTableProps) {
   ];
 
   return (
-    <Card className="overflow-hidden">
+    <div className="space-y-3">
+      <div className="flex items-center justify-end">
+        <TagFilter value={tagFilter} onChange={setTagFilter} />
+      </div>
+      <Card className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -116,6 +147,7 @@ export function CampaignTable({ data, loading }: CampaignTableProps) {
                   </span>
                 </th>
               ))}
+              <th className="px-4 py-3 text-left text-gray-400 font-medium">Tags</th>
             </tr>
           </thead>
           <tbody>
@@ -143,11 +175,27 @@ export function CampaignTable({ data, loading }: CampaignTableProps) {
                 <td className="px-4 py-3 text-right text-gray-300">
                   {formatPercent(row.engagement_rate)}
                 </td>
+                <td className="px-4 py-3">
+                  <TagCell
+                    tags={
+                      tagsByKey.get(
+                        campaignEntityKey(row.campaign_name, row.ad_group, row.keyword)
+                      ) ?? []
+                    }
+                    entityType="campaign"
+                    entityKey={campaignEntityKey(
+                      row.campaign_name,
+                      row.ad_group,
+                      row.keyword
+                    )}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </Card>
+      </Card>
+    </div>
   );
 }

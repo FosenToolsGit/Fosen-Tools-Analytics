@@ -8,6 +8,10 @@ import { formatCompact, formatPercent } from "@/lib/utils/format";
 import { formatDateNorwegian } from "@/lib/utils/date";
 import type { PostRow } from "@/hooks/use-posts";
 import { ExternalLink, ChevronUp, ChevronDown } from "lucide-react";
+import { TagCell } from "@/components/tags/tag-cell";
+import { TagFilter } from "@/components/tags/tag-filter";
+import { useTaggingsForEntityType } from "@/hooks/use-tags";
+import { postEntityKey, type Tag } from "@/lib/types/tags";
 
 interface TopPostsTableProps {
   posts: PostRow[];
@@ -32,13 +36,34 @@ export function TopPostsTable({
 }: TopPostsTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const { data: taggings } = useTaggingsForEntityType("post");
+
+  const tagsByKey = useMemo(() => {
+    const map = new Map<string, Tag[]>();
+    taggings?.forEach((t) => {
+      const list = map.get(t.entity_key) ?? [];
+      list.push(t.tag);
+      map.set(t.entity_key, list);
+    });
+    return map;
+  }, [taggings]);
 
   const isMailchimp = platformFilter === "mailchimp";
   const isGA4 = platformFilter === "ga4";
 
-  const sorted = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!posts?.length) return [];
-    return [...posts].sort((a, b) => {
+    if (!tagFilter) return posts;
+    return posts.filter((p) => {
+      const tags = tagsByKey.get(postEntityKey(p.platform, p.platform_post_id));
+      return tags?.some((t) => t.id === tagFilter);
+    });
+  }, [posts, tagFilter, tagsByKey]);
+
+  const sorted = useMemo(() => {
+    if (!filtered.length) return [];
+    return [...filtered].sort((a, b) => {
       let aVal: number;
       let bVal: number;
       switch (sortColumn) {
@@ -79,7 +104,7 @@ export function TopPostsTable({
       }
       return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
     });
-  }, [posts, sortColumn, sortDirection]);
+  }, [filtered, sortColumn, sortDirection]);
 
   function handleSort(column: SortColumn) {
     if (sortColumn === column) {
@@ -144,7 +169,11 @@ export function TopPostsTable({
   }
 
   return (
-    <Card className="overflow-hidden">
+    <div className="space-y-3">
+      <div className="flex items-center justify-end">
+        <TagFilter value={tagFilter} onChange={setTagFilter} />
+      </div>
+      <Card className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -175,6 +204,7 @@ export function TopPostsTable({
                 </>
               )}
               <SortableTh column="date" label="Dato" />
+              <th className="px-4 py-3 text-left text-gray-400 font-medium">Tags</th>
             </tr>
           </thead>
           <tbody>
@@ -279,12 +309,20 @@ export function TopPostsTable({
                       ? formatDateNorwegian(new Date(post.published_at))
                       : "—"}
                   </td>
+                  <td className="px-4 py-3">
+                    <TagCell
+                      tags={tagsByKey.get(postEntityKey(post.platform, post.platform_post_id)) ?? []}
+                      entityType="post"
+                      entityKey={postEntityKey(post.platform, post.platform_post_id)}
+                    />
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
