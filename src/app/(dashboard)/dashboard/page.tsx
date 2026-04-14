@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Eye, Users, MousePointerClick, UserPlus } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
@@ -12,7 +13,7 @@ import { useDateRange } from "@/hooks/use-date-range";
 import { useMetrics, aggregateMetrics } from "@/hooks/use-metrics";
 import { getPreviousPeriod } from "@/lib/utils/date";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { dateRange, preset, compare, setPreset, setCompare, setCustomRange } = useDateRange();
   const { data: currentData, isLoading } = useMetrics(dateRange);
 
@@ -93,5 +94,13 @@ export default function DashboardPage() {
         <SyncStatusCard />
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<MetricGrid loading />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

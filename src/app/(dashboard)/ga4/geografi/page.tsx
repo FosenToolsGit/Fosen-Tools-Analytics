@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { MapPin, Globe, Users, Bot } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
@@ -9,7 +9,7 @@ import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import { useGeo } from "@/hooks/use-geo";
 
-export default function GeografiPage() {
+function GeografiContent() {
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const [excludeBots, setExcludeBots] = useState(false);
   const { data, isLoading } = useGeo(dateRange, excludeBots);
@@ -65,5 +65,13 @@ export default function GeografiPage() {
 
       <GeoMap data={data || []} loading={isLoading} />
     </div>
+  );
+}
+
+export default function GeografiPage() {
+  return (
+    <Suspense fallback={<MetricGrid loading />}>
+      <GeografiContent />
+    </Suspense>
   );
 }

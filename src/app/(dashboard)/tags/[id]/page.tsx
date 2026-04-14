@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { Suspense, use } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { ArrowLeft, Tag as TagIcon, MousePointerClick, Eye, Activity, Users } from "lucide-react";
@@ -45,7 +45,7 @@ interface TagMetricsResponse {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-export default function TagDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function TagDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const fromStr = dateRange.from.toISOString().split("T")[0];
@@ -235,5 +235,13 @@ function EntityList({
         )}
       </ul>
     </Card>
+  );
+}
+
+export default function TagDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<MetricGrid loading />}>
+      <TagDetailContent params={params} />
+    </Suspense>
   );
 }

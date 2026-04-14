@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Megaphone, Users, MousePointerClick, Target } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
@@ -8,7 +9,7 @@ import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import { useCampaigns } from "@/hooks/use-campaigns";
 
-export default function AnnonserPage() {
+function AnnonserContent() {
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useCampaigns(dateRange);
 
@@ -46,5 +47,13 @@ export default function AnnonserPage() {
 
       <CampaignTable data={data || []} loading={isLoading} />
     </div>
+  );
+}
+
+export default function AnnonserPage() {
+  return (
+    <Suspense fallback={<MetricGrid loading />}>
+      <AnnonserContent />
+    </Suspense>
   );
 }

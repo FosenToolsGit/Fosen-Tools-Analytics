@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Search, MousePointerClick, Eye, Hash } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
@@ -8,7 +9,7 @@ import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import { useKeywords } from "@/hooks/use-keywords";
 
-export default function SokeordPage() {
+function SokeordContent() {
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useKeywords(dateRange);
 
@@ -60,5 +61,13 @@ export default function SokeordPage() {
 
       <KeywordTable data={data || []} loading={isLoading} />
     </div>
+  );
+}
+
+export default function SokeordPage() {
+  return (
+    <Suspense fallback={<MetricGrid loading />}>
+      <SokeordContent />
+    </Suspense>
   );
 }
