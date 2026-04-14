@@ -9,6 +9,7 @@ export default function GeneratorPage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [foundHeaders, setFoundHeaders] = useState<string[] | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +38,7 @@ export default function GeneratorPage() {
     if (!file) return;
     setLoading(true);
     setError(null);
+    setFoundHeaders(null);
     setSuccess(false);
 
     try {
@@ -50,6 +52,9 @@ export default function GeneratorPage() {
 
       if (!res.ok) {
         const data = await res.json();
+        if (data.found_headers) {
+          setFoundHeaders(data.found_headers);
+        }
         throw new Error(data.error || "Generering feilet");
       }
 
@@ -186,9 +191,19 @@ export default function GeneratorPage() {
         <Card className="p-4 bg-red-900/20 border border-red-800/50">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-red-300">Feil</p>
               <p className="text-sm text-red-400/80 mt-1">{error}</p>
+              {foundHeaders && (
+                <div className="mt-3 p-3 bg-gray-900/50 rounded text-xs">
+                  <p className="text-gray-400 mb-1">
+                    Kolonner funnet i filen:
+                  </p>
+                  <p className="text-gray-300 font-mono">
+                    {foundHeaders.join(" | ")}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </Card>

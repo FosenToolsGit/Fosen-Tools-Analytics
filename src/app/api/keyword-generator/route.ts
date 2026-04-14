@@ -63,51 +63,71 @@ export async function POST(request: NextRequest) {
       defval: null,
     }) as unknown[][];
 
+    // Robust header detection — convert all cells to strings
+    const keywordVariants = ["søkeord", "sokeord", "keyword", "search term", "query"];
+    const clickVariants = ["klikk", "clicks"];
+
     let headerRowIdx = -1;
-    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+    for (let i = 0; i < rawData.length; i++) {
       const row = rawData[i];
-      if (
-        row &&
-        row.some(
-          (c) =>
-            typeof c === "string" &&
-            (c.toLowerCase().includes("søkeord") ||
-              c.toLowerCase().includes("keyword"))
-        )
-      ) {
+      if (!row) continue;
+      const rowStrings = row.map((c) => String(c ?? "").toLowerCase().trim());
+      const hasKeyword = rowStrings.some((s) =>
+        keywordVariants.some((v) => s.includes(v))
+      );
+      const hasClicks = rowStrings.some((s) =>
+        clickVariants.some((v) => s.includes(v))
+      );
+      if (hasKeyword && hasClicks) {
         headerRowIdx = i;
         break;
       }
     }
 
     if (headerRowIdx === -1) {
+      // Try to give a helpful error showing what was in the file
+      const sampleRows = rawData.slice(0, 10).map((r) =>
+        (r || []).map((c) => String(c ?? "").trim())
+      );
       return NextResponse.json(
-        { error: "Could not find header row with 'Søkeord' or 'Keyword'" },
+        {
+          error:
+            "Kunne ikke finne header-rad med både 'Søkeord' og 'Klikk'. Sjekk at filen har disse kolonnene.",
+          sample_rows: sampleRows,
+        },
         { status: 400 }
       );
     }
 
-    const headers = (rawData[headerRowIdx] as string[]).map((h) =>
-      (h || "").toString().toLowerCase().trim()
+    const headers = (rawData[headerRowIdx] || []).map((h) =>
+      String(h ?? "").toLowerCase().trim()
     );
     const rows = rawData.slice(headerRowIdx + 1);
 
     // Map column indices
     const colIdx = {
       type: headers.findIndex((h) => h === "type"),
-      campaign: headers.findIndex((h) => h.includes("kampanje")),
-      adGroup: headers.findIndex((h) => h.includes("annonsegruppe")),
-      keyword: headers.findIndex(
-        (h) => h.includes("søkeord") || h.includes("keyword")
+      campaign: headers.findIndex((h) => h.includes("kampanje") || h.includes("campaign")),
+      adGroup: headers.findIndex((h) => h.includes("annonsegruppe") || h.includes("ad group")),
+      keyword: headers.findIndex((h) =>
+        keywordVariants.some((v) => h.includes(v))
       ),
-      clicks: headers.findIndex((h) => h.includes("klikk")),
-      cost: headers.findIndex((h) => h.includes("kostnad")),
+      clicks: headers.findIndex((h) =>
+        clickVariants.some((v) => h.includes(v))
+      ),
+      cost: headers.findIndex((h) => h.includes("kostnad") || h.includes("cost") || h.includes("spend")),
       cpc: headers.findIndex((h) => h.includes("cpc")),
     };
 
     if (colIdx.keyword === -1 || colIdx.clicks === -1) {
       return NextResponse.json(
-        { error: "Could not find required columns (Søkeord, Klikk)" },
+        {
+          error: `Kunne ikke finne nødvendige kolonner. Søkeord-kolonne: ${
+            colIdx.keyword === -1 ? "MANGLER" : "OK"
+          }, Klikk-kolonne: ${colIdx.clicks === -1 ? "MANGLER" : "OK"}`,
+          found_headers: headers,
+          header_row: headerRowIdx + 1,
+        },
         { status: 400 }
       );
     }
