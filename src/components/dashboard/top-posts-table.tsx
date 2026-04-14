@@ -1,12 +1,13 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PLATFORMS, type PlatformKey } from "@/lib/utils/platforms";
 import { formatCompact, formatPercent } from "@/lib/utils/format";
 import { formatDateNorwegian } from "@/lib/utils/date";
 import type { PostRow } from "@/hooks/use-posts";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ChevronUp, ChevronDown } from "lucide-react";
 
 interface TopPostsTableProps {
   posts: PostRow[];
@@ -14,11 +15,114 @@ interface TopPostsTableProps {
   platformFilter?: PlatformKey;
 }
 
+type SortColumn =
+  | "date"
+  | "clicks"
+  | "engagement"
+  | "likes"
+  | "impressions"
+  | "reach"
+  | "open_rate";
+type SortDirection = "asc" | "desc";
+
 export function TopPostsTable({
   posts,
   loading,
   platformFilter,
 }: TopPostsTableProps) {
+  const [sortColumn, setSortColumn] = useState<SortColumn>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const isMailchimp = platformFilter === "mailchimp";
+  const isGA4 = platformFilter === "ga4";
+
+  const sorted = useMemo(() => {
+    if (!posts?.length) return [];
+    return [...posts].sort((a, b) => {
+      let aVal: number;
+      let bVal: number;
+      switch (sortColumn) {
+        case "date":
+          aVal = a.published_at
+            ? new Date(a.published_at).getTime()
+            : 0;
+          bVal = b.published_at
+            ? new Date(b.published_at).getTime()
+            : 0;
+          break;
+        case "clicks":
+          aVal = a.clicks;
+          bVal = b.clicks;
+          break;
+        case "engagement":
+          aVal = a.likes + a.comments + a.shares;
+          bVal = b.likes + b.comments + b.shares;
+          break;
+        case "likes":
+          aVal = a.likes;
+          bVal = b.likes;
+          break;
+        case "impressions":
+          aVal = a.impressions;
+          bVal = b.impressions;
+          break;
+        case "reach":
+          aVal = a.reach;
+          bVal = b.reach;
+          break;
+        case "open_rate":
+          aVal = a.reach > 0 ? a.impressions / a.reach : 0;
+          bVal = b.reach > 0 ? b.impressions / b.reach : 0;
+          break;
+        default:
+          return 0;
+      }
+      return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+    });
+  }, [posts, sortColumn, sortDirection]);
+
+  function handleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  }
+
+  function SortIcon({ column }: { column: SortColumn }) {
+    if (sortColumn !== column) {
+      return <ChevronDown className="w-3 h-3 text-gray-600 inline ml-1" />;
+    }
+    return sortDirection === "asc" ? (
+      <ChevronUp className="w-3 h-3 text-blue-400 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-3 h-3 text-blue-400 inline ml-1" />
+    );
+  }
+
+  function SortableTh({
+    column,
+    label,
+    align = "right",
+  }: {
+    column: SortColumn;
+    label: string;
+    align?: "left" | "right";
+  }) {
+    return (
+      <th
+        className={`px-4 py-3 text-gray-400 font-medium cursor-pointer select-none hover:text-gray-200 ${
+          align === "right" ? "text-right" : "text-left"
+        }`}
+        onClick={() => handleSort(column)}
+      >
+        {label}
+        <SortIcon column={column} />
+      </th>
+    );
+  }
+
   if (loading) {
     return (
       <Card>
@@ -39,9 +143,6 @@ export function TopPostsTable({
     );
   }
 
-  const isMailchimp = platformFilter === "mailchimp";
-  const isGA4 = platformFilter === "ga4";
-
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -56,53 +157,35 @@ export function TopPostsTable({
               </th>
               {isMailchimp ? (
                 <>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Sendt
-                  </th>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Åpninger
-                  </th>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Klikk
-                  </th>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Åpningsrate
-                  </th>
+                  <SortableTh column="reach" label="Sendt" />
+                  <SortableTh column="impressions" label="Åpninger" />
+                  <SortableTh column="clicks" label="Klikk" />
+                  <SortableTh column="open_rate" label="Åpningsrate" />
                 </>
               ) : isGA4 ? (
                 <>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Visninger
-                  </th>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Brukere
-                  </th>
+                  <SortableTh column="impressions" label="Visninger" />
+                  <SortableTh column="reach" label="Brukere" />
                 </>
               ) : (
                 <>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Klikk
-                  </th>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Engasjement
-                  </th>
-                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                    Likes
-                  </th>
+                  <SortableTh column="clicks" label="Klikk" />
+                  <SortableTh column="engagement" label="Engasjement" />
+                  <SortableTh column="likes" label="Likes" />
                 </>
               )}
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                Dato
-              </th>
+              <SortableTh column="date" label="Dato" />
             </tr>
           </thead>
           <tbody>
-            {posts.map((post) => {
+            {sorted.map((post) => {
               const platform = PLATFORMS[post.platform];
               const totalEngagement =
                 post.likes + post.comments + post.shares;
               const openRate =
                 post.reach > 0 ? post.impressions / post.reach : 0;
+              const postIsMailchimp = post.platform === "mailchimp";
+              const postIsGA4 = post.platform === "ga4";
 
               return (
                 <tr
@@ -125,7 +208,7 @@ export function TopPostsTable({
                         {post.post_url && (
                           <a
                             href={
-                              isGA4
+                              postIsGA4
                                 ? `https://fosen-tools.no${post.post_url}`
                                 : post.post_url
                             }
@@ -133,9 +216,9 @@ export function TopPostsTable({
                             rel="noopener noreferrer"
                             className="text-blue-400 hover:text-blue-300 text-xs inline-flex items-center gap-1"
                           >
-                            {isMailchimp
+                            {postIsMailchimp
                               ? "Se rapport"
-                              : isGA4
+                              : postIsGA4
                                 ? post.post_url
                                 : "Se innlegg"}
                             <ExternalLink className="w-3 h-3" />

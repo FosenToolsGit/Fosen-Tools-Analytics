@@ -17,6 +17,7 @@ import {
   ArrowUpRight,
   Megaphone,
   Swords,
+  Sparkles,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -54,6 +55,7 @@ const navItems: NavItem[] = [
   { label: "Mailchimp", href: "/platform/mailchimp", icon: Mail },
   { label: "LinkedIn", href: "/platform/linkedin", icon: Briefcase },
   { label: "Innlegg", href: "/posts", icon: FileText },
+  { label: "Søkeord-generator", href: "/sokeord-generator", icon: Sparkles },
   { label: "Innstillinger", href: "/settings", icon: Settings },
 ];
 

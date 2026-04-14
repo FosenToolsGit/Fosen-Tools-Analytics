@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
 import { formatCompact, formatNumber } from "@/lib/utils/format";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import type { GeoDataRow } from "@/lib/services/types";
+
+type GeoSortColumn = "country" | "city" | "sessions" | "total_users";
+type SortDirection = "asc" | "desc";
 
 // Dynamically import WorldMap to avoid SSR issues
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,6 +105,46 @@ export function GeoMap({ data, loading }: GeoMapProps) {
 
   const maxSessions = countryData.length > 0 ? countryData[0].sessions : 0;
 
+  // Sortering for detail-tabellen
+  const [sortColumn, setSortColumn] = useState<GeoSortColumn>("sessions");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const sortedTableData = useMemo(() => {
+    if (!data?.length) return [];
+    return [...data].slice(0, 200).sort((a, b) => {
+      const aVal = a[sortColumn] ?? "";
+      const bVal = b[sortColumn] ?? "";
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDirection === "asc"
+          ? aVal.localeCompare(bVal, "nb")
+          : bVal.localeCompare(aVal, "nb");
+      }
+      return sortDirection === "asc"
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
+    });
+  }, [data, sortColumn, sortDirection]);
+
+  function handleSort(column: GeoSortColumn) {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  }
+
+  function SortIcon({ column }: { column: GeoSortColumn }) {
+    if (sortColumn !== column) {
+      return <ChevronDown className="w-3 h-3 text-gray-600 inline ml-1" />;
+    }
+    return sortDirection === "asc" ? (
+      <ChevronUp className="w-3 h-3 text-blue-400 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-3 h-3 text-blue-400 inline ml-1" />
+    );
+  }
+
   if (loading) {
     return (
       <Card>
@@ -174,22 +218,38 @@ export function GeoMap({ data, loading }: GeoMapProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800">
-                <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-left px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("country")}
+                >
                   Land
+                  <SortIcon column="country" />
                 </th>
-                <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-left px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("city")}
+                >
                   By
+                  <SortIcon column="city" />
                 </th>
-                <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-right px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("sessions")}
+                >
                   Sesjoner
+                  <SortIcon column="sessions" />
                 </th>
-                <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-right px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("total_users")}
+                >
                   Brukere
+                  <SortIcon column="total_users" />
                 </th>
               </tr>
             </thead>
             <tbody>
-              {data.slice(0, 50).map((row, i) => (
+              {sortedTableData.map((row, i) => (
                 <tr
                   key={`${row.country}-${row.city}-${i}`}
                   className="border-b border-gray-800/50 hover:bg-gray-800/30"

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { formatCompact, formatPercent, formatNumber } from "@/lib/utils/format";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -11,6 +12,15 @@ import {
   Tooltip,
 } from "recharts";
 import type { TrafficSourceRow } from "@/lib/services/types";
+
+type SortColumn =
+  | "channel"
+  | "source"
+  | "medium"
+  | "sessions"
+  | "total_users"
+  | "engagement_rate";
+type SortDirection = "asc" | "desc";
 
 interface SourceChartProps {
   data: TrafficSourceRow[];
@@ -36,6 +46,45 @@ interface ChannelAggregate {
 }
 
 export function SourceChart({ data, loading }: SourceChartProps) {
+  const [sortColumn, setSortColumn] = useState<SortColumn>("sessions");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const sortedData = useMemo(() => {
+    if (!data?.length) return [];
+    return [...data].sort((a, b) => {
+      const aVal = a[sortColumn] ?? "";
+      const bVal = b[sortColumn] ?? "";
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDirection === "asc"
+          ? aVal.localeCompare(bVal, "nb")
+          : bVal.localeCompare(aVal, "nb");
+      }
+      return sortDirection === "asc"
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
+    });
+  }, [data, sortColumn, sortDirection]);
+
+  function handleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  }
+
+  function SortIcon({ column }: { column: SortColumn }) {
+    if (sortColumn !== column) {
+      return <ChevronDown className="w-3 h-3 text-gray-600 inline ml-1" />;
+    }
+    return sortDirection === "asc" ? (
+      <ChevronUp className="w-3 h-3 text-blue-400 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-3 h-3 text-blue-400 inline ml-1" />
+    );
+  }
+
   const channelData = useMemo(() => {
     if (!data?.length) return [];
     const map = new Map<string, number>();
@@ -134,28 +183,52 @@ export function SourceChart({ data, loading }: SourceChartProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-800">
-              <th className="text-left px-4 py-3 text-gray-400 font-medium">
+              <th
+                className="text-left px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                onClick={() => handleSort("channel")}
+              >
                 Kanal
+                <SortIcon column="channel" />
               </th>
-              <th className="text-left px-4 py-3 text-gray-400 font-medium">
+              <th
+                className="text-left px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                onClick={() => handleSort("source")}
+              >
                 Kilde
+                <SortIcon column="source" />
               </th>
-              <th className="text-left px-4 py-3 text-gray-400 font-medium">
+              <th
+                className="text-left px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                onClick={() => handleSort("medium")}
+              >
                 Medium
+                <SortIcon column="medium" />
               </th>
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">
+              <th
+                className="text-right px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                onClick={() => handleSort("sessions")}
+              >
                 Sesjoner
+                <SortIcon column="sessions" />
               </th>
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">
+              <th
+                className="text-right px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                onClick={() => handleSort("total_users")}
+              >
                 Brukere
+                <SortIcon column="total_users" />
               </th>
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">
+              <th
+                className="text-right px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                onClick={() => handleSort("engagement_rate")}
+              >
                 Engasjement
+                <SortIcon column="engagement_rate" />
               </th>
             </tr>
           </thead>
           <tbody>
-            {data.map((row, i) => (
+            {sortedData.map((row, i) => (
               <tr
                 key={`${row.channel}-${row.source}-${row.medium}-${i}`}
                 className="border-b border-gray-800/50 hover:bg-gray-800/30"

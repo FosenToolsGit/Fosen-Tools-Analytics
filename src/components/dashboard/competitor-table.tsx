@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { formatCompact } from "@/lib/utils/format";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, ChevronUp, ChevronDown } from "lucide-react";
 
 export interface Competitor {
   id: string;
@@ -21,6 +21,9 @@ interface CompetitorTableProps {
   loading?: boolean;
 }
 
+type SortColumn = "domain" | "name" | "estimated_traffic" | "ranking";
+type SortDirection = "asc" | "desc";
+
 export function CompetitorTable({
   competitors,
   onAdd,
@@ -29,6 +32,47 @@ export function CompetitorTable({
 }: CompetitorTableProps) {
   const [domain, setDomain] = useState("");
   const [name, setName] = useState("");
+  const [sortColumn, setSortColumn] = useState<SortColumn>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const sorted = useMemo(() => {
+    if (!competitors?.length) return [];
+    return [...competitors].sort((a, b) => {
+      const aVal = a[sortColumn];
+      const bVal = b[sortColumn];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDirection === "asc"
+          ? aVal.localeCompare(bVal, "nb")
+          : bVal.localeCompare(aVal, "nb");
+      }
+      return sortDirection === "asc"
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
+    });
+  }, [competitors, sortColumn, sortDirection]);
+
+  function handleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  }
+
+  function SortIcon({ column }: { column: SortColumn }) {
+    if (sortColumn !== column) {
+      return <ChevronDown className="w-3 h-3 text-gray-600 inline ml-1" />;
+    }
+    return sortDirection === "asc" ? (
+      <ChevronUp className="w-3 h-3 text-blue-400 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-3 h-3 text-blue-400 inline ml-1" />
+    );
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -91,17 +135,33 @@ export function CompetitorTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800">
-                <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-left px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("domain")}
+                >
                   Nettside
+                  <SortIcon column="domain" />
                 </th>
-                <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-left px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("name")}
+                >
                   Navn
+                  <SortIcon column="name" />
                 </th>
-                <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-right px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("estimated_traffic")}
+                >
                   Estimert trafikk
+                  <SortIcon column="estimated_traffic" />
                 </th>
-                <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                <th
+                  className="text-right px-4 py-3 text-gray-400 font-medium cursor-pointer hover:text-gray-200 select-none"
+                  onClick={() => handleSort("ranking")}
+                >
                   Rangering
+                  <SortIcon column="ranking" />
                 </th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">
                   Notater
@@ -110,7 +170,7 @@ export function CompetitorTable({
               </tr>
             </thead>
             <tbody>
-              {competitors.map((comp) => (
+              {sorted.map((comp) => (
                 <tr
                   key={comp.id}
                   className="border-b border-gray-800/50 hover:bg-gray-800/30"
