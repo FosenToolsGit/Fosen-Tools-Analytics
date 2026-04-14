@@ -130,8 +130,8 @@ export class GA4Service implements PlatformService {
           body: JSON.stringify({
             startDate: format(startDate, "yyyy-MM-dd"),
             endDate: format(endDate, "yyyy-MM-dd"),
-            dimensions: ["query"],
-            rowLimit: 500,
+            dimensions: ["date", "query"],
+            rowLimit: 5000,
             type: "web",
           }),
         }
@@ -155,12 +155,12 @@ export class GA4Service implements PlatformService {
           ctr: number;
           position: number;
         }) => ({
-          query: row.keys[0],
+          query: row.keys[1],
           clicks: row.clicks,
           impressions: row.impressions,
           ctr: row.ctr,
           position: Math.round(row.position * 10) / 10,
-          metric_date: format(endDate, "yyyy-MM-dd"),
+          metric_date: row.keys[0], // already in YYYY-MM-DD format
         })
       );
     } catch (err) {
@@ -197,29 +197,37 @@ export class GA4Service implements PlatformService {
           endDate: format(endDate, "yyyy-MM-dd"),
         },
       ],
-      dimensions: [{ name: "country" }, { name: "city" }, { name: "countryId" }],
+      dimensions: [
+        { name: "date" },
+        { name: "country" },
+        { name: "city" },
+        { name: "countryId" },
+      ],
       metrics: [
         { name: "sessions" },
         { name: "totalUsers" },
         { name: "activeUsers" },
       ],
-      orderBys: [
-        { metric: { metricName: "sessions" }, desc: true },
-      ],
-      limit: 500,
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: 5000,
     });
 
     if (!response.rows) return [];
 
-    return response.rows.map((row) => ({
-      country: row.dimensionValues?.[0]?.value || "",
-      city: row.dimensionValues?.[1]?.value || null,
-      country_code: row.dimensionValues?.[2]?.value || "",
-      sessions: parseInt(row.metricValues?.[0]?.value || "0"),
-      total_users: parseInt(row.metricValues?.[1]?.value || "0"),
-      active_users: parseInt(row.metricValues?.[2]?.value || "0"),
-      metric_date: format(endDate, "yyyy-MM-dd"),
-    }));
+    return response.rows.map((row) => {
+      const dateStr = row.dimensionValues?.[0]?.value || "";
+      // GA4 returns dates as YYYYMMDD
+      const formattedDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+      return {
+        country: row.dimensionValues?.[1]?.value || "",
+        city: row.dimensionValues?.[2]?.value || null,
+        country_code: row.dimensionValues?.[3]?.value || "",
+        sessions: parseInt(row.metricValues?.[0]?.value || "0"),
+        total_users: parseInt(row.metricValues?.[1]?.value || "0"),
+        active_users: parseInt(row.metricValues?.[2]?.value || "0"),
+        metric_date: formattedDate,
+      };
+    });
   }
 
   async fetchTrafficSources(
@@ -235,6 +243,7 @@ export class GA4Service implements PlatformService {
         },
       ],
       dimensions: [
+        { name: "date" },
         { name: "sessionDefaultChannelGroup" },
         { name: "sessionSource" },
         { name: "sessionMedium" },
@@ -245,24 +254,26 @@ export class GA4Service implements PlatformService {
         { name: "engagementRate" },
         { name: "conversions" },
       ],
-      orderBys: [
-        { metric: { metricName: "sessions" }, desc: true },
-      ],
-      limit: 200,
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: 5000,
     });
 
     if (!response.rows) return [];
 
-    return response.rows.map((row) => ({
-      channel: row.dimensionValues?.[0]?.value || "",
-      source: row.dimensionValues?.[1]?.value || null,
-      medium: row.dimensionValues?.[2]?.value || null,
-      sessions: parseInt(row.metricValues?.[0]?.value || "0"),
-      total_users: parseInt(row.metricValues?.[1]?.value || "0"),
-      engagement_rate: parseFloat(row.metricValues?.[2]?.value || "0"),
-      conversions: parseInt(row.metricValues?.[3]?.value || "0"),
-      metric_date: format(endDate, "yyyy-MM-dd"),
-    }));
+    return response.rows.map((row) => {
+      const dateStr = row.dimensionValues?.[0]?.value || "";
+      const formattedDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+      return {
+        channel: row.dimensionValues?.[1]?.value || "",
+        source: row.dimensionValues?.[2]?.value || null,
+        medium: row.dimensionValues?.[3]?.value || null,
+        sessions: parseInt(row.metricValues?.[0]?.value || "0"),
+        total_users: parseInt(row.metricValues?.[1]?.value || "0"),
+        engagement_rate: parseFloat(row.metricValues?.[2]?.value || "0"),
+        conversions: parseInt(row.metricValues?.[3]?.value || "0"),
+        metric_date: formattedDate,
+      };
+    });
   }
 
   async fetchAdCampaigns(
@@ -278,6 +289,7 @@ export class GA4Service implements PlatformService {
         },
       ],
       dimensions: [
+        { name: "date" },
         { name: "sessionCampaignName" },
         { name: "sessionGoogleAdsAdGroupName" },
         { name: "sessionGoogleAdsKeyword" },
@@ -288,25 +300,27 @@ export class GA4Service implements PlatformService {
         { name: "conversions" },
         { name: "engagementRate" },
       ],
-      orderBys: [
-        { metric: { metricName: "sessions" }, desc: true },
-      ],
-      limit: 200,
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: 5000,
     });
 
     if (!response.rows) return [];
 
     return response.rows
-      .filter((row) => row.dimensionValues?.[0]?.value !== "(not set)")
-      .map((row) => ({
-        campaign_name: row.dimensionValues?.[0]?.value || "",
-        ad_group: row.dimensionValues?.[1]?.value || null,
-        keyword: row.dimensionValues?.[2]?.value || null,
-        sessions: parseInt(row.metricValues?.[0]?.value || "0"),
-        total_users: parseInt(row.metricValues?.[1]?.value || "0"),
-        conversions: parseInt(row.metricValues?.[2]?.value || "0"),
-        engagement_rate: parseFloat(row.metricValues?.[3]?.value || "0"),
-        metric_date: format(endDate, "yyyy-MM-dd"),
-      }));
+      .filter((row) => row.dimensionValues?.[1]?.value !== "(not set)")
+      .map((row) => {
+        const dateStr = row.dimensionValues?.[0]?.value || "";
+        const formattedDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+        return {
+          campaign_name: row.dimensionValues?.[1]?.value || "",
+          ad_group: row.dimensionValues?.[2]?.value || null,
+          keyword: row.dimensionValues?.[3]?.value || null,
+          sessions: parseInt(row.metricValues?.[0]?.value || "0"),
+          total_users: parseInt(row.metricValues?.[1]?.value || "0"),
+          conversions: parseInt(row.metricValues?.[2]?.value || "0"),
+          engagement_rate: parseFloat(row.metricValues?.[3]?.value || "0"),
+          metric_date: formattedDate,
+        };
+      });
   }
 }

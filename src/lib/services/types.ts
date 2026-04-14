@@ -48,6 +48,7 @@ export interface SearchKeywordRow {
   impressions: number;
   ctr: number;
   metric_date: string;
+  daily?: SearchKeywordRow[];
 }
 
 export interface GeoDataRow {

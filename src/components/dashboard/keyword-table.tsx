@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { formatCompact, formatPercent, formatNumber } from "@/lib/utils/format";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { formatCompact, formatPercent } from "@/lib/utils/format";
+import { formatDateNorwegian } from "@/lib/utils/date";
+import { ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
 import type { SearchKeywordRow } from "@/lib/services/types";
 
 interface KeywordTableProps {
@@ -17,6 +18,7 @@ type SortDirection = "asc" | "desc";
 export function KeywordTable({ data, loading }: KeywordTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("clicks");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const sorted = useMemo(() => {
     if (!data?.length) return [];
@@ -41,6 +43,18 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
       setSortColumn(column);
       setSortDirection("desc");
     }
+  }
+
+  function toggleExpanded(query: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(query)) {
+        next.delete(query);
+      } else {
+        next.add(query);
+      }
+      return next;
+    });
   }
 
   function SortIcon({ column }: { column: SortColumn }) {
@@ -88,6 +102,7 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-800">
+              <th className="w-8" />
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -105,26 +120,95 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((row, i) => (
-              <tr
-                key={`${row.query}-${i}`}
-                className="border-b border-gray-800/50 hover:bg-gray-800/30"
-              >
-                <td className="px-4 py-3 text-white">{row.query}</td>
-                <td className="px-4 py-3 text-right text-gray-300">
-                  {row.position.toFixed(1)}
-                </td>
-                <td className="px-4 py-3 text-right text-gray-300">
-                  {formatCompact(row.clicks)}
-                </td>
-                <td className="px-4 py-3 text-right text-gray-300">
-                  {formatCompact(row.impressions)}
-                </td>
-                <td className="px-4 py-3 text-right text-gray-300">
-                  {formatPercent(row.ctr)}
-                </td>
-              </tr>
-            ))}
+            {sorted.map((row) => {
+              const isExpanded = expanded.has(row.query);
+              const hasDaily = row.daily && row.daily.length > 1;
+
+              return (
+                <Fragment key={row.query}>
+                  <tr
+                    className={`border-b border-gray-800/50 hover:bg-gray-800/30 ${
+                      hasDaily ? "cursor-pointer" : ""
+                    }`}
+                    onClick={() => hasDaily && toggleExpanded(row.query)}
+                  >
+                    <td className="px-2 py-3 text-gray-500">
+                      {hasDaily ? (
+                        isExpanded ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-white">
+                      {row.query}
+                      {hasDaily && (
+                        <span className="ml-2 text-xs text-gray-500">
+                          ({row.daily!.length} dager)
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-300">
+                      {row.position.toFixed(1)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-300">
+                      {formatCompact(row.clicks)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-300">
+                      {formatCompact(row.impressions)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-300">
+                      {formatPercent(row.ctr)}
+                    </td>
+                  </tr>
+                  {isExpanded && row.daily && (
+                    <tr className="bg-gray-900/50">
+                      <td colSpan={6} className="px-12 py-3">
+                        <div className="text-xs text-gray-500 mb-2">
+                          Daglig fordeling:
+                        </div>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-gray-500">
+                              <th className="text-left py-1">Dato</th>
+                              <th className="text-right py-1">Posisjon</th>
+                              <th className="text-right py-1">Klikk</th>
+                              <th className="text-right py-1">Visninger</th>
+                              <th className="text-right py-1">CTR</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {row.daily.map((d) => (
+                              <tr
+                                key={d.metric_date}
+                                className="text-gray-400"
+                              >
+                                <td className="py-1">
+                                  {formatDateNorwegian(new Date(d.metric_date))}
+                                </td>
+                                <td className="text-right py-1">
+                                  {d.position.toFixed(1)}
+                                </td>
+                                <td className="text-right py-1">
+                                  {d.clicks}
+                                </td>
+                                <td className="text-right py-1">
+                                  {d.impressions}
+                                </td>
+                                <td className="text-right py-1">
+                                  {formatPercent(d.ctr)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
