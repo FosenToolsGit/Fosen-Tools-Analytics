@@ -24,8 +24,27 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   const results = [];
 
-  for (const platform of PLATFORM_KEYS) {
-    const result = await syncPlatform(admin, platform, "manual");
+  // Only sync platforms that have credentials configured
+  const configuredPlatforms = PLATFORM_KEYS.filter((p) => {
+    switch (p) {
+      case "ga4":
+        return !!process.env.GA4_PROPERTY_ID;
+      case "meta":
+        return !!process.env.META_ACCESS_TOKEN;
+      case "mailchimp":
+        return !!process.env.MAILCHIMP_API_KEY;
+      case "linkedin":
+        return !!process.env.LINKEDIN_ACCESS_TOKEN;
+      default:
+        return false;
+    }
+  });
+
+  const triggeredBy =
+    authHeader === `Bearer ${syncSecret}` ? "cron" : "manual";
+
+  for (const platform of configuredPlatforms) {
+    const result = await syncPlatform(admin, platform, triggeredBy);
     results.push(result);
   }
 
