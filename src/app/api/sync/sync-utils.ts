@@ -5,6 +5,7 @@ import { GA4Service } from "@/lib/services/ga4";
 import { MetaService } from "@/lib/services/meta";
 import { LinkedInService } from "@/lib/services/linkedin";
 import { MailchimpService } from "@/lib/services/mailchimp";
+import { applyTagRules } from "@/lib/services/tag-rules-engine";
 import { subDays } from "date-fns";
 
 function getService(platform: PlatformKey): PlatformService {
@@ -133,6 +134,13 @@ export async function syncPlatform(
           });
         recordsSynced += campaigns.length;
       }
+    }
+
+    // Anvend tag-regler mot ny data (stille — feiler vi her skal sync fortsatt v\u00e6re suksess)
+    try {
+      await applyTagRules(admin);
+    } catch (tagErr) {
+      console.error("applyTagRules after sync failed:", tagErr);
     }
 
     // Update sync log

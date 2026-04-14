@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
 import * as XLSX from "xlsx";
-import { ruleMatches, type TagRule } from "@/lib/types/tags";
+import { ruleMatches, keywordEntityKey, type TagRule } from "@/lib/types/tags";
 
 interface AdsKeyword {
   type: string;
@@ -415,6 +415,81 @@ export async function POST(request: NextRequest) {
       { wch: 50 },
     ];
     XLSX.utils.book_append_sheet(wb, reviewWs, "Vurder disse");
+
+    // Sheet 6: Tag-breakdown — grupper ads-søkeord per tag
+    const { data: keywordTaggings } = await supabase
+      .from("tag_assignments")
+      .select("entity_key, tag:tags(id, name)")
+      .eq("entity_type", "keyword");
+
+    interface TagTotals {
+      name: string;
+      count: number;
+      clicks: number;
+      cost: number;
+      keywords: string[];
+    }
+    const tagTotals = new Map<string, TagTotals>();
+    if (keywordTaggings) {
+      // Map entity_key → tag name(s)
+      const keyToTags = new Map<string, string[]>();
+      for (const t of keywordTaggings as unknown as Array<{
+        entity_key: string;
+        tag: { id: string; name: string } | null;
+      }>) {
+        if (!t.tag) continue;
+        const list = keyToTags.get(t.entity_key) ?? [];
+        list.push(t.tag.name);
+        keyToTags.set(t.entity_key, list);
+      }
+
+      for (const k of adsKeywords) {
+        const key = keywordEntityKey(k.keyword);
+        const tags = keyToTags.get(key) ?? [];
+        if (tags.length === 0) continue;
+        for (const tagName of tags) {
+          const existing = tagTotals.get(tagName) ?? {
+            name: tagName,
+            count: 0,
+            clicks: 0,
+            cost: 0,
+            keywords: [],
+          };
+          existing.count += 1;
+          existing.clicks += k.clicks;
+          existing.cost += k.cost;
+          existing.keywords.push(k.keyword);
+          tagTotals.set(tagName, existing);
+        }
+      }
+    }
+
+    if (tagTotals.size > 0) {
+      const tagRows = Array.from(tagTotals.values()).sort(
+        (a, b) => b.cost - a.cost
+      );
+      const tagData: (string | number)[][] = [
+        ["Tag", "Antall søkeord", "Totalt klikk", "Total kostnad", "Snitt CPC", "Eksempel-søkeord"],
+        ...tagRows.map((t) => [
+          t.name,
+          t.count,
+          t.clicks,
+          parseFloat(t.cost.toFixed(2)),
+          t.clicks > 0 ? parseFloat((t.cost / t.clicks).toFixed(2)) : 0,
+          t.keywords.slice(0, 5).join(", ") + (t.keywords.length > 5 ? "..." : ""),
+        ]),
+      ];
+      const tagWs = XLSX.utils.aoa_to_sheet(tagData);
+      tagWs["!cols"] = [
+        { wch: 25 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 60 },
+      ];
+      XLSX.utils.book_append_sheet(wb, tagWs, "Tag-oversikt");
+    }
 
     const outputBuffer = XLSX.write(wb, {
       type: "buffer",
