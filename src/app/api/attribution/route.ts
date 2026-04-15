@@ -1,0 +1,240 @@
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse, type NextRequest } from "next/server";
+
+/**
+ * Cross-platform attribution: samler data fra GA4 traffic_sources + Google Ads
+ * conversions + platform_posts + ga4-metrics for å vise hvor salg faktisk kommer fra.
+ *
+ * Vi bruker GA4 som "sannhetskilde" for sesjoner per kilde (fordi GA4 ser all
+ * trafikk uavhengig av kanal), og Google Ads for ekte kjøpsverdier per kampanje.
+ */
+
+export interface ChannelAttribution {
+  channel: string;
+  sessions: number;
+  conversions: number;
+  estimated_value_nok: number;
+  cost_nok: number; // 0 for ikke-betalte kanaler
+  roas: number; // 0 hvis cost_nok er 0
+  share_of_sessions_pct: number;
+  share_of_value_pct: number;
+  is_paid: boolean;
+}
+
+export interface AttributionResponse {
+  period: { from: string; to: string; days: number };
+  total_sessions: number;
+  total_conversions: number;
+  total_estimated_value_nok: number;
+  total_cost_nok: number;
+  overall_roas: number;
+  channels: ChannelAttribution[];
+  top_sources: Array<{
+    channel: string;
+    source: string;
+    medium: string;
+    sessions: number;
+    conversions: number;
+  }>;
+}
+
+export async function GET(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const searchParams = request.nextUrl.searchParams;
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  if (!from || !to) {
+    return NextResponse.json(
+      { error: "Missing from/to" },
+      { status: 400 }
+    );
+  }
+
+  // 1. Hent traffic_sources for perioden (paginert)
+  interface SourceRow {
+    channel: string;
+    source: string;
+    medium: string;
+    sessions: number;
+    conversions: number;
+  }
+  const sourceRows: SourceRow[] = [];
+  const pageSize = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("traffic_sources")
+      .select("channel, source, medium, sessions, conversions")
+      .gte("metric_date", from)
+      .lte("metric_date", to)
+      .range(offset, offset + pageSize - 1);
+    if (error) {
+      if (/relation .* does not exist/i.test(error.message)) {
+        break;
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data || data.length === 0) break;
+    sourceRows.push(...(data as SourceRow[]));
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  // 2. Hent Google Ads total kostnad og ekte kjøps-verdi
+  const { data: adsCamps } = await supabase
+    .from("google_ads_campaigns")
+    .select("cost_nok")
+    .gte("metric_date", from)
+    .lte("metric_date", to);
+  const googleAdsCost = (adsCamps ?? []).reduce(
+    (s, r) => s + (Number(r.cost_nok) || 0),
+    0
+  );
+
+  const { data: adsConvs } = await supabase
+    .from("google_ads_conversions")
+    .select("conversion_action_name, all_conversions_value")
+    .gte("metric_date", from)
+    .lte("metric_date", to);
+  const googleAdsPurchaseValue = (adsConvs ?? [])
+    .filter((r) =>
+      (r.conversion_action_name as string).toLowerCase().includes("purchase")
+    )
+    .reduce((s, r) => s + (Number(r.all_conversions_value) || 0), 0);
+
+  // 3. Aggreger per channel
+  interface ChannelAgg {
+    sessions: number;
+    conversions: number;
+  }
+  const channelMap = new Map<string, ChannelAgg>();
+  for (const row of sourceRows) {
+    const ch = row.channel || "Ukjent";
+    const ex = channelMap.get(ch) ?? { sessions: 0, conversions: 0 };
+    ex.sessions += row.sessions || 0;
+    ex.conversions += Number(row.conversions) || 0;
+    channelMap.set(ch, ex);
+  }
+
+  const totalSessions = Array.from(channelMap.values()).reduce(
+    (s, c) => s + c.sessions,
+    0
+  );
+  const totalConversions = Array.from(channelMap.values()).reduce(
+    (s, c) => s + c.conversions,
+    0
+  );
+
+  // 4. Beregn estimert verdi per channel.
+  // Paid Search-kanalen får sin ekte verdi fra Google Ads purchase tracking.
+  // Andre kanaler estimeres proporsjonalt på konverteringer vs samlet Google Ads-verdi per session.
+  // Alternativt: bruk GA4 attribusjon. Vi går enkelt her og sier at Paid Search = Google Ads verdi,
+  // andre kanaler estimeres med gjennomsnittlig verdi per konvertering.
+  const avgValuePerConversion =
+    totalConversions > 0 && googleAdsPurchaseValue > 0
+      ? googleAdsPurchaseValue /
+        Math.max(
+          1,
+          (channelMap.get("Paid Search") ?? { conversions: 0 }).conversions
+        )
+      : 1000; // Fallback: 1000 NOK per konv hvis vi ikke har ekte data
+
+  const channels: ChannelAttribution[] = [];
+  let totalValue = 0;
+
+  for (const [channel, data] of channelMap) {
+    const isPaidSearch = channel.toLowerCase().includes("paid search");
+    const isPaid =
+      isPaidSearch ||
+      channel.toLowerCase().includes("paid") ||
+      channel.toLowerCase().includes("cross-network");
+    let estValue = 0;
+    if (isPaidSearch || channel === "Cross-network") {
+      // Bruk ekte Google Ads-data
+      estValue = googleAdsPurchaseValue;
+    } else {
+      estValue = data.conversions * avgValuePerConversion;
+    }
+    totalValue += estValue;
+
+    channels.push({
+      channel,
+      sessions: data.sessions,
+      conversions: data.conversions,
+      estimated_value_nok: estValue,
+      cost_nok: isPaidSearch || channel === "Cross-network" ? googleAdsCost : 0,
+      roas:
+        isPaidSearch || channel === "Cross-network"
+          ? googleAdsCost > 0
+            ? estValue / googleAdsCost
+            : 0
+          : 0,
+      share_of_sessions_pct:
+        totalSessions > 0 ? (data.sessions / totalSessions) * 100 : 0,
+      share_of_value_pct: 0, // fylles etterpå
+      is_paid: isPaid,
+    });
+  }
+
+  // Fyll share_of_value_pct
+  for (const c of channels) {
+    c.share_of_value_pct =
+      totalValue > 0 ? (c.estimated_value_nok / totalValue) * 100 : 0;
+  }
+
+  channels.sort((a, b) => b.estimated_value_nok - a.estimated_value_nok);
+
+  // 5. Topp 20 kilder (source+medium breakdown)
+  interface SourceAgg {
+    channel: string;
+    source: string;
+    medium: string;
+    sessions: number;
+    conversions: number;
+  }
+  const srcMap = new Map<string, SourceAgg>();
+  for (const row of sourceRows) {
+    const key = `${row.channel}|${row.source}|${row.medium}`;
+    const ex = srcMap.get(key) ?? {
+      channel: row.channel,
+      source: row.source,
+      medium: row.medium,
+      sessions: 0,
+      conversions: 0,
+    };
+    ex.sessions += row.sessions || 0;
+    ex.conversions += Number(row.conversions) || 0;
+    srcMap.set(key, ex);
+  }
+  const topSources = Array.from(srcMap.values())
+    .sort((a, b) => b.sessions - a.sessions)
+    .slice(0, 20);
+
+  // 6. Beregn periode
+  const fromDate = new Date(from);
+  const toDate = new Date(to);
+  const days = Math.max(
+    1,
+    Math.round((toDate.getTime() - fromDate.getTime()) / (24 * 60 * 60 * 1000))
+  );
+
+  const response: AttributionResponse = {
+    period: { from, to, days },
+    total_sessions: totalSessions,
+    total_conversions: totalConversions,
+    total_estimated_value_nok: totalValue,
+    total_cost_nok: googleAdsCost,
+    overall_roas: googleAdsCost > 0 ? totalValue / googleAdsCost : 0,
+    channels,
+    top_sources: topSources,
+  };
+
+  return NextResponse.json(response);
+}

@@ -3,15 +3,41 @@ import type { PlatformService, DailyMetric, PlatformPost } from "./types";
 
 const GRAPH_API_BASE = "https://graph.facebook.com/v22.0";
 
+export interface MetaPostExtras {
+  post_source: "facebook" | "instagram";
+  media_type?: string; // IMAGE, VIDEO, CAROUSEL_ALBUM, REEL (IG) or status/photo/video (FB)
+}
+
 export class MetaService implements PlatformService {
   private accessToken: string;
   private pageId: string;
-  private igAccountId: string;
+  private igAccountIdEnv: string;
+  private cachedIgAccountId: string | null = null;
 
   constructor() {
     this.accessToken = process.env.META_ACCESS_TOKEN!;
     this.pageId = process.env.META_PAGE_ID!;
-    this.igAccountId = process.env.META_INSTAGRAM_ACCOUNT_ID!;
+    this.igAccountIdEnv = process.env.META_INSTAGRAM_ACCOUNT_ID || "";
+  }
+
+  /**
+   * Henter tilkoblet Instagram Business Account. Hvis env-variabel er satt,
+   * bruk den. Ellers forsøk å finne den via Facebook Page.
+   */
+  private async getInstagramAccountId(): Promise<string | null> {
+    if (this.igAccountIdEnv) return this.igAccountIdEnv;
+    if (this.cachedIgAccountId !== null) return this.cachedIgAccountId;
+    try {
+      const res = await this.graphGet(`/${this.pageId}`, {
+        fields: "instagram_business_account",
+      });
+      const igId = res?.instagram_business_account?.id || null;
+      this.cachedIgAccountId = igId;
+      return igId;
+    } catch {
+      this.cachedIgAccountId = "";
+      return null;
+    }
   }
 
   private async graphGet(path: string, params: Record<string, string> = {}) {
@@ -115,6 +141,14 @@ export class MetaService implements PlatformService {
   }
 
   async fetchTopPosts(limit: number): Promise<PlatformPost[]> {
+    const [fbPosts, igPosts] = await Promise.all([
+      this.fetchFacebookPosts(limit),
+      this.fetchInstagramPosts(limit),
+    ]);
+    return [...fbPosts, ...igPosts];
+  }
+
+  private async fetchFacebookPosts(limit: number): Promise<PlatformPost[]> {
     const response = await this.graphGet(`/${this.pageId}/posts`, {
       fields:
         "id,message,created_time,full_picture,permalink_url,likes.summary(true),comments.summary(true),shares",
@@ -123,7 +157,6 @@ export class MetaService implements PlatformService {
 
     const posts = response.data || [];
 
-    // Fetch post_clicks for each post in parallel
     const postsWithClicks = await Promise.all(
       posts.map(async (post: Record<string, unknown>) => {
         let clicks = 0;
@@ -157,8 +190,8 @@ export class MetaService implements PlatformService {
           content_snippet: ((post.message as string) || "").slice(0, 200),
           post_url: post.permalink_url as string,
           thumbnail_url: (post.full_picture as string) || null,
-          post_type: "post",
-          impressions: clicks, // use clicks as proxy for visibility
+          post_type: "facebook_post",
+          impressions: clicks,
           reach: likes + comments + shares + clicks,
           likes,
           comments,
@@ -170,6 +203,89 @@ export class MetaService implements PlatformService {
     );
 
     return postsWithClicks;
+  }
+
+  /**
+   * Henter Instagram-media (posts, reels, carousels) med insights.
+   * Instagram-API-et er separat fra Facebook Page API selv om de deler token.
+   */
+  private async fetchInstagramPosts(limit: number): Promise<PlatformPost[]> {
+    const igId = await this.getInstagramAccountId();
+    if (!igId) return [];
+
+    let mediaResponse;
+    try {
+      mediaResponse = await this.graphGet(`/${igId}/media`, {
+        fields:
+          "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count",
+        limit: limit.toString(),
+      });
+    } catch (err) {
+      console.error("Instagram media fetch failed:", err);
+      return [];
+    }
+
+    const media = (mediaResponse.data || []) as Array<Record<string, unknown>>;
+
+    // Hent insights per media i parallel — reach, impressions, saved
+    const postsWithInsights = await Promise.all(
+      media.map(async (m) => {
+        const mediaType = String(m.media_type || "IMAGE");
+        const isVideo = mediaType === "VIDEO" || mediaType === "REELS";
+
+        // Instagram Insights-metrics varierer per media-type
+        let reach = 0;
+        let impressions = 0;
+        let saves = 0;
+        let videoViews = 0;
+        try {
+          const metricList = isVideo
+            ? "reach,plays,saved"
+            : "reach,impressions,saved";
+          const insightsRes = await this.graphGet(
+            `/${m.id}/insights`,
+            { metric: metricList }
+          );
+          const insights = (insightsRes.data || []) as Array<{
+            name: string;
+            values?: Array<{ value?: number }>;
+          }>;
+          for (const ins of insights) {
+            const val = ins.values?.[0]?.value ?? 0;
+            if (ins.name === "reach") reach = val;
+            else if (ins.name === "impressions") impressions = val;
+            else if (ins.name === "plays") videoViews = val;
+            else if (ins.name === "saved") saves = val;
+          }
+        } catch {
+          // Noen insights kan feile for eldre content
+        }
+
+        const likes = Number(m.like_count ?? 0);
+        const comments = Number(m.comments_count ?? 0);
+
+        return {
+          platform: "meta" as const,
+          platform_post_id: `ig_${m.id as string}`,
+          published_at: String(m.timestamp || ""),
+          title: null,
+          content_snippet: String(m.caption || "").slice(0, 200),
+          post_url: String(m.permalink || ""),
+          thumbnail_url:
+            (m.thumbnail_url as string) || (m.media_url as string) || null,
+          post_type: `instagram_${mediaType.toLowerCase()}`,
+          impressions: impressions || reach,
+          reach,
+          likes,
+          comments,
+          shares: saves, // Bruker "saves" som nærmeste Instagram-ekvivalent til shares
+          clicks: 0, // Instagram eksponerer ikke klikk på samme måte
+          video_views: videoViews,
+        };
+      })
+    );
+
+    return postsWithInsights;
   }
 
   private emptyMetric(date: string, followers: number = 0): DailyMetric {

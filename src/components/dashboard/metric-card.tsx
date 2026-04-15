@@ -59,7 +59,7 @@ export function MetricCard({
       <div className="flex items-center justify-between">
         <span
           className={cn(
-            "text-sm text-gray-400",
+            "text-xs sm:text-sm text-gray-400 truncate",
             tooltip &&
               "border-b border-dotted border-gray-600 cursor-help"
           )}
@@ -68,7 +68,7 @@ export function MetricCard({
         >
           {title}
         </span>
-        <Icon className="w-5 h-5 text-gray-500" />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
       </div>
 
       {showTooltip && tooltip && (
@@ -77,8 +77,10 @@ export function MetricCard({
         </div>
       )}
 
-      <div className="flex items-end gap-3">
-        <span className="text-3xl font-bold text-white">{formatted}</span>
+      <div className="flex items-end gap-2 sm:gap-3">
+        <span className="text-2xl sm:text-3xl font-bold text-white truncate">
+          {formatted}
+        </span>
 
         {previousValue !== undefined && (
           <span
