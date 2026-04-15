@@ -13,12 +13,14 @@ import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { GoogleAdsCampaignTable } from "@/components/dashboard/google-ads-campaign-table";
 import { GoogleAdsKeywordTable } from "@/components/dashboard/google-ads-keyword-table";
 import { GoogleAdsSearchTermsTable } from "@/components/dashboard/google-ads-search-terms-table";
+import { GoogleAdsConversionsTable } from "@/components/dashboard/google-ads-conversions-table";
 import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import {
   useGoogleAdsCampaigns,
   useGoogleAdsKeywords,
   useGoogleAdsSearchTerms,
+  useGoogleAdsConversions,
 } from "@/hooks/use-google-ads";
 
 function Content() {
@@ -29,6 +31,8 @@ function Content() {
     useGoogleAdsKeywords(dateRange);
   const { data: searchTerms, isLoading: loadingSearchTerms } =
     useGoogleAdsSearchTerms(dateRange);
+  const { data: conversions, isLoading: loadingConversions } =
+    useGoogleAdsConversions(dateRange);
 
   const campaignRows = Array.isArray(campaigns) ? campaigns : [];
   const keywordRows = Array.isArray(keywords) ? keywords : [];
@@ -117,6 +121,22 @@ function Content() {
           Topp søkeord (etter kostnad)
         </h2>
         <GoogleAdsKeywordTable data={keywordRows} loading={loadingKeywords} />
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-1">
+          Konverteringer og funnel-aktivitet
+        </h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Alle trackede handlinger per kampanje — inkludert de som ikke er
+          markert som "primary conversion" i Google Ads. Viktig for å se ekte
+          aktivitet når sporingen er konfigurert feil.
+        </p>
+        <GoogleAdsConversionsTable
+          data={Array.isArray(conversions) ? conversions : []}
+          loading={loadingConversions}
+          groupByCampaign
+        />
       </div>
 
       <div>

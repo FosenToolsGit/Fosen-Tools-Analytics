@@ -6,6 +6,7 @@ import type { DateRange } from "@/lib/utils/date";
 import type { GoogleAdsCampaignAggregate } from "@/app/api/google-ads/campaigns/route";
 import type { GoogleAdsKeywordAggregate } from "@/app/api/google-ads/keywords/route";
 import type { SearchTermAggregate } from "@/app/api/google-ads/search-terms/route";
+import type { ConversionAggregate } from "@/app/api/google-ads/conversions/route";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -24,6 +25,21 @@ export function useGoogleAdsKeywords(dateRange: DateRange) {
   const to = formatDateISO(dateRange.to);
   const { data, error, isLoading, mutate } = useSWR<GoogleAdsKeywordAggregate[]>(
     `/api/google-ads/keywords?from=${from}&to=${to}`,
+    fetcher
+  );
+  return { data, error, isLoading, mutate };
+}
+
+export function useGoogleAdsConversions(
+  dateRange: DateRange,
+  opts: { campaignId?: string } = {}
+) {
+  const from = formatDateISO(dateRange.from);
+  const to = formatDateISO(dateRange.to);
+  const params = new URLSearchParams({ from, to });
+  if (opts.campaignId) params.set("campaign_id", opts.campaignId);
+  const { data, error, isLoading, mutate } = useSWR<ConversionAggregate[]>(
+    `/api/google-ads/conversions?${params.toString()}`,
     fetcher
   );
   return { data, error, isLoading, mutate };

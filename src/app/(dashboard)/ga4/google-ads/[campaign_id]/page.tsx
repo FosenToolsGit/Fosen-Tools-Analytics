@@ -22,7 +22,11 @@ import {
 import { CampaignDailyChart } from "@/components/dashboard/campaign-daily-chart";
 import { GoogleAdsKeywordTable } from "@/components/dashboard/google-ads-keyword-table";
 import { GoogleAdsSearchTermsTable } from "@/components/dashboard/google-ads-search-terms-table";
-import { useGoogleAdsSearchTerms } from "@/hooks/use-google-ads";
+import { GoogleAdsConversionsTable } from "@/components/dashboard/google-ads-conversions-table";
+import {
+  useGoogleAdsSearchTerms,
+  useGoogleAdsConversions,
+} from "@/hooks/use-google-ads";
 
 function Content({ campaignId }: { campaignId: string }) {
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
@@ -32,6 +36,8 @@ function Content({ campaignId }: { campaignId: string }) {
     useGoogleAdsCampaignKeywords(campaignId, dateRange);
   const { data: searchTerms, isLoading: loadingSearchTerms } =
     useGoogleAdsSearchTerms(dateRange, { campaignId });
+  const { data: conversions, isLoading: loadingConversions } =
+    useGoogleAdsConversions(dateRange, { campaignId });
 
   const campaignName = detail?.campaign?.campaign_name ?? "Ukjent kampanje";
   const status = detail?.campaign?.status;
@@ -133,6 +139,19 @@ function Content({ campaignId }: { campaignId: string }) {
         <GoogleAdsKeywordTable
           data={Array.isArray(keywords) ? keywords : []}
           loading={loadingKeywords}
+        />
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-1">Konverterings-breakdown</h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Alle handlinger for denne kampanjen. Viser både Googles "primary"
+          telling og alle sporede handlinger.
+        </p>
+        <GoogleAdsConversionsTable
+          data={Array.isArray(conversions) ? conversions : []}
+          loading={loadingConversions}
+          groupByCampaign={false}
         />
       </div>
 

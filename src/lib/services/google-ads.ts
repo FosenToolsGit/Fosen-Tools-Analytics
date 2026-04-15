@@ -49,6 +49,17 @@ export interface GoogleAdsKeyword {
   quality_score: number | null;
 }
 
+export interface GoogleAdsConversionRow {
+  campaign_id: string;
+  campaign_name: string;
+  conversion_action_name: string;
+  metric_date: string;
+  conversions: number;
+  conversions_value: number;
+  all_conversions: number;
+  all_conversions_value: number;
+}
+
 export interface GoogleAdsSearchTerm {
   source: "search_term" | "pmax_insight";
   campaign_id: string;
@@ -235,6 +246,51 @@ export class GoogleAdsService {
         quality_score: qualityInfo.quality_score != null
           ? Number(qualityInfo.quality_score)
           : null,
+      };
+    });
+  }
+
+  /**
+   * Henter konvertering-breakdown per kampanje og action per dag. Dette
+   * inkluderer ALLE actions (all_conversions), ikke bare de som er markert
+   * som primary. Viktig for å se ekte funnel-aktivitet når Google Ads-
+   * konverteringssporingen er ufullstendig.
+   */
+  async fetchConversions(
+    startDate: Date,
+    endDate: Date
+  ): Promise<GoogleAdsConversionRow[]> {
+    const from = startDate.toISOString().split("T")[0];
+    const to = endDate.toISOString().split("T")[0];
+
+    const rows = (await this.customer.query(`
+      SELECT
+        campaign.id,
+        campaign.name,
+        segments.conversion_action_name,
+        segments.date,
+        metrics.conversions,
+        metrics.conversions_value,
+        metrics.all_conversions,
+        metrics.all_conversions_value
+      FROM campaign
+      WHERE segments.date BETWEEN '${from}' AND '${to}'
+        AND metrics.all_conversions > 0
+    `)) as unknown as Array<Record<string, unknown>>;
+
+    return rows.map((row) => {
+      const campaign = (row.campaign ?? {}) as Record<string, unknown>;
+      const metrics = (row.metrics ?? {}) as Record<string, unknown>;
+      const segments = (row.segments ?? {}) as Record<string, unknown>;
+      return {
+        campaign_id: String(campaign.id ?? ""),
+        campaign_name: String(campaign.name ?? ""),
+        conversion_action_name: String(segments.conversion_action_name ?? ""),
+        metric_date: String(segments.date ?? ""),
+        conversions: Number(metrics.conversions ?? 0),
+        conversions_value: Number(metrics.conversions_value ?? 0),
+        all_conversions: Number(metrics.all_conversions ?? 0),
+        all_conversions_value: Number(metrics.all_conversions_value ?? 0),
       };
     });
   }

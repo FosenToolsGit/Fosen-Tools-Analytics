@@ -11,6 +11,7 @@ export type GoogleAdsSyncResult =
       keywords: number;
       search_terms: number;
       pmax_insights: number;
+      conversions: number;
     }
   | {
       platform: "google_ads";
@@ -126,8 +127,25 @@ export async function syncGoogleAds(
       console.error("Pmax search term insight sync failed:", pmaxErr);
     }
 
+    // Konverterings-breakdown per kampanje + action + dag
+    const conversions = await service.fetchConversions(startDate, endDate);
+    let conversionsSynced = 0;
+    if (conversions.length > 0) {
+      const { error } = await admin
+        .from("google_ads_conversions")
+        .upsert(conversions, {
+          onConflict: "campaign_id,conversion_action_name,metric_date",
+        });
+      if (error) throw error;
+      conversionsSynced = conversions.length;
+    }
+
     const totalSynced =
-      campaignsSynced + keywordsSynced + searchTermsSynced + pmaxInsightsSynced;
+      campaignsSynced +
+      keywordsSynced +
+      searchTermsSynced +
+      pmaxInsightsSynced +
+      conversionsSynced;
 
     await admin
       .from("sync_logs")
@@ -146,6 +164,7 @@ export async function syncGoogleAds(
       keywords: keywordsSynced,
       search_terms: searchTermsSynced,
       pmax_insights: pmaxInsightsSynced,
+      conversions: conversionsSynced,
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
