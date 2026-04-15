@@ -9,6 +9,7 @@ import { SyncStatusCard } from "@/components/dashboard/sync-status-card";
 import { TagOverviewCard } from "@/components/dashboard/tag-overview-card";
 import { OutliersCard } from "@/components/dashboard/outliers-card";
 import { GoogleAdsSpendCard } from "@/components/dashboard/google-ads-spend-card";
+import { AnomaliesWidget } from "@/components/dashboard/anomalies-widget";
 import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { ComparisonToggle } from "@/components/filters/comparison-toggle";
 import { useDateRange } from "@/hooks/use-date-range";
@@ -91,7 +92,10 @@ function DashboardContent() {
         </div>
       )}
 
-      <OutliersCard />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AnomaliesWidget />
+        <OutliersCard />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <GoogleAdsSpendCard

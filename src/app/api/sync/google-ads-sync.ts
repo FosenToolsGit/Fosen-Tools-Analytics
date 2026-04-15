@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { subDays } from "date-fns";
 import { GoogleAdsService } from "@/lib/services/google-ads";
+import { detectAnomalies } from "@/lib/services/anomaly-detection";
 
 export type GoogleAdsSyncResult =
   | {
@@ -146,6 +147,13 @@ export async function syncGoogleAds(
       searchTermsSynced +
       pmaxInsightsSynced +
       conversionsSynced;
+
+    // Kjør anomali-deteksjon mot nye Google Ads-data (stille ved feil)
+    try {
+      await detectAnomalies(admin);
+    } catch (anomalyErr) {
+      console.error("detectAnomalies after google ads sync failed:", anomalyErr);
+    }
 
     await admin
       .from("sync_logs")

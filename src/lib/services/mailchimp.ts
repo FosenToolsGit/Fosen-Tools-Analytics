@@ -190,6 +190,185 @@ export class MailchimpService implements PlatformService {
     return posts;
   }
 
+  /**
+   * Henter per-lenke klikk for en kampanje (hvilke URL-er klikkes mest).
+   * Bruker /reports/{id}/click-details.
+   */
+  async fetchCampaignClickDetails(campaignId: string): Promise<
+    Array<{
+      url: string;
+      total_clicks: number;
+      unique_clicks: number;
+      click_percentage: number;
+      last_click: string | null;
+    }>
+  > {
+    try {
+      const res = await this.mcGet(`/reports/${campaignId}/click-details`, {
+        count: "1000",
+      });
+      const urls = (res.urls_clicked || []) as Array<{
+        url: string;
+        total_clicks: number;
+        unique_clicks: number;
+        click_percentage: number;
+        last_click?: string;
+      }>;
+      return urls.map((u) => ({
+        url: u.url,
+        total_clicks: u.total_clicks || 0,
+        unique_clicks: u.unique_clicks || 0,
+        click_percentage: u.click_percentage || 0,
+        last_click: u.last_click || null,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Henter geografisk fordeling av åpninger for en kampanje.
+   */
+  async fetchCampaignLocations(campaignId: string): Promise<
+    Array<{ country_code: string; region: string; opens: number }>
+  > {
+    try {
+      const res = await this.mcGet(`/reports/${campaignId}/locations`, {
+        count: "200",
+      });
+      const locs = (res.locations || []) as Array<{
+        country_code?: string;
+        region?: string;
+        opens?: number;
+      }>;
+      return locs
+        .filter((l) => l.country_code)
+        .map((l) => ({
+          country_code: l.country_code!,
+          region: l.region || "",
+          opens: l.opens || 0,
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Henter abonnent-veksthistorikk for listen (per måned).
+   */
+  async fetchListGrowth(): Promise<
+    Array<{
+      metric_date: string;
+      existing: number;
+      imports: number;
+      optins: number;
+      unsubs: number;
+      cleaned: number;
+    }>
+  > {
+    try {
+      const res = await this.mcGet(
+        `/lists/${this.listId}/growth-history`,
+        { count: "60" }
+      );
+      const history = (res.history || []) as Array<{
+        month?: string;
+        existing?: number;
+        imports?: number;
+        optins?: number;
+        unsubscribes?: number;
+        cleaned?: number;
+      }>;
+      return history
+        .filter((h) => h.month)
+        .map((h) => ({
+          metric_date: `${h.month}-01`, // Mailchimp returnerer YYYY-MM
+          existing: h.existing ?? 0,
+          imports: h.imports ?? 0,
+          optins: h.optins ?? 0,
+          unsubs: h.unsubscribes ?? 0,
+          cleaned: h.cleaned ?? 0,
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Henter daglig liste-aktivitet (sent, opens, clicks, unsubs per dag).
+   */
+  async fetchListActivity(): Promise<
+    Array<{
+      metric_date: string;
+      emails_sent: number;
+      unique_opens: number;
+      recipient_clicks: number;
+      hard_bounce: number;
+      soft_bounce: number;
+      unsubs: number;
+      other_adds: number;
+      other_removes: number;
+      subs: number;
+    }>
+  > {
+    try {
+      const res = await this.mcGet(
+        `/lists/${this.listId}/activity`,
+        { count: "180" }
+      );
+      const activity = (res.activity || []) as Array<{
+        day?: string;
+        emails_sent?: number;
+        unique_opens?: number;
+        recipient_clicks?: number;
+        hard_bounce?: number;
+        soft_bounce?: number;
+        unsubs?: number;
+        other_adds?: number;
+        other_removes?: number;
+        subs?: number;
+      }>;
+      return activity
+        .filter((a) => a.day)
+        .map((a) => ({
+          metric_date: a.day!,
+          emails_sent: a.emails_sent ?? 0,
+          unique_opens: a.unique_opens ?? 0,
+          recipient_clicks: a.recipient_clicks ?? 0,
+          hard_bounce: a.hard_bounce ?? 0,
+          soft_bounce: a.soft_bounce ?? 0,
+          unsubs: a.unsubs ?? 0,
+          other_adds: a.other_adds ?? 0,
+          other_removes: a.other_removes ?? 0,
+          subs: a.subs ?? 0,
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Henter ID-ene til siste N kampanjer (for batch-click-details-henting).
+   */
+  async fetchRecentCampaignIds(sinceDate: Date): Promise<string[]> {
+    try {
+      const res = await this.mcGet("/campaigns", {
+        since_send_time: sinceDate.toISOString(),
+        status: "sent",
+        count: "100",
+        sort_field: "send_time",
+        sort_dir: "DESC",
+      });
+      return (res.campaigns || []).map((c: { id: string }) => c.id);
+    } catch {
+      return [];
+    }
+  }
+
+  get effectiveListId(): string {
+    return this.listId;
+  }
+
   private emptyMetric(date: string, subscribers: number = 0): DailyMetric {
     return {
       platform: "mailchimp",

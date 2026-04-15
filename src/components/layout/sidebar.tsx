@@ -21,6 +21,7 @@ import {
   Brain,
   ShieldOff,
   FileSpreadsheet,
+  Bell,
   Tag as TagIcon,
   ChevronDown,
   ChevronRight,
@@ -43,6 +44,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Oversikt", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Varsler", href: "/varsler", icon: Bell },
   {
     label: "Google Analytics",
     href: "/platform/ga4",

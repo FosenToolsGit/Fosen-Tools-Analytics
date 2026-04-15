@@ -6,6 +6,7 @@ import { MetaService } from "@/lib/services/meta";
 import { LinkedInService } from "@/lib/services/linkedin";
 import { MailchimpService } from "@/lib/services/mailchimp";
 import { applyTagRules } from "@/lib/services/tag-rules-engine";
+import { detectAnomalies } from "@/lib/services/anomaly-detection";
 import { subDays } from "date-fns";
 
 function getService(platform: PlatformKey): PlatformService {
@@ -144,11 +145,90 @@ export async function syncPlatform(
       }
     }
 
+    // Mailchimp-specific: sync links, locations, growth, daily list activity
+    if (platform === "mailchimp") {
+      const mc = service as MailchimpService;
+      try {
+        // Hent siste 30 dagers kampanjer for click-details (tyngste kall)
+        const recentSince = subDays(endDate, 30);
+        const recentIds = await mc.fetchRecentCampaignIds(recentSince);
+
+        for (const campaignId of recentIds) {
+          const links = await mc.fetchCampaignClickDetails(campaignId);
+          if (links.length > 0) {
+            const linkRows = links.map((l) => ({
+              campaign_id: campaignId,
+              url: l.url,
+              total_clicks: l.total_clicks,
+              unique_clicks: l.unique_clicks,
+              click_percentage: l.click_percentage,
+              last_click_at: l.last_click,
+            }));
+            await admin
+              .from("mailchimp_campaign_links")
+              .upsert(linkRows, { onConflict: "campaign_id,url" });
+            recordsSynced += links.length;
+          }
+
+          const locs = await mc.fetchCampaignLocations(campaignId);
+          if (locs.length > 0) {
+            const locRows = locs.map((l) => ({
+              campaign_id: campaignId,
+              country_code: l.country_code,
+              region: l.region,
+              opens: l.opens,
+            }));
+            await admin
+              .from("mailchimp_campaign_locations")
+              .upsert(locRows, {
+                onConflict: "campaign_id,country_code,region",
+              });
+            recordsSynced += locs.length;
+          }
+        }
+
+        // List growth (månedlig historikk)
+        const growth = await mc.fetchListGrowth();
+        if (growth.length > 0) {
+          const growthRows = growth.map((g) => ({
+            list_id: mc.effectiveListId,
+            ...g,
+          }));
+          await admin
+            .from("mailchimp_list_growth")
+            .upsert(growthRows, { onConflict: "list_id,metric_date" });
+          recordsSynced += growth.length;
+        }
+
+        // Daglig list-aktivitet
+        const activity = await mc.fetchListActivity();
+        if (activity.length > 0) {
+          const activityRows = activity.map((a) => ({
+            list_id: mc.effectiveListId,
+            ...a,
+          }));
+          await admin
+            .from("mailchimp_list_daily")
+            .upsert(activityRows, { onConflict: "list_id,metric_date" });
+          recordsSynced += activity.length;
+        }
+      } catch (mcErr) {
+        console.error("Mailchimp extended sync failed:", mcErr);
+      }
+    }
+
     // Anvend tag-regler mot ny data (stille — feiler vi her skal sync fortsatt v\u00e6re suksess)
     try {
       await applyTagRules(admin);
     } catch (tagErr) {
       console.error("applyTagRules after sync failed:", tagErr);
+    }
+
+    // Kjør anomali-deteksjon mot ny data (også stille ved feil)
+    try {
+      await detectAnomalies(admin);
+    } catch (anomalyErr) {
+      console.error("detectAnomalies after sync failed:", anomalyErr);
     }
 
     // Update sync log
