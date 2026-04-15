@@ -156,7 +156,17 @@ export async function syncPlatform(
         for (const campaignId of recentIds) {
           const links = await mc.fetchCampaignClickDetails(campaignId);
           if (links.length > 0) {
-            const linkRows = links.map((l) => ({
+            // Dedupliser per URL innen samme kampanje — Mailchimp returnerer
+            // ofte samme URL flere ganger (samme lenke i flere posisjoner).
+            // Behold raden med flest klikk.
+            const linkMap = new Map<string, (typeof links)[0]>();
+            for (const l of links) {
+              const existing = linkMap.get(l.url);
+              if (!existing || l.total_clicks > existing.total_clicks) {
+                linkMap.set(l.url, l);
+              }
+            }
+            const linkRows = Array.from(linkMap.values()).map((l) => ({
               campaign_id: campaignId,
               url: l.url,
               total_clicks: l.total_clicks,
@@ -167,12 +177,21 @@ export async function syncPlatform(
             await admin
               .from("mailchimp_campaign_links")
               .upsert(linkRows, { onConflict: "campaign_id,url" });
-            recordsSynced += links.length;
+            recordsSynced += linkRows.length;
           }
 
           const locs = await mc.fetchCampaignLocations(campaignId);
           if (locs.length > 0) {
-            const locRows = locs.map((l) => ({
+            // Samme dedup-pattern for locations
+            const locMap = new Map<string, (typeof locs)[0]>();
+            for (const l of locs) {
+              const key = `${l.country_code}|${l.region}`;
+              const existing = locMap.get(key);
+              if (!existing || l.opens > existing.opens) {
+                locMap.set(key, l);
+              }
+            }
+            const locRows = Array.from(locMap.values()).map((l) => ({
               campaign_id: campaignId,
               country_code: l.country_code,
               region: l.region,
@@ -183,7 +202,7 @@ export async function syncPlatform(
               .upsert(locRows, {
                 onConflict: "campaign_id,country_code,region",
               });
-            recordsSynced += locs.length;
+            recordsSynced += locRows.length;
           }
         }
 
