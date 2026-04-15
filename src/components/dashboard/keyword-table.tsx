@@ -8,6 +8,7 @@ import { ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
 import type { SearchKeywordRow } from "@/lib/services/types";
 import { TagCell } from "@/components/tags/tag-cell";
 import { TagFilter } from "@/components/tags/tag-filter";
+import { BulkTagToolbar } from "@/components/tags/bulk-tag-toolbar";
 import { useTaggingsForEntityType } from "@/hooks/use-tags";
 import { keywordEntityKey, type Tag } from "@/lib/types/tags";
 
@@ -24,6 +25,7 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const { data: taggings } = useTaggingsForEntityType("keyword");
 
   const tagsByKey = useMemo(() => {
@@ -67,6 +69,23 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
     } else {
       setSortColumn(column);
       setSortDirection("desc");
+    }
+  }
+
+  function toggleSelected(key: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === sorted.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(sorted.map((r) => keywordEntityKey(r.query))));
     }
   }
 
@@ -121,8 +140,15 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
     { key: "ctr", label: "CTR", align: "right" },
   ];
 
+  const allSelected = sorted.length > 0 && selected.size === sorted.length;
+
   return (
     <div className="space-y-3">
+      <BulkTagToolbar
+        entityType="keyword"
+        selectedKeys={Array.from(selected)}
+        onClear={() => setSelected(new Set())}
+      />
       <div className="flex items-center justify-end">
         <TagFilter value={tagFilter} onChange={setTagFilter} />
       </div>
@@ -131,6 +157,15 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-800">
+              <th className="w-8 px-2">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 rounded border-gray-600 bg-gray-900"
+                  aria-label="Velg alle"
+                />
+              </th>
               <th className="w-8" />
               {columns.map((col) => (
                 <th
@@ -153,15 +188,32 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
             {sorted.map((row) => {
               const isExpanded = expanded.has(row.query);
               const hasDaily = row.daily && row.daily.length > 1;
+              const entityKey = keywordEntityKey(row.query);
+              const isSelected = selected.has(entityKey);
 
               return (
                 <Fragment key={row.query}>
                   <tr
                     className={`border-b border-gray-800/50 hover:bg-gray-800/30 ${
                       hasDaily ? "cursor-pointer" : ""
-                    }`}
+                    } ${isSelected ? "bg-blue-950/30" : ""}`}
                     onClick={() => hasDaily && toggleExpanded(row.query)}
                   >
+                    <td
+                      className="px-2 py-3"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelected(entityKey);
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelected(entityKey)}
+                        className="h-4 w-4 rounded border-gray-600 bg-gray-900"
+                        aria-label="Velg rad"
+                      />
+                    </td>
                     <td className="px-2 py-3 text-gray-500">
                       {hasDaily ? (
                         isExpanded ? (
@@ -201,7 +253,7 @@ export function KeywordTable({ data, loading }: KeywordTableProps) {
                   </tr>
                   {isExpanded && row.daily && (
                     <tr className="bg-gray-900/50">
-                      <td colSpan={7} className="px-12 py-3">
+                      <td colSpan={8} className="px-12 py-3">
                         <div className="text-xs text-gray-500 mb-2">
                           Daglig fordeling:
                         </div>

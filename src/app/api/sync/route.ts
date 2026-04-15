@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse, type NextRequest } from "next/server";
-import { PLATFORM_KEYS, type PlatformKey } from "@/lib/utils/platforms";
+import { PLATFORM_KEYS } from "@/lib/utils/platforms";
 import { syncPlatform } from "./sync-utils";
+import { syncGoogleAds } from "./google-ads-sync";
 
 export async function POST(request: NextRequest) {
   // Check auth: either session or SYNC_SECRET_KEY
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const results = [];
+  const results: Array<Record<string, unknown>> = [];
 
   // Only sync platforms that have credentials configured
   const configuredPlatforms = PLATFORM_KEYS.filter((p) => {
@@ -43,9 +44,24 @@ export async function POST(request: NextRequest) {
   const triggeredBy =
     authHeader === `Bearer ${syncSecret}` ? "cron" : "manual";
 
+  // Valgfritt sync-vindu via ?days=N (default 90 fra sync-utils)
+  const daysParam = request.nextUrl.searchParams.get("days");
+  const days = daysParam ? parseInt(daysParam, 10) : undefined;
+
   for (const platform of configuredPlatforms) {
-    const result = await syncPlatform(admin, platform, triggeredBy);
+    const result = await syncPlatform(admin, platform, triggeredBy, days ? { days } : {});
     results.push(result);
+  }
+
+  // Google Ads kjøres separat — bruker ikke PlatformService-interfacet og har
+  // egen tabell-struktur. syncGoogleAds returnerer "skipped" hvis env mangler.
+  if (process.env.GOOGLE_ADS_DEVELOPER_TOKEN) {
+    const gaResult = await syncGoogleAds(
+      admin,
+      triggeredBy,
+      days ? { days } : {}
+    );
+    results.push(gaResult);
   }
 
   return NextResponse.json({ results });

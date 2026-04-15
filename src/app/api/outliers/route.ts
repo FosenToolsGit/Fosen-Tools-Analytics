@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { subDays, formatISO } from "date-fns";
+import { keywordEntityKey } from "@/lib/types/tags";
 
 interface MetricRow {
   platform: string;
@@ -12,7 +13,15 @@ interface MetricRow {
   clicks: number;
 }
 
-export interface Outlier {
+interface KeywordRow {
+  query: string;
+  clicks: number;
+  impressions: number;
+  metric_date: string;
+}
+
+export interface PlatformOutlier {
+  kind: "platform";
   platform: string;
   metric: "sessions" | "impressions" | "reach" | "engagement" | "clicks";
   current: number;
@@ -22,7 +31,22 @@ export interface Outlier {
   severity: "info" | "warning" | "alert";
 }
 
-const METRICS: Outlier["metric"][] = [
+export interface TagOutlier {
+  kind: "tag";
+  tag_id: string;
+  tag_name: string;
+  tag_color: string;
+  metric: "clicks" | "impressions";
+  current: number;
+  previous: number;
+  delta_pct: number;
+  direction: "up" | "down";
+  severity: "info" | "warning" | "alert";
+}
+
+export type OutlierAny = PlatformOutlier | TagOutlier;
+
+const PLATFORM_METRICS: PlatformOutlier["metric"][] = [
   "sessions",
   "impressions",
   "reach",
@@ -30,12 +54,15 @@ const METRICS: Outlier["metric"][] = [
   "clicks",
 ];
 
-// Terskler: prosent endring som kvalifiserer som outlier
-const WARNING_THRESHOLD = 0.3; // 30%
-const ALERT_THRESHOLD = 0.6; // 60%
-
-// Minimum absoluttverdi f\u00f8r vi flagger (unng\u00e5r 0 \u2192 1 = 100% spam)
+const WARNING_THRESHOLD = 0.3;
+const ALERT_THRESHOLD = 0.6;
 const MIN_ABSOLUTE = 10;
+
+function severityFor(abs: number): "warning" | "alert" | null {
+  if (abs >= ALERT_THRESHOLD) return "alert";
+  if (abs >= WARNING_THRESHOLD) return "warning";
+  return null;
+}
 
 export async function GET() {
   const supabase = await createClient();
@@ -56,25 +83,22 @@ export async function GET() {
   const previousFromStr = formatISO(previousFrom, { representation: "date" });
   const previousToStr = formatISO(previousTo, { representation: "date" });
 
-  const { data: currentRows, error: err1 } = await supabase
+  // --- PLATFORM OUTLIERS ---
+  const { data: currentRows } = await supabase
     .from("analytics_metrics")
     .select("*")
     .gte("metric_date", currentFromStr)
     .lte("metric_date", todayStr);
-  if (err1) {
-    return NextResponse.json({ error: err1.message }, { status: 500 });
-  }
 
-  const { data: previousRows, error: err2 } = await supabase
+  const { data: previousRows } = await supabase
     .from("analytics_metrics")
     .select("*")
     .gte("metric_date", previousFromStr)
     .lte("metric_date", previousToStr);
-  if (err2) {
-    return NextResponse.json({ error: err2.message }, { status: 500 });
-  }
 
-  function aggregate(rows: MetricRow[]): Map<string, Record<string, number>> {
+  function aggregatePlatform(
+    rows: MetricRow[]
+  ): Map<string, Record<string, number>> {
     const map = new Map<string, Record<string, number>>();
     for (const row of rows) {
       const existing = map.get(row.platform) ?? {
@@ -84,7 +108,7 @@ export async function GET() {
         engagement: 0,
         clicks: 0,
       };
-      for (const m of METRICS) {
+      for (const m of PLATFORM_METRICS) {
         existing[m] += (row[m] as number) || 0;
       }
       map.set(row.platform, existing);
@@ -92,40 +116,122 @@ export async function GET() {
     return map;
   }
 
-  const current = aggregate((currentRows ?? []) as MetricRow[]);
-  const previous = aggregate((previousRows ?? []) as MetricRow[]);
+  const platformCurrent = aggregatePlatform((currentRows ?? []) as MetricRow[]);
+  const platformPrevious = aggregatePlatform(
+    (previousRows ?? []) as MetricRow[]
+  );
 
-  const outliers: Outlier[] = [];
-  for (const [platform, currentTotals] of current.entries()) {
-    const previousTotals = previous.get(platform) ?? {};
-    for (const metric of METRICS) {
-      const cur = currentTotals[metric] || 0;
-      const prev = previousTotals[metric] || 0;
-      if (cur < MIN_ABSOLUTE && prev < MIN_ABSOLUTE) continue;
-      if (prev === 0) continue;
-      const delta = (cur - prev) / prev;
-      const abs = Math.abs(delta);
-      if (abs < WARNING_THRESHOLD) continue;
-
-      outliers.push({
+  const platformOutliers: PlatformOutlier[] = [];
+  for (const [platform, cur] of platformCurrent.entries()) {
+    const prev = platformPrevious.get(platform) ?? {};
+    for (const metric of PLATFORM_METRICS) {
+      const c = cur[metric] || 0;
+      const p = prev[metric] || 0;
+      if (c < MIN_ABSOLUTE && p < MIN_ABSOLUTE) continue;
+      if (p === 0) continue;
+      const delta = (c - p) / p;
+      const sev = severityFor(Math.abs(delta));
+      if (!sev) continue;
+      platformOutliers.push({
+        kind: "platform",
         platform,
         metric,
-        current: cur,
-        previous: prev,
+        current: c,
+        previous: p,
         delta_pct: delta,
         direction: delta > 0 ? "up" : "down",
-        severity: abs >= ALERT_THRESHOLD ? "alert" : "warning",
+        severity: sev,
       });
     }
   }
 
-  // Sorter: alerts f\u00f8rst, s\u00e5 etter st\u00f8rste prosent-endring
-  outliers.sort((a, b) => {
-    if (a.severity !== b.severity) {
-      return a.severity === "alert" ? -1 : 1;
+  // --- TAG OUTLIERS ---
+  // Fokusert p\u00e5 keyword-tags siden vi har d\u00f8gn-data per s\u00f8keord
+  const { data: tags } = await supabase.from("tags").select("*");
+  const { data: taggings } = await supabase
+    .from("tag_assignments")
+    .select("tag_id, entity_key")
+    .eq("entity_type", "keyword");
+
+  const tagById = new Map<string, { id: string; name: string; color: string }>();
+  for (const t of tags ?? []) {
+    tagById.set(t.id, { id: t.id, name: t.name, color: t.color });
+  }
+
+  // Bygg lookup: entity_key -> tag_ids
+  const keyToTagIds = new Map<string, string[]>();
+  for (const a of taggings ?? []) {
+    const list = keyToTagIds.get(a.entity_key) ?? [];
+    list.push(a.tag_id);
+    keyToTagIds.set(a.entity_key, list);
+  }
+
+  // Hent s\u00f8keord-data for hele 14-dagers vinduet
+  const { data: keywordRows } = await supabase
+    .from("search_keywords")
+    .select("query, clicks, impressions, metric_date")
+    .gte("metric_date", previousFromStr)
+    .lte("metric_date", todayStr);
+
+  // Aggreger per tag per vindu
+  interface TagTotals {
+    current: { clicks: number; impressions: number };
+    previous: { clicks: number; impressions: number };
+  }
+  const tagTotals = new Map<string, TagTotals>();
+  for (const row of (keywordRows ?? []) as KeywordRow[]) {
+    const key = keywordEntityKey(row.query);
+    const tagIds = keyToTagIds.get(key);
+    if (!tagIds || tagIds.length === 0) continue;
+    const inCurrent = row.metric_date >= currentFromStr;
+    for (const tagId of tagIds) {
+      const existing = tagTotals.get(tagId) ?? {
+        current: { clicks: 0, impressions: 0 },
+        previous: { clicks: 0, impressions: 0 },
+      };
+      if (inCurrent) {
+        existing.current.clicks += row.clicks || 0;
+        existing.current.impressions += row.impressions || 0;
+      } else {
+        existing.previous.clicks += row.clicks || 0;
+        existing.previous.impressions += row.impressions || 0;
+      }
+      tagTotals.set(tagId, existing);
     }
+  }
+
+  const tagOutliers: TagOutlier[] = [];
+  for (const [tagId, totals] of tagTotals.entries()) {
+    const tag = tagById.get(tagId);
+    if (!tag) continue;
+    for (const metric of ["clicks", "impressions"] as const) {
+      const c = totals.current[metric];
+      const p = totals.previous[metric];
+      if (c < MIN_ABSOLUTE && p < MIN_ABSOLUTE) continue;
+      if (p === 0) continue;
+      const delta = (c - p) / p;
+      const sev = severityFor(Math.abs(delta));
+      if (!sev) continue;
+      tagOutliers.push({
+        kind: "tag",
+        tag_id: tagId,
+        tag_name: tag.name,
+        tag_color: tag.color,
+        metric,
+        current: c,
+        previous: p,
+        delta_pct: delta,
+        direction: delta > 0 ? "up" : "down",
+        severity: sev,
+      });
+    }
+  }
+
+  const all: OutlierAny[] = [...platformOutliers, ...tagOutliers];
+  all.sort((a, b) => {
+    if (a.severity !== b.severity) return a.severity === "alert" ? -1 : 1;
     return Math.abs(b.delta_pct) - Math.abs(a.delta_pct);
   });
 
-  return NextResponse.json(outliers);
+  return NextResponse.json(all);
 }

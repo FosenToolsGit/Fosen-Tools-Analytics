@@ -11,10 +11,22 @@ interface MetricCardProps {
   title: string;
   value: number;
   previousValue?: number;
-  format?: "number" | "percent";
+  format?: "number" | "percent" | "currency" | "currency-precise";
   icon: LucideIcon;
   tooltip?: string;
 }
+
+const nokCompact = new Intl.NumberFormat("nb-NO", {
+  style: "currency",
+  currency: "NOK",
+  maximumFractionDigits: 0,
+});
+const nokPrecise = new Intl.NumberFormat("nb-NO", {
+  style: "currency",
+  currency: "NOK",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export function MetricCard({
   title,
@@ -26,7 +38,13 @@ export function MetricCard({
 }: MetricCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const formatted =
-    format === "percent" ? formatPercent(value) : formatCompact(value);
+    format === "percent"
+      ? formatPercent(value)
+      : format === "currency"
+        ? nokCompact.format(value)
+        : format === "currency-precise"
+          ? nokPrecise.format(value)
+          : formatCompact(value);
 
   let trend: "up" | "down" | "flat" = "flat";
   let deltaText = "";

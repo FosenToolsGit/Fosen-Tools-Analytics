@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { PLATFORMS, type PlatformKey } from "@/lib/utils/platforms";
 import { formatCompact } from "@/lib/utils/format";
 
-interface Outlier {
+interface PlatformOutlier {
+  kind: "platform";
   platform: PlatformKey;
   metric: "sessions" | "impressions" | "reach" | "engagement" | "clicks";
   current: number;
@@ -16,7 +17,22 @@ interface Outlier {
   severity: "info" | "warning" | "alert";
 }
 
-const METRIC_LABELS: Record<Outlier["metric"], string> = {
+interface TagOutlier {
+  kind: "tag";
+  tag_id: string;
+  tag_name: string;
+  tag_color: string;
+  metric: "clicks" | "impressions";
+  current: number;
+  previous: number;
+  delta_pct: number;
+  direction: "up" | "down";
+  severity: "info" | "warning" | "alert";
+}
+
+type Outlier = PlatformOutlier | TagOutlier;
+
+const METRIC_LABELS: Record<string, string> = {
   sessions: "sesjoner",
   impressions: "visninger",
   reach: "rekkevidde",
@@ -53,7 +69,7 @@ export function OutliersCard() {
     );
   }
 
-  const top = data.slice(0, 6);
+  const top = data.slice(0, 8);
 
   return (
     <Card className="p-4">
@@ -63,7 +79,6 @@ export function OutliersCard() {
       </h3>
       <ul className="space-y-2">
         {top.map((o, i) => {
-          const platform = PLATFORMS[o.platform];
           const pct = Math.round(o.delta_pct * 100);
           const isUp = o.direction === "up";
           const colorClass =
@@ -74,19 +89,33 @@ export function OutliersCard() {
               : isUp
                 ? "text-green-300"
                 : "text-yellow-300";
+
+          const label =
+            o.kind === "platform"
+              ? PLATFORMS[o.platform]?.label ?? o.platform
+              : o.tag_name;
+          const swatch =
+            o.kind === "platform"
+              ? PLATFORMS[o.platform]?.color ?? "#6b7280"
+              : o.tag_color;
+          const prefix = o.kind === "tag" ? "Tag" : null;
+
           return (
             <li
-              key={`${o.platform}-${o.metric}-${i}`}
+              key={`${o.kind}-${i}`}
               className="flex items-center justify-between gap-3 rounded bg-gray-900/50 px-3 py-2"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span
                   className="inline-block h-2 w-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: platform?.color ?? "#6b7280" }}
+                  style={{ backgroundColor: swatch }}
                 />
-                <span className="text-sm text-white truncate">
-                  {platform?.label ?? o.platform}
-                </span>
+                {prefix && (
+                  <span className="text-[10px] uppercase tracking-wide text-gray-500 bg-gray-800 px-1.5 rounded">
+                    {prefix}
+                  </span>
+                )}
+                <span className="text-sm text-white truncate">{label}</span>
                 <span className="text-xs text-gray-500">
                   {METRIC_LABELS[o.metric]}
                 </span>
@@ -106,8 +135,8 @@ export function OutliersCard() {
           );
         })}
       </ul>
-      {data.length > 6 && (
-        <p className="text-xs text-gray-500 mt-2">+ {data.length - 6} flere</p>
+      {data.length > 8 && (
+        <p className="text-xs text-gray-500 mt-2">+ {data.length - 8} flere</p>
       )}
     </Card>
   );

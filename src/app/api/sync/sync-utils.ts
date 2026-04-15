@@ -23,11 +23,19 @@ function getService(platform: PlatformKey): PlatformService {
   }
 }
 
+// Default sync window. Kan overstyres per kall via syncPlatform(..., { days }) eller
+// ved å sette SYNC_DAYS env-variabel. Search Console har maks ~16 måneder historikk,
+// GA4 er ubegrenset. Fornuftig default for daglig drift er 90 dager.
+const DEFAULT_SYNC_DAYS = parseInt(process.env.SYNC_DAYS || "90", 10);
+
 export async function syncPlatform(
   admin: SupabaseClient,
   platform: PlatformKey,
-  triggeredBy: string
+  triggeredBy: string,
+  options: { days?: number } = {}
 ) {
+  const days = options.days ?? DEFAULT_SYNC_DAYS;
+
   // Insert sync log
   const { data: syncLog } = await admin
     .from("sync_logs")
@@ -42,7 +50,7 @@ export async function syncPlatform(
   try {
     const service = getService(platform);
     const endDate = new Date();
-    const startDate = subDays(endDate, 30);
+    const startDate = subDays(endDate, days);
 
     // Fetch and upsert metrics
     const rawMetrics = await service.fetchDailyMetrics(startDate, endDate);

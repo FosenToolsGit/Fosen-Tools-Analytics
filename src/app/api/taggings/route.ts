@@ -46,11 +46,17 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { tag_id, entity_type, entity_key } = body;
+  const { tag_id, entity_type } = body;
+  // St\u00f8tte b\u00e5de enkel (entity_key) og batch (entity_keys: string[])
+  const keys: string[] = Array.isArray(body.entity_keys)
+    ? body.entity_keys
+    : body.entity_key
+      ? [body.entity_key]
+      : [];
 
-  if (!tag_id || !entity_type || !entity_key) {
+  if (!tag_id || !entity_type || keys.length === 0) {
     return NextResponse.json(
-      { error: "Missing tag_id, entity_type or entity_key" },
+      { error: "Missing tag_id, entity_type or entity_key(s)" },
       { status: 400 }
     );
   }
@@ -59,17 +65,18 @@ export async function POST(request: NextRequest) {
   }
 
   const adminClient = createAdminClient();
+  const rows = keys.map((entity_key) => ({ tag_id, entity_type, entity_key }));
   const { data, error } = await adminClient
     .from("tag_assignments")
-    .upsert(
-      { tag_id, entity_type, entity_key },
-      { onConflict: "tag_id,entity_type,entity_key" }
-    )
-    .select("*, tag:tags(*)")
-    .single();
+    .upsert(rows, { onConflict: "tag_id,entity_type,entity_key" })
+    .select("*, tag:tags(*)");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  // Behold bakoverkompatibilitet: enkelt-kall returnerer ett objekt
+  if (keys.length === 1 && data) {
+    return NextResponse.json(data[0] ?? null);
   }
   return NextResponse.json(data);
 }

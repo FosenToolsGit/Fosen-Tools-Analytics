@@ -208,6 +208,36 @@ export function useApplyTagRules() {
   return { applyRules };
 }
 
+export function useBulkAssignTag() {
+  const { mutate } = useSWRConfig();
+
+  const bulkAssign = async (params: {
+    tag_id: string;
+    entity_type: TaggableEntity;
+    entity_keys: string[];
+  }) => {
+    const res = await fetch("/api/taggings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to bulk assign");
+    }
+    mutate(
+      (key) =>
+        typeof key === "string" &&
+        key.startsWith(`/api/taggings?entity_type=${params.entity_type}`),
+      undefined,
+      { revalidate: true }
+    );
+    return res.json();
+  };
+
+  return { bulkAssign };
+}
+
 export function useUnassignTag() {
   const { mutate } = useSWRConfig();
 
