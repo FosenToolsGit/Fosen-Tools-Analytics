@@ -12,11 +12,13 @@ import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { GoogleAdsCampaignTable } from "@/components/dashboard/google-ads-campaign-table";
 import { GoogleAdsKeywordTable } from "@/components/dashboard/google-ads-keyword-table";
+import { GoogleAdsSearchTermsTable } from "@/components/dashboard/google-ads-search-terms-table";
 import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { useDateRange } from "@/hooks/use-date-range";
 import {
   useGoogleAdsCampaigns,
   useGoogleAdsKeywords,
+  useGoogleAdsSearchTerms,
 } from "@/hooks/use-google-ads";
 
 function Content() {
@@ -25,6 +27,8 @@ function Content() {
     useGoogleAdsCampaigns(dateRange);
   const { data: keywords, isLoading: loadingKeywords } =
     useGoogleAdsKeywords(dateRange);
+  const { data: searchTerms, isLoading: loadingSearchTerms } =
+    useGoogleAdsSearchTerms(dateRange);
 
   const campaignRows = Array.isArray(campaigns) ? campaigns : [];
   const keywordRows = Array.isArray(keywords) ? keywords : [];
@@ -113,6 +117,20 @@ function Content() {
           Topp søkeord (etter kostnad)
         </h2>
         <GoogleAdsKeywordTable data={keywordRows} loading={loadingKeywords} />
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-1">
+          Faktiske søketermer (fra brukere)
+        </h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Dette er hva folk faktisk har skrevet i Google — inkluderer
+          Performance Max-kategorier som ellers er skjult.
+        </p>
+        <GoogleAdsSearchTermsTable
+          data={Array.isArray(searchTerms) ? searchTerms : []}
+          loading={loadingSearchTerms}
+        />
       </div>
     </div>
   );

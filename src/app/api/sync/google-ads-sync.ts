@@ -9,6 +9,8 @@ export type GoogleAdsSyncResult =
       records_synced: number;
       campaigns: number;
       keywords: number;
+      search_terms: number;
+      pmax_insights: number;
     }
   | {
       platform: "google_ads";
@@ -85,7 +87,47 @@ export async function syncGoogleAds(
       keywordsSynced = keywords.length;
     }
 
-    const totalSynced = campaignsSynced + keywordsSynced;
+    // search_term_view for Search-kampanjer
+    const searchTerms = await service.fetchSearchTerms(startDate, endDate);
+    let searchTermsSynced = 0;
+    if (searchTerms.length > 0) {
+      const { error } = await admin
+        .from("google_ads_search_terms")
+        .upsert(searchTerms, {
+          onConflict: "source,campaign_id,ad_group_id,search_term,metric_date",
+        });
+      if (error) throw error;
+      searchTermsSynced = searchTerms.length;
+    }
+
+    // campaign_search_term_insight for Performance Max-kampanjer
+    let pmaxInsightsSynced = 0;
+    try {
+      const pmaxIds = await service.fetchPmaxCampaignIds();
+      if (pmaxIds.length > 0) {
+        const pmaxTerms = await service.fetchPmaxSearchTerms(
+          pmaxIds,
+          startDate,
+          endDate
+        );
+        if (pmaxTerms.length > 0) {
+          const { error } = await admin
+            .from("google_ads_search_terms")
+            .upsert(pmaxTerms, {
+              onConflict:
+                "source,campaign_id,ad_group_id,search_term,metric_date",
+            });
+          if (error) throw error;
+          pmaxInsightsSynced = pmaxTerms.length;
+        }
+      }
+    } catch (pmaxErr) {
+      // Pmax-feil skal ikke bryte hele syncen — logg og fortsett
+      console.error("Pmax search term insight sync failed:", pmaxErr);
+    }
+
+    const totalSynced =
+      campaignsSynced + keywordsSynced + searchTermsSynced + pmaxInsightsSynced;
 
     await admin
       .from("sync_logs")
@@ -102,6 +144,8 @@ export async function syncGoogleAds(
       records_synced: totalSynced,
       campaigns: campaignsSynced,
       keywords: keywordsSynced,
+      search_terms: searchTermsSynced,
+      pmax_insights: pmaxInsightsSynced,
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Sparkles, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Sparkles, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+type LiveDays = 7 | 30 | 90;
 
 export default function GeneratorPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -11,6 +13,7 @@ export default function GeneratorPage() {
   const [error, setError] = useState<string | null>(null);
   const [foundHeaders, setFoundHeaders] = useState<string[] | null>(null);
   const [success, setSuccess] = useState(false);
+  const [liveDays, setLiveDays] = useState<LiveDays>(90);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -63,6 +66,41 @@ export default function GeneratorPage() {
       const a = document.createElement("a");
       a.href = url;
       a.download = `Sokeord-Anbefalinger-${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ukjent feil");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGenerateLive() {
+    setLoading(true);
+    setError(null);
+    setFoundHeaders(null);
+    setSuccess(false);
+
+    try {
+      const res = await fetch(
+        `/api/keyword-generator?source=db&days=${liveDays}`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Generering feilet");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Sokeord-Anbefalinger-Live-${liveDays}d-${new Date().toISOString().split("T")[0]}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -184,6 +222,59 @@ export default function GeneratorPage() {
               </div>
             </>
           )}
+        </div>
+      </Card>
+
+      <Card className="p-6 border border-purple-900/40 bg-purple-950/10">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-lg bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 text-purple-300" />
+          </div>
+          <div className="flex-1 space-y-3">
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                Eller bruk live data fra Google Ads API
+              </h3>
+              <p className="text-sm text-gray-400 mt-1">
+                Siden vi allerede henter søkeord-data direkte fra Google Ads
+                hver sync, kan du generere samme rapport uten å laste opp noe.
+                Velg periode og klikk Generer.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
+                {([7, 30, 90] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setLiveDays(d)}
+                    disabled={loading}
+                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                      liveDays === d
+                        ? "bg-purple-600 text-white"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    {d} dager
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleGenerateLive}
+                disabled={loading}
+              >
+                {loading ? (
+                  "Genererer..."
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-1.5" />
+                    Generer fra live data
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </Card>
 

@@ -8,6 +8,7 @@ import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { SyncStatusCard } from "@/components/dashboard/sync-status-card";
 import { TagOverviewCard } from "@/components/dashboard/tag-overview-card";
 import { OutliersCard } from "@/components/dashboard/outliers-card";
+import { GoogleAdsSpendCard } from "@/components/dashboard/google-ads-spend-card";
 import { DateRangePicker } from "@/components/filters/date-range-picker";
 import { ComparisonToggle } from "@/components/filters/comparison-toggle";
 import { useDateRange } from "@/hooks/use-date-range";
@@ -92,7 +93,12 @@ function DashboardContent() {
 
       <OutliersCard />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <GoogleAdsSpendCard
+          dateRange={dateRange}
+          previousRange={previousRange}
+          compare={compare}
+        />
         <TagOverviewCard />
         <SyncStatusCard />
       </div>

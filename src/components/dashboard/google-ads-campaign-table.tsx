@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { formatCompact, formatNumber } from "@/lib/utils/format";
 import { ChevronUp, ChevronDown } from "lucide-react";
@@ -141,7 +142,14 @@ export function GoogleAdsCampaignTable({ data, loading }: Props) {
                 key={row.campaign_id}
                 className="border-b border-gray-800/50 hover:bg-gray-800/30"
               >
-                <td className="px-4 py-3 text-white">{row.campaign_name}</td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/ga4/google-ads/${encodeURIComponent(row.campaign_id)}`}
+                    className="text-white hover:text-blue-400 transition-colors"
+                  >
+                    {row.campaign_name}
+                  </Link>
+                </td>
                 <td className="px-4 py-3 text-right text-gray-300">
                   {formatCompact(row.impressions)}
                 </td>
