@@ -3,9 +3,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import * as XLSX from "xlsx";
 import {
   buildKeywordReport,
+  buildIntelligentKeywordReport,
   fetchOrganicMap,
   type AdsKeywordInput,
 } from "@/lib/services/keyword-report";
+import { runIntelligence } from "@/lib/services/keyword-intelligence";
+import {
+  KeywordPlannerService,
+  getKeywordPlannerStatus,
+} from "@/lib/services/keyword-planner";
 
 function excelResponse(buffer: Buffer, filename: string) {
   return new NextResponse(new Uint8Array(buffer), {
@@ -339,10 +345,33 @@ export async function GET(request: NextRequest) {
     );
 
     const organicMap = await fetchOrganicMap(supabase);
-    const outputBuffer = await buildKeywordReport(
+
+    // Kjør intelligens-pipeline + hent evt. Keyword Planner-ideer
+    const intelligence = await runIntelligence(supabase, days);
+    const plannerStatus = await getKeywordPlannerStatus();
+    let plannerIdeas = null;
+    if (plannerStatus.available) {
+      try {
+        const topSeeds = intelligence.signals
+          .filter((s) => s.total_clicks > 5 && !s.competitor_match)
+          .sort((a, b) => b.total_clicks - a.total_clicks)
+          .slice(0, 10)
+          .map((s) => s.keyword);
+        if (topSeeds.length > 0) {
+          const svc = new KeywordPlannerService();
+          plannerIdeas = await svc.getIdeas(topSeeds, { pageSize: 100 });
+        }
+      } catch {
+        plannerIdeas = null;
+      }
+    }
+
+    const outputBuffer = await buildIntelligentKeywordReport(
       supabase,
       adsKeywords,
-      organicMap
+      organicMap,
+      intelligence,
+      plannerIdeas
     );
 
     return excelResponse(

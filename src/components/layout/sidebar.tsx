@@ -19,6 +19,8 @@ import {
   Swords,
   Sparkles,
   Brain,
+  ShieldOff,
+  FileSpreadsheet,
   Tag as TagIcon,
   ChevronDown,
   ChevronRight,
@@ -60,6 +62,9 @@ const navItems: NavItem[] = [
   { label: "LinkedIn", href: "/platform/linkedin", icon: Briefcase },
   { label: "Innlegg", href: "/posts", icon: FileText },
   { label: "Søkeord-generator", href: "/sokeord-generator", icon: Sparkles },
+  { label: "Søkeord: Intelligens", href: "/sokeord-generator/intelligens", icon: Brain },
+  { label: "Søkeord: Auto-actions", href: "/sokeord-generator/auto-actions", icon: ShieldOff },
+  { label: "Søkeord: Rapporter", href: "/sokeord-generator/rapporter", icon: FileSpreadsheet },
   { label: "Tags", href: "/tags", icon: TagIcon },
   { label: "Innstillinger", href: "/settings", icon: Settings },
 ];

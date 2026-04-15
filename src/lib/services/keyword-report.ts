@@ -6,6 +6,11 @@
 import * as XLSX from "xlsx";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { keywordEntityKey, ruleMatches, type TagRule } from "@/lib/types/tags";
+import type {
+  IntelligenceReport,
+  KeywordSignal,
+} from "@/lib/services/keyword-intelligence";
+import type { KeywordPlannerResult } from "@/lib/services/keyword-planner";
 
 export interface AdsKeywordInput {
   type?: string;
@@ -342,6 +347,161 @@ export async function buildKeywordReport(
 
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
 }
+
+/**
+ * Utvidet Excel-rapport som inkluderer intelligens-data fra keyword-intelligence.
+ * Dette er den nye "optimaliserte" rapporten — bruker konverteringsdata og
+ * flere kilder for smartere anbefalinger. Backward-compatible: tar samme
+ * input som buildKeywordReport pluss en valgfri IntelligenceReport.
+ */
+export async function buildIntelligentKeywordReport(
+  supabase: SupabaseClient,
+  adsKeywords: AdsKeywordInput[],
+  organicMap: Map<string, OrganicKeywordInput>,
+  intelligence: IntelligenceReport | null,
+  plannerIdeas: KeywordPlannerResult[] | null
+): Promise<Buffer> {
+  // Start med basis-rapporten (6 sheets)
+  const baseBuffer = await buildKeywordReport(supabase, adsKeywords, organicMap);
+  const wb = XLSX.read(baseBuffer, { type: "buffer" });
+
+  if (intelligence) {
+    // Ark 7: Skaler opp
+    const scaleData: (string | number)[][] = [
+      [
+        "Søkeord",
+        "Kilder",
+        "Klikk",
+        "Kostnad",
+        "Est. verdi",
+        "ROAS",
+        "Konfidens",
+        "Anbefaling",
+      ],
+      ...intelligence.top_scale_up.map((s) => [
+        s.keyword,
+        s.sources.join(", "),
+        s.total_clicks,
+        parseFloat(s.total_cost.toFixed(2)),
+        parseFloat(s.est_conversion_value.toFixed(2)),
+        parseFloat(s.est_roas.toFixed(2)),
+        s.confidence,
+        s.verdict_reason,
+      ]),
+    ];
+    const scaleWs = XLSX.utils.aoa_to_sheet(scaleData);
+    scaleWs["!cols"] = [
+      { wch: 35 },
+      { wch: 30 },
+      { wch: 8 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 8 },
+      { wch: 10 },
+      { wch: 60 },
+    ];
+    XLSX.utils.book_append_sheet(wb, scaleWs, "Skaler opp");
+
+    // Ark 8: Negativ-kandidater
+    const negData: (string | number)[][] = [
+      [
+        "Søkeord",
+        "Grunn",
+        "Klikk",
+        "Kostnad",
+        "Kilder",
+      ],
+      ...intelligence.negative_suggestions.map((s) => [
+        s.keyword,
+        s.verdict_reason,
+        s.total_clicks,
+        parseFloat(s.total_cost.toFixed(2)),
+        s.sources.join(", "),
+      ]),
+    ];
+    const negWs = XLSX.utils.aoa_to_sheet(negData);
+    negWs["!cols"] = [
+      { wch: 35 },
+      { wch: 60 },
+      { wch: 8 },
+      { wch: 12 },
+      { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, negWs, "Negativ-kandidater");
+
+    // Ark 9: Nye muligheter (GSC + Pmax)
+    const newOppData: (string | number)[][] = [
+      [
+        "Søkeord",
+        "Kilder",
+        "Org. visninger",
+        "Org. posisjon",
+        "Anbefaling",
+      ],
+      ...intelligence.new_opportunities.map((s) => [
+        s.keyword,
+        s.sources.join(", "),
+        s.organic_impressions ?? 0,
+        s.organic_position ? parseFloat(s.organic_position.toFixed(1)) : 0,
+        s.verdict_reason,
+      ]),
+    ];
+    const newOppWs = XLSX.utils.aoa_to_sheet(newOppData);
+    newOppWs["!cols"] = [
+      { wch: 35 },
+      { wch: 25 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 60 },
+    ];
+    XLSX.utils.book_append_sheet(wb, newOppWs, "Nye muligheter (DB)");
+  }
+
+  // Ark 10: Keyword Planner (bare hvis tilgjengelig)
+  if (plannerIdeas && plannerIdeas.length > 0) {
+    const plannerData: (string | number)[][] = [
+      [
+        "Søkeord",
+        "Søk/mnd",
+        "Konkurranse",
+        "Min CPC (NOK)",
+        "Max CPC (NOK)",
+      ],
+      ...plannerIdeas.map((k) => [
+        k.text,
+        k.avg_monthly_searches,
+        k.competition,
+        parseFloat(k.low_top_bid_nok.toFixed(2)),
+        parseFloat(k.high_top_bid_nok.toFixed(2)),
+      ]),
+    ];
+    const plannerWs = XLSX.utils.aoa_to_sheet(plannerData);
+    plannerWs["!cols"] = [
+      { wch: 35 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+    ];
+    XLSX.utils.book_append_sheet(wb, plannerWs, "Keyword Planner");
+  } else {
+    // Tom plassholder med forklaring
+    const plannerEmpty: (string | number)[][] = [
+      ["Keyword Planner krever Basic Access på developer token."],
+      [
+        "Google godkjenner dette 1–2 virkedager etter søknad. Dette arket fylles automatisk når tilgang er klar.",
+      ],
+    ];
+    const plannerEmptyWs = XLSX.utils.aoa_to_sheet(plannerEmpty);
+    plannerEmptyWs["!cols"] = [{ wch: 80 }];
+    XLSX.utils.book_append_sheet(wb, plannerEmptyWs, "Keyword Planner");
+  }
+
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+}
+
+// Re-eksporter KeywordSignal-typen for enklere bruk i andre moduler
+export type { KeywordSignal };
 
 /**
  * Henter organiske søkeord fra Search Console (siste 30 dager) og bygger
