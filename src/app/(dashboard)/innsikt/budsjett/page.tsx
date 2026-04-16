@@ -18,14 +18,18 @@ const nok = new Intl.NumberFormat("nb-NO", {
 interface SimRow {
   campaign_id: string;
   campaign_name: string;
+  business_model: string;
   current_cost: number;
   current_roas: number;
   current_value: number;
   current_purchases: number;
+  current_leads: number;
+  lead_value: number;
   pct: number;
   new_cost: number;
   projected_value: number;
   projected_purchases: number;
+  projected_leads: number;
 }
 
 function Content() {
@@ -54,22 +58,28 @@ function Content() {
   const simRows: SimRow[] = campaigns.map((c) => {
     const pct = allocations[c.campaign_id] || 0;
     const newCost = (totalBudget * pct) / 100;
-    const roas = c.cost_nok > 0 ? c.real_purchase_value / c.cost_nok : 0;
+    const totalValue = c.real_purchase_value + c.estimated_lead_total_value;
+    const roas = c.cost_nok > 0 ? totalValue / c.cost_nok : 0;
     const projectedValue = newCost * roas;
-    const projectedPurchases =
-      c.cost_nok > 0 ? (newCost / c.cost_nok) * c.real_purchases : 0;
+    const scaleFactor = c.cost_nok > 0 ? newCost / c.cost_nok : 0;
+    const projectedPurchases = scaleFactor * c.real_purchases;
+    const projectedLeads = scaleFactor * c.real_leads;
 
     return {
       campaign_id: c.campaign_id,
       campaign_name: c.campaign_name,
+      business_model: c.business_model,
       current_cost: c.cost_nok,
       current_roas: roas,
-      current_value: c.real_purchase_value,
+      current_value: totalValue,
       current_purchases: c.real_purchases,
+      current_leads: c.real_leads,
+      lead_value: c.estimated_lead_value_nok,
       pct,
       new_cost: newCost,
       projected_value: projectedValue,
       projected_purchases: projectedPurchases,
+      projected_leads: projectedLeads,
     };
   });
 
@@ -78,24 +88,18 @@ function Content() {
   const valueDelta = projectedTotalValue - currentTotalValue;
 
   function autoOptimize() {
-    const totalRoas = campaigns.reduce((s, c) => {
-      const roas = c.cost_nok > 0 ? c.real_purchase_value / c.cost_nok : 0;
-      return s + roas;
-    }, 0);
+    const effectiveRoas = (c: (typeof campaigns)[0]) =>
+      c.cost_nok > 0 ? (c.real_purchase_value + c.estimated_lead_total_value) / c.cost_nok : 0;
+    const totalRoas = campaigns.reduce((s, c) => s + effectiveRoas(c), 0);
     if (totalRoas === 0) return;
 
     const allocs: Record<string, number> = {};
     let remaining = 100;
-    const sorted = [...campaigns].sort((a, b) => {
-      const roasA = a.cost_nok > 0 ? a.real_purchase_value / a.cost_nok : 0;
-      const roasB = b.cost_nok > 0 ? b.real_purchase_value / b.cost_nok : 0;
-      return roasB - roasA;
-    });
+    const sorted = [...campaigns].sort((a, b) => effectiveRoas(b) - effectiveRoas(a));
 
     for (let i = 0; i < sorted.length; i++) {
       const c = sorted[i];
-      const roas = c.cost_nok > 0 ? c.real_purchase_value / c.cost_nok : 0;
-      const share = Math.round((roas / totalRoas) * 100);
+      const share = Math.round((effectiveRoas(c) / totalRoas) * 100);
       const alloc = i === sorted.length - 1 ? remaining : Math.min(share, remaining);
       allocs[c.campaign_id] = alloc;
       remaining -= alloc;
@@ -212,7 +216,8 @@ function Content() {
                     <div>
                       <span className="text-white text-sm font-medium">{row.campaign_name}</span>
                       <span className="text-xs text-gray-500 ml-2">
-                        ROAS: {row.current_roas.toFixed(1)}x
+                        Eff. ROAS: {row.current_roas.toFixed(1)}x
+                        {row.business_model === "leads" && ` (${row.lead_value} kr/lead)`}
                       </span>
                     </div>
                     <span className="text-sm text-cyan-400 font-medium">
@@ -250,40 +255,68 @@ function Content() {
                 <thead>
                   <tr className="border-b border-gray-800 text-left">
                     <th className="px-4 py-3 text-gray-400 font-medium">Kampanje</th>
+                    <th className="px-4 py-3 text-gray-400 font-medium">Modell</th>
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">Nå spend</th>
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">Ny spend</th>
-                    <th className="px-4 py-3 text-right text-gray-400 font-medium">ROAS</th>
+                    <th className="px-4 py-3 text-right text-gray-400 font-medium">Eff. ROAS</th>
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">Nå verdi</th>
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">Proj. verdi</th>
-                    <th className="px-4 py-3 text-right text-gray-400 font-medium">Proj. kjøp</th>
+                    <th className="px-4 py-3 text-right text-gray-400 font-medium">Proj. resultat</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {simRows.map((row) => (
-                    <tr key={row.campaign_id} className="border-b border-gray-800/50">
-                      <td className="px-4 py-3 text-white">{row.campaign_name}</td>
-                      <td className="px-4 py-3 text-right text-gray-400">{nok.format(row.current_cost)}</td>
-                      <td className="px-4 py-3 text-right text-cyan-400">{nok.format(row.new_cost)}</td>
-                      <td
-                        className={`px-4 py-3 text-right font-medium ${
-                          row.current_roas >= 4
-                            ? "text-green-400"
-                            : row.current_roas >= 1.5
-                              ? "text-blue-400"
-                              : "text-yellow-400"
-                        }`}
-                      >
-                        {row.current_roas.toFixed(1)}x
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-300">{nok.format(row.current_value)}</td>
-                      <td className="px-4 py-3 text-right text-white font-medium">
-                        {nok.format(row.projected_value)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-300">
-                        {row.projected_purchases.toFixed(1)}
-                      </td>
-                    </tr>
-                  ))}
+                  {simRows.map((row) => {
+                    const modelLabel =
+                      row.business_model === "leads"
+                        ? "Leads"
+                        : row.business_model === "mixed"
+                          ? "Miks"
+                          : "Kjøp";
+                    return (
+                      <tr key={row.campaign_id} className="border-b border-gray-800/50">
+                        <td className="px-4 py-3 text-white">{row.campaign_name}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              row.business_model === "leads"
+                                ? "bg-purple-900/30 text-purple-400"
+                                : row.business_model === "mixed"
+                                  ? "bg-amber-900/30 text-amber-400"
+                                  : "bg-green-900/30 text-green-400"
+                            }`}
+                          >
+                            {modelLabel}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-400">{nok.format(row.current_cost)}</td>
+                        <td className="px-4 py-3 text-right text-cyan-400">{nok.format(row.new_cost)}</td>
+                        <td
+                          className={`px-4 py-3 text-right font-medium ${
+                            row.current_roas >= 4
+                              ? "text-green-400"
+                              : row.current_roas >= 1.5
+                                ? "text-blue-400"
+                                : row.current_roas >= 0.5
+                                  ? "text-yellow-400"
+                                  : "text-red-400"
+                          }`}
+                        >
+                          {row.current_roas.toFixed(1)}x
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-300">{nok.format(row.current_value)}</td>
+                        <td className="px-4 py-3 text-right text-white font-medium">
+                          {nok.format(row.projected_value)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-300">
+                          {row.business_model === "leads"
+                            ? `${row.projected_leads.toFixed(1)} leads`
+                            : row.business_model === "mixed"
+                              ? `${row.projected_purchases.toFixed(1)} kjøp + ${row.projected_leads.toFixed(1)} leads`
+                              : `${row.projected_purchases.toFixed(1)} kjøp`}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -292,9 +325,11 @@ function Content() {
           <Card className="p-4 border border-blue-900/40 bg-blue-950/10 text-xs text-blue-300/80">
             <p className="font-semibold mb-1">Om simuleringen</p>
             <p>
-              Projeksjoner bruker historisk ROAS per kampanje og antar lineær
-              skalering. I virkeligheten kan økt spend gi lavere marginal-ROAS
-              (diminishing returns). Bruk som retningsgivende, ikke som fasit.
+              Projeksjoner bruker effektiv ROAS per kampanje (kjøpsverdi +
+              estimert lead-verdi) og antar lineær skalering. Kampanjer med
+              modell &quot;Leads&quot; bruker estimert lead-verdi fra
+              kampanjeinnstillingene. I virkeligheten kan økt spend gi lavere
+              marginal-ROAS (diminishing returns). Bruk som retningsgivende.
             </p>
           </Card>
         </>
