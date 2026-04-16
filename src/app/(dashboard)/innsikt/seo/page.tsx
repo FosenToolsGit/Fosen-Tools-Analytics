@@ -186,6 +186,7 @@ function Content() {
                 <thead>
                   <tr className="border-b border-gray-800 text-left">
                     <th className="px-4 py-3 text-gray-400 font-medium">Søkeord</th>
+                    <th className="px-4 py-3 text-gray-400 font-medium">Side</th>
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">Pos.</th>
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">Trend</th>
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">Klikk</th>
@@ -200,6 +201,21 @@ function Content() {
                     <tr key={`${opp.query}-${i}`} className="border-b border-gray-800/50 hover:bg-gray-800/30">
                       <td className="px-4 py-3 text-white font-medium max-w-[200px] truncate">
                         {opp.query}
+                      </td>
+                      <td className="px-4 py-3 max-w-[180px] truncate">
+                        {opp.page_url ? (
+                          <a
+                            href={opp.page_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-400 hover:text-blue-300 underline"
+                            title={opp.page_url}
+                          >
+                            {opp.page_url.replace(/^https?:\/\/(www\.)?fosen-tools\.no/, "")}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-600">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right text-gray-300">{opp.position}</td>
                       <td className="px-4 py-3 text-right">

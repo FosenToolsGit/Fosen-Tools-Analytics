@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { GoogleAuth } from "google-auth-library";
 import { NextResponse, type NextRequest } from "next/server";
 
 type Category = "quick_win" | "almost_page_one" | "low_ctr" | "declining" | "rising";
@@ -15,6 +16,7 @@ interface Opportunity {
   category: Category;
   priority: "high" | "medium" | "low";
   suggestion: string;
+  page_url: string | null;
 }
 
 export interface SEOResponse {
@@ -83,6 +85,51 @@ async function fetchKeywords(
   return map;
 }
 
+async function fetchQueryPages(from: string, to: string): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const auth = new GoogleAuth({
+      credentials: {
+        client_email: process.env.GA4_CLIENT_EMAIL!,
+        private_key: process.env.GA4_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+      },
+      scopes: ["https://www.googleapis.com/auth/webmasters.readonly"],
+    });
+    const client = await auth.getClient();
+    const tokenResponse = await client.getAccessToken();
+    const token = tokenResponse.token || "";
+
+    const siteUrl = process.env.SEARCH_CONSOLE_SITE_URL || "sc-domain:fosen-tools.no";
+    const response = await fetch(
+      `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startDate: from,
+          endDate: to,
+          dimensions: ["query", "page"],
+          rowLimit: 5000,
+          type: "web",
+        }),
+      }
+    );
+    if (!response.ok) return map;
+    const data = await response.json();
+    for (const row of data.rows ?? []) {
+      const query = (row.keys[0] || "").trim().toLowerCase();
+      const page = row.keys[1] || "";
+      const existing = map.get(query);
+      if (!existing || row.clicks > 0) {
+        map.set(query, page);
+      }
+    }
+  } catch {
+    // Graceful degradation — page URLs are optional
+  }
+  return map;
+}
+
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -98,9 +145,10 @@ export async function GET(request: NextRequest) {
     const prevTo = new Date(new Date(from).getTime() - 86400000).toISOString().slice(0, 10);
     const prevFrom = new Date(new Date(from).getTime() - days * 86400000).toISOString().slice(0, 10);
 
-    const [current, previous] = await Promise.all([
+    const [current, previous, queryPages] = await Promise.all([
       fetchKeywords(supabase, from, to),
       fetchKeywords(supabase, prevFrom, prevTo),
+      fetchQueryPages(from, to),
     ]);
 
     const opportunities: Opportunity[] = [];
@@ -169,6 +217,7 @@ export async function GET(request: NextRequest) {
           category,
           priority,
           suggestion,
+          page_url: queryPages.get(query) || null,
         });
       }
     }
