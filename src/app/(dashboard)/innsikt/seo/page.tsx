@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import React, { Suspense, useState } from "react";
 import {
   Search,
   Zap,
@@ -8,7 +8,14 @@ import {
   MousePointerClick,
   TrendingDown,
   TrendingUp,
+  ScanSearch,
+  Loader2,
+  AlertOctagon,
+  AlertTriangle,
+  Info,
+  CheckCircle,
 } from "lucide-react";
+import type { PageAnalysisResponse } from "@/app/api/insights/seo/analyze/route";
 import { Card } from "@/components/ui/card";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
@@ -59,13 +66,133 @@ const TABS: { key: CategoryFilter; label: string }[] = [
   { key: "rising", label: "Stigende" },
 ];
 
+const ISSUE_ICONS = {
+  error: AlertOctagon,
+  warning: AlertTriangle,
+  info: Info,
+};
+const ISSUE_COLORS = {
+  error: "text-red-400",
+  warning: "text-yellow-400",
+  info: "text-blue-400",
+};
+
+function AnalysisPanel({ data, onClose }: { data: PageAnalysisResponse; onClose: () => void }) {
+  return (
+    <div className="py-3 pb-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+              data.score >= 70
+                ? "bg-green-900/30 text-green-400"
+                : data.score >= 40
+                  ? "bg-yellow-900/30 text-yellow-400"
+                  : "bg-red-900/30 text-red-400"
+            }`}
+          >
+            {data.score}
+          </div>
+          <div>
+            <p className="text-sm text-white font-medium">SEO-analyse for &quot;{data.query}&quot;</p>
+            <p className="text-xs text-gray-500">{data.url}</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="text-xs text-gray-500 hover:text-white">Lukk</button>
+      </div>
+
+      {/* Current elements summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <div className="bg-gray-800/50 rounded-lg p-2">
+          <p className="text-gray-500">Title</p>
+          <p className="text-gray-300 truncate">{data.elements.title || "Mangler"}</p>
+        </div>
+        <div className="bg-gray-800/50 rounded-lg p-2">
+          <p className="text-gray-500">H1</p>
+          <p className="text-gray-300 truncate">{data.elements.h1[0] || "Mangler"}</p>
+        </div>
+        <div className="bg-gray-800/50 rounded-lg p-2">
+          <p className="text-gray-500">Ord</p>
+          <p className="text-gray-300">{data.elements.word_count}</p>
+        </div>
+        <div className="bg-gray-800/50 rounded-lg p-2">
+          <p className="text-gray-500">Bilder</p>
+          <p className="text-gray-300">{data.elements.image_count} ({data.elements.images_without_alt} uten alt)</p>
+        </div>
+      </div>
+
+      {data.elements.meta_description && (
+        <div className="bg-gray-800/50 rounded-lg p-2 text-xs">
+          <p className="text-gray-500">Meta description ({data.elements.meta_description.length} tegn)</p>
+          <p className="text-gray-300">{data.elements.meta_description}</p>
+        </div>
+      )}
+
+      {/* Issues list */}
+      <div className="space-y-2">
+        {data.issues.map((issue, idx) => {
+          const Icon = ISSUE_ICONS[issue.type];
+          const color = ISSUE_COLORS[issue.type];
+          return (
+            <div key={idx} className="flex items-start gap-2 text-xs">
+              <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${color}`} />
+              <div className="flex-1">
+                <p className="text-gray-300">
+                  <span className="font-medium text-white">{issue.element}:</span> {issue.message}
+                </p>
+                {issue.current && (
+                  <p className="text-gray-500 mt-0.5">Nåværende: {issue.current}</p>
+                )}
+                <p className="text-green-400/80 mt-0.5 flex items-start gap-1">
+                  <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  {issue.suggestion}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {data.issues.length === 0 && (
+        <div className="flex items-center gap-2 text-xs text-green-400">
+          <CheckCircle className="w-4 h-4" />
+          Ingen vesentlige SEO-problemer funnet for dette søkeordet
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Content() {
   const { dateRange, preset, setPreset, setCustomRange } = useDateRange();
   const { data, isLoading } = useSEO(dateRange);
   const [filter, setFilter] = useState<CategoryFilter>("all");
+  const [expandedQuery, setExpandedQuery] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<Record<string, PageAnalysisResponse>>({});
+  const [analyzing, setAnalyzing] = useState<string | null>(null);
 
   const filtered =
     data?.opportunities.filter((o) => filter === "all" || o.category === filter) ?? [];
+
+  async function analyzeRow(query: string, pageUrl: string, position: number) {
+    if (analysis[query]) {
+      setExpandedQuery(expandedQuery === query ? null : query);
+      return;
+    }
+    setExpandedQuery(query);
+    setAnalyzing(query);
+    try {
+      const res = await fetch(
+        `/api/insights/seo/analyze?url=${encodeURIComponent(pageUrl)}&query=${encodeURIComponent(query)}&position=${position}`
+      );
+      const result = await res.json();
+      if (!result.error) {
+        setAnalysis((prev) => ({ ...prev, [query]: result }));
+      }
+    } finally {
+      setAnalyzing(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -194,11 +321,13 @@ function Content() {
                     <th className="px-4 py-3 text-right text-gray-400 font-medium">CTR</th>
                     <th className="px-4 py-3 text-center text-gray-400 font-medium">Kategori</th>
                     <th className="px-4 py-3 text-gray-400 font-medium">Anbefaling</th>
+                    <th className="px-4 py-3 text-center text-gray-400 font-medium w-20"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.slice(0, 50).map((opp, i) => (
-                    <tr key={`${opp.query}-${i}`} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <React.Fragment key={`${opp.query}-${i}`}>
+                    <tr className="border-b border-gray-800/50 hover:bg-gray-800/30">
                       <td className="px-4 py-3 text-white font-medium max-w-[200px] truncate">
                         {opp.query}
                       </td>
@@ -262,7 +391,30 @@ function Content() {
                           {opp.suggestion}
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-center">
+                        {opp.page_url && (
+                          <button
+                            onClick={() => analyzeRow(opp.query, opp.page_url!, opp.position)}
+                            disabled={analyzing === opp.query}
+                            className="px-2 py-1 rounded text-xs font-medium bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors disabled:opacity-50"
+                          >
+                            {analyzing === opp.query ? (
+                              <Loader2 className="w-3 h-3 animate-spin inline" />
+                            ) : (
+                              <ScanSearch className="w-3 h-3 inline" />
+                            )}
+                          </button>
+                        )}
+                      </td>
                     </tr>
+                    {expandedQuery === opp.query && analysis[opp.query] && (
+                      <tr>
+                        <td colSpan={10} className="px-4 py-0">
+                          <AnalysisPanel data={analysis[opp.query]} onClose={() => setExpandedQuery(null)} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                   ))}
                 </tbody>
               </table>
