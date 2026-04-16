@@ -303,12 +303,11 @@ function Content() {
             <p className="font-semibold mb-1">Om beregningene</p>
             <p>
               Sesjoner og konverteringer hentes fra Google Analytics sin
-              traffic_sources-tabell. For Paid Search (Google Ads) brukes ekte
-              kjøps-verdi fra purchase-eventet. For andre kanaler (organic,
-              direct, email, social) estimeres verdien basert på snitt-verdi
-              per konvertering. Dette er en forenkling — ekte attribusjon
-              krever fler-touch-modeller som går utover hva Google Analytics
-              eksponerer gratis.
+              traffic_sources-tabell. Verdi vises kun for kanaler med ekte
+              sporingsdata: Paid Search og Cross-network bruker Google Ads
+              purchase-verdier. For organiske kanaler (organic, direct, email,
+              social) vises konverteringstall men ikke estimert verdi — GA4
+              &quot;conversions&quot; inkluderer alle events, ikke bare kjøp.
             </p>
           </Card>
         </>

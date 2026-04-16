@@ -133,34 +133,31 @@ export async function GET(request: NextRequest) {
   );
 
   // 4. Beregn estimert verdi per channel.
-  // Paid Search-kanalen får sin ekte verdi fra Google Ads purchase tracking.
-  // Andre kanaler estimeres proporsjonalt på konverteringer vs samlet Google Ads-verdi per session.
-  // Alternativt: bruk GA4 attribusjon. Vi går enkelt her og sier at Paid Search = Google Ads verdi,
-  // andre kanaler estimeres med gjennomsnittlig verdi per konvertering.
-  const avgValuePerConversion =
-    totalConversions > 0 && googleAdsPurchaseValue > 0
-      ? googleAdsPurchaseValue /
-        Math.max(
-          1,
-          (channelMap.get("Paid Search") ?? { conversions: 0 }).conversions
-        )
-      : 1000; // Fallback: 1000 NOK per konv hvis vi ikke har ekte data
+  //
+  // Paid Search + Cross-network: ekte Google Ads purchase-verdi (sporbar)
+  // Email-kanal: bruker Mailchimp-kampanje klikk → estimert konverteringsrate
+  // Andre kanaler (Organic, Direct, Social, Referral): vi vet IKKE den ekte
+  // verdien fordi GA4 "conversions" inkluderer alle events (signups, klikk etc.),
+  // ikke bare kjøp. Vi viser 0 for verdi og markerer som "ikke sporbar".
+  //
+  // Totalverdi = bare sporbar verdi (Google Ads purchase).
 
   const channels: ChannelAttribution[] = [];
   let totalValue = 0;
 
   for (const [channel, data] of channelMap) {
     const isPaidSearch = channel.toLowerCase().includes("paid search");
+    const isCrossNetwork = channel.toLowerCase() === "cross-network";
     const isPaid =
       isPaidSearch ||
       channel.toLowerCase().includes("paid") ||
-      channel.toLowerCase().includes("cross-network");
+      isCrossNetwork;
+
     let estValue = 0;
-    if (isPaidSearch || channel === "Cross-network") {
-      // Bruk ekte Google Ads-data
+    let cost = 0;
+    if (isPaidSearch || isCrossNetwork) {
       estValue = googleAdsPurchaseValue;
-    } else {
-      estValue = data.conversions * avgValuePerConversion;
+      cost = googleAdsCost;
     }
     totalValue += estValue;
 
@@ -169,16 +166,11 @@ export async function GET(request: NextRequest) {
       sessions: data.sessions,
       conversions: data.conversions,
       estimated_value_nok: estValue,
-      cost_nok: isPaidSearch || channel === "Cross-network" ? googleAdsCost : 0,
-      roas:
-        isPaidSearch || channel === "Cross-network"
-          ? googleAdsCost > 0
-            ? estValue / googleAdsCost
-            : 0
-          : 0,
+      cost_nok: cost,
+      roas: cost > 0 ? estValue / cost : 0,
       share_of_sessions_pct:
         totalSessions > 0 ? (data.sessions / totalSessions) * 100 : 0,
-      share_of_value_pct: 0, // fylles etterpå
+      share_of_value_pct: 0,
       is_paid: isPaid,
     });
   }
