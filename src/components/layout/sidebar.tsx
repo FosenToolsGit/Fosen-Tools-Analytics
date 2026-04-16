@@ -24,6 +24,11 @@ import {
   Bell,
   GitBranch,
   Route,
+  Lightbulb,
+  CalendarCheck,
+  BarChart3,
+  Globe2,
+  Calculator,
   Tag as TagIcon,
   ChevronDown,
   ChevronRight,
@@ -48,6 +53,17 @@ const navItems: NavItem[] = [
   { label: "Oversikt", href: "/dashboard", icon: LayoutDashboard },
   { label: "Attribusjon", href: "/attribution", icon: GitBranch },
   { label: "Kundereise", href: "/kundereise", icon: Route },
+  {
+    label: "Innsikt",
+    href: "/innsikt/ukesrapport",
+    icon: Lightbulb,
+    children: [
+      { label: "Ukesrapport", href: "/innsikt/ukesrapport", icon: CalendarCheck },
+      { label: "Innholds-ROI", href: "/innsikt/innhold-roi", icon: BarChart3 },
+      { label: "Geo-intelligens", href: "/innsikt/geo", icon: Globe2 },
+      { label: "Budsjett-sim", href: "/innsikt/budsjett", icon: Calculator },
+    ],
+  },
   { label: "Varsler", href: "/varsler", icon: Bell },
   {
     label: "Google Analytics",
@@ -83,10 +99,15 @@ interface SidebarProps {
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
 
-  // Auto-expand GA4 section if on a GA4 sub-page
   const isGA4Active =
     pathname.startsWith("/ga4/") || pathname === "/platform/ga4";
-  const [ga4Expanded, setGa4Expanded] = useState(isGA4Active);
+  const isInnsiktActive = pathname.startsWith("/innsikt/");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    "/platform/ga4": isGA4Active,
+    "/innsikt/ukesrapport": isInnsiktActive,
+  });
+  const toggleExpanded = (href: string) =>
+    setExpanded((prev) => ({ ...prev, [href]: !prev[href] }));
 
   return (
     <>
@@ -135,8 +156,14 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               hasChildren &&
               (pathname === item.href ||
                 item.children!.some((c) => pathname === c.href));
+            const isAutoExpand =
+              hasChildren &&
+              (pathname === item.href ||
+                item.children!.some(
+                  (c) => pathname === c.href || pathname.startsWith(c.href + "/")
+                ));
             const isExpanded =
-              hasChildren && (ga4Expanded || isGA4Active);
+              hasChildren && (expanded[item.href] || isAutoExpand);
 
             return (
               <div key={item.href}>
@@ -156,7 +183,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                   </Link>
                   {hasChildren && (
                     <button
-                      onClick={() => setGa4Expanded(!ga4Expanded)}
+                      onClick={() => toggleExpanded(item.href)}
                       className="p-1.5 text-gray-500 hover:text-white rounded transition-colors"
                     >
                       {isExpanded ? (
