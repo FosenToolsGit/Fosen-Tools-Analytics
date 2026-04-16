@@ -23,6 +23,7 @@ import {
   FileSpreadsheet,
   Bell,
   GitBranch,
+  Route,
   Tag as TagIcon,
   ChevronDown,
   ChevronRight,
@@ -46,6 +47,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Oversikt", href: "/dashboard", icon: LayoutDashboard },
   { label: "Attribusjon", href: "/attribution", icon: GitBranch },
+  { label: "Kundereise", href: "/kundereise", icon: Route },
   { label: "Varsler", href: "/varsler", icon: Bell },
   {
     label: "Google Analytics",
