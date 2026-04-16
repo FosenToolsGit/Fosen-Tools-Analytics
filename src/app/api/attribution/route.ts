@@ -87,27 +87,40 @@ export async function GET(request: NextRequest) {
     offset += pageSize;
   }
 
-  // 2. Hent Google Ads total kostnad og ekte kjøps-verdi
+  // 2. Hent Google Ads kostnad og purchase-verdi PER kampanje
   const { data: adsCamps } = await supabase
     .from("google_ads_campaigns")
-    .select("cost_nok")
+    .select("campaign_id, campaign_name, channel_type, cost_nok")
     .gte("metric_date", from)
     .lte("metric_date", to);
-  const googleAdsCost = (adsCamps ?? []).reduce(
-    (s, r) => s + (Number(r.cost_nok) || 0),
-    0
-  );
+
+  // Bygg kostnad per kanal-type (Search → Paid Search, Pmax → Cross-network)
+  const costByChannel = new Map<string, number>();
+  const campaignChannelMap = new Map<string, string>();
+  for (const row of adsCamps ?? []) {
+    const ct = (row.channel_type || "").toLowerCase();
+    const gaChannel = ct.includes("search") ? "Paid Search" : "Cross-network";
+    costByChannel.set(gaChannel, (costByChannel.get(gaChannel) || 0) + (Number(row.cost_nok) || 0));
+    campaignChannelMap.set(row.campaign_id, gaChannel);
+  }
+  const googleAdsCost = Array.from(costByChannel.values()).reduce((s, v) => s + v, 0);
 
   const { data: adsConvs } = await supabase
     .from("google_ads_conversions")
-    .select("conversion_action_name, all_conversions_value")
+    .select("campaign_id, conversion_action_name, all_conversions_value")
     .gte("metric_date", from)
     .lte("metric_date", to);
-  const googleAdsPurchaseValue = (adsConvs ?? [])
-    .filter((r) =>
-      (r.conversion_action_name as string).toLowerCase().includes("purchase")
-    )
-    .reduce((s, r) => s + (Number(r.all_conversions_value) || 0), 0);
+
+  // Purchase-verdi per GA4-kanal (Paid Search vs Cross-network)
+  const purchaseValueByChannel = new Map<string, number>();
+  for (const row of adsConvs ?? []) {
+    if (!(row.conversion_action_name as string).toLowerCase().includes("purchase")) continue;
+    const gaChannel = campaignChannelMap.get(row.campaign_id) || "Cross-network";
+    purchaseValueByChannel.set(
+      gaChannel,
+      (purchaseValueByChannel.get(gaChannel) || 0) + (Number(row.all_conversions_value) || 0)
+    );
+  }
 
   // 3. Aggreger per channel
   interface ChannelAgg {
@@ -155,9 +168,12 @@ export async function GET(request: NextRequest) {
 
     let estValue = 0;
     let cost = 0;
-    if (isPaidSearch || isCrossNetwork) {
-      estValue = googleAdsPurchaseValue;
-      cost = googleAdsCost;
+    if (isPaidSearch) {
+      estValue = purchaseValueByChannel.get("Paid Search") || 0;
+      cost = costByChannel.get("Paid Search") || 0;
+    } else if (isCrossNetwork) {
+      estValue = purchaseValueByChannel.get("Cross-network") || 0;
+      cost = costByChannel.get("Cross-network") || 0;
     }
     totalValue += estValue;
 
