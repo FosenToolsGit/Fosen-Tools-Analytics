@@ -34,12 +34,28 @@ export interface PageAnalysisResponse {
   score: number;
 }
 
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&aring;/g, "å")
+    .replace(/&AElig;/g, "Æ")
+    .replace(/&oslash;/g, "ø")
+    .replace(/&Oslash;/g, "Ø");
+}
+
 function extractText(html: string, tag: string): string[] {
   const regex = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "gis");
   const matches: string[] = [];
   let m;
   while ((m = regex.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]+>/g, "").trim();
+    const text = decodeEntities(m[1].replace(/<[^>]+>/g, "")).trim();
     if (text) matches.push(text);
   }
   return matches;
@@ -51,12 +67,13 @@ function extractMeta(html: string, name: string): string | null {
     "i"
   );
   const m = regex.exec(html);
-  return m ? (m[1] || m[2] || null) : null;
+  const raw = m ? (m[1] || m[2] || null) : null;
+  return raw ? decodeEntities(raw) : null;
 }
 
 function extractTitle(html: string): string | null {
   const m = new RegExp("<title[^>]*>(.*?)</title>", "is").exec(html);
-  return m ? m[1].trim() : null;
+  return m ? decodeEntities(m[1]).trim() : null;
 }
 
 function extractCanonical(html: string): string | null {
