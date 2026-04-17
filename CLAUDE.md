@@ -134,7 +134,8 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 
 ### Hovedsider
 - `/dashboard` — Oversikt med KPI-kort, anomali-widget, Google Ads spend-kort, outliers, tag-oversikt, sync-status
-- `/attribution` — Cross-platform attribusjon: pie chart, per-kanal ROAS, topp kilder
+- `/attribution` — Cross-platform attribusjon: pie chart, per-kanal ROAS, topp kilder. Viser KUN sporbar purchase-verdi (ikke oppblåste estimater). Splittet mellom Paid Search (Bransjer) og Cross-network (Pmax) basert på kampanjetype.
+- `/kundereise` — Cross-platform kundereise-visualisering: Sankey-diagram (kanal → konverteringssteg), konverteringstrakt med dropoff %, kanal-assistanse-tabell, konverteringsrate per kanal, daglig tidslinje med stacked areas
 - `/varsler` — Anomali-varsler med severity-filtrering og acknowledge/resolve-knapper
 - `/posts` — Alle innlegg + kampanjer med filter og sortering
 - `/sokeord-generator` — Last opp Excel ELLER bruk live DB-data (7/30/90 dager)
@@ -143,6 +144,14 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 - `/sokeord-generator/rapporter` — Ukentlige rapporter med generering og nedlasting
 - `/settings` — Innstillinger
 - `/login` — Innlogging
+
+### Innsikt-sider (expanderbar meny i sidebar)
+- `/innsikt/ukesrapport` — Trafikklys per plattform (grønn/gul/rød border basert på delta), Google Ads spend-sammenligning, anomali-oppsummering, topp 3 highlights
+- `/innsikt/innhold-roi` — Kobler poster/kampanjer til trafikkeffekt (GA4 sesjoner 3d etter vs 3d før publisering), scatter plot (engasjement vs trafikkløft), ROI-scoring per post
+- `/innsikt/geo` — Krysskobling av GA4 geo + Mailchimp locations, verdenskart med vektet score, topp regioner-tabell, GA4 vs Mailchimp sammenligning
+- `/innsikt/budsjett` — Google Ads budsjett-simulator med slidere per kampanje, auto-optimalisering basert på effektiv ROAS (inkluderer lead-verdi fra campaign_settings), projeksjonstabell
+- `/innsikt/seo` — SEO-muligheter fra Search Console: klassifiserer søkeord i 5 kategorier (quick_win, almost_page_one, low_ctr, declining, rising), viser side-URL per søkeord (via Search Console query+page dimensjoner), expanderbart analyse-panel per rad som fetcher HTML fra fosen-tools.no og gir konkrete anbefalinger
+- `/innsikt/kalender` — Kampanjekalender: tidslinje med alle hendelser (poster, anomalier, auto-actions, syncs) overlagt på sesjonsgraf. Klikkbare dager, filtrerbare event-typer
 
 ### Plattform-sider
 - `/platform/ga4` — Google Analytics overview (generisk [slug]-side)
@@ -210,6 +219,17 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 | `GET /api/anomalies` | Aktive + håndterte anomalier |
 | `POST /api/anomalies` | Acknowledge eller resolve en anomali |
 | `POST /api/anomalies/detect` | Manuell trigger for deteksjon |
+
+### Kundereise og Innsikt
+| Rute | Funksjon |
+|------|----------|
+| `GET /api/customer-journey` | Sankey-data, funnel, kanal-assistanse, daglig tidslinje, KPI-er |
+| `GET /api/insights/scoreboard` | Ukesrapport: per-plattform delta, Google Ads sammenligning, anomali-antall, highlights |
+| `GET /api/insights/content-roi` | Posts med trafikkløft (3d etter vs 3d før publisering), ROI-scoring, summary |
+| `GET /api/insights/geo` | Krysskoblet geo: GA4 + Mailchimp opens + estimerte konverteringer, vektet value_score |
+| `GET /api/insights/seo` | SEO-muligheter klassifisert i 5 kategorier + posisjonsfordeling. Henter query+page fra Search Console direkte for side-URL per søkeord |
+| `GET /api/insights/seo/analyze?url=&query=&position=` | On-demand HTML-analyse: fetcher side, ekstraherer title/meta/H1/H2/ord/bilder/lenker, scorer 0-100, gir konkrete anbefalinger. Dekoder HTML-entiteter korrekt. |
+| `GET /api/insights/calendar` | Hendelses-tidslinje: posts + anomalier + auto-actions + syncs + daglige sesjoner |
 
 ### Mailchimp (utvidet)
 | Rute | Funksjon |
@@ -426,3 +446,50 @@ Alle er også lagt inn i Vercel som Environment Variables.
 7. **Pmax search_term_insight krever eksakt 1 campaign_id** og tåler ikke `segments.date` i SELECT
 8. **`LAST_90_DAYS` er ikke gyldig DURING-literal** i GAQL — bruk BETWEEN med eksplisitte datoer
 9. **Google Ads `metrics.conversions_value` reflekterer primary-status ved conversion-tidspunkt** — kan ikke oppdateres retroaktivt
+10. **GA4 kan returnere duplikate rader** for samme dato (malformed date-dimensjoner) — sync-pipelinen dedupliserer på conflict-key før upsert i alle GA4-tabeller (analytics_metrics, platform_posts, search_keywords, geo_data, traffic_sources, ad_campaigns)
+11. **Supabase PostgrestError er IKKE en Error-instans** — sync-utils error handler pakker ut `{message, details, hint, code}` for å gi meningsfulle feilmeldinger i stedet for "Unknown error"
+12. **HTML-entiteter blåser opp tegn-tellinger** — SEO-analyzer dekoder `&#248;` (6 tegn) til `ø` (1 tegn) før lengde-validering
+13. **Attribusjon-verdi er kun sporbar for Paid Search/Cross-network** — organiske kanaler (Direct, Organic Search, Email, Social) viser sesjoner + konverteringer men ingen verdi, fordi GA4 "conversions" inkluderer alle events (ikke bare kjøp)
+
+---
+
+## Siste sesjons-sammendrag (17. april 2026)
+
+### Nylig bygget
+- **`/kundereise`-siden** — Sankey + funnel + kanal-assistanse + tidslinje (src/app/(dashboard)/kundereise/ + src/app/api/customer-journey/)
+- **Innsikt-meny** med 6 undersider (ukesrapport, innhold-roi, geo, budsjett, seo, kalender)
+- **SEO-analyzer** som fetcher HTML fra fosen-tools.no, ekstraherer title/meta/H1/ord/bilder, scorer 0-100, gir konkrete anbefalinger per søkeord
+- **Side-URL-ekstraksjon** i SEO-muligheter via Search Console `query + page` dimensjoner (direkte API-kall, ikke cached)
+
+### Viktige bugfikser
+- **Sync-dedupliseringen** — fikset "ON CONFLICT DO UPDATE command cannot affect row a second time" i GA4 sync. Duplikater i `platform_posts` var hovedårsaken (samme platform_post_id returnert flere ganger fra GA4 topp-pages). Dedupliserer nå på conflict-key i alle GA4-upserts.
+- **Attribusjon oppblåste tall** — gamle kode multipliserte alle konverteringer med gjennomsnittlig purchase-verdi, som ga 3.7M kr estimert verdi fra 461 GA4-konverteringer. Fjernet heuristikken, viser kun ekte sporbar verdi (10 420 kr fra Google Ads purchase-events).
+- **Attribusjon Paid Search vs Cross-network** — splittet kostnad og verdi basert på kampanje-ID mapping (Search-kampanjer → Paid Search, Pmax → Cross-network) i stedet for å dele hele potten.
+- **Budsjett-simulator** — bruker nå effektiv ROAS (purchase + estimert lead-verdi) i stedet for kun purchase-verdi. Bransjer-kampanjen (leads, 500 kr/lead) får nå korrekt verdi i simuleringer.
+- **Error-håndtering i sync** — pakker ut Supabase PostgrestError-felter (message, details, hint, code) i stedet for "Unknown error" fallback.
+
+### Operasjonelt utført
+- **Meta access token fornyet** 17. april — nytt Page Access Token gyldig til 13. desember 2026 (~8 måneder). Har alle scopes: read_insights, pages_read_engagement, pages_read_user_content, pages_show_list, ads_management. Oppdatert i både `.env.local` og Vercel production.
+- **GA4-sync fungerer igjen** etter dedup-fikset (10 870 rader per sync).
+- **Meta-sync fungerer** etter token-fornyelse (141 rader per sync).
+
+### Ventende / følg opp
+- **Keyword Planner** — dag 3 av ~3 virkedager, feilmelding fortsatt `DEVELOPER_TOKEN_NOT_APPROVED` / "explorer access". Sjekk igjen mandag 20. april.
+- **Instagram-integrasjon** — fortsatt droppet (Meta Developer UI-problemer). Nytt token har ikke instagram_basic/manage_insights scopes.
+- **LinkedIn** — venter fortsatt på Community Management API-godkjenning.
+- **Vercel Cron** — ikke implementert. Manuell sync kjøres daglig. Kandidat for automatisering.
+
+### SEO-fremdrift (Search Console)
+Brukeren jobber gjennom SEO-muligheter identifisert via `/innsikt/seo`. Per 17. april:
+- **Forsiden (`/`, søkeord "tools", pos 10):** FIKSET. H1 redusert fra 3 til 1, meta description utvidet, title forbedret. Score 80 → 90. Gjenstår kun H1-inkludering av "tools" for 100.
+- **`/categories/pelicase` (søkeord "pelicase", pos 6.1):** FIKSET ifølge bruker. Hadde score 60 med manglende H1, meta description på 8 tegn.
+- **`/produkter/verktøyvogner` (søkeord "verktøyvogn", pos 12.5, 640 visn/mnd):** FIKSET ifølge bruker. Hadde kritisk error (manglet H1), bare 291 ord innhold. Strategi: bygg opp kategorisiden som primær landingsside for generiske søk, behold Milwaukee-produktsidene for spesifikke søk.
+- **DPTM24-produktside (pos 3.8, 289 visn, 0 klikk):** IKKE fikset. Ikke prioritert.
+- **Gjenværende quick wins:** leatherman arc (pos 7.3, fallende), fil (pos 8.2), hakenøkkel (pos 7), spikerpistol (pos 13.4), pipesett (pos 12).
+
+### Oppstart mandag 20. april
+1. Sjekk om Keyword Planner endelig er godkjent: `POST /api/keyword-generator/keyword-planner-ideas` med seed
+2. Kjør daglig sync via `/dashboard` Synkroniser-knappen
+3. Sjekk `/varsler` for nye anomalier (positive = acknowledge, konkurrent-brands = vurder)
+4. Sjekk `/innsikt/seo` for å se om Search Console har oppdatert ranking for de SEO-endrede sidene (2-3 dagers etterslep)
+5. Vurder neste quick win fra SEO-listen (leatherman arc eller fil er neste)
