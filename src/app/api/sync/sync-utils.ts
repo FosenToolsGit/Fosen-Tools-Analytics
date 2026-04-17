@@ -57,10 +57,28 @@ export async function syncPlatform(
     const rawMetrics = await service.fetchDailyMetrics(startDate, endDate);
     let recordsSynced = 0;
 
-    // Strip any extra fields not in the DB schema
-    const metrics = rawMetrics.map(({ platform: p, metric_date, impressions, reach, engagement, clicks, followers, sessions, pageviews, users_total, bounce_rate }) => ({
-      platform: p, metric_date, impressions, reach, engagement, clicks, followers, sessions, pageviews, users_total, bounce_rate,
-    }));
+    // Strip any extra fields not in the DB schema + filter ugyldige datoer.
+    // GA4 kan returnere "(other)" eller tomme date-dimensjoner som blir
+    // malformede datoer etter slice — disse må vekk før upsert.
+    const validDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+    const rawRows = rawMetrics
+      .map(({ platform: p, metric_date, impressions, reach, engagement, clicks, followers, sessions, pageviews, users_total, bounce_rate }) => ({
+        platform: p, metric_date, impressions, reach, engagement, clicks, followers, sessions, pageviews, users_total, bounce_rate,
+      }))
+      .filter((r) => validDate(r.metric_date));
+
+    // Dedupliser på (platform, metric_date) — behold raden med flest sesjoner.
+    // Supabase upsert feiler hvis samme conflict-key forekommer flere ganger i
+    // samme batch ("ON CONFLICT DO UPDATE command cannot affect row a second time").
+    const dedupMap = new Map<string, (typeof rawRows)[0]>();
+    for (const row of rawRows) {
+      const key = `${row.platform}|${row.metric_date}`;
+      const existing = dedupMap.get(key);
+      if (!existing || (row.sessions || 0) > (existing.sessions || 0)) {
+        dedupMap.set(key, row);
+      }
+    }
+    const metrics = Array.from(dedupMap.values());
 
     if (metrics.length > 0) {
       const { error: metricsError } = await admin
@@ -80,68 +98,118 @@ export async function syncPlatform(
     const posts = await service.fetchTopPosts(50);
 
     if (posts.length > 0) {
+      // Dedupliser på (platform, platform_post_id) før upsert.
+      const postMap = new Map<string, (typeof posts)[0]>();
+      for (const p of posts) {
+        postMap.set(`${p.platform}|${p.platform_post_id}`, p);
+      }
+      const dedupedPosts = Array.from(postMap.values());
       const { error: postsError } = await admin
         .from("platform_posts")
-        .upsert(posts, {
+        .upsert(dedupedPosts, {
           onConflict: "platform,platform_post_id",
         });
 
-      if (postsError) throw postsError;
-      recordsSynced += posts.length;
+      if (postsError) {
+        console.error("platform_posts upsert error:", postsError);
+        throw postsError;
+      }
+      recordsSynced += dedupedPosts.length;
     }
 
     // GA4-specific: sync keywords, geo, sources, campaigns
     if (platform === "ga4") {
       const ga4 = service as GA4Service;
 
-      const keywords = await ga4.fetchSearchKeywords(startDate, endDate);
+      // Helper: dedupliser array på sammensatt nøkkel, behold raden med
+      // høyest verdi av valgfritt sort-felt (ellers siste forekomst).
+      const dedupBy = <T>(
+        rows: T[],
+        keyFn: (r: T) => string,
+        scoreFn?: (r: T) => number
+      ): T[] => {
+        const m = new Map<string, T>();
+        for (const r of rows) {
+          const k = keyFn(r);
+          const existing = m.get(k);
+          if (!existing) m.set(k, r);
+          else if (scoreFn && scoreFn(r) > scoreFn(existing)) m.set(k, r);
+          else if (!scoreFn) m.set(k, r);
+        }
+        return Array.from(m.values());
+      };
+      const validDateRow = (r: { metric_date: string }) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(r.metric_date);
+
+      const rawKeywords = await ga4.fetchSearchKeywords(startDate, endDate);
+      const keywords = dedupBy(
+        rawKeywords.filter(validDateRow),
+        (r) => `${r.query}|${r.metric_date}`,
+        (r) => Number(r.impressions) || 0
+      );
       if (keywords.length > 0) {
-        await admin
+        const { error } = await admin
           .from("search_keywords")
           .upsert(keywords, { onConflict: "query,metric_date" });
+        if (error) { console.error("search_keywords upsert error:", error); throw error; }
         recordsSynced += keywords.length;
       }
 
-      const geo = await ga4.fetchGeoData(startDate, endDate);
-      if (geo.length > 0) {
-        const geoRows = geo.map((g) => ({
+      const rawGeo = await ga4.fetchGeoData(startDate, endDate);
+      const geoRows = dedupBy(
+        rawGeo.filter(validDateRow).map((g) => ({
           ...g,
           city: g.city || "",
-        }));
-        await admin
+        })),
+        (r) => `${r.country}|${r.city}|${r.metric_date}`,
+        (r) => Number(r.sessions) || 0
+      );
+      if (geoRows.length > 0) {
+        const { error } = await admin
           .from("geo_data")
           .upsert(geoRows, { onConflict: "country,city,metric_date" });
-        recordsSynced += geo.length;
+        if (error) { console.error("geo_data upsert error:", error); throw error; }
+        recordsSynced += geoRows.length;
       }
 
-      const sources = await ga4.fetchTrafficSources(startDate, endDate);
-      if (sources.length > 0) {
-        const sourceRows = sources.map((s) => ({
+      const rawSources = await ga4.fetchTrafficSources(startDate, endDate);
+      const sourceRows = dedupBy(
+        rawSources.filter(validDateRow).map((s) => ({
           ...s,
           source: s.source || "",
           medium: s.medium || "",
-        }));
-        await admin
+        })),
+        (r) => `${r.channel}|${r.source}|${r.medium}|${r.metric_date}`,
+        (r) => Number(r.sessions) || 0
+      );
+      if (sourceRows.length > 0) {
+        const { error } = await admin
           .from("traffic_sources")
           .upsert(sourceRows, {
             onConflict: "channel,source,medium,metric_date",
           });
-        recordsSynced += sources.length;
+        if (error) { console.error("traffic_sources upsert error:", error); throw error; }
+        recordsSynced += sourceRows.length;
       }
 
-      const campaigns = await ga4.fetchAdCampaigns(startDate, endDate);
-      if (campaigns.length > 0) {
-        const campaignRows = campaigns.map((c) => ({
+      const rawCampaigns = await ga4.fetchAdCampaigns(startDate, endDate);
+      const campaignRows = dedupBy(
+        rawCampaigns.filter(validDateRow).map((c) => ({
           ...c,
           ad_group: c.ad_group || "",
           keyword: c.keyword || "",
-        }));
-        await admin
+        })),
+        (r) => `${r.campaign_name}|${r.ad_group}|${r.keyword}|${r.metric_date}`,
+        (r) => Number(r.sessions) || 0
+      );
+      if (campaignRows.length > 0) {
+        const { error } = await admin
           .from("ad_campaigns")
           .upsert(campaignRows, {
             onConflict: "campaign_name,ad_group,keyword,metric_date",
           });
-        recordsSynced += campaigns.length;
+        if (error) { console.error("ad_campaigns upsert error:", error); throw error; }
+        recordsSynced += campaignRows.length;
       }
     }
 
@@ -266,8 +334,27 @@ export async function syncPlatform(
       records_synced: recordsSynced,
     };
   } catch (err) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Unknown error";
+    let errorMessage = "Unknown error";
+    if (err instanceof Error) {
+      errorMessage = err.message;
+    } else if (err && typeof err === "object") {
+      // Supabase PostgrestError: { message, details, hint, code }
+      const e = err as Record<string, unknown>;
+      const parts = [e.message, e.details, e.hint, e.code]
+        .filter((v) => typeof v === "string" && v.length > 0);
+      if (parts.length > 0) {
+        errorMessage = parts.join(" | ");
+      } else {
+        try {
+          errorMessage = JSON.stringify(err).slice(0, 500);
+        } catch {
+          errorMessage = String(err);
+        }
+      }
+    } else if (err !== undefined && err !== null) {
+      errorMessage = String(err);
+    }
+    console.error(`Sync failed for ${platform}:`, err);
 
     await admin
       .from("sync_logs")
