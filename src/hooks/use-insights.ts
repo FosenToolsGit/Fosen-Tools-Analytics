@@ -8,6 +8,7 @@ import type { ContentROIResponse } from "@/app/api/insights/content-roi/route";
 import type { GeoInsightResponse } from "@/app/api/insights/geo/route";
 import type { SEOResponse } from "@/app/api/insights/seo/route";
 import type { CalendarResponse } from "@/app/api/insights/calendar/route";
+import type { GrowthResponse } from "@/app/api/insights/growth/route";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -59,4 +60,23 @@ export function useCalendar(dateRange: DateRange) {
     fetcher
   );
   return { data, error, isLoading };
+}
+
+const postFetcher = (url: string, body: unknown) =>
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then((r) => r.json());
+
+export function useGrowth(seeds: string[] | null, dateRange: DateRange) {
+  const from = formatDateISO(dateRange.from);
+  const to = formatDateISO(dateRange.to);
+  const key = seeds === null ? null : ["/api/insights/growth", seeds, from, to];
+  const { data, error, isLoading, mutate } = useSWR<GrowthResponse>(
+    key,
+    () => postFetcher("/api/insights/growth", { seeds: seeds ?? [], from, to }),
+    { revalidateOnFocus: false }
+  );
+  return { data, error, isLoading, mutate };
 }
