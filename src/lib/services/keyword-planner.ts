@@ -89,7 +89,7 @@ export class KeywordPlannerService {
       // Minimalt test-kall med ett seed-ord
       await this.customer.keywordPlanIdeas.generateKeywordIdeas({
         customer_id: this.customerId,
-        language: "languageConstants/10", // Norwegian
+        language: "languageConstants/1013", // Norwegian
         geo_target_constants: ["geoTargetConstants/2578"], // Norway
         keyword_plan_network: 2, // GOOGLE_SEARCH
         keyword_seed: { keywords: ["test"] },
@@ -144,7 +144,7 @@ export class KeywordPlannerService {
     try {
       const response = (await this.customer.keywordPlanIdeas.generateKeywordIdeas({
         customer_id: this.customerId,
-        language: "languageConstants/10",
+        language: "languageConstants/1013",
         geo_target_constants: ["geoTargetConstants/2578"],
         keyword_plan_network: 2,
         keyword_seed: { keywords: seedKeywords.slice(0, 20) },
