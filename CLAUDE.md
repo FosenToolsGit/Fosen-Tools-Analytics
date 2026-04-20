@@ -151,6 +151,7 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 - `/innsikt/geo` — Krysskobling av GA4 geo + Mailchimp locations, verdenskart med vektet score, topp regioner-tabell, GA4 vs Mailchimp sammenligning
 - `/innsikt/budsjett` — Google Ads budsjett-simulator med slidere per kampanje, auto-optimalisering basert på effektiv ROAS (inkluderer lead-verdi fra campaign_settings), projeksjonstabell
 - `/innsikt/seo` — SEO-muligheter fra Search Console: klassifiserer søkeord i 5 kategorier (quick_win, almost_page_one, low_ctr, declining, rising), viser side-URL per søkeord (via Search Console query+page dimensjoner), expanderbart analyse-panel per rad som fetcher HTML fra fosen-tools.no og gir konkrete anbefalinger
+- `/innsikt/vekst` — Vekstmuligheter: henter relevante søkeord fra Google Keyword Planner basert på Fosen Tools-spesifikke seeds (verktøy, verktøyvogn, pelicase, merker), krysskobler med Search Console for nåværende rangering, beregner potensiell klikk/mnd ved å klatre til topp 3. Redigerbart seed-sett per bruker.
 - `/innsikt/kalender` — Kampanjekalender: tidslinje med alle hendelser (poster, anomalier, auto-actions, syncs) overlagt på sesjonsgraf. Klikkbare dager, filtrerbare event-typer
 
 ### Plattform-sider
@@ -229,6 +230,7 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 | `GET /api/insights/geo` | Krysskoblet geo: GA4 + Mailchimp opens + estimerte konverteringer, vektet value_score |
 | `GET /api/insights/seo` | SEO-muligheter klassifisert i 5 kategorier + posisjonsfordeling. Henter query+page fra Search Console direkte for side-URL per søkeord |
 | `GET /api/insights/seo/analyze?url=&query=&position=` | On-demand HTML-analyse: fetcher side, ekstraherer title/meta/H1/H2/ord/bilder/lenker, scorer 0-100, gir konkrete anbefalinger. Dekoder HTML-entiteter korrekt. |
+| `POST /api/insights/growth` | Vekstmuligheter: Keyword Planner-ideer + Search Console-rangering. Input `{seeds, from, to}`. Returnerer prioriterte søkeord med potensiell klikk/mnd. |
 | `GET /api/insights/calendar` | Hendelses-tidslinje: posts + anomalier + auto-actions + syncs + daglige sesjoner |
 
 ### Mailchimp (utvidet)
@@ -474,10 +476,41 @@ Alle er også lagt inn i Vercel som Environment Variables.
 - **Meta-sync fungerer** etter token-fornyelse (141 rader per sync).
 
 ### Ventende / følg opp
-- **Keyword Planner** — dag 3 av ~3 virkedager, feilmelding fortsatt `DEVELOPER_TOKEN_NOT_APPROVED` / "explorer access". Sjekk igjen mandag 20. april.
+- **Keyword Planner** — ✅ GODKJENT 20. april. Fungerer fullt ut. Viktig fix: `languageConstants/10` var feil kode — norsk bokmål har criterion ID **1013**. Oppdatert i `src/lib/services/keyword-planner.ts`.
 - **Instagram-integrasjon** — fortsatt droppet (Meta Developer UI-problemer). Nytt token har ikke instagram_basic/manage_insights scopes.
 - **LinkedIn** — venter fortsatt på Community Management API-godkjenning.
 - **Vercel Cron** — ikke implementert. Manuell sync kjøres daglig. Kandidat for automatisering.
+
+### Nye funksjoner bygget 20. april
+- **`/innsikt/vekst` (Vekstmuligheter)** — Henter Keyword Planner-forslag basert på 12 Fosen Tools-relaterte seeds (verktøy, verktøyvogn, pelicase, snap-on, milwaukee verktøy osv.), krysskobler med Search Console-data, beregner potensiell klikk/mnd ved å klatre til topp 3. Første kjøring: 138 relevante søkeord, 110 som Fosen IKKE rangerer på. Topp funn: `momentnøkkel` (6 600 søk/mnd, pos 28.9), `verktøykasse` (4 400 søk/mnd, ikke rangerer), `verktøyvogn` (3 600 søk/mnd, pos 12.9). Merkesøk som "milwaukee verktøy", "makita verktøy", "dewalt verktøy", "ryobi verktøy", "bosch verktøy" (1 000-1 600 søk/mnd hver) har alle status "ikke rangerer" — stor mulighet.
+
+## Planlagte funksjoner (notater)
+
+### Innleggsbygger (`/innleggsbygger` — ikke bygget)
+
+Verktøy som hjelper bruker å planlegge og bygge Meta/Mailchimp-innlegg basert på data om hva som har fungert historisk. Kobler sammen eksisterende post-data med forslag til nytt innhold.
+
+**Kjernefunksjoner:**
+1. **Caption-analyse** — Les igjennom eksisterende captions fra `platform_posts` (Meta) og Mailchimp-kampanjer. Identifiser hvilke som har høyest engasjement (likes + comments + shares + clicks / impressions). Ekstraher mønstre: lengde, bruk av emojis, CTA-struktur, hashtag-bruk, tonalitet.
+2. **Generere nye captions** — Basert på topp-performere, foreslå nye captions tilpasset ønsket tema/produkt. Bruk mønstrene fra best-performing (f.eks. "kort + spørsmål + emoji + CTA" hvis det scorer høyest).
+3. **Tema-forslag** — Basert på sesong, ukesdag, tidligere performance, foreslå hva som kan postes nå. Koble til produkter som trenger mer oppmerksomhet (fra `/innsikt/vekst`).
+4. **Native-prompts** — Generer klar-til-å-limes-inn prompts for **Native-appen** (bruker **Nano Banana 2** for bildegenerering). Format: produktbeskrivelse + visuell stil + komposisjon.
+5. **Organiske innleggstips** — Foreslå filming-ideer (f.eks. "unboxing av ny verktøyvogn", "før/etter-visning av verkstedinnredning", "kundecase fra industri"). Ikke-AI-genererte ideer som bruker Fosen Tools sitt faktiske produktsortiment.
+
+**Datakilder:**
+- `platform_posts` — historiske poster med `content_snippet`, engasjement, published_at
+- `mailchimp_campaign_links` — hvilke produkter/lenker som klikkes mest
+- `/innsikt/innhold-roi` — hvilke poster som driver trafikk
+- `/innsikt/vekst` — søkeord og produktkategorier med lavt vekstpotensial
+- Kalender-data fra `/innsikt/kalender` — avstand til siste post, ukedager
+
+**Oppdateringsfrekvens:**
+- Daglig eller ukentlig — kjøres automatisk via Vercel Cron (når implementert)
+- Live-analyse: når bruker åpner siden, henter siste sync-data
+
+**Integrasjoner å vurdere:**
+- Native-appen tar inn tekst-prompts og bruker Nano Banana 2 for bildegenerering. Vi trenger ikke direkte API-integrasjon — bare generere prompt-tekst som bruker kopierer.
+- Potensiell LLM-bruk (Claude API): for caption-generering basert på topp-performers. Alternativt: mønsterbasert template-system uten LLM.
 
 ### SEO-fremdrift (Search Console)
 Brukeren jobber gjennom SEO-muligheter identifisert via `/innsikt/seo`. Per 17. april:
