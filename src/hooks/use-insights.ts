@@ -9,6 +9,7 @@ import type { GeoInsightResponse } from "@/app/api/insights/geo/route";
 import type { SEOResponse } from "@/app/api/insights/seo/route";
 import type { CalendarResponse } from "@/app/api/insights/calendar/route";
 import type { GrowthResponse } from "@/app/api/insights/growth/route";
+import type { IndexingResponse } from "@/app/api/insights/indexing/route";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -68,6 +69,17 @@ const postFetcher = (url: string, body: unknown) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }).then((r) => r.json());
+
+export function useIndexing(dateRange: DateRange) {
+  const from = formatDateISO(dateRange.from);
+  const to = formatDateISO(dateRange.to);
+  const { data, error, isLoading, mutate } = useSWR<IndexingResponse>(
+    `/api/insights/indexing?from=${from}&to=${to}`,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+  return { data, error, isLoading, mutate };
+}
 
 export function useGrowth(seeds: string[] | null, dateRange: DateRange) {
   const from = formatDateISO(dateRange.from);
