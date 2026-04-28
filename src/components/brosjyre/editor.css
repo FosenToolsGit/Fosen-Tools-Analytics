@@ -1,0 +1,191 @@
+/* Brosjyre-editor — globale stiler. Importeres fra page.tsx via Next.js. */
+
+/* Web-fonter for brosjyre-rendering. Lastes via Google Fonts.
+   Korolev krever lisens og er ikke tilgjengelig — Roboto 900 er fallback
+   som matcher visuelt godt nok for kampanje-headinger. */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;600&family=Playfair+Display:wght@400;700&display=swap");
+
+.brosjyre-editor {
+  /* Editor chrome (mørkt) */
+  --chrome-bg: #0f1115;
+  --chrome-bg-2: #161922;
+  --chrome-bg-3: #1d2230;
+  --chrome-border: #262b38;
+  --chrome-text: #e5e7eb;
+  --chrome-muted: #8b90a0;
+  --chrome-accent: #ed1c24;
+
+  /* Brand-tokens — overstyres av editor.tsx via inline-style */
+  --ft-red: #ed1c24;
+  --ft-text-main: #111827;
+  --ft-text-body: #4b5563;
+  --ft-bg-page: #f5f7fa;
+
+  --heading-stack: "Korolev", "Roboto", Arial, Helvetica, sans-serif;
+  --body-stack: "Roboto", Arial, Helvetica, sans-serif;
+  --mono-stack: "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Canvas page: må se ut som ekte print */
+.brosjyre-editor .page-paper {
+  background: #ffffff;
+  color: var(--ft-text-main);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 8px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+.brosjyre-editor .page-paper * { box-sizing: border-box; }
+.brosjyre-editor .ft-heading {
+  font-family: var(--heading-stack);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+.brosjyre-editor .ft-body {
+  font-family: var(--body-stack);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Selection handles */
+.brosjyre-editor .obj-selected { outline: 2px solid #4f8cff; outline-offset: 0; }
+.brosjyre-editor .handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 1.5px solid #4f8cff;
+  border-radius: 2px;
+  z-index: 50;
+}
+
+/* Bleed + safe guides */
+.brosjyre-editor .bleed-guide {
+  position: absolute;
+  pointer-events: none;
+  border: 1px dashed rgba(237, 28, 36, 0.5);
+}
+.brosjyre-editor .safe-guide {
+  position: absolute;
+  pointer-events: none;
+  border: 1px dashed rgba(11, 37, 69, 0.4);
+}
+
+/* Custom scrollbars */
+.brosjyre-editor .chrome-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.brosjyre-editor .chrome-scroll::-webkit-scrollbar-track { background: transparent; }
+.brosjyre-editor .chrome-scroll::-webkit-scrollbar-thumb { background: #2c3142; border-radius: 6px; }
+.brosjyre-editor .chrome-scroll::-webkit-scrollbar-thumb:hover { background: #3a4159; }
+
+/* Buttons (prefiks ft- for å unngå kollisjon med Tailwind/dashboard) */
+.brosjyre-editor .ft-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--chrome-bg-3);
+  color: var(--chrome-text);
+  border: 1px solid var(--chrome-border);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  font-family: var(--body-stack);
+}
+.brosjyre-editor .ft-btn:hover { background: #242a3a; border-color: #353c52; }
+.brosjyre-editor .ft-btn-primary { background: var(--ft-red); color: #fff; border-color: var(--ft-red); }
+.brosjyre-editor .ft-btn-primary:hover { background: #c81620; border-color: #c81620; }
+.brosjyre-editor .ft-btn-ghost { background: transparent; border-color: transparent; }
+.brosjyre-editor .ft-btn-ghost:hover { background: var(--chrome-bg-3); border-color: var(--chrome-border); }
+.brosjyre-editor .ft-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+.brosjyre-editor .ft-input {
+  background: #0c0e14;
+  color: var(--chrome-text);
+  border: 1px solid var(--chrome-border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 12px;
+  width: 100%;
+  font-family: var(--body-stack);
+}
+.brosjyre-editor .ft-input:focus { outline: none; border-color: #4f8cff; }
+.brosjyre-editor .ft-panel-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--chrome-muted);
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 600;
+}
+
+.brosjyre-editor .lib-card { user-select: none; }
+.brosjyre-editor .lib-card:active { cursor: grabbing; }
+
+/* Burst — used inside page renderers */
+.brosjyre-editor .burst-star {
+  background: var(--ft-red);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--heading-stack);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Toggle */
+.brosjyre-editor .ft-toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: #2c3142;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.brosjyre-editor .ft-toggle.on { background: var(--ft-red); }
+.brosjyre-editor .ft-toggle::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: transform .15s;
+}
+.brosjyre-editor .ft-toggle.on::after { transform: translateX(14px); }
+
+/* Smart guides */
+.brosjyre-editor .smart-guide {
+  position: absolute;
+  pointer-events: none;
+  background: #ff3b76;
+  z-index: 60;
+}
+
+/* Print rules — globale */
+@media print {
+  @page { size: A4; margin: 0; }
+  body { background: white !important; }
+  .brosjyre-editor .no-print,
+  .brosjyre-editor .no-print * { display: none !important; }
+  .brosjyre-editor .print-root { display: block !important; }
+  .brosjyre-editor .print-root .page-paper {
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+    margin: 0 !important;
+  }
+  .brosjyre-editor .print-root .page-paper:last-child {
+    page-break-after: auto;
+  }
+}

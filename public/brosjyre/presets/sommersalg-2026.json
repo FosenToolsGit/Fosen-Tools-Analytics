@@ -1,0 +1,1260 @@
+{
+  "id": "doc_9bipmr6",
+  "title": "Fosen Tools — Sommersalg 2026",
+  "paper": "A4P",
+  "tokens": {
+    "red": "#ff6b00",
+    "redCmyk": "#e85f00",
+    "ink": "#111111",
+    "textMain": "#111827",
+    "textBody": "#4b5563",
+    "textMuted": "#6b7280",
+    "link": "#0b2545",
+    "bgPage": "#fff8f0",
+    "cardBg": "#ffffff",
+    "borderSoft": "rgba(148, 163, 184, 0.4)",
+    "shadowSoft": "0 18px 40px rgba(15, 23, 42, 0.16)",
+    "headingFont": "Korolev, Roboto, Arial, Helvetica, sans-serif",
+    "bodyFont": "Roboto, Arial, Helvetica, sans-serif",
+    "showVat": true,
+    "vatRate": 25
+  },
+  "pages": [
+    {
+      "id": "page_nqghea5",
+      "paper": "A4P",
+      "w": 210,
+      "h": 297,
+      "bg": "#ffffff",
+      "objects": [
+        {
+          "id": "obj_cqhpqb9",
+          "type": "shape",
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 297,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_squ6s66",
+          "type": "image",
+          "x": 117,
+          "y": 18,
+          "w": 80,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "src": "/brosjyre/Fosen-Tools_white.svg",
+            "label": "Fosen Tools",
+            "mask": "none",
+            "fit": "contain",
+            "focusX": 0.5,
+            "focusY": 0.5,
+            "tint": null
+          }
+        },
+        {
+          "id": "obj_o5q1q55",
+          "type": "shape",
+          "x": 0,
+          "y": 175,
+          "w": 210,
+          "h": 122,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#0f1115",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_0x0b42n",
+          "type": "shape",
+          "x": 15,
+          "y": 28,
+          "w": 8,
+          "h": 0.6,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#fff",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_9kvow7r",
+          "type": "text",
+          "x": 26,
+          "y": 25,
+          "w": 100,
+          "h": 6,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "FOSEN TOOLS · SOMMERTILBUD",
+            "preset": "h5",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_w38itug",
+          "type": "text",
+          "x": 15,
+          "y": 42,
+          "w": 180,
+          "h": 90,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "SOMMER-\nSALG\n2026.",
+            "preset": "h1",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_bp1g89a",
+          "type": "text",
+          "x": 15,
+          "y": 138,
+          "w": 180,
+          "h": 14,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "INNTIL",
+            "preset": "h3",
+            "align": "left",
+            "color": "rgba(255,255,255,0.7)",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_4abcen1",
+          "type": "text",
+          "x": 15,
+          "y": 148,
+          "w": 180,
+          "h": 28,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "−44 %",
+            "preset": "h1",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_w27ohvz",
+          "type": "text",
+          "x": 15,
+          "y": 190,
+          "w": 180,
+          "h": 12,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "VERKSTEDET KLAR FOR\nSOMMERSESONGEN.",
+            "preset": "h2",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_ok0rbfr",
+          "type": "text",
+          "x": 15,
+          "y": 224,
+          "w": 180,
+          "h": 14,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Mest populære verktøy fra Facom, Milwaukee, Rivit og Rennsteig — sommerprisene gjelder mens lageret rekker.",
+            "preset": "h4",
+            "align": "left",
+            "color": "rgba(255,255,255,0.78)",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_cbn46f9",
+          "type": "shape",
+          "x": 15,
+          "y": 252,
+          "w": 14,
+          "h": 0.8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_xev2jp5",
+          "type": "text",
+          "x": 15,
+          "y": 257,
+          "w": 180,
+          "h": 6,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "01.06 — 31.07.2026",
+            "preset": "h5",
+            "align": "left",
+            "color": "#ff6b00",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_zri46ks",
+          "type": "text",
+          "x": 15,
+          "y": 275,
+          "w": 180,
+          "h": 6,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "fosen-tools.no  ·  72 51 51 20  ·  Brekstad",
+            "preset": "h5",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "page_c6ze8im",
+      "paper": "A4P",
+      "w": 210,
+      "h": 297,
+      "bg": "#ffffff",
+      "objects": [
+        {
+          "id": "obj_6k00ucy",
+          "type": "shape",
+          "x": 15,
+          "y": 18,
+          "w": 14,
+          "h": 0.8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_sltpm68",
+          "type": "text",
+          "x": 15,
+          "y": 24,
+          "w": 180,
+          "h": 14,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "TOPP-DEAL DENNE SOMMEREN",
+            "preset": "h2",
+            "align": "left",
+            "color": "#111",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_zimcyj6",
+          "type": "text",
+          "x": 15,
+          "y": 38,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "42 % rabatt — spar 12 144 kr",
+            "preset": "h4",
+            "align": "left",
+            "color": "#4b5563",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_1l1mqbn",
+          "type": "productCard",
+          "x": 15,
+          "y": 56,
+          "w": 180,
+          "h": 156,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "variant": "hero",
+            "product": {
+              "source_url": "https://fosen-tools.no/facom/125615",
+              "name": "Verktøyvogn 7 Skuffer Inkl.Verktøy",
+              "manufacturer": "Facom",
+              "manufacturer_logo_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/63968/image/d80065c1-aff8-4590-b819-d40dfcc5b182/facom_logo.w240.png?v=638973237755870000",
+              "image_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/67141/image/08bc94aa-874d-4df2-8937-96d9f4f83870/start.m4acm_3.w900.png",
+              "image_placeholder": "FACOM",
+              "price_before": 29134,
+              "price_now": 16990,
+              "discount_pct": 42,
+              "in_stock": true,
+              "category": "Verktøy",
+              "bullets": [
+                "Bred verktøyvogn med 7 skuffer",
+                "Konstruert for høy komfort og enkel manøvrering",
+                "Integrerte kanter hindrer at verktøy faller ned under forflytning",
+                "Vognen leveres ferdig montert med hjul (Ø 125 mm: 2 svingbare med brems…"
+              ]
+            },
+            "showBurst": true,
+            "burstStyle": "star",
+            "burstText": null,
+            "showQR": false,
+            "showStock": true,
+            "showWarranty": false,
+            "vatMode": "ex",
+            "bulletCount": 3,
+            "bgColor": "#ffffff",
+            "accentColor": "#ff6b00"
+          }
+        },
+        {
+          "id": "obj_7tfcakw",
+          "type": "shape",
+          "x": 15,
+          "y": 218,
+          "w": 180,
+          "h": 0.5,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#e5e7eb",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_53ne5mz",
+          "type": "shape",
+          "x": 15,
+          "y": 228,
+          "w": 14,
+          "h": 0.8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_agz5d3z",
+          "type": "text",
+          "x": 15,
+          "y": 233,
+          "w": 80,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "GARANTI",
+            "preset": "h4",
+            "align": "left",
+            "color": "#111",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_khj38th",
+          "type": "text",
+          "x": 15,
+          "y": 243,
+          "w": 80,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Full produsent-garanti.",
+            "preset": "h5",
+            "align": "left",
+            "color": "#4b5563",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_adpmdwu",
+          "type": "shape",
+          "x": 108,
+          "y": 228,
+          "w": 14,
+          "h": 0.8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_3mkh10s",
+          "type": "text",
+          "x": 108,
+          "y": 233,
+          "w": 80,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "LEVERING",
+            "preset": "h4",
+            "align": "left",
+            "color": "#111",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_b9ihvx0",
+          "type": "text",
+          "x": 108,
+          "y": 243,
+          "w": 80,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "1–3 dager fra Brekstad.",
+            "preset": "h5",
+            "align": "left",
+            "color": "#4b5563",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_04okq1m",
+          "type": "contact",
+          "x": 15,
+          "y": 258,
+          "w": 180,
+          "h": 40,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "phone": "72 51 51 20",
+            "email": "post@fosen-tools.no",
+            "address": "Industrigata 1, 7130 Brekstad",
+            "web": "fosen-tools.no",
+            "showMiljofyrtarn": true
+          }
+        },
+        {
+          "id": "obj_8tb68ap",
+          "type": "footer",
+          "x": 0,
+          "y": 287,
+          "w": 210,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "left": "Fosen Tools AS — Sommersalg 2026",
+            "right": "Side 2 / 5",
+            "color": "#6b7280"
+          }
+        }
+      ]
+    },
+    {
+      "id": "page_6iwc9rf",
+      "paper": "A4P",
+      "w": 210,
+      "h": 297,
+      "bg": "#ffffff",
+      "objects": [
+        {
+          "id": "obj_j9z6uri",
+          "type": "shape",
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 24,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#0f1115",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_qdpopii",
+          "type": "shape",
+          "x": 13,
+          "y": 8,
+          "w": 14,
+          "h": 0.8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_urqe0at",
+          "type": "text",
+          "x": 31,
+          "y": 4,
+          "w": 100,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "MEST POPULÆRT",
+            "preset": "h3",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_q9l6epl",
+          "type": "text",
+          "x": 31,
+          "y": 12,
+          "w": 100,
+          "h": 6,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Bestselgerne fra nyhetsbrevet siste 60 dager",
+            "preset": "h5",
+            "align": "left",
+            "color": "rgba(255,255,255,0.6)",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_pg3xs9k",
+          "type": "productCard",
+          "x": 13,
+          "y": 32,
+          "w": 88,
+          "h": 116,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "variant": "standard",
+            "product": {
+              "source_url": "https://fosen-tools.no/facom/125604",
+              "name": "Verktøykoffert 181 Pcs Facom",
+              "manufacturer": "Facom",
+              "manufacturer_logo_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/63968/image/d80065c1-aff8-4590-b819-d40dfcc5b182/facom_logo.w240.png?v=638973237755870000",
+              "image_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/67179/image/601b66a1-ea05-45e0-bb9d-711d03f80655/ecomm_large-bv.gms181pb_5.w900.jpg",
+              "image_placeholder": "FACOM",
+              "price_before": 8918,
+              "price_now": 4990,
+              "discount_pct": 44,
+              "in_stock": true,
+              "category": "Verktøy",
+              "bullets": [
+                "Verktøykoffert med det generelt utvalg av FACOM håndverktøy som dekker…",
+                "187A.18G - Kombinasjonstang, 180 mm",
+                "170A.25 - Justerbar tang, 250 mm",
+                "193A.16G - Spisstang, 160 mm"
+              ]
+            },
+            "showBurst": true,
+            "burstStyle": "star",
+            "burstText": null,
+            "showQR": false,
+            "showStock": true,
+            "showWarranty": false,
+            "vatMode": "ex",
+            "bulletCount": 3,
+            "bgColor": "#ffffff",
+            "accentColor": "#ff6b00"
+          }
+        },
+        {
+          "id": "obj_syh3qke",
+          "type": "productCard",
+          "x": 105,
+          "y": 32,
+          "w": 88,
+          "h": 116,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "variant": "standard",
+            "product": {
+              "source_url": "https://fosen-tools.no/facom/125614",
+              "name": "Verktøyvogn Inkl.Verktøy Facom 7 Skuffer",
+              "manufacturer": "Facom",
+              "manufacturer_logo_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/63968/image/d80065c1-aff8-4590-b819-d40dfcc5b182/facom_logo.w240.png?v=638973237755870000",
+              "image_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/67134/image/703f66bb-275f-4a8c-8608-a441e4d71bcb/start.m3acm2_1.w900.png",
+              "image_placeholder": "FACOM",
+              "price_before": 19326,
+              "price_now": 10990,
+              "discount_pct": 43,
+              "in_stock": true,
+              "category": "Verktøy",
+              "bullets": [
+                "Verktøysvogn med 7 stk skuffer",
+                "3 stk skuffer inkl",
+                "For komfort og enkel manøvrering",
+                "Integrerte kanter hindrer at verktøy faller ned under forflytning"
+              ]
+            },
+            "showBurst": true,
+            "burstStyle": "star",
+            "burstText": null,
+            "showQR": false,
+            "showStock": true,
+            "showWarranty": false,
+            "vatMode": "ex",
+            "bulletCount": 3,
+            "bgColor": "#ffffff",
+            "accentColor": "#ff6b00"
+          }
+        },
+        {
+          "id": "obj_02kpj9c",
+          "type": "productCard",
+          "x": 13,
+          "y": 152,
+          "w": 88,
+          "h": 116,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "variant": "standard",
+            "product": {
+              "source_url": "https://fosen-tools.no/rivit/119362",
+              "name": "Blindmuttertang Pro Riv740 18V Popnut",
+              "manufacturer": "Rivit",
+              "manufacturer_logo_url": null,
+              "image_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/33918/image/def5a2e6-fb26-4640-8ae2-cc97fad96147/6352000_1.w900.jpg",
+              "image_placeholder": "RIVIT",
+              "price_before": 19025,
+              "price_now": 16123,
+              "discount_pct": 15,
+              "in_stock": true,
+              "category": "Verktøy",
+              "bullets": [
+                "BLINDMUTTERTANG PRO RIV740 18V BATTERI POPNUT M3-M12 Batteridrevet…",
+                "Frontstykker inkludert: M3",
+                "Til blindmuttere (Popnut) i aluminium, stål og rustfritt stål",
+                "Lader og 2 stk 18V batteri 2,0Ah med strømindikator - kommer i koffert"
+              ]
+            },
+            "showBurst": true,
+            "burstStyle": "star",
+            "burstText": null,
+            "showQR": false,
+            "showStock": true,
+            "showWarranty": false,
+            "vatMode": "ex",
+            "bulletCount": 3,
+            "bgColor": "#ffffff",
+            "accentColor": "#ff6b00"
+          }
+        },
+        {
+          "id": "obj_muysat2",
+          "type": "productCard",
+          "x": 105,
+          "y": 152,
+          "w": 88,
+          "h": 116,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "variant": "standard",
+            "product": {
+              "source_url": "https://fosen-tools.no/milwaukee/126014",
+              "name": "Popnaglepistol M12 Bprt-0",
+              "manufacturer": "Milwaukee",
+              "manufacturer_logo_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/63996/image/1d6d4b18-940e-4487-bf78-bf8e35812245/milwaukee_logo.svg.w240.png?v=638973251368630000",
+              "image_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/68634/image/1d9b8602-d54a-4fc0-939e-aba920f16e52/m12_bprt-0--hero_1.w900.jpg",
+              "image_placeholder": "MILWAU",
+              "price_before": 4042,
+              "price_now": 3426,
+              "discount_pct": 15,
+              "in_stock": true,
+              "category": "Verktøy",
+              "bullets": [
+                "Kompakt M12™ popnaglepistol som klarer opp til 325 x 4,8 mm rustfrie…",
+                "Til nagler i aluminium, stål, rustfritt stål og kobber fra 2,4 - 4,8 mm",
+                "20,32 mm slaglengde",
+                "Mundstykket holder naglen fast uansett vinkel på pistolen"
+              ]
+            },
+            "showBurst": true,
+            "burstStyle": "star",
+            "burstText": null,
+            "showQR": false,
+            "showStock": true,
+            "showWarranty": false,
+            "vatMode": "ex",
+            "bulletCount": 3,
+            "bgColor": "#ffffff",
+            "accentColor": "#ff6b00"
+          }
+        },
+        {
+          "id": "obj_pg7qvcz",
+          "type": "shape",
+          "x": 13,
+          "y": 273,
+          "w": 60,
+          "h": 0.5,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#e5e7eb",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_azvljvl",
+          "type": "text",
+          "x": 13,
+          "y": 278,
+          "w": 180,
+          "h": 6,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Alle priser eks. mva. Mens lageret rekker.",
+            "preset": "h5",
+            "align": "left",
+            "color": "#9ca3af",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_rvstetz",
+          "type": "footer",
+          "x": 0,
+          "y": 287,
+          "w": 210,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "left": "Fosen Tools AS — Sommersalg 2026",
+            "right": "Side 3 / 5",
+            "color": "#6b7280"
+          }
+        }
+      ]
+    },
+    {
+      "id": "page_zdg8r95",
+      "paper": "A4P",
+      "w": 210,
+      "h": 297,
+      "bg": "#ffffff",
+      "objects": [
+        {
+          "id": "obj_hitn0te",
+          "type": "shape",
+          "x": 15,
+          "y": 18,
+          "w": 14,
+          "h": 0.8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_22vmge9",
+          "type": "text",
+          "x": 15,
+          "y": 24,
+          "w": 180,
+          "h": 14,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "FLERE FAVORITTER",
+            "preset": "h2",
+            "align": "left",
+            "color": "#111",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_2l18cf8",
+          "type": "text",
+          "x": 15,
+          "y": 38,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Også på sommerpris — håndplukket fra dataene.",
+            "preset": "h4",
+            "align": "left",
+            "color": "#4b5563",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_c34htfd",
+          "type": "productCard",
+          "x": 15,
+          "y": 60,
+          "w": 180,
+          "h": 90,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "variant": "compare",
+            "product": {
+              "source_url": "https://fosen-tools.no/rennsteig/122139",
+              "name": "Sentreringskjørner Sett 3 Deler",
+              "manufacturer": "Rennsteig",
+              "manufacturer_logo_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/64031/image/9371ab21-5dcb-4dd9-ad64-a1e40b6cc1a5/rennsteig%2Bkopi.w240.png?v=638973255400230000",
+              "image_url": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/29895/image/f21e3621-ee29-447c-8d41-f148bf616e16/im0026213.w900.jpg",
+              "image_placeholder": "RENNST",
+              "price_before": 2378,
+              "price_now": 2016,
+              "discount_pct": 15,
+              "in_stock": true,
+              "category": "Verktøy",
+              "bullets": [
+                "Justerbare sentreringskjørner sett i 3 deler Høykvalitets automatisk…",
+                "For presis overføring av borehull til andre arbeidsstykker",
+                "Arbeidsprinsippet sikrer presis",
+                "Ensartet innretting av den slissede sentreringshylsen på prøveemnet…"
+              ]
+            },
+            "showBurst": true,
+            "burstStyle": "star",
+            "burstText": null,
+            "showQR": false,
+            "showStock": true,
+            "showWarranty": false,
+            "vatMode": "ex",
+            "bulletCount": 3,
+            "bgColor": "#ffffff",
+            "accentColor": "#ff6b00"
+          }
+        },
+        {
+          "id": "obj_m7sgthq",
+          "type": "shape",
+          "x": 15,
+          "y": 258,
+          "w": 60,
+          "h": 0.5,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#e5e7eb",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_60a8yt2",
+          "type": "text",
+          "x": 15,
+          "y": 263,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Begge produkter har full produsent-garanti og leveres lagerført fra Brekstad.",
+            "preset": "h5",
+            "align": "left",
+            "color": "#6b7280",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_rpmpcrq",
+          "type": "footer",
+          "x": 0,
+          "y": 287,
+          "w": 210,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "left": "Fosen Tools AS — Sommersalg 2026",
+            "right": "Side 4 / 5",
+            "color": "#6b7280"
+          }
+        }
+      ]
+    },
+    {
+      "id": "page_m28s3ak",
+      "paper": "A4P",
+      "w": 210,
+      "h": 297,
+      "bg": "#ffffff",
+      "objects": [
+        {
+          "id": "obj_0sotnws",
+          "type": "shape",
+          "x": 0,
+          "y": 0,
+          "w": 210,
+          "h": 297,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#ff6b00",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_bl7wsve",
+          "type": "shape",
+          "x": 0,
+          "y": 0,
+          "w": 105,
+          "h": 165,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "rgba(0,0,0,0.08)",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_oqt9jzn",
+          "type": "image",
+          "x": 15,
+          "y": 20,
+          "w": 120,
+          "h": 12,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "src": "/brosjyre/Fosen-Tools_white.svg",
+            "label": "Fosen Tools",
+            "mask": "none",
+            "fit": "contain",
+            "focusX": 0.5,
+            "focusY": 0.5,
+            "tint": null
+          }
+        },
+        {
+          "id": "obj_njd5kau",
+          "type": "text",
+          "x": 15,
+          "y": 40,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "TA TUREN INNOM",
+            "preset": "h5",
+            "align": "left",
+            "color": "rgba(255,255,255,0.7)",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_zvv3i3d",
+          "type": "shape",
+          "x": 15,
+          "y": 50,
+          "w": 14,
+          "h": 0.8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "#fff",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_gilu1l3",
+          "type": "text",
+          "x": 15,
+          "y": 58,
+          "w": 180,
+          "h": 70,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "INDUSTRI-\nGATA 1\nBREKSTAD.",
+            "preset": "h1",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_je6y8gs",
+          "type": "shape",
+          "x": 15,
+          "y": 175,
+          "w": 60,
+          "h": 0.5,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "rgba(255,255,255,0.4)",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_hsns41u",
+          "type": "text",
+          "x": 15,
+          "y": 182,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "ÅPNINGSTIDER (sommer)",
+            "preset": "h5",
+            "align": "left",
+            "color": "rgba(255,255,255,0.7)",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_12tha1o",
+          "type": "text",
+          "x": 15,
+          "y": 192,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Man – fre   07:30 – 16:00",
+            "preset": "h3",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_v9peogb",
+          "type": "text",
+          "x": 15,
+          "y": 215,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "KONTAKT",
+            "preset": "h5",
+            "align": "left",
+            "color": "rgba(255,255,255,0.7)",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_5ycj791",
+          "type": "text",
+          "x": 15,
+          "y": 225,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "72 51 51 20",
+            "preset": "h2",
+            "align": "left",
+            "color": "#fff",
+            "weight": 900,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_dgan7kf",
+          "type": "text",
+          "x": 15,
+          "y": 245,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "post@fosen-tools.no  ·  fosen-tools.no",
+            "preset": "h4",
+            "align": "left",
+            "color": "#fff",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        },
+        {
+          "id": "obj_myqf9dg",
+          "type": "shape",
+          "x": 15,
+          "y": 270,
+          "w": 14,
+          "h": 0.5,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "shape": "rect",
+            "fill": "rgba(255,255,255,0.4)",
+            "stroke": "none",
+            "strokeW": 0,
+            "radius": 0
+          }
+        },
+        {
+          "id": "obj_cbtnki0",
+          "type": "text",
+          "x": 15,
+          "y": 275,
+          "w": 180,
+          "h": 8,
+          "rot": 0,
+          "locked": false,
+          "props": {
+            "content": "Fosen Tools AS — del av 100-årig industrikonsern · 25 år i 2026",
+            "preset": "h5",
+            "align": "left",
+            "color": "rgba(255,255,255,0.65)",
+            "weight": 400,
+            "italic": false,
+            "isHeading": true
+          }
+        }
+      ]
+    }
+  ],
+  "assets": []
+}
