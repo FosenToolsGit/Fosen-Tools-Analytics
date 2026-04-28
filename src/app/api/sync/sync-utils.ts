@@ -94,8 +94,12 @@ export async function syncPlatform(
       recordsSynced += metrics.length;
     }
 
-    // Fetch and upsert posts
-    const posts = await service.fetchTopPosts(50);
+    // Fetch and upsert posts.
+    // GA4 trenger mye høyere grense fordi hver "post" er en sidesti — vi vil
+    // fange opp individuelle produktsider for brosjyre-editoren.
+    // Meta/Mailchimp har færre, ekte poster/kampanjer — 50 holder.
+    const postLimit = platform === "ga4" ? 500 : 50;
+    const posts = await service.fetchTopPosts(postLimit);
 
     if (posts.length > 0) {
       // Dedupliser på (platform, platform_post_id) før upsert.

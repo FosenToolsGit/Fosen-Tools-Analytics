@@ -32,8 +32,11 @@ import {
   Calendar,
   Rocket,
   Tag as TagIcon,
+  PenTool,
   ChevronDown,
   ChevronRight,
+  FileSearch,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { LucideIcon } from "lucide-react";
@@ -45,31 +48,48 @@ interface NavChild {
 }
 
 interface NavItem {
+  kind?: "item";
   label: string;
   href: string;
   icon: LucideIcon;
   children?: NavChild[];
 }
 
-const navItems: NavItem[] = [
+interface NavSection {
+  kind: "section";
+  label: string;
+}
+
+type NavEntry = NavItem | NavSection;
+
+const navItems: NavEntry[] = [
+  // ── Daglig ──────────────────────────────────────
   { label: "Oversikt", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Attribusjon", href: "/attribution", icon: GitBranch },
-  { label: "Kundereise", href: "/kundereise", icon: Route },
+  { label: "Mandagsmøte", href: "/mandagsmote", icon: CalendarCheck },
+  { label: "Varsler", href: "/varsler", icon: Bell },
+
+  // ── Analyse ─────────────────────────────────────
+  { kind: "section", label: "Analyse" },
   {
     label: "Innsikt",
     href: "/innsikt/ukesrapport",
     icon: Lightbulb,
     children: [
       { label: "Ukesrapport", href: "/innsikt/ukesrapport", icon: CalendarCheck },
+      { label: "Attribusjon", href: "/attribution", icon: GitBranch },
+      { label: "Kundereise", href: "/kundereise", icon: Route },
       { label: "Innholds-ROI", href: "/innsikt/innhold-roi", icon: BarChart3 },
       { label: "Geo-intelligens", href: "/innsikt/geo", icon: Globe2 },
       { label: "Budsjett-sim", href: "/innsikt/budsjett", icon: Calculator },
       { label: "SEO-muligheter", href: "/innsikt/seo", icon: Search },
+      { label: "Indeksering", href: "/innsikt/indeksering", icon: FileSearch },
       { label: "Vekstmuligheter", href: "/innsikt/vekst", icon: Rocket },
       { label: "Kalender", href: "/innsikt/kalender", icon: Calendar },
     ],
   },
-  { label: "Varsler", href: "/varsler", icon: Bell },
+
+  // ── Plattformer ─────────────────────────────────
+  { kind: "section", label: "Plattformer" },
   {
     label: "Google Analytics",
     href: "/platform/ga4",
@@ -78,20 +98,53 @@ const navItems: NavItem[] = [
       { label: "Søkeord", href: "/ga4/sokeord", icon: Search },
       { label: "Geografi", href: "/ga4/geografi", icon: MapPin },
       { label: "Trafikkilder", href: "/ga4/trafikkilder", icon: ArrowUpRight },
-      { label: "Google Ads (via GA4)", href: "/ga4/annonser", icon: Megaphone },
-      { label: "Google Ads (direkte)", href: "/ga4/google-ads", icon: Megaphone },
-      { label: "Ads: Analyse", href: "/ga4/google-ads/analyse", icon: Brain },
       { label: "Konkurrenter", href: "/ga4/konkurrenter", icon: Swords },
+    ],
+  },
+  {
+    label: "Google Ads",
+    href: "/ga4/google-ads",
+    icon: Megaphone,
+    children: [
+      { label: "Kampanjer (direkte)", href: "/ga4/google-ads", icon: Megaphone },
+      { label: "ROAS-analyse", href: "/ga4/google-ads/analyse", icon: Brain },
+      { label: "Via GA4-attribusjon", href: "/ga4/annonser", icon: Megaphone },
     ],
   },
   { label: "Meta", href: "/platform/meta", icon: Share2 },
   { label: "Mailchimp", href: "/platform/mailchimp", icon: Mail },
   { label: "LinkedIn", href: "/platform/linkedin", icon: Briefcase },
-  { label: "Innlegg", href: "/posts", icon: FileText },
-  { label: "Søkeord-generator", href: "/sokeord-generator", icon: Sparkles },
-  { label: "Søkeord: Intelligens", href: "/sokeord-generator/intelligens", icon: Brain },
-  { label: "Søkeord: Auto-actions", href: "/sokeord-generator/auto-actions", icon: ShieldOff },
-  { label: "Søkeord: Rapporter", href: "/sokeord-generator/rapporter", icon: FileSpreadsheet },
+
+  // ── Innhold ─────────────────────────────────────
+  { kind: "section", label: "Innhold" },
+  {
+    label: "Innlegg",
+    href: "/posts",
+    icon: FileText,
+    children: [
+      { label: "Alle innlegg", href: "/posts", icon: FileText },
+      { label: "Bygger: Sosiale medier", href: "/innleggsbygger/sosiale", icon: PenTool },
+      { label: "Bygger: Nyhetsbrev", href: "/innleggsbygger/nyhetsbrev", icon: Mail },
+    ],
+  },
+  { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
+
+  // ── Søkeord ─────────────────────────────────────
+  { kind: "section", label: "Søkeord" },
+  {
+    label: "Søkeord",
+    href: "/sokeord-generator/intelligens",
+    icon: Sparkles,
+    children: [
+      { label: "Intelligens", href: "/sokeord-generator/intelligens", icon: Brain },
+      { label: "Generator (Excel)", href: "/sokeord-generator", icon: FileSpreadsheet },
+      { label: "Auto-actions", href: "/sokeord-generator/auto-actions", icon: ShieldOff },
+      { label: "Rapporter", href: "/sokeord-generator/rapporter", icon: FileSpreadsheet },
+    ],
+  },
+
+  // ── Admin ───────────────────────────────────────
+  { kind: "section", label: "Admin" },
   { label: "Tags", href: "/tags", icon: TagIcon },
   { label: "Innstillinger", href: "/settings", icon: Settings },
 ];
@@ -101,15 +154,32 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+function isSection(entry: NavEntry): entry is NavSection {
+  return entry.kind === "section";
+}
+
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
 
+  const isGoogleAdsActive =
+    pathname.startsWith("/ga4/google-ads") || pathname === "/ga4/annonser";
   const isGA4Active =
-    pathname.startsWith("/ga4/") || pathname === "/platform/ga4";
-  const isInnsiktActive = pathname.startsWith("/innsikt/");
+    !isGoogleAdsActive &&
+    (pathname.startsWith("/ga4/") || pathname === "/platform/ga4");
+  const isInnsiktActive =
+    pathname.startsWith("/innsikt/") ||
+    pathname === "/attribution" ||
+    pathname === "/kundereise";
+  const isInnleggActive =
+    pathname === "/posts" || pathname.startsWith("/innleggsbygger/");
+  const isSokeordActive = pathname.startsWith("/sokeord-generator");
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     "/platform/ga4": isGA4Active,
+    "/ga4/google-ads": isGoogleAdsActive,
     "/innsikt/ukesrapport": isInnsiktActive,
+    "/posts": isInnleggActive,
+    "/sokeord-generator/intelligens": isSokeordActive,
   });
   const toggleExpanded = (href: string) =>
     setExpanded((prev) => ({ ...prev, [href]: !prev[href] }));
@@ -149,8 +219,19 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {navItems.map((entry, idx) => {
+            if (isSection(entry)) {
+              return (
+                <div
+                  key={`section-${idx}`}
+                  className="px-3 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600"
+                >
+                  {entry.label}
+                </div>
+              );
+            }
+            const item = entry;
             const isActive =
               pathname === item.href ||
               (item.href !== "/dashboard" &&
