@@ -7,6 +7,7 @@ interface PostROI {
   title: string;
   published_at: string;
   post_type: string | null;
+  post_url: string | null;
   engagement: { likes: number; comments: number; shares: number; clicks: number };
   traffic_before: number;
   traffic_after: number;
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: postsRaw } = await supabase
       .from("platform_posts")
-      .select("id, platform, title, published_at, post_type, likes, comments, shares, clicks, impressions, reach")
+      .select("id, platform, title, published_at, post_type, post_url, likes, comments, shares, clicks, impressions, reach")
       .gte("published_at", from)
       .lte("published_at", to)
       .order("published_at", { ascending: false })
@@ -129,6 +130,7 @@ export async function GET(request: NextRequest) {
         title: post.title || "(uten tittel)",
         published_at: pubStr,
         post_type: post.post_type,
+        post_url: post.post_url ?? null,
         engagement: {
           likes: Number(post.likes) || 0,
           comments: Number(post.comments) || 0,
