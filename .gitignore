@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Service account keys (Google / Supabase / etc.)
+fosen-tools-analytics-*.json
+*-credentials.json
+*-service-account*.json
+
+# Lokale arbeidsfiler (ikke kode)
+/Fosen Tools Brosjyre/
+/Fosen Tools Nettside Utsende/
+
+# Generert sitemap (publiseres separat)
+/sitemap.xml
