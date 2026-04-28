@@ -110,14 +110,19 @@ async function detectPlatformAnomalies(
     for (const metric of metrics) {
       const currVal = curr[metric];
       const prevVal = prev[metric];
-      // Trenger minimum volum for å unngå støy
-      if (prevVal < 30 && currVal < 30) continue;
+      // Trenger minimum volum for å unngå støy fra små svingninger
+      if (prevVal < 100 && currVal < 100) continue;
       if (prevVal === 0) continue;
       const delta = (currVal - prevVal) / prevVal;
-      if (Math.abs(delta) < 0.4) continue; // Under 40% er ikke interessant
+      if (Math.abs(delta) < 0.5) continue; // Under 50% er ikke interessant
 
-      const severity: AnomalySeverity =
-        Math.abs(delta) >= 0.7 ? "critical" : "warning";
+      // Nedganger er warnings/critical, oppganger er info (mulighet, ikke alarm)
+      let severity: AnomalySeverity;
+      if (delta < 0) {
+        severity = Math.abs(delta) >= 1.0 ? "critical" : "warning";
+      } else {
+        severity = "info";
+      }
       const direction = delta > 0 ? "økt" : "falt";
       const pct = Math.abs(delta * 100).toFixed(0);
 
