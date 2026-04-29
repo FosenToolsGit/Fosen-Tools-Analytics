@@ -675,12 +675,30 @@ Alltid inkluder:
 
 Svarene (200-400 tegn) skal flette inn produktnumre + Fosen Tools-referanser (CADLAB, HDFI, Brekstad-lager).
 
-### Status per 25. april 2026
+### Tekst-regler for INTRO og FAQ
 
-- **Ferdig (full 5-blokk-struktur + JSON-LD):** Pelicase, Stahlwille (video-hero), Fosen Tools, Fosen Tools Custom, Wera, **Leatherman**, **Mitutoyo** (4-blokk, ingen kategorigrid), **Ledlenser**, **Mora of Sweden** (4-blokk, ingen kategorigrid), **Hellberg** (egen tilpasset struktur med produkt-carousels + FAQ + CTA + JSON-LD), **Snap-on**, **FACOM** (video-hero med 2-slide carousel), **Knipex**, **PB Swiss Tools**
+- **IKKE inkluder konkrete kategori-tellinger eller produkt-tall** i INTRO-tekst eller FAQ-svar (f.eks. "6 skrustikker", "17 trappestiger", "26 HEUER-artikler på lager"). Kategori-filteringen i Multicase er ikke alltid komplett — produkter kan mangle filter-tagging eller ligge på flere kategorier samtidig — så tallene blir feil eller endres uforutsigbart. Beskriv produktområdene generelt ("skrustikker i ulike størrelser", "et utvalg av sortimentet").
+- **OK med tall i kategorigrid-labels?** Nei — kategorigrid skal også være uten produkt-antall i parentes (allerede dokumentert lenger oppe).
+- **Modellnavn er OK** når de er stabile (f.eks. "Standard, Front Modular, Profi" for HEUER) — så lenge de ikke binder seg til antall.
+
+### Status per 29. april 2026
+
+- **Ferdig (full 5-blokk-struktur + JSON-LD):** Pelicase, Stahlwille (video-hero), Fosen Tools, Fosen Tools Custom, Wera, Leatherman, Mitutoyo (4-blokk, ingen kategorigrid), Ledlenser, Mora of Sweden (4-blokk, ingen kategorigrid), Hellberg (egen tilpasset struktur med produkt-carousels + FAQ + CTA + JSON-LD), Snap-on, FACOM (video-hero med 2-slide carousel), Knipex, PB Swiss Tools, **KC Tools, Gedore, Zarges, Brockhaus HEUER (video-hero), Milwaukee, Fluke, Rennsteig, Bahco, Gigant, Solid Gear (4-blokk, ingen kategorigrid)** — sistnevnte 10 publisert 29. april, alle indeksering forespurt i GSC samme dag.
 - **Custom-side ferdig med JSON-LD + FAQ (bruker setter meta selv):** HDFI — kjører på egen side-struktur (`ft-section`, `ft-wrap`) ikke produsent-template. Har fortsatt suggested H1-endring til "HDFI — verktøykontroll med gravert silhuett" som bruker kan vurdere.
-- **Kun hero-blokk publisert (trenger fortsatt intro + kategorigrid + FAQ + CTA + JSON-LD):** Gedore, KC Tools, Viking Arm, Brockhaus Heuer (video-hero), Lista AG
-- **Anbefalt neste prioritet:** KC Tools (325 produkter, nest største katalog), Viking Arm (norsk oppfinnelse — stor SEO-verdi), Gedore, Brockhaus Heuer, Lista AG
+- **Kun hero-blokk publisert (trenger fortsatt intro + kategorigrid + FAQ + CTA + JSON-LD):** Viking Arm, Lista AG
+- **Anbefalt neste prioritet:** Viking Arm (norsk oppfinnelse — stor SEO-verdi), Bondhus, Hultafors, Husqvarna, Sumake, og Lista AG. Vurder også å bytte til kategori-sider (`/produkter/verktøyvogner` har 57 sess/mnd uten SEO-arbeid, større trafikk-løft enn flere små produsenter).
+- **Hoppes over som lav-prioritet:** Karlstad Redskap, Red Rooster (avklart 29. april).
+
+### Stor SEO-dag 29. april 2026
+
+**10 produsent-sider bygget på én dag:** KC Tools, Gedore, Zarges, Brockhaus HEUER, Milwaukee, Fluke, Rennsteig, Bahco, Gigant, Solid Gear. Alle har full 5-blokk-struktur (Solid Gear og Brockhaus HEUER med tilpasninger), og indeksering ble forespurt på alle via Google Search Console URL-inspeksjon.
+
+**Tonal/strukturelle nyheter denne dagen:**
+- KC Tools, Bahco: skandinavisk/svensk håndverkstradisjon med spesielt fokus på "oppfinneren" (Bahco = JP Johansson, 1892-skiftenøkkelen)
+- Brockhaus HEUER: bevart eksisterende video-hero, lagt til separat META + JSON-LD-blokk
+- Gigant: "Würth-gruppen"-tilknytning som trygghetssignal i INTRO
+- Solid Gear: 4-blokk uten kategorigrid (samme mønster som Mitutoyo, Mora)
+- Milwaukee: dypdykket i M12/M18/MX FUEL-økosystem som SEO-vinkel
 
 ### Stor SEO-økt 24.–25. april 2026
 
