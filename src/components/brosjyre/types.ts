@@ -143,6 +143,17 @@ export interface GalleryProps {
   gap: number;
 }
 
+export interface ComboCardProps {
+  productA: Product;
+  productB: Product;
+  comboPrice: number;
+  comboLabel: string;
+  vatMode: VatMode;
+  bgColor: string;
+  accentColor: string | null;
+  showSavings: boolean;
+}
+
 // Discriminated union for objects
 export type PageObject =
   | { id: string; type: "productCard"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: ProductCardProps }
@@ -154,7 +165,8 @@ export type PageObject =
   | { id: string; type: "shape"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: ShapeProps }
   | { id: string; type: "contact"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: ContactProps }
   | { id: string; type: "footer"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: FooterProps }
-  | { id: string; type: "gallery"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: GalleryProps };
+  | { id: string; type: "gallery"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: GalleryProps }
+  | { id: string; type: "comboCard"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: ComboCardProps };
 
 export type ObjectType = PageObject["type"];
 
@@ -199,7 +211,8 @@ export type LibPayload =
   | { kind: "shape" }
   | { kind: "divider" }
   | { kind: "contact" }
-  | { kind: "gallery" };
+  | { kind: "gallery" }
+  | { kind: "comboCard"; productA?: Product; productB?: Product; comboPrice?: number };
 
 // Template definition
 export interface Template {

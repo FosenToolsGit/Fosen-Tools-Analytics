@@ -236,6 +236,34 @@ export const makeGallery = (x = 10, y = 40, w = 190, h = 230): PageObject => ({
   props: { cols: 3, products: DUMMY_PRODUCTS.slice(0, 6), gap: 4 },
 });
 
+export const makeComboCard = (
+  productA?: Product,
+  productB?: Product,
+  comboPrice?: number,
+  x = 20,
+  y = 20
+): PageObject => {
+  const a = productA || DUMMY_PRODUCTS[0];
+  const b = productB || DUMMY_PRODUCTS[1] || DUMMY_PRODUCTS[0];
+  const sumNow = (a?.price_now || 0) + (b?.price_now || 0);
+  const defaultCombo = comboPrice ?? Math.round(sumNow * 0.85);
+  return {
+    id: uid("obj"),
+    type: "comboCard",
+    x, y, w: 140, h: 100, rot: 0, locked: false,
+    props: {
+      productA: a,
+      productB: b,
+      comboPrice: defaultCombo,
+      comboLabel: "KOMBI-PRIS",
+      vatMode: "ex",
+      bgColor: "#ffffff",
+      accentColor: null,
+      showSavings: true,
+    },
+  };
+};
+
 // ---------------- Default dokument ----------------
 export function makeBlankPage(paper: PaperId = "A4P", index = 0): Page {
   const sz = PAPER_SIZES[paper];

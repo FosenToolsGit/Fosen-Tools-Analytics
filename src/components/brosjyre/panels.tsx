@@ -125,6 +125,7 @@ function ComponentsTab() {
         <LibCard label="Kompakt" hint="60×70 mm — 6-grid" parsed={{ kind: "productCard", variant: "compact" }} />
         <LibCard label="Hero" hint="180×240 mm — fullside" parsed={{ kind: "productCard", variant: "hero" }} />
         <LibCard label="Sammenligning" hint="170×90 mm horisontal" parsed={{ kind: "productCard", variant: "compare" }} />
+        <LibCard label="Kombi-kort (2 produkter)" hint="140×100 mm — kombinert pris" parsed={{ kind: "comboCard" }} />
       </Section>
       <Section title="Pris & rabatt">
         <LibCard label="Pris-blokk" parsed={{ kind: "priceBlock" }} />
@@ -765,6 +766,56 @@ function TypeSpecificProps({ obj, updateProps, store }: { obj: PageObject; updat
           <NumberField label="Pris nå" value={p.priceNow} onChange={(v) => updateProps({ priceNow: v })} suffix="kr" />
           <SelectField label="MVA" value={p.vatMode} onChange={(v) => updateProps({ vatMode: v })} options={[{ value: "ex", label: "Eks. mva" }, { value: "inc", label: "Inkl. mva" }]} />
           <SelectField label="Strikethrough" value={p.strikeStyle} onChange={(v) => updateProps({ strikeStyle: v })} options={["diagonal", "horizontal"]} />
+        </>
+      );
+    }
+    case "comboCard": {
+      const p = obj.props;
+      const sumNow = (p.productA?.price_now || 0) + (p.productB?.price_now || 0);
+      const savings = Math.max(0, sumNow - (p.comboPrice || 0));
+      return (
+        <>
+          <Field label="Etikett (badge øverst)">
+            <input className="ft-input" value={p.comboLabel} onChange={(e) => updateProps({ comboLabel: e.target.value })} placeholder="KOMBI-PRIS" />
+          </Field>
+
+          <div style={{ padding: 8, background: "var(--chrome-bg-3)", borderRadius: 4, marginTop: 8, marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: "var(--chrome-muted)", textTransform: "uppercase", marginBottom: 4 }}>Produkt A</div>
+            <Field label="Velg fra dummy-katalog">
+              <select className="ft-input" value={p.productA?.source_url || ""} onChange={(e) => {
+                const found = DUMMY_PRODUCTS.find(pp => pp.source_url === e.target.value);
+                if (found) updateProps({ productA: found });
+              }}>
+                {DUMMY_PRODUCTS.map(pp => <option key={pp.source_url} value={pp.source_url}>{pp.manufacturer} — {pp.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Navn"><input className="ft-input" value={p.productA?.name || ""} onChange={(e) => updateProps({ productA: { ...p.productA, name: e.target.value } })} /></Field>
+            <NumberField label="Pris nå (A)" value={p.productA?.price_now} onChange={(v) => updateProps({ productA: { ...p.productA, price_now: v } })} suffix="kr" />
+          </div>
+
+          <div style={{ padding: 8, background: "var(--chrome-bg-3)", borderRadius: 4, marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: "var(--chrome-muted)", textTransform: "uppercase", marginBottom: 4 }}>Produkt B</div>
+            <Field label="Velg fra dummy-katalog">
+              <select className="ft-input" value={p.productB?.source_url || ""} onChange={(e) => {
+                const found = DUMMY_PRODUCTS.find(pp => pp.source_url === e.target.value);
+                if (found) updateProps({ productB: found });
+              }}>
+                {DUMMY_PRODUCTS.map(pp => <option key={pp.source_url} value={pp.source_url}>{pp.manufacturer} — {pp.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Navn"><input className="ft-input" value={p.productB?.name || ""} onChange={(e) => updateProps({ productB: { ...p.productB, name: e.target.value } })} /></Field>
+            <NumberField label="Pris nå (B)" value={p.productB?.price_now} onChange={(v) => updateProps({ productB: { ...p.productB, price_now: v } })} suffix="kr" />
+          </div>
+
+          <NumberField label="Kombi-pris" value={p.comboPrice} onChange={(v) => updateProps({ comboPrice: v })} suffix="kr" />
+          <div style={{ fontSize: 10, color: "var(--chrome-muted)", marginTop: -2, marginBottom: 6 }}>
+            Sum hver-for-seg: {sumNow.toLocaleString("nb-NO")} kr · Kunde sparer: {savings.toLocaleString("nb-NO")} kr
+          </div>
+
+          <SelectField label="MVA" value={p.vatMode} onChange={(v) => updateProps({ vatMode: v })} options={[{ value: "ex", label: "Eks. mva" }, { value: "inc", label: "Inkl. mva" }]} />
+          <ToggleField label="Vis spar-stempel" value={p.showSavings} onChange={(v) => updateProps({ showSavings: v })} />
+          <ColorField label="Aksent (overstyr brand)" value={p.accentColor || ""} onChange={(v) => updateProps({ accentColor: v || null })} />
+          <ColorField label="Bakgrunn" value={p.bgColor} onChange={(v) => updateProps({ bgColor: v })} />
         </>
       );
     }

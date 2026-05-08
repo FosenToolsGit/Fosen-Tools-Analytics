@@ -17,6 +17,7 @@ import type {
   FooterProps,
   GalleryProps,
   ProductCardProps,
+  ComboCardProps,
   BrandTokens,
 } from "./types";
 import { MM_TO_PX, formatNOK, DEFAULT_TOKENS } from "./store";
@@ -735,6 +736,94 @@ function GalleryObj({ props, ctx }: { props: GalleryProps; ctx: RendererCtx }) {
   );
 }
 
+// ---------------- Kombi-kort (2 produkter, kombinert pris) ----------------
+function ComboCard({ props, ctx }: { props: ComboCardProps; ctx: RendererCtx }) {
+  const { productA, productB, comboPrice, comboLabel, vatMode, bgColor, accentColor, showSavings } = props;
+  const accent = accentColor || ctx.tokens.red;
+  const sumNow = (productA?.price_now || 0) + (productB?.price_now || 0);
+  const savings = Math.max(0, sumNow - (comboPrice || 0));
+  const monoA = monoFor(productA);
+  const monoB = monoFor(productB);
+
+  const Plus = () => (
+    <div style={{
+      width: 24, height: 24, borderRadius: "50%", background: accent,
+      color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 16, fontWeight: 700, flexShrink: 0,
+    }}>+</div>
+  );
+
+  return (
+    <div className="ft-body" style={{
+      width: "100%", height: "100%", background: bgColor || "#fff",
+      border: `1px solid ${ctx.tokens.borderSoft}`, borderRadius: 4,
+      display: "grid", gridTemplateRows: "auto 1fr auto", overflow: "hidden", position: "relative",
+    }}>
+      <div style={{
+        padding: "2.5% 4%", background: accent, color: "#fff",
+        fontSize: "0.78em", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+      }}>{comboLabel || "KOMBI-PRIS"}</div>
+
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr auto 1fr",
+        gap: "2%", padding: "3.5% 4%", alignItems: "center",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+          <div style={{ aspectRatio: "1.5 / 1", background: "#f5f7fa", borderRadius: 3, overflow: "hidden" }}>
+            <ProductImage src={productA?.image_url} mono={monoA} label={productA?.image_placeholder} fit="contain" />
+          </div>
+          <ManufacturerBadge product={productA} accent={accent} heightEm={0.7} />
+          <div className="ft-heading" style={{
+            fontSize: "0.85em", color: "#111", lineHeight: 1.15,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>{productA?.name}</div>
+          <div style={{ fontSize: "0.75em", color: "#6b7280" }}>{formatNOK(productA?.price_now)}</div>
+        </div>
+
+        <Plus />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+          <div style={{ aspectRatio: "1.5 / 1", background: "#f5f7fa", borderRadius: 3, overflow: "hidden" }}>
+            <ProductImage src={productB?.image_url} mono={monoB} label={productB?.image_placeholder} fit="contain" />
+          </div>
+          <ManufacturerBadge product={productB} accent={accent} heightEm={0.7} />
+          <div className="ft-heading" style={{
+            fontSize: "0.85em", color: "#111", lineHeight: 1.15,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>{productB?.name}</div>
+          <div style={{ fontSize: "0.75em", color: "#6b7280" }}>{formatNOK(productB?.price_now)}</div>
+        </div>
+      </div>
+
+      <div style={{
+        display: "flex", alignItems: "baseline", justifyContent: "space-between",
+        padding: "3% 4%", borderTop: `1px solid ${ctx.tokens.borderSoft}`, background: "#fafbfc",
+        gap: 8,
+      }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ fontSize: "0.65em", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", lineHeight: 1 }}>Samlet</div>
+          <div className="ft-heading" style={{ fontSize: "1.6em", color: accent, lineHeight: 1.05, marginTop: 2 }}>
+            {formatNOK(comboPrice)}
+          </div>
+          <div style={{ fontSize: "0.6em", color: "#9ca3af", marginTop: 1 }}>
+            {vatMode === "inc" ? "Inkl. mva" : "Eks. mva"}
+          </div>
+        </div>
+        {showSavings && savings > 0 && (
+          <div style={{
+            display: "inline-flex", flexDirection: "column", alignItems: "center",
+            background: accent, color: "#fff", padding: "5px 10px", borderRadius: 3,
+            transform: "rotate(-3deg)", flexShrink: 0,
+          }}>
+            <div style={{ fontSize: "0.55em", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", lineHeight: 1 }}>SPAR</div>
+            <div className="ft-heading" style={{ fontSize: "1.05em", lineHeight: 1.1, marginTop: 1 }}>{formatNOK(savings)}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ---------------- Master switch ----------------
 export function ObjectRenderer({ obj, tokens }: { obj: PageObject; tokens?: BrandTokens }) {
   const ctx: RendererCtx = { tokens: tokens ?? DEFAULT_TOKENS };
@@ -749,6 +838,7 @@ export function ObjectRenderer({ obj, tokens }: { obj: PageObject; tokens?: Bran
     case "footer":      return <FooterObj props={obj.props} ctx={ctx} />;
     case "contact":     return <ContactObj props={obj.props} ctx={ctx} />;
     case "gallery":     return <GalleryObj props={obj.props} ctx={ctx} />;
+    case "comboCard":   return <ComboCard props={obj.props} ctx={ctx} />;
   }
   return <div style={{ width: "100%", height: "100%", background: "#fee", color: "#900", padding: 6, fontSize: "0.9em" }}>Ukjent objekt</div>;
 }

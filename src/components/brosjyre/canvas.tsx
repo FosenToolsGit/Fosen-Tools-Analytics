@@ -20,6 +20,7 @@ import {
   makeDivider,
   makeContact,
   makeGallery,
+  makeComboCard,
 } from "./store";
 import { ObjectRenderer } from "./object-renderer";
 
@@ -67,6 +68,8 @@ export function makeFromLib(parsed: LibPayload, x: number, y: number): PageObjec
       return makeContact(x, y);
     case "gallery":
       return makeGallery(x, y);
+    case "comboCard":
+      return makeComboCard(parsed.productA, parsed.productB, parsed.comboPrice, x, y);
     default:
       return null;
   }
