@@ -149,9 +149,9 @@ async function fetchKeywordVolumes(keywords: string[]): Promise<Map<string, { vo
   if (keywords.length === 0) return out;
   try {
     const planner = new KeywordPlannerService();
-    const status = await planner.checkStatus();
+    const status = await planner.checkAccess();
     if (!status.available) return out;
-    const ideas = await planner.generateKeywordIdeas(keywords.slice(0, 20), { language: "1013", location: "2578" });
+    const ideas = await planner.getIdeas(keywords.slice(0, 20));
     for (const idea of ideas) {
       out.set(idea.text.toLowerCase(), {
         volume: idea.avg_monthly_searches,
