@@ -5,13 +5,21 @@ import { PLATFORM_KEYS } from "@/lib/utils/platforms";
 import { syncPlatform } from "./sync-utils";
 import { syncGoogleAds } from "./google-ads-sync";
 
+export async function GET(request: NextRequest) {
+  return POST(request);
+}
+
 export async function POST(request: NextRequest) {
-  // Check auth: either session or SYNC_SECRET_KEY
+  // Check auth: session, SYNC_SECRET_KEY (manual curl), or CRON_SECRET (Vercel cron)
   const authHeader = request.headers.get("authorization");
   const syncSecret = process.env.SYNC_SECRET_KEY;
+  const cronSecret = process.env.CRON_SECRET;
+  const isCronOrSecret =
+    authHeader === `Bearer ${syncSecret}` ||
+    (cronSecret && authHeader === `Bearer ${cronSecret}`);
 
-  if (authHeader === `Bearer ${syncSecret}`) {
-    // Cron-triggered sync
+  if (isCronOrSecret) {
+    // Cron-triggered or secret-token sync
   } else {
     const supabase = await createClient();
     const {
@@ -41,8 +49,7 @@ export async function POST(request: NextRequest) {
     }
   });
 
-  const triggeredBy =
-    authHeader === `Bearer ${syncSecret}` ? "cron" : "manual";
+  const triggeredBy = isCronOrSecret ? "cron" : "manual";
 
   // Valgfritt sync-vindu via ?days=N (default 90 fra sync-utils)
   const daysParam = request.nextUrl.searchParams.get("days");
