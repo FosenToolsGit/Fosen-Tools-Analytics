@@ -46,6 +46,7 @@ interface NavChild {
   label: string;
   href: string;
   icon: LucideIcon;
+  localOnly?: boolean;
 }
 
 interface NavItem {
@@ -54,6 +55,7 @@ interface NavItem {
   href: string;
   icon: LucideIcon;
   children?: NavChild[];
+  localOnly?: boolean;
 }
 
 interface NavSection {
@@ -83,7 +85,7 @@ const navItems: NavEntry[] = [
       { label: "Geo-intelligens", href: "/innsikt/geo", icon: Globe2 },
       { label: "Budsjett-sim", href: "/innsikt/budsjett", icon: Calculator },
       { label: "SEO-muligheter", href: "/innsikt/seo", icon: Search },
-      { label: "SEO-innhold (AI)", href: "/innsikt/seo-innhold", icon: Sparkles },
+      { label: "SEO-innhold (AI)", href: "/innsikt/seo-innhold", icon: Sparkles, localOnly: true },
       { label: "Indeksering", href: "/innsikt/indeksering", icon: FileSearch },
       { label: "Vekstmuligheter", href: "/innsikt/vekst", icon: Rocket },
       { label: "Kalender", href: "/innsikt/kalender", icon: Calendar },
@@ -268,7 +270,15 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                     )}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {item.localOnly && (
+                      <span
+                        title="Krever Claude Code lokalt — ikke tilgjengelig på Vercel"
+                        className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide rounded bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                      >
+                        Lokal
+                      </span>
+                    )}
                   </Link>
                   {hasChildren && (
                     <button
@@ -302,7 +312,15 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                           )}
                         >
                           <child.icon className="w-4 h-4 flex-shrink-0" />
-                          {child.label}
+                          <span className="flex-1">{child.label}</span>
+                          {child.localOnly && (
+                            <span
+                              title="Krever Claude Code lokalt — ikke tilgjengelig på Vercel"
+                              className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide rounded bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                            >
+                              Lokal
+                            </span>
+                          )}
                         </Link>
                       );
                     })}
