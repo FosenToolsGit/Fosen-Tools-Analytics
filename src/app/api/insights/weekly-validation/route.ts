@@ -1,11 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
+import { GoogleAdsService } from "@/lib/services/google-ads";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Validering av forrige uke: sammenligner Pmax brand_share, Brand Search-status
  * og Bransjer-kampanjen siste 7 dager vs forrige 7 dager. Brukes på /mandagsmote
  * for å svare på "fungerer endringene vi gjorde sist møte?".
+ *
+ * VIKTIG (lærepenger 3. mai 2026): Pmax-rader i `google_ads_search_terms` er
+ * snapshots av Googles aggregerte 90-dagers `campaign_search_term_insight`,
+ * stemplet med sync-dagen som `metric_date`. Når sync kjører hver dag får
+ * vi N nesten-identiske kopier av samme aggregerte data. Et 7d-vindu på den
+ * tabellen overestimerer Pmax-klikk dramatisk og gir falske brand-share-tall.
+ *
+ * Fiksen: for Pmax-kampanjer kaller vi Google Ads API live med BETWEEN på
+ * det eksakte vinduet. For Search/Bransjer bruker vi Supabase med
+ * `source=search_term` (ekte daglige rader, en per dag).
  */
+
+const PMAX_CHANNEL_TYPE = "10";
 
 const BRAND_PATTERNS = [/fosen[\s-]?tools?/i, /^fosen$/i, /fosentools/i];
 const isBrandTerm = (t: string) => BRAND_PATTERNS.some((p) => p.test(t.toLowerCase().trim()));
@@ -104,9 +117,12 @@ async function aggregateWindow(
     }
   }
 
+  // VIKTIG: bare hent SEARCH-terms (ikke Pmax-snapshots — se kommentar øverst).
+  // For Pmax aggregerer vi via Google Ads API live i fetchPmaxBrandShare().
   const { data: terms } = await supabase
     .from("google_ads_search_terms")
     .select("campaign_id, search_term, clicks")
+    .eq("source", "search_term")
     .gte("metric_date", from)
     .lte("metric_date", to);
 
@@ -119,6 +135,40 @@ async function aggregateWindow(
   }
 
   return map;
+}
+
+/**
+ * Henter Pmax brand-share live fra Google Ads API for et eksakt vindu.
+ * Pmax-snapshots i `google_ads_search_terms` lagres med snapshot-dato som
+ * metric_date og inneholder akkumulerte 90d-tall — derfor ubrukelige for
+ * uke-over-uke-sammenligning. Live-call gir oss det reelle 7d-bildet.
+ *
+ * Returnerer null hvis API-en feiler (graceful degradation — UI viser bare
+ * kostnad-deltaen, ikke brand-share).
+ */
+async function fetchPmaxBrandShare(
+  pmaxCampaignIds: string[],
+  from: string,
+  to: string
+): Promise<Map<string, { brand_clicks: number; total_term_clicks: number }> | null> {
+  if (pmaxCampaignIds.length === 0) return new Map();
+  try {
+    const ads = new GoogleAdsService();
+    const fromDate = new Date(`${from}T00:00:00Z`);
+    const toDate = new Date(`${to}T00:00:00Z`);
+    const rows = await ads.fetchPmaxSearchTerms(pmaxCampaignIds, fromDate, toDate);
+    const out = new Map<string, { brand_clicks: number; total_term_clicks: number }>();
+    for (const r of rows) {
+      const ex = out.get(r.campaign_id) ?? { brand_clicks: 0, total_term_clicks: 0 };
+      ex.total_term_clicks += r.clicks;
+      if (isBrandTerm(r.search_term)) ex.brand_clicks += r.clicks;
+      out.set(r.campaign_id, ex);
+    }
+    return out;
+  } catch (err) {
+    console.error("fetchPmaxBrandShare failed:", err instanceof Error ? err.message : err);
+    return null;
+  }
 }
 
 function buildStory(role: CampaignValidation["role"], curr: CampaignValidation["current"], prev: CampaignValidation["previous"], status: string | null): string {
@@ -163,6 +213,34 @@ export async function GET(request: NextRequest) {
       aggregateWindow(supabase, from, to),
       aggregateWindow(supabase, prevFrom, prevTo),
     ]);
+
+    // Identifiser Pmax-kampanjer som finnes i ett av vinduene, og hent
+    // ekte brand-share fra Google Ads live API. Erstatter de feilaktige
+    // total_term_clicks/brand_clicks som ble lest fra Supabase-snapshots.
+    const pmaxIds = new Set<string>();
+    for (const [id, meta] of curr) if (meta.channel_type === PMAX_CHANNEL_TYPE) pmaxIds.add(id);
+    for (const [id, meta] of prev) if (meta.channel_type === PMAX_CHANNEL_TYPE) pmaxIds.add(id);
+
+    const pmaxIdList = [...pmaxIds];
+    const [pmaxCurr, pmaxPrev] = await Promise.all([
+      fetchPmaxBrandShare(pmaxIdList, from, to),
+      fetchPmaxBrandShare(pmaxIdList, prevFrom, prevTo),
+    ]);
+
+    for (const id of pmaxIds) {
+      const c = curr.get(id);
+      const p = prev.get(id);
+      const pcLive = pmaxCurr?.get(id);
+      const ppLive = pmaxPrev?.get(id);
+      if (c) {
+        c.brand_clicks = pcLive?.brand_clicks ?? 0;
+        c.total_term_clicks = pcLive?.total_term_clicks ?? 0;
+      }
+      if (p) {
+        p.brand_clicks = ppLive?.brand_clicks ?? 0;
+        p.total_term_clicks = ppLive?.total_term_clicks ?? 0;
+      }
+    }
 
     const allIds = new Set([...curr.keys(), ...prev.keys()]);
     const empty: CampaignWindow = {

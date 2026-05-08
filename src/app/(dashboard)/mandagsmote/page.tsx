@@ -256,6 +256,12 @@ function Content() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/mandagsmote/brief"
+            className="flex items-center gap-1 px-3 py-2 text-xs bg-amber-700 hover:bg-amber-600 text-white rounded-lg transition-colors"
+          >
+            <Sparkles className="w-3 h-3" /> Møtebrief
+          </Link>
           <button
             onClick={() => mutate()}
             className="px-3 py-2 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"

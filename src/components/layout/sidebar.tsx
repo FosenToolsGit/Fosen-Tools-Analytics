@@ -37,6 +37,7 @@ import {
   ChevronRight,
   FileSearch,
   BookOpen,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { LucideIcon } from "lucide-react";
@@ -82,6 +83,7 @@ const navItems: NavEntry[] = [
       { label: "Geo-intelligens", href: "/innsikt/geo", icon: Globe2 },
       { label: "Budsjett-sim", href: "/innsikt/budsjett", icon: Calculator },
       { label: "SEO-muligheter", href: "/innsikt/seo", icon: Search },
+      { label: "SEO-innhold (AI)", href: "/innsikt/seo-innhold", icon: Sparkles },
       { label: "Indeksering", href: "/innsikt/indeksering", icon: FileSearch },
       { label: "Vekstmuligheter", href: "/innsikt/vekst", icon: Rocket },
       { label: "Kalender", href: "/innsikt/kalender", icon: Calendar },
@@ -125,6 +127,7 @@ const navItems: NavEntry[] = [
       { label: "Alle innlegg", href: "/posts", icon: FileText },
       { label: "Bygger: Sosiale medier", href: "/innleggsbygger/sosiale", icon: PenTool },
       { label: "Bygger: Nyhetsbrev", href: "/innleggsbygger/nyhetsbrev", icon: Mail },
+      { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
     ],
   },
   { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },

@@ -81,6 +81,27 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 
 ---
 
+## Publiseringsrytme (sosiale medier + nyhetsbrev)
+
+Fast publiseringskalender som styrer hvordan vi planlegger innhold:
+
+| Kanal | Dag | Tid | Innholdstype |
+|---|---|---|---|
+| **Mailchimp (FTNett)** | Tirsdag | 11:00 | Nyhetsbrev — produkter, kampanjer, midtseksjon |
+| **Meta (FB + IG)** | Fredag | — | Produksjons-/leveranse-poster (Pelicase 1535-Forsvaret 1. mai er et eksempel) |
+| **Meta (FB + IG)** | Ad-hoc | — | Tematiske/edukative poster (HDFI vs generisk skum 3. mai er et eksempel) |
+| **LinkedIn** | Ad-hoc | — | Speiles ofte fra Meta — ikke fast plan |
+
+**Implikasjoner for analyse:**
+- **Mailchimp-utsendelser i `platform_posts`** dukker opp tirsdag — uke-i-uke-sammenligning bør respektere dette (en mandagsbrief som dekker man-søn fanger forrige tirsdag-utsendelse, en som dekker tir-man fanger 2 utsendelser eller 0).
+- **Fredag-poster på Meta er typisk «levert»-format** med høy engagement-rate (skreddersøm-mønster, +144% lift per memory). Disse driver trafikk fra IG-bio og FB-organic-lenker.
+- **Ad-hoc-poster** (som HDFI vs generisk) bør tagges med distinkt `utm_campaign` så de ikke blander seg med faste fredag-poster i attribusjon.
+
+**Språkregler for sosiale medier (og alt FT-innhold):**
+- **CNC-maskinert** — IKKE «CNC-frest». «CNC-frest» er nono. Gjelder alle innlegg på Meta, LinkedIn, nyhetsbrev og produkt-/landingssider. Brukes når vi beskriver HDFI-produksjon i CADLAB.
+
+---
+
 ## Database (Supabase)
 
 **Prosjekt:** `evfbfiqruxzaraksetok`
@@ -113,6 +134,7 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 | `tag_rules` | Automatiske tag-regler |
 | `tag_assignments` | Tag-tilordninger til entities |
 | `brochures` | Lagrede brosjyrer for editoren (id, user_id, title, doc jsonb, created_at, updated_at). RLS owner-only. |
+| `utm_links` | Sentralt UTM-register (id, label, base_url, utm_source, utm_medium, utm_campaign, utm_content, utm_term, full_url, notes, user_id). Alle innlogga kan lese/lage; eier kan endre/slette. |
 
 **Viktig:** `platform_type` er en Postgres enum: `ga4`, `meta`, `linkedin`, `mailchimp`, `google_ads`. Husk `ALTER TYPE platform_type ADD VALUE` om du legger til en ny plattform.
 
@@ -127,6 +149,8 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 - `008_mailchimp_extended.sql` — 4 Mailchimp-tabeller (links, locations, growth, daily)
 - `009_brochures.sql` — `brochures`-tabell for multi-doc save i brosjyre-editoren. RLS owner-only + auto `updated_at`-trigger
 - `010_brochure_assets.sql` — privat Storage-bucket `brochure_assets` for opplastede bilder i brosjyre-editoren. RLS path-basert (`{user_id}/...`)
+- `011_utm_links.sql` — `utm_links`-tabell for sentralt UTM-register (`/innleggsbygger/utm`). RLS: alle innlogga kan lese/lage, kun eier kan endre/slette. Auto `updated_at`-trigger.
+- `011_utm_links_seed.sql` — valgfri seed med 8 linker generert i samtalen 3. mai (kjør etter `011_utm_links.sql`)
 
 ### Storage
 - **Bucket `weekly-reports`** (privat) — lagrer genererte Excel-rapporter
@@ -169,6 +193,7 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 ### Innleggsbygger (nye sider 20. april)
 - `/innleggsbygger/sosiale` — Analyserer Meta-captions, identifiserer mønstre med lift% (spørsmål, emoji, CTA, lengde). Foreslår nye captions per tema + Native-prompts for Nano Banana 2 + organiske filming-ideer (reel/carousel/story/photo) med shot-lister
 - `/innleggsbygger/nyhetsbrev` — Analyserer Mailchimp emne-linjer med lift% på åpningsrate. Foreslår nyhetsbrev-temaer basert på mest-klikkede lenker (hva abonnentene faktisk vil ha), med 4 emne-varianter + preheader + innholdsskisse per tema
+- `/innleggsbygger/utm` — Sentralt register over alle UTM-linker (lagret i `utm_links`-tabellen). Hurtigmaler for FB/IG/LinkedIn/Mailchimp/Google Ads, skjema med live-forhåndsvisning, kopi-knapp per link, gruppering per `utm_campaign`, og krysskobling med `traffic_sources` for å vise sesjoner + konverteringer per kanal siste 30d. Forhindrer duplikate/inkonsistente kampanje-tags på tvers av poster.
 
 ### Brosjyre-editor (ny 27. april)
 - `/brosjyre` — Fullskjerm WYSIWYG editor for kampanje-brosjyrer (PDF-eksport). Fixed inset-0 z-50 overlay som dekker dashbord-layouten. 3-panel UI: sidetre + bibliotek + property-panel. 10 objekt-typer (productCard, priceBlock, badge, banner, gallery, contact, footer, text, image, shape), 9 ferdige maler, brand-tokens system, undo/redo (60 nivåer), PDF-eksport via `modern-screenshot` + jspdf med auto-nedlasting. Auto-save til localStorage. **Detaljer:** se egen seksjon nederst i denne filen.
@@ -240,6 +265,10 @@ Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, M
 |------|----------|
 | `GET /api/innleggsbygger/sosiale?from=&to=&themes=` | Meta-caption-analyse: scorer poster på engagement rate (likes + 3×kommentarer + 5×delinger + klikk), finner mønstre med lift%, genererer forslag |
 | `GET /api/innleggsbygger/nyhetsbrev?from=&to=` | Mailchimp emne-linje-analyse: mønstre i åpningsrate + topp-klikkede lenker som driver tema-forslag |
+| `GET /api/utm-links` | Lister alle lagrede UTM-linker (filterbart på `?campaign=` og `?source=`) |
+| `POST /api/utm-links` | Lagrer ny UTM-link. Body: `{label, base_url, utm_source, utm_medium, utm_campaign, utm_content?, utm_term?, notes?}`. Bygger `full_url` automatisk. |
+| `DELETE /api/utm-links/[id]` | Sletter en UTM-link (RLS: kun eier) |
+| `GET /api/utm-links/stats?days=30` | Krysskoble UTM-register med `traffic_sources` — sesjoner + konverteringer per (source, medium) siste N dager |
 | `GET /api/linkedin/health` | Sjekker LinkedIn token + organisasjon + Community Management API-tilgang per scope |
 
 ### Mandagsmøte-utvidelser (27. april)
@@ -683,10 +712,11 @@ Svarene (200-400 tegn) skal flette inn produktnumre + Fosen Tools-referanser (CA
 
 ### Status per 29. april 2026
 
-- **Ferdig (full 5-blokk-struktur + JSON-LD):** Pelicase, Stahlwille (video-hero), Fosen Tools, Fosen Tools Custom, Wera, Leatherman, Mitutoyo (4-blokk, ingen kategorigrid), Ledlenser, Mora of Sweden (4-blokk, ingen kategorigrid), Hellberg (egen tilpasset struktur med produkt-carousels + FAQ + CTA + JSON-LD), Snap-on, FACOM (video-hero med 2-slide carousel), Knipex, PB Swiss Tools, **KC Tools, Gedore, Zarges, Brockhaus HEUER (video-hero), Milwaukee, Fluke, Rennsteig, Bahco, Gigant, Solid Gear (4-blokk, ingen kategorigrid)** — sistnevnte 10 publisert 29. april, alle indeksering forespurt i GSC samme dag.
+- **Ferdig (full 5-blokk-struktur + JSON-LD):** Pelicase, Stahlwille (video-hero), Fosen Tools, Fosen Tools Custom, Wera, Leatherman, Mitutoyo (4-blokk, ingen kategorigrid), Ledlenser, Mora of Sweden (4-blokk, ingen kategorigrid), Hellberg (egen tilpasset struktur med produkt-carousels + FAQ + CTA + JSON-LD), Snap-on, FACOM (video-hero med 2-slide carousel), Knipex, PB Swiss Tools, **KC Tools, Gedore, Zarges, Brockhaus HEUER (video-hero), Milwaukee, Fluke, Rennsteig, Bahco, Gigant, Solid Gear (4-blokk, ingen kategorigrid), Viking Arm (4-blokk, ingen kategorigrid — kun 3 produkter), Lista AG (full 5-blokk, 26 produkter), Bondhus (4-blokk, ingen kategorigrid — 6 produkter), Hultafors (4-blokk, ingen kategorigrid — 28 produkter), Husqvarna (video-hero med 3-slide carousel + META + JSON-LD som separat blokk), Sumake (4-blokk, ingen kategorigrid — 76 produkter)** — sistnevnte 16 publisert 29. april, alle indeksering forespurt i GSC samme dag.
 - **Custom-side ferdig med JSON-LD + FAQ (bruker setter meta selv):** HDFI — kjører på egen side-struktur (`ft-section`, `ft-wrap`) ikke produsent-template. Har fortsatt suggested H1-endring til "HDFI — verktøykontroll med gravert silhuett" som bruker kan vurdere.
-- **Kun hero-blokk publisert (trenger fortsatt intro + kategorigrid + FAQ + CTA + JSON-LD):** Viking Arm, Lista AG
-- **Anbefalt neste prioritet:** Viking Arm (norsk oppfinnelse — stor SEO-verdi), Bondhus, Hultafors, Husqvarna, Sumake, og Lista AG. Vurder også å bytte til kategori-sider (`/produkter/verktøyvogner` har 57 sess/mnd uten SEO-arbeid, større trafikk-løft enn flere små produsenter).
+- **Kun hero-blokk publisert (trenger fortsatt intro + kategorigrid + FAQ + CTA + JSON-LD):** (ingen — alle hero-only sider er nå komplette)
+- **Anbefalt neste prioritet:** Alle hovedmerker er nå dekket. Naturlige neste arbeidsstrømmer: (1) unikifisere kannibaliserende underkategori-URLer — pipesett (3 duplikate URLer), deretter samme pattern på skraller/sekskant/tolvkant/forlengere/universalledd/overganger/unbrako/torx/holder/auto/koffert; (2) verifisere SEO-fall på `leatherman` (-20) og `pipesett` (-18) som har stått åpent siden 20. april; (3) rydde "merke-ukjent" (175 produkter uten merke-tagging).
+- **Default-struktur:** 4-blokk (HERO + INTRO + FAQ + CTA + JSON-LD). Kategorigrid genereres KUN ved eksplisitt forespørsel — filter-verdiene må verifiseres manuelt mot Multicase venstre-kolonne, og brukeren vil ikke at dette gjøres uten bekreftelse.
 - **Hoppes over som lav-prioritet:** Karlstad Redskap, Red Rooster (avklart 29. april).
 
 ### Stor SEO-dag 29. april 2026
@@ -724,21 +754,178 @@ Svarene (200-400 tegn) skal flette inn produktnumre + Fosen Tools-referanser (CA
 
 ---
 
+## Kategori-sider (`/produkter/*`) — levende catgrid
+
+Alle kategori-sider på `/produkter/*` skal ha en **levende ft-catgrid** som dynamisk leser `.ProductMenu` og bygger kategori-grid med bilder. Lim inn dette scriptet som **én publisering** mellom INTRO-blokk og FAQ-blokk på hver kategori-side. Scriptet er **generisk** — funker både på toppnivå-katalogen (`/produkter`) og på alle under-kategorier (`/produkter/momentverktøy`, `/produkter/tenger` osv.) automatisk.
+
+### To moduser
+
+Scriptet velger modus dynamisk basert på menystrukturen:
+
+**Modus A — Toppnivå (`/produkter`):** `.Level1Selected` mangler, så scriptet bygger fra alle `.Level1`-elementer (alle hovedkategorier). Bilder fra `/userfiles/image/menuicons/{slug}.png`.
+
+**Modus B — Sub-kategori (`/produkter/{kategori}`):** `.Level1Selected` finnes, så scriptet bygger fra `.Level2`-søsken (under-kategoriene av valgt). Bilder fra `/userfiles/image/Kategoribilder/{Hovedkategori-label}/{slug}.png`.
+
+### Hvordan det virker
+
+1. Sjekker om `.Level1Selected` finnes i `.ProductMenu` for å avgjøre modus
+2. Bygger items-liste (Level1 alle, eller Level2-søsken)
+3. Bygger først tekst-catgrid via `innerHTML` (Multicase godkjenner `<span>`-elementer)
+4. Injiserer deretter `<img>`-elementer via `document.createElement` og `insertBefore` (Multicase strikker `<img>`-attributter i raw HTML, men ikke det JavaScript gjør i etterkant)
+5. `onerror` settes via JS-event-listener — hvis bildefil mangler, skjules `<img>`-elementet og kun tekst vises
+6. MutationObserver + polling som fallback siden ProductMenu kan lastes via AJAX
+
+### Bilde-konvensjoner
+
+| Sidetype | Mappe | Eksempel |
+|---|---|---|
+| Toppnivå `/produkter` | `/userfiles/image/menuicons/` | `/userfiles/image/menuicons/tenger.png` |
+| Sub-kategori `/produkter/{kategori}` | `/userfiles/image/Kategoribilder/{Hovedkategori}/` | `/userfiles/image/Kategoribilder/Momentverktøy/momentnøkkel.png` |
+
+**Filnavn:** slug fra siste segment i href, lowercase med norske bokstaver bevart, `.png`-extension. Multicase er case-insensitive på filnavn (Windows IIS), men hold lowercase som konvensjon.
+
+### Script (lim inn som publisering mellom INTRO og FAQ på hver kategori-side, inkludert `/produkter`-toppsiden)
+
+```html
+<section aria-label="Kategorier" class="ft-catgrid ft-catgrid--text">
+<ul class="ft-catgrid__list" id="ft-auto-catgrid"></ul>
+</section>
+<script>
+(function() {
+  var built = false;
+  function build() {
+    if (built) return true;
+    try {
+      var menu = document.querySelector('.ProductMenu');
+      var ul = document.getElementById('ft-auto-catgrid');
+      if (!menu || !ul) return false;
+
+      var items = [];
+      var folder;
+      var selected = menu.querySelector('.Level1Selected');
+
+      if (selected) {
+        // SUB-KATEGORI: viser Level2-søsken under Level1Selected
+        var selA = selected.querySelector('a');
+        if (!selA) return false;
+        var parentLabel = selA.textContent.trim();
+        folder = '/userfiles/image/Kategoribilder/' + encodeURIComponent(parentLabel);
+
+        var sib = selected.nextElementSibling;
+        while (sib) {
+          if (sib.classList.contains('Level2')) {
+            var a = sib.querySelector('a');
+            if (a) {
+              var href = a.getAttribute('href') || '';
+              var slug = href.split('/').filter(Boolean).pop() || '';
+              try { slug = decodeURIComponent(slug); } catch (e) {}
+              items.push({ href: href, label: a.textContent.trim(), slug: slug });
+            }
+          } else if (sib.classList.contains('Level1') || sib.classList.contains('Level1Selected')) {
+            break;
+          }
+          sib = sib.nextElementSibling;
+        }
+      } else {
+        // TOPPNIVÅ (/produkter): viser alle Level1-elementer
+        folder = '/userfiles/image/menuicons';
+        var lis = menu.querySelectorAll('li');
+        lis.forEach(function(li) {
+          if (!li.classList.contains('Level1')) return;
+          var a = li.querySelector('a');
+          if (!a) return;
+          var href = a.getAttribute('href') || '';
+          var slug = href.split('/').filter(Boolean).pop() || '';
+          try { slug = decodeURIComponent(slug); } catch (e) {}
+          items.push({ href: href, label: a.textContent.trim(), slug: slug });
+        });
+      }
+
+      if (items.length === 0) return false;
+
+      ul.innerHTML = items.map(function(item) {
+        return '<li class="ft-catgrid__cell"><a class="ft-catgrid__item" href="' + item.href + '"><span class="ft-catgrid__label">' + item.label + '</span></a></li>';
+      }).join('');
+
+      var cells = ul.querySelectorAll('.ft-catgrid__item');
+      items.forEach(function(item, i) {
+        var anchor = cells[i];
+        if (!anchor) return;
+        var img = document.createElement('img');
+        img.alt = item.label;
+        img.loading = 'lazy';
+        img.style.maxWidth = '80px';
+        img.style.maxHeight = '80px';
+        img.style.display = 'block';
+        img.style.margin = '0 auto 8px';
+        img.onerror = function() { img.style.display = 'none'; };
+        img.src = folder + '/' + encodeURIComponent(item.slug) + '.png';
+        anchor.insertBefore(img, anchor.firstChild);
+      });
+
+      built = true;
+      return true;
+    } catch (e) {
+      console.error('FT catgrid:', e);
+      return false;
+    }
+  }
+
+  if (build()) return;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
+  var n = 0;
+  var poll = setInterval(function() { n++; if (build() || n >= 50) clearInterval(poll); }, 200);
+  if (typeof MutationObserver !== 'undefined') {
+    var obs = new MutationObserver(function() { if (build()) obs.disconnect(); });
+    obs.observe(document.body, { childList: true, subtree: true });
+    setTimeout(function() { obs.disconnect(); }, 12000);
+  }
+})();
+</script>
+```
+
+### Bekreftet fungerer på
+
+- `/produkter/momentverktøy` (verifisert 7. mai 2026 — sub-kategori-modus, 4 underkategorier med bilder)
+- `/produkter` (toppnivå-modus, 39 hovedkategorier — krever bilder lastet opp i `/userfiles/image/menuicons/`)
+
+### Hvorfor DOM-API for bilder (ikke innerHTML)
+
+Multicase strikker `<img>`-attributter (sannsynligvis XSS-beskyttelse) når raw HTML med `<img src=... onerror=...>` limes inn i publiseringsfelt. Hele cellen kollapser eller blir blank. Løsningen er å bygge tekst-cellene først via `innerHTML` (som Multicase godkjenner), så injisere `<img>`-elementer via `document.createElement` etter at DOM er klar — Multicase ser ikke disse fordi de er JS-genererte runtime, ikke i den lagrede publiseringen.
+
+### Oppload av bilder
+
+Last opp bilder via Multicase admin → Filhåndtering → `/userfiles/image/Kategoribilder/{Hovedkategori}/`. Multicase er case-insensitive på filnavn (Windows IIS), men hold lowercase som konvensjon. Hvis bildet for en underkategori mangler, vises kun tekst i den cellen — ikke ødelagt layout.
+
+### Når URL endres på en underkategori
+
+Hvis du endrer slug på en underkategori (f.eks. `momentnøkler` → `momentnøkkel`), trenger du å:
+1. Bekreft alle 60+ redirects som Multicase auto-genererer for alle land-prefiks
+2. Last opp ny bildefil med ny slug, eller omdøp eksisterende fil
+3. Scriptet plukker automatisk opp ny slug fra menyen — ingen endring i scriptet
+
+---
+
 ## Kjente begrensninger og ventende ting
 
 ### Venter på ekstern godkjenning
 - **Google Ads Keyword Planner:** Developer token er "Explorer"-nivå. Søkt om Basic Access (15. april). `KeywordPlannerService` aktiveres automatisk når Google godkjenner — graceful degradation i mellomtiden.
 - **LinkedIn:** Venter på Community Management API-godkjenning
 - **Google Calendar:** Venter på Workspace admin-tilgang
-- **Multicase (sendt 24. april):** Avklare (1) UI-konsekvens ved å gjøre skjult avdeling synlig for sitemap, (2) om mellomting finnes (skjult i meny, synlig i sitemap), (3) aktivere self-service 301-redirect-tilgang.
+- **Multicase — svar mottatt 29. april:**
+  - **301-redirect-modul:** Automatisert via dialog når URL endres (f.eks. `/snap-on` → `/snapon`). Trinn: endre URL → dialog spør om redirect → bekreft → administreres via redirect-grensesnitt. Pris kun for modul, ingen ekstra config-tid. **Status: Trolig ikke aktivert ennå** — Kjetil beskrev funksjonaliteten, ikke at den er på. Verifiseres før URL-endrings-arbeid.
+  - **CSS-klasse per menypunkt — løser sitemap-saken:** Hvert menypunkt kan få egen CSS-klasse i admin (Avansert → "Css klasse"). Egen CSS kan `display: none`-skjule punktet visuelt. **Siden forblir tilgjengelig på URL og inkluderes i sitemap.** Dette er "mellomtingen" vi spurte om — skjult i meny, synlig i sitemap. **Implikasjon:** Vi kan nå gjøre den skjulte avdelingen synlig (alle 229 topp-nivå-paths inkl. produsent-sider havner i sitemap) UTEN å påvirke meny-strukturen — hver enkelt side vi ikke vil ha i meny kan CSS-skjules individuelt.
 
 ### SEO-oppgaver å gjøre
-- **Unikifisere pipesett-kategorisidene** (3 duplikate URLer kannibaliserer hverandre):
-  - `/produkter/piper-og-skraller/pipesett` (primær — bygg unik introtekst + CTA-grid til underkategorier)
-  - `/produkter/verktøykoffert/pipesett` (unik "pipesett levert i koffert"-vinkling + CTA til primær)
-  - `/produkter/verktøysett/koffert/pipesett` (unik "komplette pipesett i verktøysett"-vinkling + CTA)
-  - Bakgrunn: Multicase støtter ikke canonical-tags, så unikifisering er eneste SEO-verktøy mot kannibalisering. Samme tilnærming rulles deretter ut på `skraller`, `sekskant`, `tolvkant`, `forlengere`, `universalledd`, `overganger`, `unbrako`, `torx`, `holder`, `auto`, `koffert` (alle med 4-5 duplikate URLer).
-- **Sett opp 301-redirect `/snap-on → /snapon`** (når redirect-tilgang aktiveres av Multicase).
+- **Pipesett-kannibalisering — løst 29. april 2026:**
+  - `/produkter/piper-og-skraller/pipesett` (primær — har allerede unik introtekst + meta, fortsatt aktiv)
+  - `/produkter/verktøykoffert/pipesett` → **omdefinert som HDFI-landingsside** (29. april). Vinkling: Pipesett i koffert med skreddersydd HDFI fra CADLAB. Målgruppe: Forsvaret, aviation, offshore, kvalitetssystem-kunder (ISO 9001 / AS 9100). Brukeren legger inn HDFI-pipesett-produkter her over tid. INTRO + FAQ + inline JSON-LD + CTA generert med distinkt vinkling fra primær (CADLAB-skreddersøm + FOD-sikring + Fosen Tools-standarden hos Forsvaret). CTA-lenke til primær for brukere som vil ha generell pipesett.
+  - `/produkter/verktøysett/koffert/pipesett` → **fjernet** (29. april). Var tom URL uten distinkt nisje-vinkling.
+  - **Læring 1:** Sjekk alltid produktantall i Multicase-admin før unikifiserings-arbeid startes. Tom URL har 3 mulige behandlinger: (1) fjern URL helt, (2) skjul + noindex, (3) 301-redirect, (4) omdefiner som målrettet landingsside hvis Fosen Tools har en distinkt nisje-vinkling. HDFI er den åpenbare nisje-vinklingen for verktøyrelaterte URL-er siden CADLAB-produksjonen er konkurransefortrinn ingen andre forhandlere har.
+  - **Læring 2:** Multicase HTML-rendererer kan strippe `document.createElement` JSON-LD — bruk **inline `<script type="application/ld+json">`** i stedet for IIFE-injection for landingssider. IIFE-script er fortsatt OK for produsent-sider der vi også overstyrer title/meta.
+  - **Læring 3:** For sider der brukeren har CMS-tilgang til title/meta/URL (alle ikke-produsent-sider), trenger scriptet KUN JSON-LD — ikke title/meta/OG-overstyring.
+  - Bakgrunn: Multicase støtter ikke canonical-tags, så omdefiner / unikifisering / skjuling / fjerning er de eneste SEO-verktøyene mot kannibalisering. Samme tilnærming rulles ut på `skraller`, `sekskant`, `tolvkant`, `forlengere`, `universalledd`, `overganger`, `unbrako`, `torx`, `holder`, `auto`, `koffert` (alle med 4-5 duplikate URLer — noen kan omdefineres til HDFI-spesifikke landingssider, andre fjernes/skjules).
+- ~~**Sett opp 301-redirect `/snap-on → /snapon`**~~ **Fullført 6. mai** (lagt inn via Multicase URL Redirect-modul, verifisert live).
 - **Rydde "merke-ukjent"** (175 produkter uten merke-tagging — Ridgid, Protekt, Schneider m.fl.).
 
 ### Instagram
@@ -772,6 +959,7 @@ Svarene (200-400 tegn) skal flette inn produktnumre + Fosen Tools-referanser (CA
 11. **Supabase PostgrestError er IKKE en Error-instans** — sync-utils error handler pakker ut `{message, details, hint, code}` for å gi meningsfulle feilmeldinger i stedet for "Unknown error"
 12. **HTML-entiteter blåser opp tegn-tellinger** — SEO-analyzer dekoder `&#248;` (6 tegn) til `ø` (1 tegn) før lengde-validering
 13. **Attribusjon-verdi er kun sporbar for Paid Search/Cross-network** — organiske kanaler (Direct, Organic Search, Email, Social) viser sesjoner + konverteringer men ingen verdi, fordi GA4 "conversions" inkluderer alle events (ikke bare kjøp)
+14. **Multicase content-cloaking via User-Agent** — fosen-tools.no serverer JSON-LD KUN til crawlers (Googlebot UA), ikke til vanlige browsere. `curl -A "Mozilla/5.0"` returnerer 0 `application/ld+json` på alle sider, mens `curl -A "Googlebot/2.1"` returnerer 3-15 schemas. Dette er en feature, ikke en bug — vanlige brukere får slankere DOM, søkemotorer får full SEO-data. **Implikasjon for verifikasjon:** alle JSON-LD-verifikasjons-scripts MÅ bruke Googlebot User-Agent, ellers får man falske negative resultater. Bekreftet 30. april 2026 etter at en Mozilla-basert verifikasjon viste 0/47 sider og en Googlebot-basert verifikasjon viste 47/47 sider med korrekt schema.
 
 ---
 
@@ -903,6 +1091,34 @@ Python-script `/tmp/scrape_products.py` (ikke committet) plukker fra fosen-tools
 
 ---
 
+## Prosjekt-tidslinje (10. april → 30. april 2026)
+
+Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag for de største dagene følger under denne tabellen.
+
+| Dato | Hovedaktivitet |
+|---|---|
+| 10. apr | Initial setup — Next.js 16 + Supabase + GA4 + Meta + verdenskart + custom date picker |
+| 13. apr | Mailchimp-integrasjon, Search Console-keywords, GA4 table-fix, logo |
+| 14. apr | Tag-system på tvers av søkeord/posts/kampanjer, søkeords-generator (Excel), smart sync-route, daglig sync-script, første Vercel-deploy |
+| 15. apr | **Stor dag**: Google Ads direkte API (kampanjer + keywords + search terms + Pmax insights + conversions), anomali-varsling-system med 5 sjekker, Mailchimp utvidet (4 nye tabeller: links/locations/growth/daily), Instagram-stub, attribusjon-side, søkeords-intelligens med auto-apply negative keywords, ukentlige rapporter |
+| 16. apr | Cross-platform kundereise (Sankey-diagram), Innsikt-seksjon med 4 strategiske sider (ukesrapport / innhold-roi / geo / budsjett), SEO-muligheter (5 kategorier), Kampanjekalender, SEO-analyse per side med HTML-fetch |
+| 17. apr | SEO-analyse dekoder HTML-entiteter, dedup-fix i sync-pipeline |
+| 19. apr | Vekstmuligheter-side med Keyword Planner-krysskobling, norsk språk-kode (1013) |
+| 20. apr | **Stor opprydding**: Google Ads negative keywords + Pmax brand exclusions + ny Brand Search-kampanje (~6 500 kr/90d besparelse), sidebar omorganisering 18→12, `/mandagsmote`, `/innleggsbygger/sosiale`, `/innleggsbygger/nyhetsbrev`, LinkedIn health-sjekk, Google Ads negatives-oversikt, indekseringshelse-side |
+| 21. apr | Vercel-pause etter sikkerhetshendelse hos Vercel — appen kjører kun lokalt fra dette punktet |
+| 22.–23. apr | Slangeklemmer + Polering lagt til som nye produktkategorier |
+| 24.–25. apr | **9 produsent-sider**: Leatherman, Mitutoyo, Ledlenser, Mora of Sweden, Hellberg, Snap-on, FACOM, Knipex, PB Swiss Tools — etablerer HERO/INTRO/FAQ/CTA-mønsteret |
+| 27. apr | Mandagsmøte-utvidelser (3 nye API-er + 3 seksjoner med trafikklys-validering), brosjyre-editor v1 (10 objekt-typer, 9 maler, PDF via modern-screenshot), Sommersalg-preset med ekte produktdata |
+| 28. apr | Brosjyre-editor produktiv ende-til-ende: live URL-import, multi-doc save (migrasjon `009`), foreslåtte produkter (GA4+Mailchimp), Storage-bucket (migrasjon `010`), produsent-mal med kampanje-forside, GA4 sync-grense 50→500 (4→49 produsenter med produktsider), anomali-threshold hevet for plattform-spikes |
+| 29. apr | **Stor SEO-dag**: 6 nye produsent-sider (Viking Arm, Lista AG, Bondhus, Hultafors, Sumake, Husqvarna), pipesett-kannibalisering ryddet, 7 produsent-sider konvertert fra dynamisk til inline JSON-LD, `/manufacturers/`-kannibalisering identifisert som hoved-årsak til SEO-fall |
+| 30. apr | **Stor data + SEO-dag**: GTM-migrering ferdig (48 entries → inline JSON-LD, **GTM-container fra ~80% → ~9%**), 4 strukturelle schema-fixer, JSON-LD verifisert 47/47 live (Multicase content-cloaking discovery), første påvirknings-analyse siden 10. april, datadrevet caption-mal lagret i memory, Pelicase 1535-Forsvaret-innlegg klart for publisering 1.-2. mai |
+| 5. mai | **Mandags-økt — Google Ads opprydding**: Pmax brand-exclusions verifisert (klikk -73% w/w, men kost bare -8% pga budsjett-cap på 50 kr/dag — Google omfordeler til dyrere generisk trafikk, CPC tredoblet 3,7→12,7 kr); **Bransjer-kampanjen pauset** etter 0 kjøp på 90d/7 742 kr (audit-entry #1, re-evaluering 5. juni); **Brand Search-budsjett økt 30 → 50 kr/dag** (audit-entry #2, netto −26 kr/dag totalt); 2 META-varsler resolved som post-outlier-varians; GSC re-indekseringsliste generert (`docs/seo/gsc-reindex-list-2026-05-05.md`, 43 URLer prioritert i 4-dagers plan). Pelicase 1535-FB leverte 140 reach + 129 klikk 1. mai. |
+| 6. mai | **Multicase redirect-modul aktivert** (Verktøy → URL redirect, 301/302-støtte + chain-cleanup, ingen wildcard). **107 redirects totalt lagt inn og verifisert live på én dag** for å løse system-bred kannibalisering identifisert 29. april. **Runde 1 (31):** 30 stk `/manufacturers/{slug}` → `/{slug}` for ferdige produsent-sider, + `/snap-on` → `/snapon` (var broken 302 til forsiden). **Runde 2 (76 → 74 live, 2 hoppet over):** Etter at brukeren delte ProductMenu-HTML (autoritativ liste over alle 53 merker), utvidet til 22 nye `/manufacturers/{slug}` for merker uten ferdig produsent-side (aok-by-kc-tools, apex-tools, boehm, bosch-tilbehør, brusletto, emhart-teknologies, geilo-verktøy, gühring, handi, karlstad-redskap, meclube, opticase, osca, red-rooster, scell-it, snickers, stanley-pmi, the-bone, ullman-devices, vogel-germany, völkel, zweibrüder), + 52 stk `/categories/{slug}` → `/{slug}` for alle merker (ScrewGrab er unntatt — bruker `/produsent/screw-grab` som primær). **Verifisert 6. mai: sitemap har 4689 URLer, alle produkt-URLer; ingen `/merkevare/*`, `/manufacturers/*` eller topp-nivå produsent-paths.** Sitemap-fix henger fortsatt på Multicase. **GSC re-indeksering:** Dag 1 (4 URLer fra Tier 1) ferdig 5. mai. Dag 2 (12 URLer): 9 ferdig 6. mai (kvote brukt opp); fosen-tools-custom, zarges, fluke flyttet til Dag 3 (7. mai). Arbeidslister generert som lokale HTML-filer i `/tmp/redirects-*` og `/tmp/gsc-dag*` med kopi-knapper og localStorage-progress (mønster fra 30. april). **Runde 3 (11):** 10 underkategori-aliaser (skraller, sekskant, tolvkant, forlengere, universalledd, overganger, holder, koffert, auto + test-rad) + spesialiserte filter-URLer for unbrako/torx → `/produkter/skrutrekkere?Filter=11¤1:11¤1_Sekskant`. **Møte med Trakk.ai 09:30 → besluttet å bygge selv:** SEO-innhold prompt-bygger bygget på 7 timer (URL-analyse + GSC-integrasjon + auto-konkurrent-finning via Serper.dev + UI med 3 steg). Siden brukeren bruker Claude Code lokalt (gratis), konvertert fra direkte API-call til prompt-bygger som brukeren limer inn til meg → JSON-svar med 6 separate publiserings-blokker (meta_title, meta_description, intro_block, faq_block, contact_cta_block, json_ld_script). Steg 3 i UI parser JSON og viser hver blokk med kopi-knapp + plassering-instruks. Bekreftet med "leatherman" og "momentverktøy"-tester. **PowerPoint til Erik (Åfjord Regnskap-presentasjon 7. mai):** 10 slides, fokus på "AI i hverdagen" + kostnadssammenligning (Fyr ~180k/år, Trakk 42k/år, brosjyre-design 5-10k/brosjyre, total estimert ~220k+/år besparelse). |
+| 7. mai | **Levende ft-catgrid-system bygget** for alle `/produkter/*`-sider. Dynamisk JS-script som leser `.ProductMenu` i DOM, finner `Level1Selected` og bygger ft-catgrid med bilder. **Dual-mode:** toppnivå `/produkter` viser alle Level1 fra `/userfiles/image/menuicons/{slug}.png`, sub-kategori-sider viser Level2-søsken fra `/userfiles/image/Kategoribilder/{Hovedkategori}/{slug}.png`. **Multicase-strikking-quirk oppdaget:** `<img>`-attributter blir strikket fra raw HTML i publiseringsfelt (sannsynligvis XSS-beskyttelse) → løsning er å bygge tekst-celle først via `innerHTML`, deretter injisere `<img>`-elementer via `document.createElement` etter at DOM er klar. MutationObserver + polling som fallback siden ProductMenu kan lastes via AJAX. Verifisert virker på `/produkter/momentverktøy` (sub-modus, 4 underkategorier) og `/produkter` (toppnivå, 39 hovedkategorier). **URL-endring:** `/produkter/momentverktøy/momentnøkler` → `/produkter/momentverktøy/momentnøkkel` (entall, hører bedre til kategori-side med ett produkt-type) + 60+ land-prefiks-redirects bekreftet via Multicase' auto-redirect-modul. **SCSS for megameny oppdatert:** filnavn endret til URL-slug-konvensjon (`momentverktøy.png` ikke `moment.png`) så samme bilder kan brukes i både megameny og catgrid. **Identifisert 5 manglende CSS-klasser i megameny** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger) — må legges til via Avansert→Css klasse i Multicase admin. **Manglende ikoner:** `verktøy-elbil.png` og `verneutstyr1.png` ikke lastet opp (men `verktøy-for-elbil.png` finnes med feil navn). |
+| 8. mai | **Diagnose: Pmax brand exclusions virket aldri.** Verifikasjon avslørte at brand-andel hadde stått fastlåst på 66,7% i hele 17-dagers-perioden siden brand exclusions ble slått på 20. april (ingen bevegelse mellom 14-20. april og 1-4. mai-bucketene). Inspeksjon av merkelisten «Fosen Tools egen brand» i Google Ads viste at den kun inneholdt ÉN brand-entitet (Googles indekserte «Fosen Tools AS»), mens 99% av brand-klikkene kommer fra fri-tekst-søket «fosen tools» som Pmax klassifiserer som generisk. Lagt inn 4 negative keywords på Pmax-kampanjen: `[fosen tools]`, `[fosentools]`, `"fosen tools"`, `"fosentools"`. Forventet brand-andel ned mot 5-15% over 3-5 dager. Lærdom lagret som memory `feedback_pmax_brand_exclusions_insufficient.md`. **Søkeresultatside-fix:** Erik flagget at toppen av `/search`-siden viste 10 misvisende lenker (4 duplikater, 4 med tekst/URL-mismatch — Wera→Zweibrüder, FT Custom→Wera, Brockhaus Heuer→/facom). Diagnose: Multicase «CenterContentArticleSearch»-sone har rotnet over år. Skjult via SCSS `[id^="Field_CenterContentArticleSearch"] { display: none !important; }` i `FosenTools.scss`. **CNC-terminologi-regel:** «CNC-maskinert» (ikke «CNC-frest») låst inn i CLAUDE.md + memory for alle FT-innlegg/nyhetsbrev/landingssider. **Skreddersydd-definisjon-innlegg** publisert på FB/LinkedIn kl 11:30 (torsdag, +93% emoji-start-mønster). UTM-linker lagret til kontakt-siden. |
+
+---
+
 ## Siste sesjons-sammendrag (27. april 2026 — lang økt)
 
 ### Mandagsmøte-utvidelser
@@ -1004,7 +1220,56 @@ Tema: gjøre brosjyre-editoren produktiv ende-til-ende. Alle TODO-er fra 27. apr
 - Brand Search-kampanjen `Brand - Fosen Tools` — godkjent? Klikk?
 - Pmax `brand_share_pct` falt fra 66,8%? (target: 5–15% etter brand exclusions)
 - LinkedIn Community Management API — godkjenning?
-- SEO-fall på `leatherman` (-20) og `pipesett` (-18) — fortsatt åpent
+- SEO-fall på `leatherman` (-20) og `pipesett` (-18) — **diagnose ferdig 29. april (se nedenfor)**
+
+---
+
+## Siste sesjons-sammendrag (29. april 2026 — lang økt)
+
+### Bygget i kronologisk rekkefølge
+1. **5 nye produsent-sider:** Viking Arm, Lista AG, Bondhus, Hultafors, Sumake — alle med 4-blokk-struktur (HERO + INTRO + FAQ + CTA + JSON-LD), ingen kategorigrid (per regel etablert denne dagen). Alle laget mens brukeren la inn banner-bilder parallelt.
+2. **Husqvarna produsent-side** — bygget rundt brukerens eksisterende video-hero (3-slide carousel: Diamantblader → K1 PACE → PACE batterisystem). Lagt til separat META + JSON-LD-blokk + INTRO + FAQ + CTA. Mønster: bevart eksisterende video-hero, lagt til alt annet rundt.
+3. **Pipesett-kannibalisering ryddet:** primær (`/produkter/piper-og-skraller/pipesett`) hadde allerede unik introtekst. URL 2 (`/produkter/verktøykoffert/pipesett`) omdefinert som **HDFI-landingsside** med distinkt vinkling (CADLAB-skreddersøm, FOD-sikring, Forsvaret-bruk). URL 3 (`/produkter/verktøysett/koffert/pipesett`) **fjernet** — var tom uten distinkt vinkling.
+4. **Pipesett-primær fikk inline JSON-LD** — `/produkter/piper-og-skraller/pipesett` hadde 0 JSON-LD; lagt til BreadcrumbList + FAQPage som inline `<script type="application/ld+json">`-tags som matcher 1:1 med synlig FAQ på siden.
+5. **Konvertert 7 produsent-sider fra dynamisk til inline JSON-LD:** Leatherman, Viking Arm, Lista AG, Bondhus, Hultafors, Husqvarna, Sumake. Tittel/meta-overstyring beholdt som JS-script (nødvendig på produsent-sider), men JSON-LD flyttet ut til inline `<script type="application/ld+json">`. Mer pålitelig for Googlebot enn `document.createElement`-injection.
+
+### SEO-fall-diagnose (29. april) — leatherman og pipesett
+**Smoking gun: `/manufacturers/{merke}` system-bred kannibalisering.** Multicase eksponerer en automatisk URL-tvilling for ALLE produsenter:
+- /manufacturers/leatherman, /manufacturers/wera, /manufacturers/hellberg (32 imps april!), /manufacturers/milwaukee, /manufacturers/zarges, /manufacturers/bahco, m.fl. — minst 15+ /manufacturers/* URLer er indeksert i april 2026.
+- Hver av dem har default-tittel ("Leatherman - Fosen Tools AS"), default-meta ("Leatherman"), og **canonical pekende til seg selv** (ikke til primær /{merke}).
+- Resultat: Google ser to nesten-identiske produsent-sider per merke → splitter SEO-autoritet → posisjonsfall.
+
+**Faktiske tall fra Google Search Console (april 2026):**
+- /leatherman: pos **18.9**, 70 visninger, **0 klikk** (fall fra ~pos 8 i mid-mars = ~10 plassers fall)
+- /produkter/piper-og-skraller/pipesett: pos **13.6**, 441 visninger, **0 klikk** (fall fra ~pos 10.8 = ~3 plassers fall)
+- CLAUDE.md hadde dokumentert -20 og -18 — faktiske tall var ~-10 og ~-3 (deler av "fallet" var noisy data).
+
+**Spørsmål sendt til Multicase 29. april:**
+1. Aktivering av 301-redirect-modul (priset)
+2. Sitemap-fix: kan brukeren selv aktivere produsent-sider i admin?
+3. /manufacturers/-kannibalisering: støtter redirect-modulen wildcard-regler (`/manufacturers/(.*) → /$1`), eller kan canonical-tag settes system-bredt?
+
+### Multicase-svar mottatt 29. april
+- **CSS-klasse per menypunkt:** Hvert menypunkt kan få egen CSS-klasse (Avansert → "Css klasse"-felt). Egen CSS kan `display: none`-skjule punktet, mens siden forblir aksesserbar og **inkluderes i sitemap**. Dette er "mellomtingen" vi ville ha — skjult i meny, synlig i sitemap.
+- **301-redirect-modul:** Beskrivelse mottatt — automatisert dialog ved URL-endring, kun modul-pris, ingen ekstra config-tid. Status: trolig ikke aktivert ennå. Erik (FT) godkjente å kjøre på "om det betaler seg selv".
+- **Pågående:** wildcard-spørsmål for /manufacturers/-redirects + selv-aktivering av produsent-sider i admin.
+
+### Memory-regler etablert 29. april (lagret i memory/)
+1. **Ikke generér kategorigrid uten å spørre** — produsent-sider default til 4-blokk; kategorigrid kun ved eksplisitt forespørsel. Filter-verdier i Multicase må verifiseres manuelt.
+2. **INTRO uten Fosen Tools-paragraf** — produsent-sider INTRO stopper etter 2 paragrafer; ikke "Hos Fosen Tools fører vi..."-avslutning. Aldri `\u00xx`-escape i HTML-body.
+3. **Sjekk produktantall før URL-unikifisering** — tomme URLer skal skjules/fjernes/omdefineres som landingsside, ikke unikifiseres med generisk innhold.
+4. **Hopp over title/meta-script når brukeren kan redigere selv** — kun JSON-LD i script for ikke-produsent-sider; brukeren setter title/meta/URL i CMS direkte.
+5. **HDFI-terminologi** — referer alltid til Fosen Tools' HDFI som "HDFI" alene; ikke "HDFI-skuminnlegg" eller "HDFI-skum".
+
+### Første gjøremål 30. april
+1. **Konvertere resterende 23 produsent-sider** fra dynamisk til inline JSON-LD: Pelicase, Stahlwille, Fosen Tools, Fosen Tools Custom, Wera, Mitutoyo, Ledlenser, Mora of Sweden, Hellberg, Snap-on, FACOM, Knipex, PB Swiss Tools, KC Tools, Gedore, Zarges, Brockhaus HEUER, Milwaukee, Fluke, Rennsteig, Bahco, Gigant, Solid Gear. Brukeren limer eksisterende script i chat → konverterer til drop-in.
+2. Følge opp Multicase-svar på (a) selv-aktivering av produsent-sider, (b) wildcard-redirect-støtte for `/manufacturers/`, (c) modul-pris-bekreftelse.
+3. Når Multicase-svar mottatt: implementere sitemap-fix (CSS-klasse-trick + gjøre skjult avdeling synlig).
+4. Etterpå: be om re-indeksering i GSC for /leatherman og pipesett-primær (og resten av sidene som ble JSON-LD-konvertert) når GSC URL-inspect-quote er oppe igjen.
+
+### Verifisering
+- /leatherman publisert med inline JSON-LD: brukeren skal teste i [Google Rich Results Test](https://search.google.com/test/rich-results) — forventer 3 typer godkjent (Brand, Breadcrumbs, FAQs).
+- Etter 1-2 uker: sjekk i GSC at /leatherman har gjenvunnet SEO-autoritet (mål: pos < 10 igjen).
 
 ---
 
@@ -1056,3 +1321,258 @@ Brukeren har overtatt Google Ads-arbeidet selv (Fyr er ikke lenger byrå). Guide
 
 ### Nye ikke-kode-filer 20. april
 - `docs/produktinfo/` — 7 PDFer fra Fosen Tools (INFO, 5S-Lean, Weapon Storage, Helikopterlandingsplass, Bærekraft, Systemvegg, HDFI). Brukes som brand/produkt-kontekst for ad-copy og SEO-arbeid.
+
+---
+
+## Siste sesjons-sammendrag (30. april 2026 — kort økt)
+
+Tema: ferdigstille GTM Lookup → inline JSON-LD-migreringen (oppfølging fra 29. april) og rydde opp strukturelle schema-feil.
+
+### GTM-migrering: 48 sider ferdigstilt
+- **`Lookup - SEO Innhold`-tabellen i GTM (52 entries)** ble fullstendig migrert til inline `<script type="application/ld+json">` i Multicase-bodyene
+- 4 sider (`/facom`, `/hellberg`, `/husqvarna`, `/brockhaus-heuer`) hadde allerede inline fra 29. april — disse fikk bare GTM-Lookup-raden slettet
+- 48 nye sider fikk inline JSON-LD limt inn via en lokal HTML-arbeidsliste (`/tmp/gtm-migration/_ARBEIDSLISTE.html`) bygget med Kopier+Åpne-knapper og localStorage-progress
+- Hele GTM Lookup-tabellen + tagget som injiserte JSON-LD via `document.createElement` ble slettet etter at alle 48 var på plass
+
+### Strukturelle JSON-LD-fixer (utover ren tekst-migrering)
+1. **Forsiden `/`** — fjernet `Manufacturer` og `WholesaleStore` fra `@type`-arrays på Organization og LocalBusiness (Fosen Tools produserer kun HDFI/FT Custom, ikke Wera/Knipex/Snap-on osv.). Fjernet brand-array fra Organization (feil bruk på Org-nivå). Resultat: 7 rene schemas (Organization, LocalBusiness, Service×2, WebSite, WebPage, FAQPage)
+2. **5 aviation undersider** (`/aviation/{accessories,aircrafts,custom-tool-cabinets,custom-tool-kits,line-maintenance-docking}`) — GTM-versjonen hadde kun bar `ItemList` uten container-page. Lagt til CollectionPage + BreadcrumbList per side
+3. **`/referanser/softcase-hdfi`** — manglet BreadcrumbList og ItemList. Lagt til begge med 5 underprosjekter
+4. **11 små-kofferter-hdfi-undersider** — inkonsistent struktur (noen med både WebPage+CollectionPage, noen med feilplasserte ItemList). Standardisert til WebPage som canonical, BreadcrumbList beholdt, ItemList fjernet (feil type for individuelle portfolio-items)
+
+### ftseo-blokk-cleanups (4 sider)
+- `/referanser/lasermerking`, `/referanser/store-kasser-hdfi`, `/referanser/verktoyvogn_med_hjul`, `/referanser/store-kasser-hdfi/våpenkoffert` (Blaser R8) — fikset til `<section class="ftseo"><div class="ftseo-inner">`-wrapper, fjernet tomme `<p>&nbsp;</p>`, utvidet H1 med målgruppe/nøkkelord, utvidet til 2 paragrafer, lagt til `class="faq-answer"` for konsistent spacing
+
+### GTM container-størrelse: 80% → 9% 🎉
+- **~71 prosentpoeng besparelse** etter migreringen
+- Massivt headroom for nye tags
+- Forventet effekt: raskere sidelast (LCP/TBT), bedre Core Web Vitals i GSC over neste 4–8 uker
+- Baseline 30. april: sjekk PageSpeed Insights for `/` og `/produkter/verktøyvogner` om ~28 dager når feltdata er oppdatert
+
+### Verifikasjon
+- Alle 52 HTML-filer i `/tmp/gtm-migration/` har gyldig JSON (225 schema-objekter parser uten feil)
+- Lokal HTML-arbeidsliste lagret som mønster i memory for fremtidige batch-oppgaver
+
+### Workflow-mønster lagret i memory
+- **Lokal HTML-arbeidsliste** (`feedback_local_html_worklist_pattern.md`) — for repetitive copy-paste-jobber, bygg standalone HTML med Kopier+Åpne-knapper og localStorage-progress. Tekniske kritiske detaljer: escape `</script>` til `<\/script>` i embedded JSON, embed innhold inline (ikke fetch fra `file://`), robust clipboard med `execCommand`-fallback, `<details>`-expander som manuell-kopi-fallback
+
+### Multicase content-cloaking — kritisk teknisk funn (sent på 30. april)
+Etter migreringen ble JSON-LD verifisert live på alle 47 sider, men FØRSTE verifikasjon-runde (med Mozilla User-Agent) viste **0/47** — ingen JSON-LD i raw HTML. Dette skapte panikk om at innholdet aldri ble publisert. Etter å ha re-kjørt med Googlebot User-Agent kom svaret: **47/47 sider serverer JSON-LD korrekt — bare til crawlers**.
+
+Multicase serverer **forskjellig HTML basert på User-Agent**:
+- `curl -A "Mozilla/5.0"` → 0 `<script type="application/ld+json">`
+- `curl -A "Googlebot/2.1"` → 3–15 schemas korrekt levert
+
+Dette er en feature, ikke en bug — vanlige brukere får slankere DOM, søkemotorer får full SEO-data. **Implikasjon:** alle fremtidige JSON-LD-verifikasjons-scripts må bruke Googlebot User-Agent. Lagt til som quirk #14 i Kjente quirks-seksjonen.
+
+Verifikasjons-scriptet ligger på `/tmp/verify-json-ld.mjs` (kan slettes når /tmp tømmes), og full rapport er på `/tmp/gtm-migration/_VERIFY_REPORT.json`.
+
+### Påvirknings-analyse — første store data-sjekk siden 10. april
+Kjørt 30. april for å se om alle endringene siden prosjekt-start har gitt målbar effekt. Fullt analyse-script på `/tmp/fosen-analyze.mjs`.
+
+**Klare positive funn:**
+- Konverteringssporing fungerer endelig: uke 27. apr viser 10 654 NOK kjøpsverdi og ROAS 26.30x (mot ~0 NOK før 17. april). Konverterings-fixen 15. april (purchase som primary med GA4-verdi) gir endelig ekte ROAS-tall i systemet.
+- Pmax-kostnad falt 27% fra første halvdel til andre halvdel av april (834 → 610 kr), og leverer nå ROAS 17.02x (single-buy outlier-effekt, men positivt).
+- Brand Search-kampanjen `Brand - Fosen Tools` leverer fra dag 1: ROAS 1.75x med første kjøp (270 kr verdi).
+- Produsent-søk klatrer: `verktøyvogn` +25 visninger, `stahlwille` +6, `wera` +3, `knipex` 0→2.
+
+**Bekymringer å overvåke:**
+- ⚠️ Pmax brand-andel gikk OPP, ikke ned: 65.3% (før 20. april) → 68.3% (etter 20. april). Brand exclusions kan trenge 7-14 dager på å re-lære. Verifiser at exclusions FAKTISK er aktive om en uke (sjekk i Google Ads UI).
+- ⚠️ Søkeposisjon-snitt forverret seg: pos 4.7 (uke 13. apr) → 8.4 (uke 27. apr). Henger trolig sammen med `/manufacturers/`-kannibaliseringen identifisert 29. april. Inline JSON-LD-migreringen 30. april kan reversere dette over 2-4 uker.
+- ⚠️ Facom-fallet: pos 2.0 → 16.7 (-17 visninger på én uke). Verdt å undersøke om Facom-siden er fortsatt indeksert.
+- ⚠️ GA4 sesjoner: topp 1077 (uke 13. apr) → 408 (uke 27. apr, 4 dager → ekstrapolert ~714). Trafikken har falt etter midten av april.
+
+For-tidlig-å-bedømme: JSON-LD-migrering (i dag), GTM 80%→9%-besparelse (28 dager før Core Web Vitals-feltdata oppdateres i GSC), 24-29. april produsent-sider (1-6 dager siden publisering).
+
+### Caption-optimalisering — første data-drevne mønster-analyse av FT sosiale medier
+Brukeren skal poste innlegg om en Pelicase 1535-leveranse til Forsvaret 1.-2. mai. Kjørt mønster-analyse av 60 Facebook-poster for å bygge en datadrevet caption-mal. Fullt analyse-script på `/tmp/fosen-caption-analysis.mjs`.
+
+**Driver-mønstre (lift mot median engasjement på 68):**
+- «Skreddersydd» / «HDFI» / «spesialtilpasset» **+144%** (klart sterkeste driver)
+- Start med emoji **+93%**
+- 2+ emojis i caption **+67%**
+- Stolthet-tone («levert», «ferdigstilt») **+38%**
+- CTA («ta kontakt») **+15%**
+- Direkte spørsmål **-33%**
+- «Forsvar/militær» eksplisitt **-94%** (de 4 forsvar-postene var filosofiske, ikke konkrete leveranse-poster)
+- Lange poster (300+ tegn) **-44%**
+
+**Beste posting-tidspunkt:** Torsdag/fredag kl 12:00 (snitt 162 eng vs onsdag 19). Onsdag verst, kl 12:00 over 2x neste alternativ.
+
+Lagret som memory `feedback_social_caption_optimization.md` for fremtidig bruk på alle FT sosiale medier-poster. Inkluderer per-plattform-stil (IG/FB/LinkedIn), UTM-konvensjoner, alt-tekst-workaround for Meta Business Suite (legg til via mobilapp etter publisering).
+
+### Neste TODO
+1. **1.-2. mai**: Publisere Pelicase 1535-Forsvaret-innlegg på IG/FB/LinkedIn (caption-pakke ferdig). Etter publisering: legg til alt-tekst via Instagram-mobilapp, sjekk i GA4 Realtime at UTM-trafikk kommer inn med riktig source.
+2. Be om re-indeksering i Google Search Console for de 48 migrerte sidene (når GSC URL-inspect-quoten er oppe igjen)
+3. Sett baseline med PageSpeed Insights for `/` og `/produkter/verktøyvogner` så GTM-besparelsen kan måles om 4 uker
+4. Følg opp Multicase-svar på selv-aktivering av produsent-sider + wildcard-redirect for `/manufacturers/` + 301-redirect-modul pris-bekreftelse
+5. **Sjekk 7. mai**: Pmax brand-andel — har den falt under 50% etter brand exclusions? Hvis ikke, verifiser at exclusions faktisk er aktive i Google Ads UI.
+6. **Sjekk 14. mai**: SEO-rangeringer for `/leatherman` og pipesett-primær — er posisjon < 10 igjen?
+7. Undersøk Facom-fallet (pos 2.0 → 16.7 på én uke) — er siden fortsatt indeksert?
+
+---
+
+## Siste sesjons-sammendrag (6.-7. mai 2026 — lang økt over to dager)
+
+Tema: Multicase URL-redirect-modul aktivert + bygget egen SEO-innhold-bygger som erstatter Trakk.ai-tilbud (42 000 kr/år) + bygget levende ft-catgrid-system med to moduser + powerpoint til Erik for Åfjord Regnskap-presentasjon.
+
+### Multicase URL-redirects — 107 totalt på én dag
+
+Multicase aktiverte redirect-modulen 6. mai (etter forespørsel siden 21. april). Modul støtter 301/302 + chain-cleanup, men IKKE wildcard. All redirect-arbeid dokumentert i `docs/seo/multicase-redirects-2026-05-06.md`.
+
+**Runde 1 (31 redirects):** 30 stk `/manufacturers/{slug}` → `/{slug}` for ferdige produsent-sider + `/snap-on` → `/snapon` (var broken 302 til forsiden). Alle verifisert live (Googlebot UA-test, 31/31 returnerer 301 → korrekt destinasjon).
+
+**Runde 2 (76 redirects, 74 live):** Etter at brukeren delte ProductMenu-HTML (autoritativ liste over alle 53 merker), utvidet til:
+- 22 nye `/manufacturers/{slug}` for merker uten ferdig produsent-side: aok-by-kc-tools, apex-tools, boehm, bosch-tilbehør, brusletto, emhart-teknologies, geilo-verktøy, gühring, handi, karlstad-redskap, meclube, opticase, osca, red-rooster, scell-it, snickers, stanley-pmi, the-bone, ullman-devices, vogel-germany, völkel, zweibrüder
+- 52 stk `/categories/{slug}` → `/{slug}` for alle 53 merker (ScrewGrab unntatt — bruker `/produsent/screw-grab` som primær)
+- Brukeren hoppet over 2: `/categories/gedore` og `/categories/bondhus` (skal legges inn senere)
+
+**Runde 3 (11 redirects):** Underkategori-aliaser som tidligere 302-ret til forsiden:
+- `/skraller`, `/tolvkant`, `/forlengere`, `/universalledd`, `/overganger`, `/holder` → `/produkter/piper-og-skraller`
+- `/sekskant`, `/torx` → `/produkter/skrutrekkere?Filter=11¤1:11¤1_Sekskant` og `?Filter=11¤1:11¤1_Torx` (filter-URLer på skrutrekker-siden)
+- `/unbrako` → `/produkter/skrutrekkere/l-nøkler` (først, deretter byttet til filter-URL etter brukerens innspill om at unbrako er skrutrekker, ikke pipe)
+- `/koffert` → `/produkter/verktøykoffert`
+- `/auto` → `/produkter/verktøyvogner/auto`
+
+**URL-endring underveis:** `/produkter/momentverktøy/momentnøkler` → `/produkter/momentverktøy/momentnøkkel` (entall) + 60+ land-prefiks-redirects bekreftet via Multicase' auto-redirect-modul. Brukeren begrunnet med at "momentnøkkel" har høyere søkevolum enn flertall.
+
+**HTML-arbeidslister generert** for hver runde i `/tmp/redirects-runde[1-3]-2026-05-06/_ARBEIDSLISTE.html` med kopier+ferdig-knapper og localStorage-progress (mønster fra 30. april).
+
+### SEO-innhold prompt-bygger — bygget på 7 timer (erstatter Trakk.ai-tilbud)
+
+09:30 møte med Trakk.ai (tilbud: 42 000 kr/år for 50 søkeord SEO-innhold). 11:00 besluttet å bygge selv. 16:00 ende-til-ende ferdig:
+
+**Backend (`/api/insights/seo-content/route.ts` + `analyze-url/route.ts`):**
+- URL-analyse-rute scraper siden, henter GSC-data (siste 90d, filtrert på page-URL), klassifiserer kandidater i 4 kategorier (low_hanging, growth, long_tail, underperforming) med score = volum × posisjon-mulighet
+- Auto-konkurrent-finning via Serper.dev API (Google har deaktivert "Search the entire web" for nye CSE-er som policy fra 2024/2025 — verifisert via help-dialog som sa "cannot be activated anymore")
+- Domain-deduplisering, ekskluderer Fosen Tools selv + Wikipedia/sosiale medier
+- Konkurrent-scraping: title, meta-description, H1, H2-liste, body-utdrag (350 ord)
+- Bygger strukturert prompt med Fosen Tools-kontekst (HDFI, CADLAB, Forsvaret, 25 år, Brekstad, Miljøfyrtårn) + Multicase-template-regler
+
+**Output-format-evolusjon:**
+- Først: én `full_snippet` med INTRO + FAQ + JSON-LD slått sammen
+- Etter brukerens tilbakemelding (han bruker meg lokalt gratis, trenger ikke API-mode): konvertert til prompt-bygger der brukeren limer prompten i Claude → får JSON-svar tilbake → limer JSON-feltene i Multicase
+- Etter "vi må legge ut i publiseringer"-tilbakemelding: 6 separate blokker som hver er en EGEN PUBLISERING:
+  1. `meta_title` (45-60 tegn, UTF-8 — settes i Multicase tittel-felt)
+  2. `meta_description` (150-160 tegn, UTF-8 — meta-felt)
+  3. `intro_block` (HTML, `<section class="ftseo">`)
+  4. `faq_block` (HTML, 5 FAQ-spørsmål, mønster: utvalg/kvalitet/bruksområde/sammenligning/garanti)
+  5. `contact_cta_block` (HTML, eksakt produsent-side-CTA-mønster)
+  6. `json_ld_script` (BreadcrumbList + FAQPage matcher faq_block eksakt)
+
+**Frontend (`/innsikt/seo-innhold` page.tsx):**
+- Steg 1: lim inn URL → 12 keyword-kandidater
+- Steg 2: velg keyword → "Bygg prompt"-knapp (evt. auto-finn 5 konkurrenter)
+- Steg 3 (NY): lim inn JSON-svar fra Claude → parse → 6 kort med kopi-knapp + plassering-instruks per blokk
+- Sidebar-link: "SEO-innhold (AI)" under Innsikt-seksjon
+
+**Verifisert med "leatherman":** 5 konkurrenter funnet via Serper, 19 315 tegn prompt. Verifisert med "momentverktøy" → JSON-output med 6 ferdige blokker, lim-klar.
+
+**Tidlig CSE-veg sluttet:** Forsøkte først Google Custom Search Engine (gratis 100/dag), brukeren satte opp `Fosen Tools SEO` (CSE-ID `017e76c2628954537`), men Google har **deaktivert «Søk på hele nettet»-toggelen for nye CSE-er** — kun eksisterende beholder funksjonen. CSE-en kan slettes eller la stå.
+
+### Levende ft-catgrid for alle `/produkter/*`-sider — bygget 7. mai
+
+JS-script som dynamisk leser `.ProductMenu`-strukturen og bygger ft-catgrid med bilder. Funker i to moduser:
+- **Toppnivå (`/produkter`):** ingen `Level1Selected` → bygg fra alle `Level1`, bilder fra `/userfiles/image/menuicons/{slug}.png`
+- **Sub-kategori (`/produkter/{kategori}`):** har `Level1Selected` → bygg fra `Level2`-søsken, bilder fra `/userfiles/image/Kategoribilder/{Hovedkategori}/{slug}.png`
+
+**Multicase-strikking-quirk oppdaget:** `<img>`-attributter (`onerror`, `style`) blir strikket fra raw HTML i publiseringsfelt — sannsynligvis XSS-beskyttelse. Hele cellen kollapser eller blir blank hvis vi prøver å bygge med `<img>` i innerHTML-strengen. **Løsning:** bygg tekst-celler først via `innerHTML` (Multicase godkjenner `<span>`-elementer), deretter injiser `<img>`-elementer via `document.createElement` og `insertBefore` etter at DOM er klar. Multicase ser ikke `<img>`-attributter siden de er JS-generert runtime, ikke i den lagrede publiseringen.
+
+**MutationObserver + polling** som fallback siden ProductMenu kan lastes via AJAX.
+
+**Bekreftet virker:** `/produkter/momentverktøy` (sub-modus, 4 underkategorier med bilder) og `/produkter` (toppnivå-modus, 39 hovedkategorier).
+
+**Komplett dokumentasjon i CLAUDE.md** under seksjonen "Kategori-sider (`/produkter/*`) — levende catgrid" med ferdig kopibar script, bilde-konvensjons-tabell, og to-mode-forklaring.
+
+**SCSS for megameny oppdatert** til å bruke URL-slug-basert filnavn-konvensjon (`momentverktøy.png` ikke `moment.png`) så samme bilder brukes både i megameny (CSS background-image) og catgrid (JS-injected `<img>`). Ingen duplikate filer.
+
+**Identifisert manglende CSS-klasser i megameny** (5 menypunkter har `class="title "` med tom verdi):
+- Arbeidsklær → trenger `arb-klaer` (allerede i SCSS)
+- Batterier → trenger `batterier` (allerede i SCSS)
+- Verktøy for elbil → trenger ny klasse `verktoy-elbil` + ny SCSS-regel + ny ikon-fil
+- Verneutstyr → trenger ny klasse `verneutstyr` + ny SCSS-regel + ny ikon-fil
+- Tvinger → trenger ny klasse `tvinger` + ny SCSS-regel + ny ikon-fil
+
+**Manglende ikoner:** `verktøy-elbil.png` (URL-slug) finnes ikke, men `verktøy-for-elbil.png` (med "for") finnes — kan omdøpes. `verneutstyr1.png` ikke lastet opp.
+
+### PowerPoint til Erik (Åfjord Regnskap-presentasjon 7. mai)
+
+Lagret som `/tmp/fosen-tools-ai-presentasjon.pptx`. Bygget med pptxgenjs (16x9 wide, 13.3" × 7.5"), Fosen Tools-branding (rød accent #DC2626 + mørk bakgrunn).
+
+**Tre iterasjoner basert på Eriks tilbakemelding:**
+1. Første versjon: 10 slides, teknisk dybde + leverandør-sammenligning
+2. Andre versjon (etter "ikke gå i dybden"): 9 slides, enklere språk, fjernet Vercel/Multicase/Trakk-refs
+3. Tredje versjon (etter "vis tall + nevne leverandører"): 10 slides, behold enkelt språk men inkluder kostnadsbesparelse-slide med Fyr (~180k/år), Trakk.ai (42k/år), brosjyre-design (5-10k/brosjyre), total estimert ~220k+/år besparelse
+
+**Slide-struktur:**
+1. Tittel — "AI i Fosen Tools — slik bruker vi det i hverdagen"
+2. Hva har vi bygget (3 hovedformål)
+3-7. Verktøy 01-05 (Mandagsmøte, SEO-innhold, Brosjyrer, Sosiale medier+nyhetsbrev, Varsler)
+8. Hva sparer vi i kroner? (Fyr/Trakk/InDesign-sammenligning)
+9. Hva betyr det i hverdagen (4 fordeler)
+10. Avslutning — "AI er ikke fremtiden for oss. Det er hverdagen."
+
+### Neste TODO (etter ny session)
+
+**Datostyrte sjekkpunkter:**
+- **7. mai (i dag):** Pmax brand-andel under 50%? + Erik holder presentasjon for Åfjord Regnskap
+- **12. mai:** Verktøykontroll-engasjement vs +144%-mønsteret
+- **13. mai:** Struktur-først-innlegg engasjement
+- **14. mai:** SEO-rangeringer `/leatherman` + pipesett under pos 10?
+- **5. juni:** Bransjer-pause re-evaluering
+
+**GSC-arbeid:**
+- Dag 3 (7. mai): 15 URLer (3 carry-over fra Dag 2 + 12 originale) — arbeidsliste klar i `/tmp/gsc-dag3-2026-05-07/_ARBEIDSLISTE.html`
+- Dag 4 (8. mai): 8 URLer
+- Be om re-indeksering for `/produkter/momentverktøy/momentnøkkel` (ny URL etter momentnøkler→momentnøkkel-endringen)
+
+**Megameny-fix:**
+- Legg til CSS-klasse i Multicase admin på 5 menypunkter (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger)
+- Last opp manglende ikoner: `verktøy-elbil.png`, `verneutstyr1.png`
+- Legg til 3 nye SCSS-regler for verktoy-elbil/verneutstyr/tvinger
+- Vurder URL-rensing: `/produkter/verneutstyr1` → `/produkter/verneutstyr` (ren URL, samme mønster som momentnøkler→momentnøkkel)
+
+**Catgrid-bilder:**
+- 39 hovedkategori-ikoner i `/userfiles/image/menuicons/` — de fleste er allerede der, manglende kan lastes opp etter behov
+- Sub-kategori-bilder i `/userfiles/image/Kategoribilder/{Hovedkategori}/` — last opp etter hvert som kategori-sider får catgrid-script
+
+**Multicase-oppfølging:**
+- Sitemap-fix henger fortsatt (avventer wildcard-redirect-svar + selv-aktivering av produsent-sider)
+- 301-redirect-modul-pris-bekreftelse
+- Eventuell URL-rensing av `/produkter/verneutstyr1` (1-suffix er sannsynligvis legacy)
+
+**Levende catgrid utrullings-arbeid:**
+- Lim inn script på alle 39 hovedkategori-sider når brukeren får tid (samme script funker uendret på alle)
+- Mest verdi på sider med mange under-kategorier (verktøyvogner, nøkler, måling-og-merking osv.)
+
+### Tekniske funn lagret som memory
+
+- **`feedback_multicase_levende_catgrid.md`** (NY): Multicase strikker `<img>` i publiseringer; bygg tekst-catgrid først via innerHTML, injiser bilder via document.createElement etter at DOM er klar. Bilde-konvensjon: `/userfiles/image/Kategoribilder/{Hovedkategori}/{slug-fra-href}.png` for sub-kategorier, `/userfiles/image/menuicons/{slug}.png` for toppnivå.
+
+### Filer skapt/oppdatert i denne økten
+
+**Nye API-ruter:**
+- `src/app/api/insights/seo-content/route.ts` — prompt-bygger med Serper.dev-integrasjon, 6-blokk JSON output-format
+- `src/app/api/insights/seo-content/analyze-url/route.ts` — URL-analyse, GSC keyword-kandidater, Keyword Planner-status
+
+**Nye sider:**
+- `src/app/(dashboard)/innsikt/seo-innhold/page.tsx` — 3-stegs UI med URL-analyse + prompt-bygger + JSON-parser
+
+**Sidebar:**
+- `src/components/layout/sidebar.tsx:86` — lagt til "SEO-innhold (AI)" under Innsikt-seksjon
+
+**Dokumentasjon:**
+- `docs/seo/multicase-redirects-2026-05-06.md` — alle 107 redirects med plan og verifikasjon
+- `docs/seo/gsc-reindex-list-2026-05-05.md` — Dag 2-3 oppdatert med carry-over
+
+**Lokale arbeidslister (kan slettes):**
+- `/tmp/redirects-runde2-2026-05-06/_ARBEIDSLISTE.html` (76 redirects)
+- `/tmp/redirects-runde3-2026-05-06/_ARBEIDSLISTE.html` (11 redirects)
+- `/tmp/redirects-categories-2026-05-06/_ARBEIDSLISTE.html` (30 redirects, eldre versjon)
+- `/tmp/gsc-dag3-2026-05-07/_ARBEIDSLISTE.html` (15 URLer for i morgen)
+- `/tmp/fosen-tools-ai-presentasjon.pptx` (PowerPoint til Erik)
+
+**CLAUDE.md utvidet med:**
+- Ny seksjon "Kategori-sider (`/produkter/*`) — levende catgrid" (mellom produsent-sider og kjente begrensninger)
+- 6. og 7. mai-rader i Prosjekt-tidslinje-tabellen
+- Denne sesjons-sammendraget
