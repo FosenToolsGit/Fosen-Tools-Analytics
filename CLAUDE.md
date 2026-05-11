@@ -1123,6 +1123,7 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 6. mai | **Multicase redirect-modul aktivert** (Verktøy → URL redirect, 301/302-støtte + chain-cleanup, ingen wildcard). **107 redirects totalt lagt inn og verifisert live på én dag** for å løse system-bred kannibalisering identifisert 29. april. **Runde 1 (31):** 30 stk `/manufacturers/{slug}` → `/{slug}` for ferdige produsent-sider, + `/snap-on` → `/snapon` (var broken 302 til forsiden). **Runde 2 (76 → 74 live, 2 hoppet over):** Etter at brukeren delte ProductMenu-HTML (autoritativ liste over alle 53 merker), utvidet til 22 nye `/manufacturers/{slug}` for merker uten ferdig produsent-side (aok-by-kc-tools, apex-tools, boehm, bosch-tilbehør, brusletto, emhart-teknologies, geilo-verktøy, gühring, handi, karlstad-redskap, meclube, opticase, osca, red-rooster, scell-it, snickers, stanley-pmi, the-bone, ullman-devices, vogel-germany, völkel, zweibrüder), + 52 stk `/categories/{slug}` → `/{slug}` for alle merker (ScrewGrab er unntatt — bruker `/produsent/screw-grab` som primær). **Verifisert 6. mai: sitemap har 4689 URLer, alle produkt-URLer; ingen `/merkevare/*`, `/manufacturers/*` eller topp-nivå produsent-paths.** Sitemap-fix henger fortsatt på Multicase. **GSC re-indeksering:** Dag 1 (4 URLer fra Tier 1) ferdig 5. mai. Dag 2 (12 URLer): 9 ferdig 6. mai (kvote brukt opp); fosen-tools-custom, zarges, fluke flyttet til Dag 3 (7. mai). Arbeidslister generert som lokale HTML-filer i `/tmp/redirects-*` og `/tmp/gsc-dag*` med kopi-knapper og localStorage-progress (mønster fra 30. april). **Runde 3 (11):** 10 underkategori-aliaser (skraller, sekskant, tolvkant, forlengere, universalledd, overganger, holder, koffert, auto + test-rad) + spesialiserte filter-URLer for unbrako/torx → `/produkter/skrutrekkere?Filter=11¤1:11¤1_Sekskant`. **Møte med Trakk.ai 09:30 → besluttet å bygge selv:** SEO-innhold prompt-bygger bygget på 7 timer (URL-analyse + GSC-integrasjon + auto-konkurrent-finning via Serper.dev + UI med 3 steg). Siden brukeren bruker Claude Code lokalt (gratis), konvertert fra direkte API-call til prompt-bygger som brukeren limer inn til meg → JSON-svar med 6 separate publiserings-blokker (meta_title, meta_description, intro_block, faq_block, contact_cta_block, json_ld_script). Steg 3 i UI parser JSON og viser hver blokk med kopi-knapp + plassering-instruks. Bekreftet med "leatherman" og "momentverktøy"-tester. **PowerPoint til Erik (Åfjord Regnskap-presentasjon 7. mai):** 10 slides, fokus på "AI i hverdagen" + kostnadssammenligning (Fyr ~180k/år, Trakk 42k/år, brosjyre-design 5-10k/brosjyre, total estimert ~220k+/år besparelse). |
 | 7. mai | **Levende ft-catgrid-system bygget** for alle `/produkter/*`-sider. Dynamisk JS-script som leser `.ProductMenu` i DOM, finner `Level1Selected` og bygger ft-catgrid med bilder. **Dual-mode:** toppnivå `/produkter` viser alle Level1 fra `/userfiles/image/menuicons/{slug}.png`, sub-kategori-sider viser Level2-søsken fra `/userfiles/image/Kategoribilder/{Hovedkategori}/{slug}.png`. **Multicase-strikking-quirk oppdaget:** `<img>`-attributter blir strikket fra raw HTML i publiseringsfelt (sannsynligvis XSS-beskyttelse) → løsning er å bygge tekst-celle først via `innerHTML`, deretter injisere `<img>`-elementer via `document.createElement` etter at DOM er klar. MutationObserver + polling som fallback siden ProductMenu kan lastes via AJAX. Verifisert virker på `/produkter/momentverktøy` (sub-modus, 4 underkategorier) og `/produkter` (toppnivå, 39 hovedkategorier). **URL-endring:** `/produkter/momentverktøy/momentnøkler` → `/produkter/momentverktøy/momentnøkkel` (entall, hører bedre til kategori-side med ett produkt-type) + 60+ land-prefiks-redirects bekreftet via Multicase' auto-redirect-modul. **SCSS for megameny oppdatert:** filnavn endret til URL-slug-konvensjon (`momentverktøy.png` ikke `moment.png`) så samme bilder kan brukes i både megameny og catgrid. **Identifisert 5 manglende CSS-klasser i megameny** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger) — må legges til via Avansert→Css klasse i Multicase admin. **Manglende ikoner:** `verktøy-elbil.png` og `verneutstyr1.png` ikke lastet opp (men `verktøy-for-elbil.png` finnes med feil navn). |
 | 8. mai | **Stor dag — Pmax-fix, Vercel-reaktivering, brosjyre-features, kampanje-leveranser.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: Pmax brand-exclusions diagnostisert + 4 negative keywords lagt inn (forventer 5-15% brand-andel mot dagens 66,7%); CenterContentArticleSearch-sonen på `/search` skjult via SCSS (rotnet med Wera→Zweibrüder-mismatch); CNC-terminologi-regel låst inn («CNC-maskinert», ikke «CNC-frest»); Skreddersydd-definisjon-innlegg + Kraftpipe-sett TESS VEST-innlegg publisert med UTM-tracking; **Vercel reaktivert** etter 3 ukers pause (Erik + Torstein lagt til som brukere, daglig auto-sync via cron kl 7 norsk, GitHub-repo recovered); ny **comboCard**-objekt-type i brosjyre-editoren; **Husqvarna Vårkampanje 2026** brosjyre bygget (8 sider, 36 produkter scrapet, kombi-pris på K1 PACE-pakke). |
+| 11. mai | **Mega-dag — dynamiske maler, jubileumslogoer, prisplakat-system, slideshow for butikk-TV.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **14 dynamiske maler** i brosjyre-editoren (bytter layout uten å miste produkter — 5 forsider + 8 produktgrid + bakside); **offisielle jubileumslogoer** (25-år + 100-år, gull-gradient SVG) integrert som ny **sigill-objekt-type** (12. type) med edit-panel; **Husqvarna-brosjyren bygd fra grunnen** med dynamiske maler (8 sider, 33 produkter, Husqvarna-logo som image på forsiden); **prisplakat-system helt nytt** (`/prisplakat`) med 5 formater (A4 single/2up/4up + slideshow landscape/portrait), container queries (cqh) for responsiv skalering, fullscreen API med klikk-overlay, ekte QR-koder med UTM, «Importér fra brosjyre», «Topp 8 populære», 4 atmosfæriske spesialslides (intro/credentials/sertifisert/avslutning); **per-produkt overrides** (pris, før-pris, burst-tekst, navn, vis/skjul burst+QR); **klikkbare PDF-lenker** via jsPDF.link; **FT-artikkelnummer** scraping (`.prd-num-label`); fix av pris-klipping i standard productCard; fix av FT-logo-størrelse i topp-stripe (3.4mm → 6.3mm); åpningstider rettet 07:00-15:00 (var feil 07:30-16:00 åtte steder); fjernet udokumentert «siden 2008»-claim; bruker `brit@fosen-tools.no` opprettet; **alt pushet til Vercel main**. |
 
 ---
 
@@ -1699,3 +1700,254 @@ Etter 3 ukers pause siden 21. april:
 - 8. mai-rad i Prosjekt-tidslinje (kondensert)
 - Denne detaljerte sesjons-sammendraget
 - (Ingen strukturelle endringer på Brosjyre-editor-seksjonen — combo-card er bare nytt object-type i samme system)
+
+---
+
+## Siste sesjons-sammendrag (11. mai 2026 — mega-lang økt)
+
+Tema: design-løft av brosjyre-editoren med Claude Design + helt nytt prisplakat-system (A4-print + butikk-TV-slideshow) + Husqvarna-brosjyren bygget fra grunnen + Vercel-deploy med per-produkt overrides.
+
+### Bygget i kronologisk rekkefølge
+
+**1. Claude Design-integrasjon ([ft-svg.tsx](src/components/brosjyre/ft-svg.tsx))**
+Portet FT-designsystem fra Claude Design: NeonCard (3px røde rails), RedDivider (3 varianter), Eyebrow, CTAButton med inline SVG-pil, Sigill25Aar (4 varianter: ring/solid/dual/square), PriceBurst (6 varianter: bullseye/star8/star14/badge/ribbon/square), SertifikatBaand, LogoTicker, FTStripe (3 varianter), HDFICard. Manrope-font lagt til via Google Fonts. Marquee-animasjon i editor.css.
+
+**2. Offisielle jubileumslogoer**
+- [public/brosjyre/Jubileumslogo-25aar.svg](public/brosjyre/Jubileumslogo-25aar.svg) — viewBox 201.56×113.39, gull-gradient (#85704d → #dbb78b)
+- [public/brosjyre/Jubileumslogo-100aar.svg](public/brosjyre/Jubileumslogo-100aar.svg) — viewBox 330.63×85.14, samme gradient
+- Erstattet vårt faux Sigill25Aar på FT-bakside med ekte 25-årslogo + 100-årslogo som «DEL AV»-hint
+
+**3. Sigill-objekt-type (12. objekt-type)**
+- Ny `sigill` i `PageObject` discriminated union ([types.ts](src/components/brosjyre/types.ts))
+- Properties-panel med variant-dropdown, ring-label, inner-tekst, rotasjon, farge
+- Drag-drop fra biblioteket (2 varianter: ring + solid)
+
+**4. Husqvarna-brosjyren bygd fra grunnen ([scripts/rebuild-husqvarna-fresh.mjs](scripts/rebuild-husqvarna-fresh.mjs))**
+- Plukker 33 unike produkter fra eksisterende doc, klassifiserer i kategorier (combo, diamantblad S, ringsag, kjernebor, maskiner) med smart sortering
+- 8 sider: forside (Mørk premium + Husqvarna-logo + 25-årslogo) → combo (K1 PACE + B750X med USP-blokk) → 3×3 diamantblad → 2×2 ringsag → 3×3 kjernebor små (Ø150≤) → 2×2 kjernebor store (Ø150+) → 3×3 maskiner → FT-bakside med jubileumslogoer
+- **Husqvarna-logo som image** på forsiden i stedet for tekst (hentet fra `manufacturer_logo_url` fra første produkt)
+- 25-årslogo + 100-årslogo (offisielle SVG) på forside og bakside
+- **KJERNEBORMASKIN DM 230** flyttet fra kjernebor til maskiner (regex-ordrekkefølge fikset)
+
+**5. Klikkbare PDF-lenker (jsPDF.link)**
+- PDF-eksport legger på `pdf.link(x, y, w, h, { url })` over hver produktkort
+- ComboCard splittes i venstre/høyre halv-lenker
+- Gallery-celler får link per produkt
+- Brosjyren blir digital katalog når den e-postes
+
+**6. FT-artikkelnummer (Multicase `.prd-num-label`)**
+- Utvidet `Product` med `sku?: string` i types.ts
+- Scraper henter fra `<span class="prd-num-label">123766</span>` med URL-fallback
+- Vises i SkuLabel-komponenten på alle 4 productCard-varianter + comboCard
+- Re-scrapet alle 36 produkter i Husqvarna-brosjyren
+
+**7. Standard productCard overflow-fix**
+Pris-blokk ble klippet ut når bullets tok for mye plass. Fix:
+- flexShrink:0 på pris-blokken (ALDRI klippes)
+- Bullets begrenset til 2 punkter med line-clamp 3
+- Produktnavn line-clamp 2
+- Bekreftet alle 33 produkter har komplette priser (Før + Nå + Spar)
+
+**8. FT-logo størrelse i topp-stripe**
+SVG-aspekt 11:1 betydde at 38×6mm container ga bare 3.4mm høyde — knapt synlig. Endret til 70×8mm container (gir SVG ~6.3mm høyde). Stripe-høyde 10→12mm. Tittel-bandet justert ned 2mm.
+
+**9. Prisplakat-system (helt nytt — `/prisplakat`)**
+
+**A4-print 3 layouts:**
+- [PricetagA4Single](src/components/prisplakat/a4-renderer.tsx) — 1/A4, stor hero-plakat med overflow-fix + line-clamp
+- PricetagA4_2Up — 2/A4 horisontal split med rød midt-divider, fallback-placeholder for tom posisjon
+- PricetagA4_4Up — 4/A4 2×2 grid med røde neon-rails, QR-kode + spar-info i hver celle
+
+**Slideshow ([slideshow.tsx](src/components/prisplakat/slideshow.tsx)):**
+- Landscape (16:9) + portrett (9:16)
+- **Container queries (cqh)** — alle font-sizes/padding skalerer med container, fungerer like bra på 1920×1080 fullscreen som i embedded preview
+- Cross-fade 1.2s transitions
+- Ken Burns zoom på produktbilder (1.0 → 1.06)
+- Tastatur: piltaster, space (pause), ESC, F
+- Pause-indikator
+- **4 atmosfæriske spesialslides**: intro (FT-logo + 25-årslogo på rød bg), credentials («Sertifisert leverandør til Forsvaret»), sertifisert (5 sertifikat-merker), avslutning («Velkommen inn — Industrigata 1, Brekstad»)
+
+**Datamodell + API:**
+- `pricetag_playlists`-tabell ([012_pricetag_playlists.sql](docs/migrations/012_pricetag_playlists.sql)) med RLS owner-only
+- 4 nye ruter: `GET /api/prisplakat/list`, `POST /api/prisplakat/save`, `GET /api/prisplakat/[id]`, `DELETE /api/prisplakat/[id]`
+- 5 formater: `a4_single`, `a4_2up`, `a4_4up`, `slideshow_landscape`, `slideshow_portrait`
+
+**Sider:**
+- `/prisplakat` — editor med 5 formater, live preview
+- `/prisplakat/[id]/play` — production slideshow med Fullscreen API
+- `/prisplakat/tmp/[id]/play` — test-modus med localStorage (deles mellom tabs)
+
+**Ekte QR-koder ([qr-code.tsx](src/components/prisplakat/qr-code.tsx)):**
+- `qrcode`-npm-pakke genererer SVG klient-side
+- Auto-UTM-tagging (`utm_source=prisplakat&utm_medium=print`) hvis URL er fosen-tools.no
+
+**10. Per-produkt overrides ([types.ts](src/components/prisplakat/types.ts))**
+Utvidet `PricetagProduct` med 6 override-felter + `effective()`-helper:
+- `price_override` (override pris-nå)
+- `price_before_override` (sett egen før-pris → rabatt auto-beregnes)
+- `burst_text_override` (overstyr automatisk rabatt — f.eks. «KAMPANJE», «NYHET», «SPAR 500»)
+- `name_override` (overstyr produktnavn)
+- `hide_burst` (skjul burst per produkt)
+- `hide_qr` (skjul QR per produkt)
+
+Accordion-UI i editor per produkt med alle 6 felter. Rød ramme + rød prikk visuell indikator på produkter med overrides. «Tilbakestill»-knapp. Alle 5 formater (slideshow + A4) bruker `effective()` så endringer vises overalt.
+
+**11. Fullskjerm-fix**
+- `requestFullscreen()` bruker nå `documentElement` (mer pålitelig)
+- Catch-fallback med alert hvis browser blokkerer
+- Auto-overlay ved `?autoplay=1` URL — bruker klikker «KLIKK FOR FULLSKJERM» for å starte (Fullscreen API krever user-gesture)
+- Test-modus brukte sessionStorage som er **isolert per tab** — byttet til localStorage med auto-cleanup
+
+**12. Quality-fixes**
+- **Åpningstider** rettet til 07:00-15:00 (var feilaktig 07:30-16:00 åtte steder)
+- **«siden 2008»** fjernet — udokumentert claim, erstattet med «HDFI · CADLAB · BREKSTAD»
+- **«Norges største på proff-verktøy»** fjernet fra FT-bakside (uberettiget claim) → «PROFF-VERKTØY FOR FAGFOLK»
+- **text-decoration React warning** — bytte fra shorthand til separate properties (textDecorationLine + textDecorationColor + textDecorationThickness)
+
+**13. Bruker opprettet**
+- `brit@fosen-tools.no` med passord `Toolrebel26` (pre-bekreftet i Supabase Auth)
+
+**14. Pushet til Vercel main**
+Alle 27+ commits gikk til `main` via fast-forward — Vercel auto-deployer til production.
+
+### Migrasjoner som er kjørt
+- `012_pricetag_playlists.sql` — playlist-tabell med RLS owner-only + auto `updated_at`-trigger
+
+### Memory å oppdatere
+Ingen nye memory-filer denne sesjonen — alt er kode-endringer og dokumentasjon her.
+
+### Datostyrte sjekker fremover (oppdatert)
+
+- **Tirsdag 12. mai morgen** — sjekk Pmax brand-andel (var pending fra 8. mai; mål: under 50%, retning 5-15%)
+- **12. mai** — engagement-sjekk på Skreddersydd-innlegg + Kraftpipe TESS VEST-innlegg vs +144%-mønsteret
+- **14. mai** — SEO-rangeringer for `/leatherman` og pipesett-primær (mål: posisjon < 10)
+- **5. juni** — Bransjer-pause re-evaluering
+
+### Tekniske quirks oppdaget (nye)
+
+1. **`sessionStorage` er isolert per tab** — ny tab kan IKKE lese forrige tab's sessionStorage. Bruk localStorage for cross-tab-state.
+2. **Fullscreen API krever user-gesture** — kan ikke auto-trigge fullscreen ved load. Vis en «klikk for fullskjerm»-overlay i stedet.
+3. **Container queries (cqh) krever `container-type: size` på parent** — uten det rendres som 0.
+4. **CSS shorthand + non-shorthand bør ikke mikses i React style-object** — bytte til separate properties (`textDecorationLine` osv.).
+5. **Husqvarna-logo finnes i Multicase Azure Blob** via `manufacturer_logo_url`-felt i scrape-output — kan brukes direkte for brand-merking i brosjyrer/prisplakater.
+
+### Filer skapt/oppdatert (oversikt)
+
+**Nye filer:**
+- `src/components/brosjyre/ft-svg.tsx` — Claude Design-komponenter
+- `src/components/brosjyre/ft-decorations.ts` — FT-stripe, footer, stempel, bakside helpers
+- `src/components/brosjyre/dynamic-templates.ts` — 14 dynamiske maler + applyTemplate
+- `src/components/prisplakat/types.ts` — PricetagProduct, PricetagSettings, PricetagFormat, effective()
+- `src/components/prisplakat/a4-renderer.tsx` — 3 A4-layouts
+- `src/components/prisplakat/slideshow.tsx` — Slideshow med container queries
+- `src/components/prisplakat/editor.tsx` — Prisplakat-editor med accordion-overrides
+- `src/components/prisplakat/qr-code.tsx` — QR med auto-UTM
+- `src/components/prisplakat/export-pdf.ts` — PDF-eksport for A4
+- `public/brosjyre/Jubileumslogo-25aar.svg` + `Jubileumslogo-100aar.svg`
+- `docs/migrations/012_pricetag_playlists.sql`
+- `scripts/rebuild-husqvarna-fresh.mjs` (+ apply-maskin-rabatt, undo-maskin-rabatt)
+- 4 nye API-ruter: `src/app/api/prisplakat/{list,save,[id]}/route.ts`
+- 2 nye sider: `src/app/(dashboard)/prisplakat/page.tsx` + `[id]/play` + `tmp/[id]/play`
+
+**Endrede filer:**
+- `src/components/brosjyre/types.ts` — sigill + sku på Product
+- `src/components/brosjyre/object-renderer.tsx` — neon-rails på productCard, ProductBurst, sigill-renderer, SkuLabel, overflow-fix
+- `src/components/brosjyre/panels.tsx` — sigill-egenskaper-panel, sigill i bibliotek
+- `src/components/brosjyre/canvas.tsx` — sigill i LibPayload-mapper
+- `src/components/brosjyre/editor.css` — Manrope-font + marquee-animasjon + FT-tokens
+- `src/components/brosjyre/export-pdf.ts` — klikkbare PDF-lenker via jsPDF.link
+- `src/components/brosjyre/templates.ts` — fjernet «siden 2008»-claim, åpningstider
+- `src/lib/services/scrape-product.ts` — sku-felt i ScrapedProduct + extractFosenSku()
+- `src/components/layout/sidebar.tsx` — Prisplakat i sidebar
+- `CLAUDE.md` — denne sesjonen + prisplakat-doc
+
+---
+
+## Klar for neste sesjon (tirsdag 12. mai 2026)
+
+### Pre-sesjon sjekkliste
+
+**1. Verifiser at Vercel-deploy fungerer**
+- Sjekk [vercel.com/dashboard](https://vercel.com/dashboard) at siste build (commit `f25d07c`) er deployd til production
+- Åpne production-URL `/prisplakat` og bekreft at editoren laster
+- Test «Importér fra brosjyre» med Husqvarna → 33 produkter skal komme inn
+- Test «Test fullskjerm» — skulle nå fungere med localStorage-fix
+- Test «Eksporter PDF» fra A4-single og verifiser at klikkbare lenker er der i Adobe Reader
+
+**2. Pmax brand-andel sjekk (mandag-pending)**
+- Trigge sync først: `POST /api/sync/google_ads` med Bearer SYNC_SECRET_KEY
+- Sjekk `brand_share_pct` i `/ga4/google-ads/analyse`
+- Mål: under 50%, retning 5-15% (var 66,7% før brand-exclusions + negative keywords 8. mai)
+- Hvis fortsatt høy: verifiser at Pmax-kampanjen faktisk har brand-exclusions aktive i Google Ads UI
+
+**3. Engagement-sjekk (12. mai-deadline)**
+- Skreddersydd-definisjon-innlegg (publisert 8. mai 11:30 fre)
+- Kraftpipe-sett TESS VEST-innlegg (publisert 8. mai)
+- Pelicase 1535-Forsvaret-innlegg (publisert 1. mai)
+- Sammenlign mot +144%-mønsteret fra `feedback_social_caption_optimization.md`
+
+**4. Sjekk prisplakat på butikk-TV (hvis tilgjengelig)**
+- Åpne slideshow-URL i Chrome på TV-en
+- Trykk F11 for fullskjerm
+- La det loope og sjekk om Ken Burns + transitions virker greit
+- Verifiser at bilder loader (proxy fungerer fra Vercel)
+
+### Tirsdag-fokus
+
+**A. Test produksjons-deployet av prisplakat-systemet**
+- A4-print: eksporter PDF, verifiser klikkbare lenker
+- Slideshow: åpne i ny tab, klikk fullskjerm, la auto-advance kjøre
+- Per-produkt overrides: sett en custom pris, verifiser at det reflekteres i alle 5 formater
+- «Importér fra brosjyre»: sjekk at Husqvarna-produktene kommer inn med riktig data
+- Lagre playlist, sjekk at den vises i «Mine prisplakater»
+
+**B. Eventuell polering basert på testing**
+Hvis det er issues på prod, fix dem. Vanlige områder:
+- Bildelasting via proxy
+- Vercel function timeouts ved scraping (8 produkter sekvensielt)
+- Browser-kompatibilitet (testet i Chrome — også sjekk Safari/Firefox hvis relevant)
+
+**C. Dokumentere flyt for butikk-TV-bruk**
+Lag en kort 1-pager til Erik/butikkansatte:
+1. Åpne fosen-tools-analytics.vercel.app i Chrome
+2. Logg inn med butikk-bruker (eventuelt opprett egen «butikk@fosen-tools.no»)
+3. Gå til `/prisplakat`
+4. Importér produkter fra eksisterende kampanje eller velg topp 8 populære
+5. Bytt format til «Slideshow — landskap 16:9»
+6. Lagre med beskrivende navn
+7. Klikk «Spill av» → åpner i ny fane → trykk F11 for fullskjerm
+
+**D. Sjekke Multicase ProductMenu-CSS-klasser (fra 7. mai)**
+5 menypunkter mangler CSS-klasse i megameny:
+- Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger
+
+Også laste opp manglende ikoner: `verktøy-elbil.png`, `verneutstyr1.png`.
+
+### Pending fra tidligere sesjoner (overført)
+
+- **Wildcard-redirect-svar fra Multicase** — `/manufacturers/(.*) → /$1` (etterfølgende svar fra 29. april)
+- **Selv-aktivering av produsent-sider** i Multicase admin (samme)
+- **301-redirect-modul pris-bekreftelse** (Erik godkjente «om det betaler seg selv»)
+- **SEO-fall på `/leatherman`** (pos 18.9, 0 klikk april) — sjekk om inline JSON-LD-konvertering 29. april forbedret rangeringen (sjekk 14. mai)
+- **Facom-fallet** (pos 2.0 → 16.7 på én uke 30. april) — sjekk om siden fortsatt er indeksert
+- **Bransjer-pause re-evaluering** (5. juni — kampanjen pauset 5. mai)
+- **GSC re-indeksering** — Dag 4 av re-indekserings-planen (8. mai-pending)
+
+### Prompt-mal for tirsdag
+
+```
+Hei! Vi fortsetter der vi slapp 11. mai. Hovedoppgaver:
+
+1. Sjekk at Vercel-deploy er live på production (siste commit f25d07c)
+2. Test prisplakat-systemet på produksjons-URL
+3. Sjekk Pmax brand-andel (mål: <50%)
+4. Engagement-sjekk på 8. mai-innleggene (Skreddersydd + Kraftpipe TESS VEST)
+
+Les CLAUDE.md, særlig 11. mai sesjons-sammendrag. Brukerne tilgjengelig på Supabase:
+- adrian@fosen-tools.no (deg)
+- erik@fosen-tools.no
+- torstein@fosen-tools.no
+- brit@fosen-tools.no (NY 11. mai)
+
+Si fra når du har full kontekst, så avgjør vi prioriteringen for dagen.
+```
