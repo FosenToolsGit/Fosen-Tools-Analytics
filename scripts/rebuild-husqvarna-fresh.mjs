@@ -147,7 +147,7 @@ const titleBand = (eyebrow, title, subtitle = null) => {
 // Side-byggere
 // ──────────────────────────────────────────────────────────────────────
 
-function buildCoverDarkPremium(title, subtitle) {
+function buildCoverDarkPremium(title, subtitle, brandLogoUrl) {
   const logo25W = 110, logo25H = logo25W / 1.78;
   return {
     id: uid("page"), paper: "A4P", w: W, h: H, bg: "#ffffff",
@@ -166,8 +166,12 @@ function buildCoverDarkPremium(title, subtitle) {
       img((W - logo25W) / 2, 48, logo25W, logo25H, "/brosjyre/Jubileumslogo-25aar.svg", {
         fit: "contain", label: "25 år",
       }),
-      // Tittel — stor og dramatisk
-      txt(10, 130, W - 20, 36, title, "h1", { color: "#ffffff", align: "center" }),
+      // Husqvarna-logo (i stedet for tekst "HUSQVARNA")
+      ...(brandLogoUrl ? [img((W - 110) / 2, 130, 110, 18, brandLogoUrl, {
+        fit: "contain", label: "Husqvarna",
+      })] : []),
+      // Tittel — stor og dramatisk (uten "HUSQVARNA" siden logo er over)
+      txt(10, 152, W - 20, 22, title, "h1", { color: "#ffffff", align: "center" }),
       // Rød accent-divider
       rect((W - 30) / 2, 178, 30, 2, FT_RED),
       // Subtitle
@@ -401,8 +405,9 @@ async function main() {
   const pages = [];
   const TOTAL_PAGES_PLACEHOLDER = 8;
 
-  // Side 1: Forside
-  pages.push(buildCoverDarkPremium("HUSQVARNA\nVÅRKAMPANJE\n2026", "Diamantblader · maskiner · kjernebor — opptil 20 % rabatt"));
+  // Side 1: Forside — bruk Husqvarna-logo i stedet for tekst "HUSQVARNA"
+  const husqvarnaLogo = (k1 || diamantblad[0] || ringsag[0])?.manufacturer_logo_url;
+  pages.push(buildCoverDarkPremium("VÅRKAMPANJE\n2026", "Diamantblader · maskiner · kjernebor — opptil 20 % rabatt", husqvarnaLogo));
 
   // Side 2: Combo hero (K1 PACE + B750X med USP-blokk)
   pages.push(buildComboHero(
