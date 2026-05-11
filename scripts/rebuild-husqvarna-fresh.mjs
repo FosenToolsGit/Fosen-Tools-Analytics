@@ -289,11 +289,12 @@ function classifyProducts(allProducts) {
     else if (n.includes("BATTERIPAKKE") || n.includes("B750X") || n.includes("C1800X")) groups.batteripakke.push(p);
     else if (n.match(/DIAMANTSAGBLAD S(35|45|85)/)) groups.diamantblad_S.push(p);
     else if (n.includes("RINGSAGBLAD") || n.includes("W1610") || n.includes("DIAMANTBLAD W")) groups.ringsag.push(p);
-    else if (n.includes("KJERNEBOR") || n.includes("CR128")) groups.kjernebor.push(p);
-    else if (n.match(/(FS-?400|K-?770|K-?970|K-?4000|DM-?230|LF-?80|PP-?7|KAPPSAG|MOTORKAPPESAG|KRAFTAGGREGAT|PLATEVIBRATOR)/)) {
-      // Hopp over K1 PACE (allerede tatt)
+    // VIKTIG: maskiner FØR kjernebor — KJERNEBORMASKIN er en maskin, ikke et kjernebor
+    else if (n.match(/(FS-?400|K-?770|K-?970|K-?4000|DM-?230|LF-?80|PP-?7|KAPPSAG|MOTORKAPPESAG|KRAFTAGGREGAT|PLATEVIBRATOR|KJERNEBORMASKIN)/)) {
       if (!n.includes("K 1 PACE") && !n.includes("K1 PACE")) groups.maskin.push(p);
-    } else {
+    }
+    else if (n.includes("KJERNEBOR") || n.includes("CR128")) groups.kjernebor.push(p);
+    else {
       groups.annet.push(p);
     }
   }
@@ -424,19 +425,19 @@ async function main() {
     5, TOTAL_PAGES_PLACEHOLDER
   ));
 
-  // Side 6: Grid 2×3 stor — store kjernebor (5-6 stk Ø182-250)
-  pages.push(buildGrid2x3(
-    kjernebor.slice(9, 15),
+  // Side 6: Grid 2×2 stor — store kjernebor (3-4 stk Ø182-250)
+  pages.push(buildGrid2x2(
+    kjernebor.slice(9, 13),
     "HUSQVARNA · KJERNEBOR",
     "STORE DIAMETRE — Ø182-250 MM",
     6, TOTAL_PAGES_PLACEHOLDER
   ));
 
-  // Side 7: Grid 2×3 stor — maskiner (6)
-  pages.push(buildGrid2x3(
-    maskiner.slice(0, 6),
+  // Side 7: Grid 3×3 — maskiner (opptil 9, vi har ~7)
+  pages.push(buildGrid3x3(
+    maskiner.slice(0, 9),
     "HUSQVARNA · MASKINER",
-    "MOTORKAPPESAGER & KRAFTAGGREGAT",
+    "MOTORKAPPESAGER · BORMASKINER · KRAFTAGGREGAT",
     7, TOTAL_PAGES_PLACEHOLDER
   ));
 
