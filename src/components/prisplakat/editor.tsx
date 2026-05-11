@@ -367,8 +367,16 @@ export function PrisplakatEditor() {
                 </div>
               )}
 
-              <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Produkter ({products.length})
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: "var(--chrome-muted)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Produkter ({products.length})
+                </div>
+                {products.length > 0 && (
+                  <button onClick={() => { if (confirm(`Tøm alle ${products.length} produkter?`)) setProducts([]); }} style={{
+                    background: "transparent", color: "var(--chrome-muted)", border: "none",
+                    cursor: "pointer", fontSize: 10, padding: 2,
+                  }}>↺ Tøm alle</button>
+                )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {products.map((p, i) => (
