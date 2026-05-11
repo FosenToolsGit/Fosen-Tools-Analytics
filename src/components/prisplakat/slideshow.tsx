@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { PricetagProduct, PricetagSettings } from "./types";
+import { effective } from "./types";
 import { PriceBurst } from "@/components/brosjyre/ft-svg";
 import { formatNOK } from "@/components/brosjyre/store";
 
@@ -167,13 +168,14 @@ function ProductSlideContent({
   product, settings, landscape, active, durationMs,
 }: { product: PricetagProduct; settings: PricetagSettings; landscape: boolean; active: boolean; durationMs: number }) {
   const accent = settings.accent_color || FT_RED;
-  const priceNow = product.price_override ?? product.price_now ?? 0;
-  const priceBefore = product.price_before ?? 0;
-  const showSavings = priceBefore > priceNow;
-  const discountPct = showSavings && priceBefore > 0 ? Math.round((1 - priceNow / priceBefore) * 100) : 0;
-  const burstText = settings.show_burst && discountPct > 0 ? `−${discountPct}%` : null;
-  const savings = showSavings ? priceBefore - priceNow : 0;
+  const eff = effective(product);
+  const burstText = settings.show_burst && !eff.hideBurst ? eff.burstText : null;
   const imgSrc = proxyImage(product.image_url);
+  const productName = eff.name;
+  const priceNow = eff.priceNow;
+  const priceBefore = eff.priceBefore;
+  const showSavings = eff.showSavings;
+  const savings = eff.savings;
 
   // Burst-size — fixed px så PriceBurst SVG ikke trenger å re-rendre
   const burstSize = landscape ? 180 : 140;
@@ -236,7 +238,7 @@ function ProductSlideContent({
               fontFamily: HEAD, fontWeight: 900,
               fontSize: "5.5cqh", lineHeight: 0.98, textTransform: "uppercase",
               display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-            }}>{product.name}</div>
+            }}>{productName}</div>
             <div style={{
               fontFamily: MONO, fontSize: "1.6cqh",
               color: "rgba(255,255,255,0.55)", marginTop: "2cqh", letterSpacing: "0.04em",
@@ -348,7 +350,7 @@ function ProductSlideContent({
             fontFamily: HEAD, fontWeight: 900,
             fontSize: "4cqh", lineHeight: 0.98, textTransform: "uppercase",
             display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-          }}>{product.name}</div>
+          }}>{productName}</div>
           <div style={{
             fontFamily: MONO, fontSize: "1.2cqh",
             color: "rgba(255,255,255,0.55)", marginTop: "1.2cqh",
@@ -406,7 +408,7 @@ function ProductSlideContent({
 // ─── Container ────────────────────────────────────────────────────────
 
 export function Slideshow({
-  products, settings, landscape, autoplay: _autoplay, embedded,
+  products, settings, landscape, autoplay, embedded,
 }: { products: PricetagProduct[]; settings: PricetagSettings; landscape: boolean; autoplay?: boolean; embedded?: boolean }) {
   // Bygg slide-liste — intro + produkter + credentials + outro
   const slides: Slide[] = [
@@ -443,6 +445,24 @@ export function Slideshow({
     };
   }, [idx, paused, advance, durationMs]);
 
+  // Fullscreen helper — bruk documentElement som primær target, fallback til container
+  const enterFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        // Prøv documentElement først (mer pålitelig), fallback til container
+        const target = document.documentElement || containerRef.current;
+        if (target?.requestFullscreen) {
+          await target.requestFullscreen({ navigationUI: "hide" } as FullscreenOptions);
+        }
+      }
+    } catch (err) {
+      console.warn("Fullscreen feilet:", err);
+      alert("Fullskjerm ikke tilgjengelig. Trykk F11 i nettleseren i stedet.");
+    }
+  }, []);
+
   // Keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -450,14 +470,11 @@ export function Slideshow({
       else if (e.key === "ArrowLeft") prev();
       else if (e.key === " ") { e.preventDefault(); setPaused(p => !p); }
       else if (e.key === "Escape" && document.fullscreenElement) document.exitFullscreen();
-      else if (e.key === "f" || e.key === "F") {
-        if (document.fullscreenElement) document.exitFullscreen();
-        else containerRef.current?.requestFullscreen();
-      }
+      else if (e.key === "f" || e.key === "F") enterFullscreen();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, prev]);
+  }, [advance, prev, enterFullscreen]);
 
   // Fullscreen change
   useEffect(() => {
@@ -526,7 +543,7 @@ export function Slideshow({
             {idx + 1} / {slides.length}
           </span>
           <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.2)", margin: "0 6px" }} />
-          <button onClick={() => containerRef.current?.requestFullscreen()} style={{
+          <button onClick={enterFullscreen} style={{
             background: FT_RED, color: "#fff", border: "none", cursor: "pointer",
             padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
           }}>Fullskjerm</button>
@@ -542,6 +559,34 @@ export function Slideshow({
           fontFamily: HEAD, fontSize: 12, fontWeight: 700,
           letterSpacing: "0.16em", textTransform: "uppercase", zIndex: 100,
         }}>❚❚ Pause — trykk space</div>
+      )}
+
+      {/* Auto-fullscreen prompt ved autoplay — Fullscreen API krever user-gesture */}
+      {autoplay && !isFullscreen && !embedded && (
+        <button
+          onClick={enterFullscreen}
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(0,0,0,0.85)", color: "#fff",
+            border: "none", cursor: "pointer",
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            fontFamily: HEAD, gap: 24,
+          }}
+        >
+          <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            KLIKK FOR FULLSKJERM
+          </div>
+          <div style={{ fontSize: 18, color: "rgba(255,255,255,0.7)", fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+            Slideshow er klar — trykk hvor som helst
+          </div>
+          <div style={{
+            marginTop: 24, padding: "12px 28px",
+            background: FT_RED, color: "#fff",
+            fontFamily: HEAD, fontSize: 14, fontWeight: 800,
+            letterSpacing: "0.12em", textTransform: "uppercase", borderRadius: 999,
+          }}>▶ Start fullskjerm</div>
+        </button>
       )}
     </div>
   );

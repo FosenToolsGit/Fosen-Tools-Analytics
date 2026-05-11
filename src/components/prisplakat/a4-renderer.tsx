@@ -4,6 +4,7 @@
 // Bruker samme FT-tokens og SVG-komponenter som brosjyre-editoren.
 
 import type { PricetagProduct, PricetagSettings } from "./types";
+import { effective } from "./types";
 import { PriceBurst, Eyebrow, RedDivider } from "@/components/brosjyre/ft-svg";
 import { formatNOK } from "@/components/brosjyre/store";
 import { QrCode } from "./qr-code";
@@ -68,14 +69,11 @@ export function PricetagA4Single({
   product, settings, pageW = A4_W_MM, pageH = A4_H_MM,
 }: { product: PricetagProduct; settings: PricetagSettings; pageW?: number; pageH?: number }) {
   const accent = settings.accent_color || FT_RED;
-  const priceNow = product.price_override ?? product.price_now ?? 0;
-  const priceBefore = product.price_before ?? 0;
-  const showSavings = priceBefore > priceNow;
-  const savings = showSavings ? priceBefore - priceNow : 0;
-  const discountPct = showSavings && priceBefore > 0
-    ? Math.round((1 - priceNow / priceBefore) * 100)
-    : 0;
-  const burstText = settings.show_burst && discountPct > 0 ? `−${discountPct}%` : null;
+  const eff = effective(product);
+  const { priceNow, priceBefore, showSavings, savings } = eff;
+  const burstText = settings.show_burst && !eff.hideBurst ? eff.burstText : null;
+  const productName = eff.name || "Produkt";
+  const showQr = settings.show_qr && !eff.hideQr;
 
   return (
     <div className="page-paper a4-pricetag" style={{
@@ -141,7 +139,7 @@ export function PricetagA4Single({
           textTransform: "uppercase", marginTop: "3mm", color: "#111",
           flexShrink: 0,
           display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-        }}>{product.name || "Produkt"}</div>
+        }}>{productName}</div>
         <div style={{
           fontFamily: "Roboto Mono, monospace", fontSize: 11,
           color: "#6b7280", marginTop: "2mm",
@@ -181,7 +179,7 @@ export function PricetagA4Single({
               )}
             </div>
           </div>
-          {settings.show_qr && (
+          {showQr && (
             <div style={{ textAlign: "center", marginLeft: "auto", alignSelf: "flex-start" }}>
               <QrCode url={product.source_url} size={70} />
               <div style={{
@@ -308,11 +306,10 @@ export function PricetagA4_2Up({
 function PricetagHalfCell({
   product, settings, accent,
 }: { product: PricetagProduct; settings: PricetagSettings; accent: string }) {
-  const priceNow = product.price_override ?? product.price_now ?? 0;
-  const priceBefore = product.price_before ?? 0;
-  const showSavings = priceBefore > priceNow;
-  const discountPct = showSavings && priceBefore > 0 ? Math.round((1 - priceNow / priceBefore) * 100) : 0;
-  const burstText = settings.show_burst && discountPct > 0 ? `−${discountPct}%` : null;
+  const eff = effective(product);
+  const { priceNow, priceBefore, showSavings } = eff;
+  const burstText = settings.show_burst && !eff.hideBurst ? eff.burstText : null;
+  const productName = eff.name;
 
   return (
     <div style={{ position: "relative", padding: "8mm 10mm", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -330,7 +327,7 @@ function PricetagHalfCell({
         fontWeight: 900, fontSize: 18, lineHeight: 1.1,
         textTransform: "uppercase", marginTop: "2mm", color: "#111",
         display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-      }}>{product.name}</div>
+      }}>{productName}</div>
       <div style={{
         fontFamily: "Roboto Mono, monospace", fontSize: 9,
         color: "#6b7280", marginTop: "1mm",
@@ -421,12 +418,11 @@ export function PricetagA4_4Up({
 function PricetagQuarterCell({
   product, settings, accent,
 }: { product: PricetagProduct; settings: PricetagSettings; accent: string }) {
-  const priceNow = product.price_override ?? product.price_now ?? 0;
-  const priceBefore = product.price_before ?? 0;
-  const showSavings = priceBefore > priceNow;
-  const discountPct = showSavings && priceBefore > 0 ? Math.round((1 - priceNow / priceBefore) * 100) : 0;
-  const burstText = settings.show_burst && discountPct > 0 ? `−${discountPct}%` : null;
-  const savings = showSavings ? priceBefore - priceNow : 0;
+  const eff = effective(product);
+  const { priceNow, priceBefore, showSavings, savings } = eff;
+  const burstText = settings.show_burst && !eff.hideBurst ? eff.burstText : null;
+  const productName = eff.name;
+  const showQr = settings.show_qr && !eff.hideQr;
 
   return (
     <div style={{
@@ -450,7 +446,7 @@ function PricetagQuarterCell({
           fontWeight: 900, fontSize: 11, lineHeight: 1.1,
           textTransform: "uppercase", marginTop: "1mm", color: "#111",
           display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-        }}>{product.name}</div>
+        }}>{productName}</div>
         <div style={{
           fontFamily: "Roboto Mono, monospace", fontSize: 7,
           color: "#6b7280", marginTop: "0.5mm",
@@ -472,7 +468,7 @@ function PricetagQuarterCell({
               Eks. mva{savings > 0 ? ` · Spar ${formatNOK(savings)}` : ""}
             </div>
           </div>
-          {settings.show_qr && (
+          {showQr && (
             <div style={{ marginLeft: "auto", alignSelf: "flex-end" }}>
               <QrCode url={product.source_url} size={32} />
             </div>

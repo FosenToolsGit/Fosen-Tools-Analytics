@@ -30,6 +30,12 @@ export function PrisplakatEditor() {
   const [showImport, setShowImport] = useState(false);
   const [brochures, setBrochures] = useState<BrochureListItem[]>([]);
   const [importing, setImporting] = useState(false);
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+
+  // Oppdater override på et produkt
+  const setProductOverride = (idx: number, patch: Partial<PricetagProduct>) => {
+    setProducts(prev => prev.map((p, i) => i === idx ? { ...p, ...patch } : p));
+  };
 
   // Last spillelister
   const loadList = useCallback(async () => {
@@ -411,19 +417,85 @@ export function PrisplakatEditor() {
                 )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {products.map((p, i) => (
-                  <div key={i} style={{ background: "var(--chrome-bg-3)", padding: 8, borderRadius: 4, display: "flex", gap: 6, alignItems: "center" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name || "(uten navn)"}</div>
-                      <div style={{ fontSize: 9, color: "var(--chrome-muted)" }}>
-                        {p.sku ? `Art.nr ${p.sku} · ` : ""}{p.price_now ? `${p.price_now} kr` : ""}
+                {products.map((p, i) => {
+                  const expanded = expandedIdx === i;
+                  const displayName = p.name_override || p.name || "(uten navn)";
+                  const displayPrice = p.price_override ?? p.price_now;
+                  const hasOverrides = !!(p.price_override || p.price_before_override || p.burst_text_override || p.name_override || p.hide_burst || p.hide_qr);
+                  return (
+                    <div key={i} style={{ background: "var(--chrome-bg-3)", borderRadius: 4, border: hasOverrides ? "1px solid var(--ft-red)" : "1px solid transparent" }}>
+                      <div style={{ padding: 8, display: "flex", gap: 6, alignItems: "center" }}>
+                        <button onClick={() => setExpandedIdx(expanded ? null : i)} style={{
+                          background: "transparent", color: "var(--chrome-muted)", border: "none",
+                          cursor: "pointer", fontSize: 10, padding: 2, flexShrink: 0,
+                        }} title={expanded ? "Lukk" : "Rediger pris, rabatt, etc."}>{expanded ? "▾" : "▸"}</button>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {displayName}{hasOverrides && <span style={{ color: "var(--ft-red)", marginLeft: 4 }}>●</span>}
+                          </div>
+                          <div style={{ fontSize: 9, color: "var(--chrome-muted)" }}>
+                            {p.sku ? `Art.nr ${p.sku} · ` : ""}{displayPrice ? `${displayPrice} kr` : ""}
+                          </div>
+                        </div>
+                        <button onClick={() => moveProduct(i, -1)} disabled={i === 0} style={{ background: "transparent", color: "#fff", border: "none", cursor: i > 0 ? "pointer" : "not-allowed", opacity: i > 0 ? 0.6 : 0.2, fontSize: 11, padding: 2 }}>▲</button>
+                        <button onClick={() => moveProduct(i, 1)} disabled={i === products.length - 1} style={{ background: "transparent", color: "#fff", border: "none", cursor: i < products.length - 1 ? "pointer" : "not-allowed", opacity: i < products.length - 1 ? 0.6 : 0.2, fontSize: 11, padding: 2 }}>▼</button>
+                        <button onClick={() => removeProduct(i)} style={{ background: "transparent", color: "#ef4444", border: "none", cursor: "pointer", fontSize: 14, padding: 0 }}>×</button>
                       </div>
+                      {expanded && (
+                        <div style={{ padding: "0 8px 10px", borderTop: "1px solid var(--chrome-border)", display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{ fontSize: 9, color: "var(--chrome-muted)", marginTop: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Overstyringer</div>
+
+                          <label style={{ fontSize: 10, color: "var(--chrome-muted)" }}>
+                            Navn (overstyr)
+                            <input type="text" value={p.name_override ?? ""} onChange={(e) => setProductOverride(i, { name_override: e.target.value || undefined })}
+                              placeholder={p.name || ""}
+                              style={{ width: "100%", marginTop: 2, padding: "4px 6px", fontSize: 11, background: "var(--chrome-bg)", border: "1px solid var(--chrome-border)", color: "#fff", borderRadius: 3, fontFamily: "inherit" }} />
+                          </label>
+
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                            <label style={{ fontSize: 10, color: "var(--chrome-muted)" }}>
+                              Pris nå (kr)
+                              <input type="number" value={p.price_override ?? ""} onChange={(e) => setProductOverride(i, { price_override: e.target.value ? parseFloat(e.target.value) : undefined })}
+                                placeholder={p.price_now?.toString() || ""}
+                                style={{ width: "100%", marginTop: 2, padding: "4px 6px", fontSize: 11, background: "var(--chrome-bg)", border: "1px solid var(--chrome-border)", color: "#fff", borderRadius: 3 }} />
+                            </label>
+                            <label style={{ fontSize: 10, color: "var(--chrome-muted)" }}>
+                              Pris før (kr)
+                              <input type="number" value={p.price_before_override ?? ""} onChange={(e) => setProductOverride(i, { price_before_override: e.target.value ? parseFloat(e.target.value) : undefined })}
+                                placeholder={p.price_before?.toString() || ""}
+                                style={{ width: "100%", marginTop: 2, padding: "4px 6px", fontSize: 11, background: "var(--chrome-bg)", border: "1px solid var(--chrome-border)", color: "#fff", borderRadius: 3 }} />
+                            </label>
+                          </div>
+
+                          <label style={{ fontSize: 10, color: "var(--chrome-muted)" }}>
+                            Burst-tekst (overstyr rabatt, f.eks. «−30%», «KAMPANJE», «NYHET»)
+                            <input type="text" value={p.burst_text_override ?? ""} onChange={(e) => setProductOverride(i, { burst_text_override: e.target.value || undefined })}
+                              placeholder={`Auto: ${p.discount_pct ? `−${p.discount_pct}%` : "ingen"}`}
+                              style={{ width: "100%", marginTop: 2, padding: "4px 6px", fontSize: 11, background: "var(--chrome-bg)", border: "1px solid var(--chrome-border)", color: "#fff", borderRadius: 3, fontFamily: "inherit" }} />
+                          </label>
+
+                          <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+                            <label style={{ fontSize: 10, color: "var(--chrome-muted)", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                              <input type="checkbox" checked={p.hide_burst ?? false} onChange={(e) => setProductOverride(i, { hide_burst: e.target.checked || undefined })} />
+                              Skjul burst
+                            </label>
+                            <label style={{ fontSize: 10, color: "var(--chrome-muted)", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                              <input type="checkbox" checked={p.hide_qr ?? false} onChange={(e) => setProductOverride(i, { hide_qr: e.target.checked || undefined })} />
+                              Skjul QR
+                            </label>
+                          </div>
+
+                          {hasOverrides && (
+                            <button onClick={() => setProductOverride(i, { name_override: undefined, price_override: undefined, price_before_override: undefined, burst_text_override: undefined, hide_burst: undefined, hide_qr: undefined })} style={{
+                              background: "transparent", color: "var(--chrome-muted)", border: "1px solid var(--chrome-border)",
+                              padding: "4px 8px", borderRadius: 3, fontSize: 10, marginTop: 4, cursor: "pointer",
+                            }}>↺ Tilbakestill overstyringer</button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <button onClick={() => moveProduct(i, -1)} disabled={i === 0} style={{ background: "transparent", color: "#fff", border: "none", cursor: i > 0 ? "pointer" : "not-allowed", opacity: i > 0 ? 0.6 : 0.2, fontSize: 11, padding: 2 }}>▲</button>
-                    <button onClick={() => moveProduct(i, 1)} disabled={i === products.length - 1} style={{ background: "transparent", color: "#fff", border: "none", cursor: i < products.length - 1 ? "pointer" : "not-allowed", opacity: i < products.length - 1 ? 0.6 : 0.2, fontSize: 11, padding: 2 }}>▼</button>
-                    <button onClick={() => removeProduct(i)} style={{ background: "transparent", color: "#ef4444", border: "none", cursor: "pointer", fontSize: 14, padding: 0 }}>×</button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
