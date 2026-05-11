@@ -158,8 +158,8 @@ export function PricetagA4Single({
             {showSavings && (
               <div style={{
                 fontFamily: "Roboto Mono, monospace", fontSize: 13,
-                color: "#9ca3af", textDecoration: `line-through ${accent}`,
-                textDecorationThickness: 1.5, lineHeight: 1,
+                color: "#9ca3af", textDecorationLine: "line-through",
+                textDecorationColor: accent, textDecorationThickness: 1.5, lineHeight: 1,
               }}>FØR {formatNOK(priceBefore)}</div>
             )}
             <div style={{
@@ -341,7 +341,7 @@ function PricetagHalfCell({
           {showSavings && (
             <div style={{
               fontFamily: "Roboto Mono, monospace", fontSize: 10,
-              color: "#9ca3af", textDecoration: `line-through ${accent}`, lineHeight: 1,
+              color: "#9ca3af", textDecorationLine: "line-through", textDecorationColor: accent, lineHeight: 1,
             }}>FØR {formatNOK(priceBefore)}</div>
           )}
           <div style={{
@@ -461,7 +461,7 @@ function PricetagQuarterCell({
             {showSavings && (
               <div style={{
                 fontFamily: "Roboto Mono, monospace", fontSize: 7,
-                color: "#9ca3af", textDecoration: `line-through ${accent}`, lineHeight: 1,
+                color: "#9ca3af", textDecorationLine: "line-through", textDecorationColor: accent, lineHeight: 1,
               }}>FØR {formatNOK(priceBefore)}</div>
             )}
             <div style={{

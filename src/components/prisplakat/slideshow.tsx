@@ -251,7 +251,7 @@ function ProductSlideContent({
                 <div style={{
                   fontFamily: MONO, fontSize: "2.2cqh",
                   color: "rgba(255,255,255,0.45)",
-                  textDecoration: `line-through ${accent}`, textDecorationThickness: 2,
+                  textDecorationLine: "line-through", textDecorationColor: accent, textDecorationThickness: 2,
                   lineHeight: 1,
                 }}>FØR {formatNOK(priceBefore)}</div>
               )}
@@ -362,7 +362,7 @@ function ProductSlideContent({
               <div style={{
                 fontFamily: MONO, fontSize: "1.6cqh",
                 color: "rgba(255,255,255,0.45)",
-                textDecoration: `line-through ${accent}`, lineHeight: 1,
+                textDecorationLine: "line-through", textDecorationColor: accent, lineHeight: 1,
               }}>FØR {formatNOK(priceBefore)}</div>
             )}
             <div style={{
