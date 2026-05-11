@@ -417,19 +417,29 @@ async function main() {
     4, TOTAL_PAGES_PLACEHOLDER
   ));
 
-  // Side 5: Grid 3×3 kjernebor (Elite Drill + 8 mindre Ø82-152)
+  // Split kjernebor på Ø150 — små vs store diametre
+  const kjerneborSmå = kjernebor.filter(k => {
+    const m = (k.name || "").match(/Ø(\d+)/);
+    return !m || parseInt(m[1], 10) <= 150;
+  });
+  const kjerneborStore = kjernebor.filter(k => {
+    const m = (k.name || "").match(/Ø(\d+)/);
+    return m && parseInt(m[1], 10) > 150;
+  });
+
+  // Side 5: Grid 3×3 kjernebor små (Ø082-152 + evt Elite Drill)
   pages.push(buildGrid3x3(
-    kjernebor.slice(0, 9),
+    kjerneborSmå.slice(0, 9),
     "HUSQVARNA · KJERNEBOR",
     "CR128 ELITE DRILL — Ø82-152 MM",
     5, TOTAL_PAGES_PLACEHOLDER
   ));
 
-  // Side 6: Grid 2×2 stor — store kjernebor (3-4 stk Ø182-250)
+  // Side 6: Grid 2×2 stor — store kjernebor (Ø182+)
   pages.push(buildGrid2x2(
-    kjernebor.slice(9, 13),
+    kjerneborStore.slice(0, 4),
     "HUSQVARNA · KJERNEBOR",
-    "STORE DIAMETRE — Ø182-250 MM",
+    "STORE DIAMETRE — Ø182 MM OG OPP",
     6, TOTAL_PAGES_PLACEHOLDER
   ));
 
