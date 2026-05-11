@@ -12,6 +12,8 @@ import { Slideshow } from "./slideshow";
 type ListItem = { id: string; title: string; format: PricetagFormat; updated_at: string; products: PricetagProduct[] };
 type BrochureListItem = { id: string; title: string; page_count: number; updated_at: string };
 
+const STORAGE_KEY = "ft-prisplakat-state-v1";
+
 export function PrisplakatEditor() {
   const [playlists, setPlaylists] = useState<ListItem[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -40,6 +42,29 @@ export function PrisplakatEditor() {
   }, []);
 
   useEffect(() => { loadList(); }, [loadList]);
+
+  // Last lokal state fra localStorage på første mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const state = JSON.parse(raw);
+        if (state.title) setTitle(state.title);
+        if (state.format) setFormat(state.format);
+        if (Array.isArray(state.products)) setProducts(state.products);
+        if (state.settings) setSettings({ ...DEFAULT_SETTINGS, ...state.settings });
+        if (state.currentId) setCurrentId(state.currentId);
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save til localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentId, title, format, products, settings }));
+    } catch { /* ignore quota etc */ }
+  }, [currentId, title, format, products, settings]);
 
   // Scrape produkt fra URL
   const scrapeProduct = async () => {
