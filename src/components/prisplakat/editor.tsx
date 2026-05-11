@@ -450,9 +450,10 @@ export function PrisplakatEditor() {
           ))}
           {format.startsWith("slideshow") && products.length > 0 && (
             <div style={{
-              width: format === "slideshow_landscape" ? 900 : 506,
-              height: format === "slideshow_landscape" ? 506 : 900,
-              maxWidth: "90%",
+              width: "100%",
+              maxWidth: format === "slideshow_landscape" ? 1100 : 480,
+              aspectRatio: format === "slideshow_landscape" ? "16 / 9" : "9 / 16",
+              maxHeight: "calc(100vh - 160px)",
               boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
               position: "relative", overflow: "hidden",
               background: "#000",
