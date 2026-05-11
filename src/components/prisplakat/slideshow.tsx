@@ -276,8 +276,8 @@ function ProductSlideContent({
 // ─── Container ────────────────────────────────────────────────────────
 
 export function Slideshow({
-  products, settings, landscape, autoplay,
-}: { products: PricetagProduct[]; settings: PricetagSettings; landscape: boolean; autoplay?: boolean }) {
+  products, settings, landscape, autoplay, embedded,
+}: { products: PricetagProduct[]; settings: PricetagSettings; landscape: boolean; autoplay?: boolean; embedded?: boolean }) {
   // Bygg slide-liste — intro + produkter + credentials + outro
   const slides: Slide[] = [
     { kind: "special", specialType: "intro" },
@@ -358,15 +358,16 @@ export function Slideshow({
 
   return (
     <div ref={containerRef} style={{
-      width: "100vw", height: "100vh", background: "#000",
+      width: embedded ? "100%" : "100vw",
+      height: embedded ? "100%" : "100vh",
+      background: "#000",
       position: "relative", overflow: "hidden",
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
       <div style={{
         aspectRatio: aspect,
-        height: isFullscreen ? "100%" : "min(100vh, calc(100vw * (9/16)))",
-        width: isFullscreen ? "100%" : "auto",
-        maxWidth: "100vw", maxHeight: "100vh",
+        width: "100%", height: "100%",
+        maxWidth: "100%", maxHeight: "100%",
         position: "relative", overflow: "hidden",
       }}>
         {slides.map((s, i) => (
@@ -382,7 +383,7 @@ export function Slideshow({
       </div>
 
       {/* Controls overlay (vises kun når ikke i fullscreen, eller på hover) */}
-      {!isFullscreen && (
+      {!isFullscreen && !embedded && (
         <div style={{
           position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
           display: "flex", gap: 12, background: "rgba(0,0,0,0.75)", padding: "10px 18px",

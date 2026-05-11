@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { PricetagProduct, PricetagPlaylist, PricetagFormat, PricetagSettings } from "./types";
 import { DEFAULT_SETTINGS, FORMAT_LABELS } from "./types";
 import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer";
+import { Slideshow } from "./slideshow";
 
 type ListItem = { id: string; title: string; format: PricetagFormat; updated_at: string; products: PricetagProduct[] };
 
@@ -289,9 +290,27 @@ export function PrisplakatEditor() {
               {format === "a4_4up" && <PricetagA4_4Up products={grp} settings={settings} />}
             </div>
           ))}
-          {format.startsWith("slideshow") && (
-            <div style={{ color: "var(--chrome-muted)", fontSize: 14, marginTop: 40, textAlign: "center" }}>
-              Slideshow-modus — lagre playlist og åpne i ny fane med «Spill av».
+          {format.startsWith("slideshow") && products.length > 0 && (
+            <div style={{
+              width: format === "slideshow_landscape" ? 900 : 506,
+              height: format === "slideshow_landscape" ? 506 : 900,
+              maxWidth: "90%",
+              boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
+              position: "relative", overflow: "hidden",
+              background: "#000",
+            }}>
+              <Slideshow
+                products={products}
+                settings={settings}
+                landscape={format === "slideshow_landscape"}
+                embedded
+              />
+            </div>
+          )}
+          {format.startsWith("slideshow") && products.length === 0 && (
+            <div style={{ color: "var(--chrome-muted)", fontSize: 14, marginTop: 80, textAlign: "center" }}>
+              Slideshow-modus — legg til produkter til venstre, så vises preview her.<br />
+              <span style={{ fontSize: 12, opacity: 0.7 }}>Lagre playlist og åpne «Spill av» for fullskjerm-versjon.</span>
             </div>
           )}
         </div>
