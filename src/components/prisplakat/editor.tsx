@@ -342,6 +342,38 @@ export function PrisplakatEditor() {
                 cursor: "pointer",
               }}>↥ Importér fra brosjyre</button>
 
+              {/* Foreslå topp populære fra GA4 + Mailchimp */}
+              <button onClick={async () => {
+                setScraping(true);
+                setScrapeError(null);
+                try {
+                  const r = await fetch("/api/brosjyre/suggest-products?days=60&limit=8");
+                  if (!r.ok) throw new Error("Failed");
+                  const d = await r.json();
+                  const suggUrls = (d.suggestions || []).map((s: { url: string }) => s.url);
+                  const existing = new Set(products.map(p => p.source_url));
+                  const newUrls = suggUrls.filter((u: string) => !existing.has(u));
+                  // Scrape hver i sekvens
+                  for (const url of newUrls) {
+                    try {
+                      const r2 = await fetch(`/api/brosjyre/scrape-product?url=${encodeURIComponent(url)}`);
+                      if (!r2.ok) continue;
+                      const d2 = await r2.json();
+                      setProducts(prev => [...prev, d2.product]);
+                    } catch { /* skip */ }
+                  }
+                } catch (e) {
+                  setScrapeError(e instanceof Error ? e.message : "Feil");
+                } finally {
+                  setScraping(false);
+                }
+              }} disabled={scraping} style={{
+                width: "100%", background: "transparent", color: "#fff",
+                border: "1px solid var(--chrome-border)",
+                padding: "8px 12px", borderRadius: 4, fontSize: 12, marginTop: 6,
+                cursor: "pointer",
+              }}>⭐ Topp 8 populære</button>
+
               {showImport && (
                 <div style={{
                   background: "var(--chrome-bg-3)", padding: 10, borderRadius: 4, marginTop: 8,
