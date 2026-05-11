@@ -196,7 +196,7 @@ Fast publiseringskalender som styrer hvordan vi planlegger innhold:
 - `/innleggsbygger/utm` — Sentralt register over alle UTM-linker (lagret i `utm_links`-tabellen). Hurtigmaler for FB/IG/LinkedIn/Mailchimp/Google Ads, skjema med live-forhåndsvisning, kopi-knapp per link, gruppering per `utm_campaign`, og krysskobling med `traffic_sources` for å vise sesjoner + konverteringer per kanal siste 30d. Forhindrer duplikate/inkonsistente kampanje-tags på tvers av poster.
 
 ### Brosjyre-editor (ny 27. april)
-- `/brosjyre` — Fullskjerm WYSIWYG editor for kampanje-brosjyrer (PDF-eksport). Fixed inset-0 z-50 overlay som dekker dashbord-layouten. 3-panel UI: sidetre + bibliotek + property-panel. 10 objekt-typer (productCard, priceBlock, badge, banner, gallery, contact, footer, text, image, shape), 9 ferdige maler, brand-tokens system, undo/redo (60 nivåer), PDF-eksport via `modern-screenshot` + jspdf med auto-nedlasting. Auto-save til localStorage. **Detaljer:** se egen seksjon nederst i denne filen.
+- `/brosjyre` — Fullskjerm WYSIWYG editor for kampanje-brosjyrer (PDF-eksport). Fixed inset-0 z-50 overlay som dekker dashbord-layouten. 3-panel UI: sidetre + bibliotek + property-panel. **11 objekt-typer** (productCard, priceBlock, badge, banner, gallery, contact, footer, text, image, shape, **comboCard** — to produkter med kombi-pris, lagt til 8. mai), 9 ferdige maler, brand-tokens system, undo/redo (60 nivåer), PDF-eksport via `modern-screenshot` + jspdf med auto-nedlasting. Auto-save til localStorage. **Detaljer:** se egen seksjon nederst i denne filen.
 
 ### GA4-undersider
 - `/ga4/sokeord` — Søkeord fra Search Console
@@ -1019,6 +1019,7 @@ Routen: `src/app/(dashboard)/brosjyre/page.tsx` (bruker `dynamic` import med `ss
 | Type | Beskrivelse |
 |---|---|
 | productCard | 4 varianter: compact (60×70 mm, 6-grid), standard (90×110 mm), hero (180×240 mm fullside), compare (170×90 mm horisontal). Felter: bilde, navn, produsent-logo eller -tekst, pris-før, pris-nå, rabatt-burst, USP-bullets, lager-prikk |
+| comboCard | **(NY 8. mai)** 140×100 mm — 2 produkter side-om-side med `+`-separator, header-badge (default «KOMBI-PRIS»), samlet pris-blokk nederst med auto-utregnet spar-stempel (sum av enkeltpriser − kombi-pris). Brukes for pakke-tilbud (f.eks. K1 PACE-sag + batteripakke = 10% pakkerabatt) |
 | priceBlock | Selvstendig pris-blokk. **Single-span** rendring (hele "16 990,-" i én span samme størrelse) for å unngå baseline-mismatch i kanvas-rasterizing. Vertikal rød 4px-stripe + FØR-pris med `text-decoration: line-through` + Eks. mva + SPAR-pill. |
 | badge | Burst-shape: star, circle, ribbon, diagonal, stamp. Star og ribbon rendres som **inline SVG polygon** (ikke clip-path) — html2canvas-arven støttet ikke clip-path. |
 | text | h1-h5 + body presets, fluid sizing, color/weight/italic. |
@@ -1115,7 +1116,7 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 5. mai | **Mandags-økt — Google Ads opprydding**: Pmax brand-exclusions verifisert (klikk -73% w/w, men kost bare -8% pga budsjett-cap på 50 kr/dag — Google omfordeler til dyrere generisk trafikk, CPC tredoblet 3,7→12,7 kr); **Bransjer-kampanjen pauset** etter 0 kjøp på 90d/7 742 kr (audit-entry #1, re-evaluering 5. juni); **Brand Search-budsjett økt 30 → 50 kr/dag** (audit-entry #2, netto −26 kr/dag totalt); 2 META-varsler resolved som post-outlier-varians; GSC re-indekseringsliste generert (`docs/seo/gsc-reindex-list-2026-05-05.md`, 43 URLer prioritert i 4-dagers plan). Pelicase 1535-FB leverte 140 reach + 129 klikk 1. mai. |
 | 6. mai | **Multicase redirect-modul aktivert** (Verktøy → URL redirect, 301/302-støtte + chain-cleanup, ingen wildcard). **107 redirects totalt lagt inn og verifisert live på én dag** for å løse system-bred kannibalisering identifisert 29. april. **Runde 1 (31):** 30 stk `/manufacturers/{slug}` → `/{slug}` for ferdige produsent-sider, + `/snap-on` → `/snapon` (var broken 302 til forsiden). **Runde 2 (76 → 74 live, 2 hoppet over):** Etter at brukeren delte ProductMenu-HTML (autoritativ liste over alle 53 merker), utvidet til 22 nye `/manufacturers/{slug}` for merker uten ferdig produsent-side (aok-by-kc-tools, apex-tools, boehm, bosch-tilbehør, brusletto, emhart-teknologies, geilo-verktøy, gühring, handi, karlstad-redskap, meclube, opticase, osca, red-rooster, scell-it, snickers, stanley-pmi, the-bone, ullman-devices, vogel-germany, völkel, zweibrüder), + 52 stk `/categories/{slug}` → `/{slug}` for alle merker (ScrewGrab er unntatt — bruker `/produsent/screw-grab` som primær). **Verifisert 6. mai: sitemap har 4689 URLer, alle produkt-URLer; ingen `/merkevare/*`, `/manufacturers/*` eller topp-nivå produsent-paths.** Sitemap-fix henger fortsatt på Multicase. **GSC re-indeksering:** Dag 1 (4 URLer fra Tier 1) ferdig 5. mai. Dag 2 (12 URLer): 9 ferdig 6. mai (kvote brukt opp); fosen-tools-custom, zarges, fluke flyttet til Dag 3 (7. mai). Arbeidslister generert som lokale HTML-filer i `/tmp/redirects-*` og `/tmp/gsc-dag*` med kopi-knapper og localStorage-progress (mønster fra 30. april). **Runde 3 (11):** 10 underkategori-aliaser (skraller, sekskant, tolvkant, forlengere, universalledd, overganger, holder, koffert, auto + test-rad) + spesialiserte filter-URLer for unbrako/torx → `/produkter/skrutrekkere?Filter=11¤1:11¤1_Sekskant`. **Møte med Trakk.ai 09:30 → besluttet å bygge selv:** SEO-innhold prompt-bygger bygget på 7 timer (URL-analyse + GSC-integrasjon + auto-konkurrent-finning via Serper.dev + UI med 3 steg). Siden brukeren bruker Claude Code lokalt (gratis), konvertert fra direkte API-call til prompt-bygger som brukeren limer inn til meg → JSON-svar med 6 separate publiserings-blokker (meta_title, meta_description, intro_block, faq_block, contact_cta_block, json_ld_script). Steg 3 i UI parser JSON og viser hver blokk med kopi-knapp + plassering-instruks. Bekreftet med "leatherman" og "momentverktøy"-tester. **PowerPoint til Erik (Åfjord Regnskap-presentasjon 7. mai):** 10 slides, fokus på "AI i hverdagen" + kostnadssammenligning (Fyr ~180k/år, Trakk 42k/år, brosjyre-design 5-10k/brosjyre, total estimert ~220k+/år besparelse). |
 | 7. mai | **Levende ft-catgrid-system bygget** for alle `/produkter/*`-sider. Dynamisk JS-script som leser `.ProductMenu` i DOM, finner `Level1Selected` og bygger ft-catgrid med bilder. **Dual-mode:** toppnivå `/produkter` viser alle Level1 fra `/userfiles/image/menuicons/{slug}.png`, sub-kategori-sider viser Level2-søsken fra `/userfiles/image/Kategoribilder/{Hovedkategori}/{slug}.png`. **Multicase-strikking-quirk oppdaget:** `<img>`-attributter blir strikket fra raw HTML i publiseringsfelt (sannsynligvis XSS-beskyttelse) → løsning er å bygge tekst-celle først via `innerHTML`, deretter injisere `<img>`-elementer via `document.createElement` etter at DOM er klar. MutationObserver + polling som fallback siden ProductMenu kan lastes via AJAX. Verifisert virker på `/produkter/momentverktøy` (sub-modus, 4 underkategorier) og `/produkter` (toppnivå, 39 hovedkategorier). **URL-endring:** `/produkter/momentverktøy/momentnøkler` → `/produkter/momentverktøy/momentnøkkel` (entall, hører bedre til kategori-side med ett produkt-type) + 60+ land-prefiks-redirects bekreftet via Multicase' auto-redirect-modul. **SCSS for megameny oppdatert:** filnavn endret til URL-slug-konvensjon (`momentverktøy.png` ikke `moment.png`) så samme bilder kan brukes i både megameny og catgrid. **Identifisert 5 manglende CSS-klasser i megameny** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger) — må legges til via Avansert→Css klasse i Multicase admin. **Manglende ikoner:** `verktøy-elbil.png` og `verneutstyr1.png` ikke lastet opp (men `verktøy-for-elbil.png` finnes med feil navn). |
-| 8. mai | **Diagnose: Pmax brand exclusions virket aldri.** Verifikasjon avslørte at brand-andel hadde stått fastlåst på 66,7% i hele 17-dagers-perioden siden brand exclusions ble slått på 20. april (ingen bevegelse mellom 14-20. april og 1-4. mai-bucketene). Inspeksjon av merkelisten «Fosen Tools egen brand» i Google Ads viste at den kun inneholdt ÉN brand-entitet (Googles indekserte «Fosen Tools AS»), mens 99% av brand-klikkene kommer fra fri-tekst-søket «fosen tools» som Pmax klassifiserer som generisk. Lagt inn 4 negative keywords på Pmax-kampanjen: `[fosen tools]`, `[fosentools]`, `"fosen tools"`, `"fosentools"`. Forventet brand-andel ned mot 5-15% over 3-5 dager. Lærdom lagret som memory `feedback_pmax_brand_exclusions_insufficient.md`. **Søkeresultatside-fix:** Erik flagget at toppen av `/search`-siden viste 10 misvisende lenker (4 duplikater, 4 med tekst/URL-mismatch — Wera→Zweibrüder, FT Custom→Wera, Brockhaus Heuer→/facom). Diagnose: Multicase «CenterContentArticleSearch»-sone har rotnet over år. Skjult via SCSS `[id^="Field_CenterContentArticleSearch"] { display: none !important; }` i `FosenTools.scss`. **CNC-terminologi-regel:** «CNC-maskinert» (ikke «CNC-frest») låst inn i CLAUDE.md + memory for alle FT-innlegg/nyhetsbrev/landingssider. **Skreddersydd-definisjon-innlegg** publisert på FB/LinkedIn kl 11:30 (torsdag, +93% emoji-start-mønster). UTM-linker lagret til kontakt-siden. |
+| 8. mai | **Stor dag — Pmax-fix, Vercel-reaktivering, brosjyre-features, kampanje-leveranser.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: Pmax brand-exclusions diagnostisert + 4 negative keywords lagt inn (forventer 5-15% brand-andel mot dagens 66,7%); CenterContentArticleSearch-sonen på `/search` skjult via SCSS (rotnet med Wera→Zweibrüder-mismatch); CNC-terminologi-regel låst inn («CNC-maskinert», ikke «CNC-frest»); Skreddersydd-definisjon-innlegg + Kraftpipe-sett TESS VEST-innlegg publisert med UTM-tracking; **Vercel reaktivert** etter 3 ukers pause (Erik + Torstein lagt til som brukere, daglig auto-sync via cron kl 7 norsk, GitHub-repo recovered); ny **comboCard**-objekt-type i brosjyre-editoren; **Husqvarna Vårkampanje 2026** brosjyre bygget (8 sider, 36 produkter scrapet, kombi-pris på K1 PACE-pakke). |
 
 ---
 
@@ -1576,3 +1577,119 @@ Lagret som `/tmp/fosen-tools-ai-presentasjon.pptx`. Bygget med pptxgenjs (16x9 w
 - Ny seksjon "Kategori-sider (`/produkter/*`) — levende catgrid" (mellom produsent-sider og kjente begrensninger)
 - 6. og 7. mai-rader i Prosjekt-tidslinje-tabellen
 - Denne sesjons-sammendraget
+
+---
+
+## Siste sesjons-sammendrag (8. mai 2026 — lang økt)
+
+Tema: Pmax brand-fix, Vercel-reaktivering etter 3 ukers pause, brosjyre-features (combo-card), Husqvarna Vårkampanje, sosiale medier-leveranser.
+
+### Operasjonelt utført
+
+#### Google Ads (Pmax brand-exclusions)
+- **Diagnose:** Brand-andel hadde stått fastlåst på 66,7% i 17 dager siden brand-exclusions ble slått på 20. april. Ingen bevegelse mellom 14-20. april (66,5%) og 1-4. mai (66,7%).
+- **Rot-årsak:** Merkelisten «Fosen Tools egen brand» inneholdt kun ÉN brand-entitet (Googles indekserte «Fosen Tools AS»), mens 99% av brand-klikkene (923 av 932) kom fra fri-tekst-søket «fosen tools» (lowercase, uten AS) — som Pmax klassifiserer som generisk.
+- **Fix:** Lagt inn 4 negative keywords på Pmax-kampanjen: `[fosen tools]`, `[fosentools]`, `"fosen tools"`, `"fosentools"`. Forventer 5-15% brand-andel etter 3-5 dager.
+- **Memory:** Lagret som `feedback_pmax_brand_exclusions_insufficient.md` — fremtidige sesjoner skal anbefale negative keywords + brand exclusions sammen, aldri brand exclusions alene.
+
+#### Søkeresultatside-fix
+- Erik flagget at toppen av `/search`-siden viste 10 misvisende lenker (4 duplikater, 4 med tekst/URL-mismatch).
+- Tre verifiserte katastrofer: «Wera»-lenker → `/zweibrüder`, «Fosen Tools Custom» → `/wera`, «Knipex» → `/nedlastinger`.
+- Diagnose: Multicase «CenterContentArticleSearch»-sone har rotnet over år med over-tagging og feil URL-bindinger.
+- Fix: Skjult via SCSS `[id^="Field_CenterContentArticleSearch"] { display: none !important; }` i `FosenTools.scss:10345-10357`. Verifisert live etter publisering.
+
+#### CNC-terminologi-regel
+- **Regel:** «CNC-maskinert», ALDRI «CNC-frest». Gjelder alle FT-innlegg/nyhetsbrev/landingssider/produsent-sider når vi beskriver HDFI/CADLAB-produksjon.
+- Lagt inn i CLAUDE.md (Publiseringsrytme-seksjon) + memory `feedback_cnc_terminologi.md`.
+
+### Sosiale medier-leveranser
+
+#### Skreddersydd-definisjon-innlegg (publisert 11:30, fredag)
+- Definisjons-stil bilde: «Skreddersydd / adjektiv / CAD-tegnet, CNC-maskinert og segmentert etter brukerens arbeidsflyt»
+- Postet på FB + IG + LinkedIn med tilpassede captions per plattform
+- UTM-linker lagret i `utm_links` for alle 3 plattformer (kampanje `skreddersydd-2026-05`, content `definisjon`)
+- Destination: `/kundesenter/kontakt-oss`
+
+#### Kraftpipe-sett TESS VEST (8. mai)
+- OPTI-koffert med skreddersydd HDFI for kraftpipe 22-38 mm levert til TESS VEST
+- 4 produktbilder (lukket koffert med engravering, åpen koffert ovenfra/vinkel, nærbilde av røde HDFI med pipene merket)
+- Caption brukte +144%-mønsteret (skreddersøm + HDFI + CNC-maskinert + emoji-start + retorisk CTA)
+- UTM-linker lagret for FB, IG (bio-link) og LinkedIn (kampanje `kraftpipe-tess-vest-2026-05`)
+- Anbefalt karusell-rekkefølge: nærbilde først (best scroll-stopper), deretter overshot, vinkel, lukket koffert
+- Planlagt publisering 11:30 (peak-vindu kl 12:00 = +144% lift)
+
+### Vercel-reaktivering — full pipeline gjenopprettet
+
+Etter 3 ukers pause siden 21. april:
+
+1. **GitHub-repo recovered** — `FosenToolsGit/Fosen-Tools-Analytics` ble slettet ved et uhell midt i Vercel-import-flyten. Lokal Git-historikk var intakt; opprettet repo på nytt via github.com og pushet `main` tilbake (mai 8 commits intakt).
+2. **Vercel-prosjekt opprettet** med samme navn `fosen-tools-analytics`. Env-variabler importert via `.env`-import i dashboard.
+3. **TS-feil under første build:** `KeywordPlannerService` ble kalt med feil method-navn (`checkStatus` → `checkAccess`, `generateKeywordIdeas` → `getIdeas`). Lokal `npm run dev` (Turbopack) fanger ikke type-feil ved build, kun Vercel sin `next build`. Fikset i commit `0d93f49`.
+4. **Static prerender-feil:** `/innsikt/indeksering` brukte `useSearchParams()` (via `useDateRange`-hook) uten Suspense-boundary. Wrapped `{children}` i `Suspense` i `(dashboard)/layout.tsx`. Fanger alle 24 dashboard-sider som bruker hooken. Commit `f615a3c`.
+5. **Cron-jobb satt opp:** `vercel.json` med `{ "path": "/api/sync", "schedule": "0 5 * * *" }` = 5 UTC = 7 norsk sommertid. `/api/sync` fikk GET-handler (Vercel cron bruker GET) + aksepterer både `Bearer SYNC_SECRET_KEY` (manuell curl) og `Bearer CRON_SECRET` (Vercel auto-injected). Commit `16ce008`.
+6. **Brukere lagt til i Supabase Auth** via Auth Admin API: `erik@fosen-tools.no` + `torstein@fosen-tools.no` (begge passord `Toolrebel2026`, e-post pre-bekreftet).
+7. **«Lokal»-tag i sidebar:** Markert `/innsikt/seo-innhold` med en amber «Lokal»-badge siden den krever Claude Code lokalt. Resten av appen funker likt på Vercel og lokalt. Commit `b0bb44f`.
+
+### Brosjyre-editor: Combo-card-feature (NY)
+
+- **Ny PageObject-type `comboCard`** for å selge 2 produkter sammen til kombi-pris
+- 5 filer endret: `types.ts` (props + discriminated union + LibPayload), `store.ts` (factory `makeComboCard`), `object-renderer.tsx` (renderer + dispatch), `canvas.tsx` (LibPayload→PageObject), `panels.tsx` (LibCard + property panel)
+- **Standard 140×100 mm** — passer som element på A4-side
+- **Layout:** Header-badge med kampanje-tekst (default «KOMBI-PRIS»), 2 produkter side-om-side med `+`-separator, samlet pris-blokk nederst med spar-stempel (auto-utregnet vs sum av enkeltpriser)
+- Property-panel: produkt A + B (dropdown fra dummy-katalog eller fri tekst), kombi-pris, MVA, accent-farge, spar-toggle
+- Commit `d63e2d2`
+
+### Husqvarna Vårkampanje 2026 brosjyre
+
+- **Brosjyre-ID:** `04e778e8-5a05-42fd-b6bd-87da8e039bb5` i `brochures`-tabellen
+- **Bygget via** standalone-script `/tmp/build-husqvarna-spring.mjs` — scraper alle URL-er via Googlebot UA, parser JSON-LD for navn/pris/bilde, anvender riktig rabatt per kategori, bygger `BrochureDoc` JSON og inserter direkte i Supabase
+- **8 sider, 36 produkter** scrapet med ekte priser, navn, bilder (Azure Blob URL-er fra Multicase) og produsent-logoer (alle Husqvarna)
+- **Side-struktur:**
+  1. Forside — orange Husqvarna-tema, «VÅR-KAMPANJE 2026», stjerne-burst med −20%
+  2. Combo hero — K1 PACE motorkappesag + B750X/C1800X batteripakke, **−10% pakkepris** via comboCard (41 717 → 37 545 kr, sparer 4 172 kr)
+  3. Diamantblad Elite Cut — S35×2 + S45×3 + S85×4 (3×3 grid, **−20%**)
+  4. Ringsagblad + W1610 — 4 produkter i 2×2 grid (**−20%**)
+  5. Kjernebor CR128 — 9 produkter (Elite Drill + Ø082-Ø152), **−20%**
+  6. Kjernebor CR128 fortsetter — Ø182-Ø250 (4 produkter, **−20%**)
+  7. Maskiner & kraftaggregat — FS-400, K-770/970/4000×2, DM-230, LF-80, PP-7 (8 produkter, **−5%**)
+  8. Bakside med stor «→ fosen-tools.no/husqvarna» CTA + kontaktblokk
+- **Bug fanget underveis:** Combo-rabatt ble doblet (10% per produkt + 10% pakke) — fikset til kun 10% pakke-rabatt på sum av ordinære priser
+- **Bug fanget underveis 2:** Image URLs var null fordi regex søkte etter «ArticleImages» — Multicase bruker Azure Blob (`mc10256fosentools.blob.core.windows.net`). Lest fra JSON-LD `image`-felt i stedet (alle 34 produkter har nå bilde + Husqvarna-logo)
+
+### Tekniske quirks oppdaget
+
+1. **Lokal `npm run dev` med Turbopack kjører IKKE TypeScript strict** — type-feil slipper gjennom som vil feile på Vercel build. Alltid kjør `npx tsc --noEmit` før push.
+2. **`useSearchParams()` krever Suspense ved static prerender i Next.js 16** — selv via transitiv hook-bruk (f.eks. `useDateRange` → `useSearchParams`).
+3. **Vercel cron bruker GET som default**, ikke POST. Eksisterende POST-routes trenger GET-handler eller cron-config-flagg.
+4. **Vercel cron auto-injecter `CRON_SECRET`-env-var i `Authorization: Bearer ...` header** — best practice å sjekke for både manuell secret OG cron secret.
+5. **Sensitive env vars i Vercel kan kun være Production-only** (ikke alle 3 environments) — det er bevisst design for sikkerhet.
+
+### Filer skapt/oppdatert i denne økten
+
+**Kode-endringer (commits):**
+- `e91074b` — feat: SEO-innhold-bygger, UTM-register, mandagsmote-brief og redirect-historikk (rebuild av main etter repo-recovery)
+- `0d93f49` — fix: KeywordPlannerService method-navn
+- `f615a3c` — fix: wrap dashboard children i Suspense
+- `16ce008` — feat: daglig auto-sync via Vercel cron kl 7
+- `b0bb44f` — feat: «Lokal»-tag i sidebar
+- `d63e2d2` — feat: comboCard i brosjyre-editor
+
+**Lokale arbeidslister (kan slettes):**
+- `/tmp/build-husqvarna-spring.mjs` — script for å bygge Husqvarna Vårkampanje
+- `/tmp/husqvarna-spring-doc.json` — debug-JSON av brosjyren
+
+**Memory:**
+- `feedback_cnc_terminologi.md` (NY)
+- `feedback_pmax_brand_exclusions_insufficient.md` (NY)
+
+### Datostyrte sjekker fremover
+
+- **Mandag 11. mai morgen** — sjekk Pmax brand-andel etter helgen (mål: under 50%, retning 5-15%). Trigge sync først, deretter samme analyse som 8. mai.
+- **12. mai** — engagement-sjekk på Skreddersydd-innlegg + Kraftpipe TESS VEST-innlegg vs +144%-mønsteret
+- **14. mai** — SEO-rangeringer for `/leatherman` og pipesett-primær (mål: posisjon < 10)
+- **5. juni** — Bransjer-pause re-evaluering (kampanjen pauset 5. mai, vurder reaktivering eller avslutning)
+
+### CLAUDE.md utvidet med:
+- 8. mai-rad i Prosjekt-tidslinje (kondensert)
+- Denne detaljerte sesjons-sammendraget
+- (Ingen strukturelle endringer på Brosjyre-editor-seksjonen — combo-card er bare nytt object-type i samme system)
