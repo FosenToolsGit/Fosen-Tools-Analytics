@@ -25,13 +25,27 @@ export default function PrisplakatTmpPlayPage() {
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(`prisplakat-tmp-${id}`);
+      const key = `prisplakat-tmp-${id}`;
+      const raw = localStorage.getItem(key);
       if (!raw) {
         setError("Test-data ikke funnet. Lukk dette vinduet og prøv igjen fra editoren.");
         return;
       }
       const data = JSON.parse(raw);
       setPlaylist(data);
+      // Rydd opp: slett tmp-data + andre gamle tmp-entries eldre enn 1 time
+      try {
+        localStorage.removeItem(key);
+        const cutoff = Date.now() - 3600_000;
+        for (const k of Object.keys(localStorage)) {
+          if (k.startsWith("prisplakat-tmp-")) {
+            try {
+              const obj = JSON.parse(localStorage.getItem(k) || "{}");
+              if (obj.ts && obj.ts < cutoff) localStorage.removeItem(k);
+            } catch { localStorage.removeItem(k); }
+          }
+        }
+      } catch { /* ignore */ }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Feil");
     }

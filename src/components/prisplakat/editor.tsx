@@ -269,11 +269,17 @@ export function PrisplakatEditor() {
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           {format.startsWith("slideshow") && products.length > 0 && (
             <button onClick={() => {
-              // Test-modus: lagre state i sessionStorage og åpne /play med tmp-id
+              // Test-modus: lagre state i localStorage (deles mellom tabs)
+              // sessionStorage fungerer IKKE — den er isolert per tab
               const tmpId = `tmp-${Date.now()}`;
-              sessionStorage.setItem(`prisplakat-tmp-${tmpId}`, JSON.stringify({
-                title, format, products, settings,
-              }));
+              try {
+                localStorage.setItem(`prisplakat-tmp-${tmpId}`, JSON.stringify({
+                  title, format, products, settings, ts: Date.now(),
+                }));
+              } catch (e) {
+                alert("Kunne ikke lagre test-data: " + (e instanceof Error ? e.message : "ukjent feil"));
+                return;
+              }
               window.open(`/prisplakat/tmp/${tmpId}/play?autoplay=1`, "_blank", "noopener");
             }} style={{
               background: "var(--chrome-bg-3)", color: "#fff",
