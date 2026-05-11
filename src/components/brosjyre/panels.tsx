@@ -981,6 +981,32 @@ function TypeSpecificProps({ obj, updateProps, store }: { obj: PageObject; updat
         </>
       );
     }
+    case "sigill": {
+      const p = obj.props;
+      return (
+        <>
+          <Field label="Variant">
+            <select className="ft-input" value={p.variant} onChange={(e) => updateProps({ variant: e.target.value as "ring" | "solid" | "dual" | "square" })}>
+              <option value="ring">Ring (gjennomsiktig)</option>
+              <option value="solid">Solid (rød)</option>
+              <option value="dual">Dual (ring + senter)</option>
+              <option value="square">Firkantet</option>
+            </select>
+          </Field>
+          <Field label="Sirkulær label (rundt)">
+            <input className="ft-input" value={p.label} onChange={(e) => updateProps({ label: e.target.value })} />
+          </Field>
+          <Field label="Sentrert tekst (stor)">
+            <input className="ft-input" value={p.inner} onChange={(e) => updateProps({ inner: e.target.value })} />
+          </Field>
+          <Field label="Sub-tekst (under)">
+            <input className="ft-input" value={p.innerSub} onChange={(e) => updateProps({ innerSub: e.target.value })} />
+          </Field>
+          <NumberField label="Rotasjon (grader)" value={p.rotate} onChange={(v) => updateProps({ rotate: v })} />
+          <ColorField label="Farge (tom = brand-rød)" value={p.color || ""} onChange={(v) => updateProps({ color: v || null })} />
+        </>
+      );
+    }
     default:
       return <div style={{ color: "var(--chrome-muted)", fontSize: 11 }}>Ingen ekstra egenskaper</div>;
   }
