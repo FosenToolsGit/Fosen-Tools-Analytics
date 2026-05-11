@@ -435,11 +435,11 @@ async function main() {
     5, TOTAL_PAGES_PLACEHOLDER
   ));
 
-  // Side 6: Grid 2×2 stor — store kjernebor (Ø182+)
+  // Side 6: Grid 2×2 stor — store kjernebor (Ø150+) — 4 slots, perfekt
   pages.push(buildGrid2x2(
     kjerneborStore.slice(0, 4),
     "HUSQVARNA · KJERNEBOR",
-    "STORE DIAMETRE — Ø182 MM OG OPP",
+    "STORE DIAMETRE — Ø150 MM OG OPP",
     6, TOTAL_PAGES_PLACEHOLDER
   ));
 
