@@ -147,31 +147,48 @@ const titleBand = (eyebrow, title, subtitle = null) => {
 // ──────────────────────────────────────────────────────────────────────
 
 function buildCoverDarkPremium(title, subtitle) {
-  const logo25W = 130, logo25H = logo25W / 1.78;
+  const logo25W = 110, logo25H = logo25W / 1.78;
   return {
     id: uid("page"), paper: "A4P", w: W, h: H, bg: "#ffffff",
     objects: [
+      // Full-bleed mørk bg
       rect(0, 0, W, H, FT_INK),
+      // Rød accent på topp
       rect(0, 0, W, 4, FT_RED),
-      img((W - 90) / 2, 18, 90, 12, "/brosjyre/Fosen-Tools_white.svg", { fit: "contain", label: "Fosen Tools" }),
-      txt(0, 40, W, 5, "BREKSTAD · NORGE", "h5", {
+      // Hvit FT-logo
+      img((W - 90) / 2, 16, 90, 12, "/brosjyre/Fosen-Tools_white.svg", { fit: "contain", label: "Fosen Tools" }),
+      // Eyebrow
+      txt(0, 36, W, 4, "BREKSTAD · NORGE · 25 ÅR I BRANSJEN", "h5", {
         align: "center", color: "rgba(255,255,255,0.5)", weight: 700,
       }),
-      img((W - logo25W) / 2, 56, logo25W, logo25H, "/brosjyre/Jubileumslogo-25aar.svg", {
+      // 25-årslogo
+      img((W - logo25W) / 2, 48, logo25W, logo25H, "/brosjyre/Jubileumslogo-25aar.svg", {
         fit: "contain", label: "25 år",
       }),
-      txt(15, 150, W - 30, 30, title, "h1", { color: "#ffffff", align: "center" }),
-      rect((W - 22) / 2, 186, 22, 2, FT_RED),
-      txt(15, 194, W - 30, 6, subtitle, "h4", {
-        color: "rgba(255,255,255,0.7)", align: "center", weight: 500,
+      // Tittel — stor og dramatisk
+      txt(10, 130, W - 20, 36, title, "h1", { color: "#ffffff", align: "center" }),
+      // Rød accent-divider
+      rect((W - 30) / 2, 178, 30, 2, FT_RED),
+      // Subtitle
+      txt(15, 188, W - 30, 8, subtitle, "h4", {
+        color: "rgba(255,255,255,0.75)", align: "center", weight: 500,
       }),
-      txt(0, 218, W, 4, "DEL AV", "h5", { align: "center", color: "rgba(255,255,255,0.35)", weight: 700 }),
-      img((W - 50) / 2, 224, 50, 13, "/brosjyre/Jubileumslogo-100aar.svg", { fit: "contain", label: "100 år" }),
-      txt(15, 256, W - 30, 12, "72 51 51 20", "h2", { align: "center", color: "#ffffff" }),
-      txt(15, 274, W - 30, 5, "fosen-tools.no  ·  Industrigata 1, 7130 Brekstad", "h5", {
+      // KAMPANJE-burst rotert i hjørne
+      badge(W - 50, 14, 38, 38, "OPPTIL\n−20%", { style: "star", rot: -10, fontSize: 11 }),
+      // "DEL AV" + 100-årslogo
+      txt(0, 212, W, 4, "DEL AV", "h5", { align: "center", color: "rgba(255,255,255,0.35)", weight: 700 }),
+      img((W - 50) / 2, 218, 50, 13, "/brosjyre/Jubileumslogo-100aar.svg", { fit: "contain", label: "100 år" }),
+      // CTA-band: rød accent-stripe
+      rect((W - 60) / 2, 240, 60, 0.6, FT_RED),
+      // RING OSS
+      txt(0, 246, W, 4, "RING OSS", "h5", { align: "center", color: "rgba(255,255,255,0.5)", weight: 700 }),
+      // Stor telefon
+      txt(15, 252, W - 30, 14, "72 51 51 20", "h1", { align: "center", color: "#ffffff" }),
+      // Kontakt-rad
+      txt(15, 272, W - 30, 5, "fosen-tools.no  ·  Industrigata 1, 7130 Brekstad", "h5", {
         align: "center", color: "rgba(255,255,255,0.55)", weight: 500,
       }),
-      txt(15, 282, W - 30, 4, "Man — fre  07:30 — 16:00", "h5", {
+      txt(15, 280, W - 30, 4, "Man — fre  07:30 — 16:00  ·  Gyldig ut mai 2026", "h5", {
         align: "center", color: "rgba(255,255,255,0.35)", weight: 500,
       }),
     ],
