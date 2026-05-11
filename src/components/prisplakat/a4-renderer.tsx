@@ -277,9 +277,15 @@ export function PricetagA4_2Up({
         position: "absolute", left: 0, right: 0, top: "32mm", bottom: "17mm",
         display: "flex",
       }}>
-        {p1 && <div style={{ flex: 1, minWidth: 0 }}><PricetagHalfCell product={p1} settings={settings} accent={accent} /></div>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {p1 ? <PricetagHalfCell product={p1} settings={settings} accent={accent} />
+              : <div style={{ width: "100%", height: "100%", background: "#f5f7fa" }} />}
+        </div>
         <div style={{ width: "1mm", background: accent, alignSelf: "stretch" }} />
-        {p2 && <div style={{ flex: 1, minWidth: 0 }}><PricetagHalfCell product={p2} settings={settings} accent={accent} /></div>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {p2 ? <PricetagHalfCell product={p2} settings={settings} accent={accent} />
+              : <div style={{ width: "100%", height: "100%", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontFamily: "Roboto Mono, monospace", fontSize: 11 }}>[ legg til produkt 2 ]</div>}
+        </div>
       </div>
 
       {/* Footer */}

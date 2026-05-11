@@ -190,10 +190,24 @@ export function PrisplakatEditor() {
           padding: "6px 14px", borderRadius: 4, fontSize: 13, cursor: "pointer",
         }}>+ Ny</button>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          {format.startsWith("slideshow") && products.length > 0 && (
+            <button onClick={() => {
+              // Test-modus: lagre state i sessionStorage og åpne /play med tmp-id
+              const tmpId = `tmp-${Date.now()}`;
+              sessionStorage.setItem(`prisplakat-tmp-${tmpId}`, JSON.stringify({
+                title, format, products, settings,
+              }));
+              window.open(`/prisplakat/tmp/${tmpId}/play?autoplay=1`, "_blank", "noopener");
+            }} style={{
+              background: "var(--chrome-bg-3)", color: "#fff",
+              padding: "6px 14px", borderRadius: 4, fontSize: 13, border: "1px solid var(--chrome-border)",
+              cursor: "pointer",
+            }}>▶ Test fullskjerm</button>
+          )}
           {currentId && format.startsWith("slideshow") && (
             <a href={`/prisplakat/${currentId}/play?autoplay=1`} target="_blank" rel="noreferrer" style={{
-              background: "var(--chrome-bg-3)", color: "#fff", textDecoration: "none",
-              padding: "6px 14px", borderRadius: 4, fontSize: 13, border: "1px solid var(--chrome-border)",
+              background: "var(--ft-red)", color: "#fff", textDecoration: "none",
+              padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 700,
             }}>▶ Spill av</a>
           )}
           {format.startsWith("a4_") && (
