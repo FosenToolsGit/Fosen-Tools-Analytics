@@ -129,24 +129,32 @@ export function PricetagA4Single({
       <div style={{
         position: "absolute", left: 0, right: 0, top: "180mm", height: "92mm",
         padding: "8mm 14mm 0",
+        display: "flex", flexDirection: "column",
+        overflow: "hidden",
       }}>
-        <Eyebrow tracking={0.18} size={10}>{product.manufacturer || "PRODUKT"}</Eyebrow>
+        <div style={{ flexShrink: 0 }}>
+          <Eyebrow tracking={0.18} size={10}>{product.manufacturer || "PRODUKT"}</Eyebrow>
+        </div>
         <div style={{
           fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
           fontWeight: 900, fontSize: 28, lineHeight: 1.05,
           textTransform: "uppercase", marginTop: "3mm", color: "#111",
+          flexShrink: 0,
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
         }}>{product.name || "Produkt"}</div>
         <div style={{
           fontFamily: "Roboto Mono, monospace", fontSize: 11,
           color: "#6b7280", marginTop: "2mm",
+          flexShrink: 0,
         }}>Art.nr {product.sku || "—"}</div>
 
-        {/* Pris-blokk */}
+        {/* Pris-blokk — flexShrink:0 så den ALDRI klippes */}
         <div style={{
           display: "flex", alignItems: "stretch", gap: "5mm", marginTop: "6mm",
+          flexShrink: 0,
         }}>
           <div style={{ width: "4mm", background: accent, alignSelf: "stretch" }} />
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {showSavings && (
               <div style={{
                 fontFamily: "Roboto Mono, monospace", fontSize: 13,
@@ -184,22 +192,26 @@ export function PricetagA4Single({
           )}
         </div>
 
-        {/* USP bullets */}
+        {/* USP bullets — flex-grow så de tar resterende plass, men overflow:hidden klipper */}
         {(product.bullets || []).slice(0, 3).length > 0 && (
           <ul style={{
             listStyle: "none", padding: 0, margin: "8mm 0 0",
             display: "flex", flexDirection: "column", gap: "2mm",
+            flex: "1 1 0", minHeight: 0, overflow: "hidden",
           }}>
             {(product.bullets || []).slice(0, 3).map((b, i) => (
               <li key={i} style={{
                 display: "flex", gap: "3mm", alignItems: "flex-start",
                 fontSize: 12, lineHeight: 1.45, color: "#374151",
+                overflow: "hidden",
               }}>
                 <span style={{
                   width: "1mm", alignSelf: "stretch", background: accent, flex: "0 0 auto",
                   marginTop: "1mm", marginBottom: "1mm",
                 }} />
-                <span>{b}</span>
+                <span style={{
+                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+                }}>{b}</span>
               </li>
             ))}
           </ul>
