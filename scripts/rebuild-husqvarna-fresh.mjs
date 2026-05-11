@@ -105,15 +105,16 @@ const comboCard = (productA, productB, comboPrice, x, y, w, h, opts = {}) => ({
   },
 });
 
-// FT-stripe (10mm) — gjenbrukbar header
+// FT-stripe (12mm) — gjenbrukbar header med synlig FT-logo
+// FT-logo har 11:1 aspect ratio. For 8mm høy logo trenger vi 88mm bred.
 const fosenStripe = (y = 0) => [
-  rect(0, y, W, 10, FT_INK),
-  rect(0, y, 1.5, 10, FT_RED),
-  img(6, y + 2, 38, 6, "/brosjyre/Fosen-Tools_white.svg", { fit: "contain", label: "Fosen Tools" }),
-  txt(60, y + 3, 60, 4, "BREKSTAD · 25 ÅR", "h5", {
+  rect(0, y, W, 12, FT_INK),
+  rect(0, y, 1.5, 12, FT_RED),
+  img(6, y + 2, 70, 8, "/brosjyre/Fosen-Tools_white.svg", { fit: "contain", label: "Fosen Tools" }),
+  txt(82, y + 4, 50, 4, "BREKSTAD · 25 ÅR", "h5", {
     align: "left", color: "rgba(255,255,255,0.85)", weight: 800,
   }),
-  txt(W - 60, y + 3.2, 55, 4, "2001 — 2026", "h5", {
+  txt(W - 60, y + 4, 55, 4, "2001 — 2026", "h5", {
     align: "right", color: "rgba(255,255,255,0.55)", weight: 500,
   }),
 ];
@@ -129,15 +130,15 @@ const fosenFooter = (pageNo, totalPages, yBase = 285) => [
   }),
 ];
 
-// Tittel-band like under FT-stripe
+// Tittel-band like under FT-stripe (FT-stripe er 12mm, så tittel starter ved y=14)
 const titleBand = (eyebrow, title, subtitle = null) => {
   const objs = [
-    rect(13, 16, 4, 14, FT_RED),
-    txt(20, 14, W - 40, 5, eyebrow, "h5", { color: "#6b7280", weight: 700 }),
-    txt(20, 20, W - 40, 12, title, "h2", { color: "#111", weight: 900 }),
+    rect(13, 18, 4, 14, FT_RED),
+    txt(20, 16, W - 40, 5, eyebrow, "h5", { color: "#6b7280", weight: 700 }),
+    txt(20, 22, W - 40, 12, title, "h2", { color: "#111", weight: 900 }),
   ];
   if (subtitle) {
-    objs.push(txt(20, 32, W - 40, 5, subtitle, "h5", { color: "#6b7280", weight: 500 }));
+    objs.push(txt(20, 34, W - 40, 5, subtitle, "h5", { color: "#6b7280", weight: 500 }));
   }
   return objs;
 };
