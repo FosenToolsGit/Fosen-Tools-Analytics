@@ -135,6 +135,8 @@ function ComponentsTab() {
         <LibCard label="Sjokkstempel" parsed={{ kind: "badge", style: "stamp", text: "KAMPANJE" }} />
         <LibCard label="Sløyfe (ribbon)" parsed={{ kind: "badge", style: "ribbon", text: "TILBUD" }} />
         <LibCard label="Diagonal banner" parsed={{ kind: "badge", style: "diagonal", text: "-20%" }} />
+        <LibCard label="FT 25-årssigill" hint="Sirkulær ringtekst" parsed={{ kind: "sigill", variant: "ring" }} />
+        <LibCard label="FT 25-årssigill (solid)" hint="Rød fylt sirkel" parsed={{ kind: "sigill", variant: "solid" }} />
       </Section>
       <Section title="Layout">
         <LibCard label="Kampanje-banner" hint="Rett" parsed={{ kind: "banner" }} />

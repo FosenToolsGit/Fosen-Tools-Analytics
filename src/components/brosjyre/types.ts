@@ -231,7 +231,8 @@ export type LibPayload =
   | { kind: "divider" }
   | { kind: "contact" }
   | { kind: "gallery" }
-  | { kind: "comboCard"; productA?: Product; productB?: Product; comboPrice?: number };
+  | { kind: "comboCard"; productA?: Product; productB?: Product; comboPrice?: number }
+  | { kind: "sigill"; variant?: SigillVariant };
 
 // Template definition
 export interface Template {

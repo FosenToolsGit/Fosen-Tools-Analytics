@@ -70,6 +70,21 @@ export function makeFromLib(parsed: LibPayload, x: number, y: number): PageObjec
       return makeGallery(x, y);
     case "comboCard":
       return makeComboCard(parsed.productA, parsed.productB, parsed.comboPrice, x, y);
+    case "sigill": {
+      return {
+        id: `obj_${Math.random().toString(36).slice(2, 9)}`,
+        type: "sigill",
+        x, y, w: 40, h: 40, rot: 0, locked: false,
+        props: {
+          variant: parsed.variant || "ring",
+          rotate: -12,
+          color: null,
+          label: "25 ÅR · 2001 — 2026 · FOSEN TOOLS · 25 ÅR · 2001 — 2026 · FOSEN TOOLS ·",
+          inner: "25",
+          innerSub: "ÅR I BRANSJEN",
+        },
+      };
+    }
     default:
       return null;
   }
