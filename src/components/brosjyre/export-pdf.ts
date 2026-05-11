@@ -185,6 +185,41 @@ export async function exportBrochureToPdf({ doc, filename, onProgress }: ExportO
 
       // Plasser bildet over hele siden i mm
       pdf.addImage(imgData, "JPEG", 0, 0, pageDoc.w, pageDoc.h, undefined, "FAST");
+
+      // Legg til klikkbare PDF-annotasjoner over produktkort/comboCard/gallery
+      // slik at brosjyren fungerer som digital katalog når den sendes på e-post.
+      for (const o of pageDoc.objects) {
+        if (o.type === "productCard") {
+          const url = o.props.product?.source_url;
+          if (url) pdf.link(o.x, o.y, o.w, o.h, { url });
+        } else if (o.type === "comboCard") {
+          // Splitt på midten: venstre → produktA, høyre → produktB
+          const urlA = o.props.productA?.source_url;
+          const urlB = o.props.productB?.source_url;
+          // Hopp over topp-badge (rundt 12% av høyden) og bunn-pris (rundt 22%)
+          const yStart = o.y + o.h * 0.12;
+          const hMid = o.h * 0.66;
+          const halfW = o.w / 2;
+          if (urlA) pdf.link(o.x, yStart, halfW, hMid, { url: urlA });
+          if (urlB) pdf.link(o.x + halfW, yStart, halfW, hMid, { url: urlB });
+        } else if (o.type === "gallery") {
+          // Galleri-celler er auto-fyll grid med `cols` kolonner.
+          // Beregn celle-bounds basert på cols + gap.
+          const cols = Math.max(1, o.props.cols || 3);
+          const gapMM = (o.props.gap ?? 4); // Allerede i mm i schema
+          const items = o.props.products || [];
+          const rows = Math.max(1, Math.ceil(items.length / cols));
+          const cellW = (o.w - gapMM * (cols - 1)) / cols;
+          const cellH = (o.h - gapMM * (rows - 1)) / rows;
+          items.forEach((p, idx) => {
+            const r = Math.floor(idx / cols);
+            const c = idx % cols;
+            const cx = o.x + c * (cellW + gapMM);
+            const cy = o.y + r * (cellH + gapMM);
+            if (p?.source_url) pdf.link(cx, cy, cellW, cellH, { url: p.source_url });
+          });
+        }
+      }
     }
 
     // Filename

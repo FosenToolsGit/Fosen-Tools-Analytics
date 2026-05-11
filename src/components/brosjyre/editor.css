@@ -1,9 +1,14 @@
 /* Brosjyre-editor — globale stiler. Importeres fra page.tsx via Next.js. */
 
-/* Web-fonter for brosjyre-rendering. Lastes via Google Fonts.
-   Korolev krever lisens og er ikke tilgjengelig — Roboto 900 er fallback
-   som matcher visuelt godt nok for kampanje-headinger. */
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;600&family=Playfair+Display:wght@400;700&display=swap");
+/* Web-fonter for brosjyre-rendering. Manrope er fri fallback for Korolev
+   (Adobe Fonts) — matcher visuelt godt med 800/900-weight + uppercase. */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;600&family=Playfair+Display:wght@400;700&display=swap");
+
+/* Marquee-animasjon for LogoTicker */
+@keyframes ft-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
 
 .brosjyre-editor {
   /* Editor chrome (mørkt) */
@@ -17,12 +22,20 @@
 
   /* Brand-tokens — overstyres av editor.tsx via inline-style */
   --ft-red: #ed1c24;
+  --ft-ink: #111111;
   --ft-text-main: #111827;
   --ft-text-body: #4b5563;
+  --ft-text-muted: #6b7280;
   --ft-bg-page: #f5f7fa;
+  --ft-card-bg: #ffffff;
+  --ft-border-soft: rgba(148, 163, 184, 0.4);
+  --ft-deep: #0f1115;
+  --ft-rail-width: 3px;
+  --ft-head-font: "Manrope", "Inter", system-ui, sans-serif;
+  --ft-body-font: "Manrope", "Inter", system-ui, sans-serif;
 
-  --heading-stack: "Korolev", "Roboto", Arial, Helvetica, sans-serif;
-  --body-stack: "Roboto", Arial, Helvetica, sans-serif;
+  --heading-stack: "Manrope", "Korolev", "Roboto", Arial, Helvetica, sans-serif;
+  --body-stack: "Manrope", "Roboto", Arial, Helvetica, sans-serif;
   --mono-stack: "Roboto Mono", ui-monospace, Menlo, monospace;
 
   -webkit-font-smoothing: antialiased;

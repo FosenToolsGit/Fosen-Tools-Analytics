@@ -18,9 +18,11 @@ import type {
   GalleryProps,
   ProductCardProps,
   ComboCardProps,
+  SigillProps,
   BrandTokens,
 } from "./types";
 import { MM_TO_PX, formatNOK, DEFAULT_TOKENS } from "./store";
+import { NeonCard, Eyebrow, RedDivider, PriceBurst, FTStripe, Sigill25Aar, SertifikatBaand, LogoTicker } from "./ft-svg";
 
 interface RendererCtx {
   tokens: BrandTokens;
@@ -347,6 +349,25 @@ const monoFor = (p: Product | undefined): string => {
 };
 
 /**
+ * Liten "Art.nr"-label. Bruker Fosen Tools-artikkelnummer (Multicase prd-num-label).
+ * Vises konsekvent som monospace for at "123766" skal være lett å lese opp i butikk.
+ */
+function SkuLabel({ sku, sizeEm = 0.62 }: { sku?: string | null; sizeEm?: number }) {
+  if (!sku) return null;
+  return (
+    <div style={{
+      fontFamily: "Roboto Mono, monospace",
+      fontSize: `${sizeEm}em`,
+      color: "#6b7280",
+      letterSpacing: "0.02em",
+      lineHeight: 1.2,
+    }}>
+      Art.nr: <span style={{ color: "#111", fontWeight: 600 }}>{sku}</span>
+    </div>
+  );
+}
+
+/**
  * Vis produsent-logo hvis tilgjengelig, ellers tekst-label. Brukes i alle
  * produktkort-varianter. heightEm angir høyden i em (relativ til kortets fontSize).
  */
@@ -371,15 +392,36 @@ function ManufacturerBadge({ product, accent, heightEm = 0.7 }: { product: Produ
   );
 }
 
+// Map gammel BurstStyle → PriceBurst-variant (FT-designsystemet).
+// "star" var default — vi bytter til "bullseye" som er FT-signaturen.
+function burstVariantFor(style: BurstStyle): "bullseye" | "star14" | "ribbon" | "badge" | "square" {
+  if (style === "circle") return "bullseye";
+  if (style === "ribbon") return "ribbon";
+  if (style === "stamp") return "badge";
+  if (style === "diagonal") return "badge";
+  return "bullseye"; // "star" → bullseye (FT default)
+}
+
 // ---------------- Produktkort ----------------
 function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx }) {
   const { product, variant, showBurst, burstStyle, burstText, showStock, vatMode, bulletCount, bgColor, accentColor } = props;
   const accent = accentColor || ctx.tokens.red;
   const burstCopy = burstText || (product?.discount_pct ? `−${product.discount_pct}%` : null);
+  const burstVariant = burstVariantFor(burstStyle);
 
   const heroLayout = variant === "hero";
   const compactLayout = variant === "compact";
   const compareLayout = variant === "compare";
+
+  // FT neon-rails — 3px røde vertikale stenger på begge sider.
+  // Erstatter borderSoft 1px frame med signaturmønsteret fra fosen-tools.no.
+  const ftFrame: React.CSSProperties = {
+    borderRadius: 0,
+    borderLeft: `3px solid ${accent}`,
+    borderRight: `3px solid ${accent}`,
+    borderTop: `1px solid ${ctx.tokens.borderSoft}`,
+    borderBottom: `1px solid ${ctx.tokens.borderSoft}`,
+  };
 
   const bullets = (product?.bullets || []).slice(0, bulletCount || 3);
   const monogram = monoFor(product);
@@ -389,13 +431,13 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
       <div className="ft-body" style={{
         width: "100%", height: "100%", background: bgColor || "#fff",
         display: "grid", gridTemplateColumns: "0.85fr 1.5fr 1fr",
-        border: `1px solid ${ctx.tokens.borderSoft}`, borderRadius: 4, overflow: "hidden", position: "relative",
+        ...ftFrame, overflow: "hidden", position: "relative",
       }}>
         <div style={{ position: "relative", borderRight: `1px solid ${ctx.tokens.borderSoft}` }}>
           <ProductImage src={product?.image_url} mono={monogram} label={product?.image_placeholder} fit="contain" />
           {showBurst && burstCopy && (
             <div style={{ position: "absolute", top: "8%", left: "8%", width: "30%", aspectRatio: "1/1" }}>
-              <BurstShape style={burstStyle} color={accent} text={burstCopy} fontSize={14} />
+              <PriceBurst variant={burstVariant} color={accent} primary={burstCopy} secondary={null} size={80} primarySize={20} />
             </div>
           )}
         </div>
@@ -405,6 +447,7 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
             <ManufacturerBadge product={product} accent={accent} heightEm={1.0} />
           </div>
           <div className="ft-heading" style={{ fontSize: "1.43em", color: "#111", marginTop: 4, lineHeight: 1.05 }}>{product?.name}</div>
+          <SkuLabel sku={product?.sku} sizeEm={0.7} />
           {bullets.length > 0 && (
             <ul className="ft-body" style={{ fontSize: "0.75em", color: "#4b5563", marginTop: "4%", paddingLeft: "1em", lineHeight: 1.45, listStyle: "none" }}>
               {bullets.map((b, i) => (
@@ -437,13 +480,13 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
       <div className="ft-body" style={{
         width: "100%", height: "100%", background: bgColor || "#fff",
         display: "grid", gridTemplateColumns: "1.1fr 1fr",
-        border: `1px solid ${ctx.tokens.borderSoft}`, borderRadius: 4, overflow: "hidden", position: "relative",
+        ...ftFrame, overflow: "hidden", position: "relative",
       }}>
         <div style={{ position: "relative", borderRight: `1px solid ${ctx.tokens.borderSoft}`, background: "#f5f7fa" }}>
           <ProductImage src={product?.image_url} mono={monogram} label={product?.image_placeholder} fit="contain" />
           {showBurst && burstCopy && (
             <div style={{ position: "absolute", top: "5%", right: "5%", width: "26%", aspectRatio: "1/1" }}>
-              <BurstShape style={burstStyle} color={accent} text={burstCopy} fontSize={18} />
+              <PriceBurst variant={burstVariant} color={accent} primary={burstCopy} size={140} primarySize={32} />
             </div>
           )}
           {showStock && (
@@ -465,6 +508,7 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
           <div className="ft-heading" style={{ fontSize: "2.1em", color: "#111", lineHeight: 1.05, marginTop: "2%" }}>
             {product?.name}
           </div>
+          <SkuLabel sku={product?.sku} sizeEm={0.85} />
           {bullets.length > 0 && (
             <ul className="ft-body" style={{ fontSize: "0.82em", color: "#4b5563", marginTop: "4%", paddingLeft: 0, lineHeight: 1.5, listStyle: "none", flexGrow: 1 }}>
               {bullets.map((b, i) => (
@@ -487,14 +531,14 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
     return (
       <div className="ft-body" style={{
         width: "100%", height: "100%", background: bgColor || "#fff",
-        display: "flex", flexDirection: "column", border: `1px solid ${ctx.tokens.borderSoft}`, borderRadius: 4,
-        overflow: "hidden", position: "relative",
+        display: "flex", flexDirection: "column",
+        ...ftFrame, overflow: "hidden", position: "relative",
       }}>
         <div style={{ position: "relative", height: "52%", background: "#f5f7fa", borderBottom: `1px solid ${ctx.tokens.borderSoft}` }}>
           <ProductImage src={product?.image_url} mono={monogram} fit="contain" />
           {showBurst && burstCopy && (
             <div style={{ position: "absolute", top: "6%", right: "6%", width: "32%", aspectRatio: "1/1" }}>
-              <BurstShape style={burstStyle} color={accent} text={burstCopy} fontSize={11} />
+              <PriceBurst variant={burstVariant} color={accent} primary={burstCopy} secondary={null} size={60} primarySize={14} />
             </div>
           )}
         </div>
@@ -504,6 +548,9 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
               <ManufacturerBadge product={product} accent={accent} heightEm={0.85} />
             </div>
             <div className="ft-heading" style={{ fontSize: "0.9em", color: "#111", lineHeight: 1.1 }}>{product?.name}</div>
+            <div style={{ marginTop: "2%" }}>
+              <SkuLabel sku={product?.sku} sizeEm={0.55} />
+            </div>
           </div>
           <PriceBlock priceBefore={product?.price_before} priceNow={product?.price_now} vatMode={vatMode} strikeStyle="diagonal" suffixSize={0.5} color={accent} size={0.65} ctx={ctx} />
         </div>
@@ -515,14 +562,14 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
   return (
     <div className="ft-body" style={{
       width: "100%", height: "100%", background: bgColor || "#fff",
-      display: "flex", flexDirection: "column", border: `1px solid ${ctx.tokens.borderSoft}`, borderRadius: 4,
-      overflow: "hidden", position: "relative",
+      display: "flex", flexDirection: "column",
+      ...ftFrame, overflow: "hidden", position: "relative",
     }}>
       <div style={{ position: "relative", height: "52%", background: "#f5f7fa", borderBottom: `1px solid ${ctx.tokens.borderSoft}` }}>
         <ProductImage src={product?.image_url} mono={monogram} label={product?.image_placeholder} fit="contain" />
         {showBurst && burstCopy && (
           <div style={{ position: "absolute", top: "-8%", right: "5%", width: "26%", aspectRatio: "1/1" }}>
-            <BurstShape style={burstStyle} color={accent} text={burstCopy} fontSize={13} />
+            <PriceBurst variant={burstVariant} color={accent} primary={burstCopy} size={88} primarySize={20} />
           </div>
         )}
         {showStock && (
@@ -544,6 +591,7 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
         <div className="ft-heading" style={{ fontSize: "1.17em", color: "#111", lineHeight: 1.1 }}>
           {product?.name}
         </div>
+        <SkuLabel sku={product?.sku} sizeEm={0.6} />
         {bullets.length > 0 && (
           <ul className="ft-body" style={{ fontSize: "0.68em", color: "#4b5563", marginTop: "2%", paddingLeft: 0, lineHeight: 1.4, listStyle: "none", flexGrow: 1 }}>
             {bullets.map((b, i) => (
@@ -756,7 +804,11 @@ function ComboCard({ props, ctx }: { props: ComboCardProps; ctx: RendererCtx }) 
   return (
     <div className="ft-body" style={{
       width: "100%", height: "100%", background: bgColor || "#fff",
-      border: `1px solid ${ctx.tokens.borderSoft}`, borderRadius: 4,
+      borderRadius: 0,
+      borderLeft: `3px solid ${accent}`,
+      borderRight: `3px solid ${accent}`,
+      borderTop: `1px solid ${ctx.tokens.borderSoft}`,
+      borderBottom: `1px solid ${ctx.tokens.borderSoft}`,
       display: "grid", gridTemplateRows: "auto 1fr auto", overflow: "hidden", position: "relative",
     }}>
       <div style={{
@@ -777,6 +829,7 @@ function ComboCard({ props, ctx }: { props: ComboCardProps; ctx: RendererCtx }) 
             fontSize: "0.85em", color: "#111", lineHeight: 1.15,
             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
           }}>{productA?.name}</div>
+          <SkuLabel sku={productA?.sku} sizeEm={0.6} />
           <div style={{ fontSize: "0.75em", color: "#6b7280" }}>{formatNOK(productA?.price_now)}</div>
         </div>
 
@@ -791,6 +844,7 @@ function ComboCard({ props, ctx }: { props: ComboCardProps; ctx: RendererCtx }) 
             fontSize: "0.85em", color: "#111", lineHeight: 1.15,
             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
           }}>{productB?.name}</div>
+          <SkuLabel sku={productB?.sku} sizeEm={0.6} />
           <div style={{ fontSize: "0.75em", color: "#6b7280" }}>{formatNOK(productB?.price_now)}</div>
         </div>
       </div>
@@ -824,6 +878,32 @@ function ComboCard({ props, ctx }: { props: ComboCardProps; ctx: RendererCtx }) 
   );
 }
 
+// ---------------- Sigill (FT 25-årsstempel) ----------------
+function SigillObj({ props, ctx }: { props: SigillProps; ctx: RendererCtx }) {
+  // Bruk container-størrelse — Sigill25Aar tar pikselstørrelse. Vi rendrer
+  // i en 100%-bredde wrapper og setter SVG-size til container-bredden.
+  // Plassert via CSS-vars så html2canvas/modern-screenshot kan lese.
+  const color = props.color || ctx.tokens.red;
+  // Vi rendrer alltid i 200px viewBox-skala — SVG skalerer naturlig
+  const containerStyle: React.CSSProperties = {
+    width: "100%", height: "100%",
+    display: "flex", alignItems: "center", justifyContent: "center",
+  };
+  return (
+    <div style={containerStyle}>
+      <Sigill25Aar
+        variant={props.variant}
+        size={200}
+        rotate={props.rotate ?? -12}
+        color={color}
+        label={props.label}
+        inner={props.inner}
+        innerSub={props.innerSub}
+      />
+    </div>
+  );
+}
+
 // ---------------- Master switch ----------------
 export function ObjectRenderer({ obj, tokens }: { obj: PageObject; tokens?: BrandTokens }) {
   const ctx: RendererCtx = { tokens: tokens ?? DEFAULT_TOKENS };
@@ -839,6 +919,7 @@ export function ObjectRenderer({ obj, tokens }: { obj: PageObject; tokens?: Bran
     case "contact":     return <ContactObj props={obj.props} ctx={ctx} />;
     case "gallery":     return <GalleryObj props={obj.props} ctx={ctx} />;
     case "comboCard":   return <ComboCard props={obj.props} ctx={ctx} />;
+    case "sigill":      return <SigillObj props={obj.props} ctx={ctx} />;
   }
   return <div style={{ width: "100%", height: "100%", background: "#fee", color: "#900", padding: 6, fontSize: "0.9em" }}>Ukjent objekt</div>;
 }

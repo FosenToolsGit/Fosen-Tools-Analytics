@@ -19,6 +19,8 @@ export interface ScrapedProduct {
   in_stock: boolean;
   category: string;
   bullets: string[];
+  /** Fosen Tools-artikkelnummer (Multicase prd-num-label). */
+  sku: string | null;
 }
 
 export class ScrapeProductError extends Error {
@@ -111,6 +113,21 @@ function extractProducerLogo(html: string, baseUrl: string): string | null {
   }
 }
 
+function extractFosenSku(html: string, sourceUrl: string): string | null {
+  // Primary: <span class="prd-num-label">123766</span>
+  const a = /<span[^>]*class=["'][^"']*prd-num-label[^"']*["'][^>]*>\s*([^<\s]+)\s*<\/span>/i.exec(html);
+  if (a?.[1]) return decodeEntities(a[1]).trim();
+  // Fallback: URL-mønster /{merke}/{artikkelnummer}/{slug}
+  try {
+    const parsed = new URL(sourceUrl);
+    const segs = parsed.pathname.split("/").filter(Boolean);
+    for (const s of segs) if (/^\d{4,7}$/.test(s)) return s;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 function extractDescriptionBullets(html: string): string[] {
   const m = /<div[^>]*id=["']description["'][^>]*>([\s\S]*?)<\/div>/i.exec(html);
   if (!m) return [];
@@ -196,6 +213,7 @@ export function buildFromJsonLd(node: any, sourceUrl: string, html: string): Scr
     in_stock: inStock,
     category,
     bullets: extractDescriptionBullets(html),
+    sku: extractFosenSku(html, sourceUrl),
   };
 }
 

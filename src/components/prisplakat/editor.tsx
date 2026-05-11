@@ -1,0 +1,335 @@
+"use client";
+
+// Prisplakat-editor — A4-print + slideshow.
+// Bruker felles produkt-velger og rendering for begge formater.
+
+import { useState, useEffect, useCallback } from "react";
+import type { PricetagProduct, PricetagPlaylist, PricetagFormat, PricetagSettings } from "./types";
+import { DEFAULT_SETTINGS, FORMAT_LABELS } from "./types";
+import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer";
+
+type ListItem = { id: string; title: string; format: PricetagFormat; updated_at: string; products: PricetagProduct[] };
+
+export function PrisplakatEditor() {
+  const [playlists, setPlaylists] = useState<ListItem[]>([]);
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [title, setTitle] = useState("Ny prisplakat");
+  const [format, setFormat] = useState<PricetagFormat>("a4_single");
+  const [products, setProducts] = useState<PricetagProduct[]>([]);
+  const [settings, setSettings] = useState<PricetagSettings>(DEFAULT_SETTINGS);
+  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [scraping, setScraping] = useState(false);
+  const [scrapeError, setScrapeError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [showPlaylistList, setShowPlaylistList] = useState(false);
+  const [zoom, setZoom] = useState(0.55);
+
+  // Last spillelister
+  const loadList = useCallback(async () => {
+    try {
+      const r = await fetch("/api/prisplakat/list");
+      if (!r.ok) return;
+      const d = await r.json();
+      setPlaylists(d.playlists || []);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { loadList(); }, [loadList]);
+
+  // Scrape produkt fra URL
+  const scrapeProduct = async () => {
+    if (!scrapeUrl.trim()) return;
+    setScraping(true);
+    setScrapeError(null);
+    try {
+      const r = await fetch(`/api/brosjyre/scrape-product?url=${encodeURIComponent(scrapeUrl)}`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Scrape failed");
+      setProducts(prev => [...prev, d.product]);
+      setScrapeUrl("");
+    } catch (e) {
+      setScrapeError(e instanceof Error ? e.message : "Feil");
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  // Lagre playlist
+  const save = async () => {
+    setSaveStatus("saving");
+    try {
+      const body = { id: currentId, title, format, products, settings };
+      const r = await fetch("/api/prisplakat/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Save failed");
+      setCurrentId(d.playlist.id);
+      setSaveStatus("saved");
+      loadList();
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (e) {
+      console.error(e);
+      setSaveStatus("error");
+    }
+  };
+
+  const loadPlaylist = async (id: string) => {
+    try {
+      const r = await fetch(`/api/prisplakat/${id}`);
+      const d = await r.json();
+      if (!r.ok) return;
+      const pl = d.playlist as PricetagPlaylist;
+      setCurrentId(pl.id);
+      setTitle(pl.title);
+      setFormat(pl.format);
+      setProducts(pl.products);
+      setSettings({ ...DEFAULT_SETTINGS, ...pl.settings });
+      setShowPlaylistList(false);
+    } catch { /* ignore */ }
+  };
+
+  const newPlaylist = () => {
+    setCurrentId(null);
+    setTitle("Ny prisplakat");
+    setFormat("a4_single");
+    setProducts([]);
+    setSettings(DEFAULT_SETTINGS);
+  };
+
+  const deletePlaylist = async (id: string) => {
+    if (!confirm("Slette denne prisplakaten?")) return;
+    await fetch(`/api/prisplakat/${id}`, { method: "DELETE" });
+    if (currentId === id) newPlaylist();
+    loadList();
+  };
+
+  const removeProduct = (idx: number) => {
+    setProducts(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const moveProduct = (idx: number, dir: -1 | 1) => {
+    setProducts(prev => {
+      const next = [...prev];
+      const target = idx + dir;
+      if (target < 0 || target >= next.length) return prev;
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  };
+
+  const exportPdf = async () => {
+    try {
+      const { exportPricetagToPdf } = await import("./export-pdf");
+      await exportPricetagToPdf({ title, format, products, settings });
+    } catch (e) {
+      console.error("Export failed:", e);
+      alert("PDF-eksport feilet. Sjekk konsollen for detaljer.");
+    }
+  };
+
+  // Telle pages basert på format og antall produkter
+  const productsPerPage = format === "a4_single" ? 1 : format === "a4_2up" ? 2 : 4;
+  const pageGroups: PricetagProduct[][] = [];
+  if (format.startsWith("a4_")) {
+    for (let i = 0; i < products.length; i += productsPerPage) {
+      pageGroups.push(products.slice(i, i + productsPerPage));
+    }
+  }
+
+  return (
+    <div className="brosjyre-editor" style={{
+      position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column",
+      background: "var(--chrome-bg)", color: "var(--chrome-text)",
+      fontFamily: 'var(--body-stack, "Manrope", system-ui)',
+    }}>
+      {/* Toolbar */}
+      <div className="no-print" style={{
+        height: 56, background: "var(--chrome-bg-2)", borderBottom: "1px solid var(--chrome-border)",
+        display: "flex", alignItems: "center", padding: "0 16px", gap: 12, flexShrink: 0,
+      }}>
+        <a href="/dashboard" style={{ color: "#fff", textDecoration: "none", fontSize: 14 }}>← Dashboard</a>
+        <div style={{ fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontSize: 13, marginRight: 16 }}>
+          PRISPLAKAT
+        </div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Tittel på prisplakat"
+          style={{
+            background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)",
+            color: "#fff", padding: "6px 10px", borderRadius: 4, fontSize: 13,
+            fontFamily: "inherit", minWidth: 240,
+          }}
+        />
+        <select
+          value={format}
+          onChange={(e) => setFormat(e.target.value as PricetagFormat)}
+          style={{
+            background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)",
+            color: "#fff", padding: "6px 10px", borderRadius: 4, fontSize: 13,
+          }}
+        >
+          {Object.entries(FORMAT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <button onClick={save} disabled={saveStatus === "saving"} style={{
+          background: "var(--ft-red)", color: "#fff", border: "none",
+          padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: "pointer",
+        }}>
+          {saveStatus === "saving" ? "Lagrer..." : saveStatus === "saved" ? "✓ Lagret" : saveStatus === "error" ? "Feil!" : "Lagre"}
+        </button>
+        <button onClick={() => setShowPlaylistList(!showPlaylistList)} style={{
+          background: "var(--chrome-bg-3)", color: "#fff", border: "1px solid var(--chrome-border)",
+          padding: "6px 14px", borderRadius: 4, fontSize: 13, cursor: "pointer",
+        }}>Mine prisplakater</button>
+        <button onClick={newPlaylist} style={{
+          background: "var(--chrome-bg-3)", color: "#fff", border: "1px solid var(--chrome-border)",
+          padding: "6px 14px", borderRadius: 4, fontSize: 13, cursor: "pointer",
+        }}>+ Ny</button>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          {currentId && format.startsWith("slideshow") && (
+            <a href={`/prisplakat/${currentId}/play?autoplay=1`} target="_blank" rel="noreferrer" style={{
+              background: "var(--chrome-bg-3)", color: "#fff", textDecoration: "none",
+              padding: "6px 14px", borderRadius: 4, fontSize: 13, border: "1px solid var(--chrome-border)",
+            }}>▶ Spill av</a>
+          )}
+          {format.startsWith("a4_") && (
+            <button onClick={exportPdf} disabled={products.length === 0} style={{
+              background: "var(--ft-red)", color: "#fff", border: "none",
+              padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 700,
+              cursor: products.length > 0 ? "pointer" : "not-allowed",
+              opacity: products.length > 0 ? 1 : 0.5,
+            }}>Eksporter PDF</button>
+          )}
+        </div>
+      </div>
+
+      {/* Body: 3-panel layout */}
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 280px", overflow: "hidden" }}>
+        {/* Venstre — produkt-velger */}
+        <div style={{
+          background: "var(--chrome-bg-2)", borderRight: "1px solid var(--chrome-border)",
+          overflowY: "auto", padding: 14,
+        }}>
+          {showPlaylistList ? (
+            <div>
+              <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Mine prisplakater</div>
+              {playlists.length === 0 && <div style={{ fontSize: 12, color: "var(--chrome-muted)" }}>Ingen lagret ennå</div>}
+              {playlists.map(pl => (
+                <div key={pl.id} style={{ background: "var(--chrome-bg-3)", padding: 8, borderRadius: 4, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ flex: 1, cursor: "pointer" }} onClick={() => loadPlaylist(pl.id)}>
+                    <div style={{ fontSize: 12, fontWeight: 600 }}>{pl.title}</div>
+                    <div style={{ fontSize: 10, color: "var(--chrome-muted)" }}>{FORMAT_LABELS[pl.format]} · {pl.products?.length || 0} produkter</div>
+                  </div>
+                  <button onClick={() => deletePlaylist(pl.id)} style={{ background: "transparent", color: "var(--chrome-muted)", border: "none", cursor: "pointer", fontSize: 14 }}>×</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 11, color: "var(--ft-red)", marginBottom: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>Legg til produkt</div>
+              <input
+                value={scrapeUrl}
+                onChange={(e) => setScrapeUrl(e.target.value)}
+                placeholder="fosen-tools.no/produkter/..."
+                onKeyDown={(e) => { if (e.key === "Enter") scrapeProduct(); }}
+                style={{
+                  width: "100%", background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)",
+                  color: "#fff", padding: "8px 10px", borderRadius: 4, fontSize: 12, fontFamily: "inherit",
+                  boxSizing: "border-box", marginBottom: 6,
+                }}
+              />
+              <button onClick={scrapeProduct} disabled={scraping || !scrapeUrl.trim()} style={{
+                width: "100%", background: "var(--ft-red)", color: "#fff", border: "none",
+                padding: "8px 12px", borderRadius: 4, fontSize: 12, fontWeight: 700,
+                cursor: scrapeUrl.trim() ? "pointer" : "not-allowed", opacity: scrapeUrl.trim() ? 1 : 0.5,
+              }}>{scraping ? "Henter..." : "Hent fra URL"}</button>
+              {scrapeError && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 6 }}>{scrapeError}</div>}
+
+              <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Produkter ({products.length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {products.map((p, i) => (
+                  <div key={i} style={{ background: "var(--chrome-bg-3)", padding: 8, borderRadius: 4, display: "flex", gap: 6, alignItems: "center" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name || "(uten navn)"}</div>
+                      <div style={{ fontSize: 9, color: "var(--chrome-muted)" }}>
+                        {p.sku ? `Art.nr ${p.sku} · ` : ""}{p.price_now ? `${p.price_now} kr` : ""}
+                      </div>
+                    </div>
+                    <button onClick={() => moveProduct(i, -1)} disabled={i === 0} style={{ background: "transparent", color: "#fff", border: "none", cursor: i > 0 ? "pointer" : "not-allowed", opacity: i > 0 ? 0.6 : 0.2, fontSize: 11, padding: 2 }}>▲</button>
+                    <button onClick={() => moveProduct(i, 1)} disabled={i === products.length - 1} style={{ background: "transparent", color: "#fff", border: "none", cursor: i < products.length - 1 ? "pointer" : "not-allowed", opacity: i < products.length - 1 ? 0.6 : 0.2, fontSize: 11, padding: 2 }}>▼</button>
+                    <button onClick={() => removeProduct(i)} style={{ background: "transparent", color: "#ef4444", border: "none", cursor: "pointer", fontSize: 14, padding: 0 }}>×</button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Midten — preview-canvas */}
+        <div style={{ background: "#1a1a1f", overflow: "auto", padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+          {products.length === 0 && (
+            <div style={{ color: "var(--chrome-muted)", fontSize: 14, marginTop: 80, textAlign: "center" }}>
+              Legg til produkter til venstre.<br/>
+              Lim inn URL fra fosen-tools.no eller velg fra populære.
+            </div>
+          )}
+          {format.startsWith("a4_") && pageGroups.map((grp, i) => (
+            <div key={i} style={{
+              transform: `scale(${zoom})`, transformOrigin: "top center",
+              boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
+              marginBottom: `${(297 * (1 - zoom))}mm`,
+            }}>
+              {format === "a4_single" && grp[0] && <PricetagA4Single product={grp[0]} settings={settings} />}
+              {format === "a4_2up" && <PricetagA4_2Up products={grp} settings={settings} />}
+              {format === "a4_4up" && <PricetagA4_4Up products={grp} settings={settings} />}
+            </div>
+          ))}
+          {format.startsWith("slideshow") && (
+            <div style={{ color: "var(--chrome-muted)", fontSize: 14, marginTop: 40, textAlign: "center" }}>
+              Slideshow-modus — lagre playlist og åpne i ny fane med «Spill av».
+            </div>
+          )}
+        </div>
+
+        {/* Høyre — innstillinger */}
+        <div style={{ background: "var(--chrome-bg-2)", borderLeft: "1px solid var(--chrome-border)", padding: 14, overflowY: "auto" }}>
+          <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Visning</div>
+          <label style={{ display: "block", marginBottom: 10 }}>
+            <div style={{ fontSize: 11, marginBottom: 4 }}>Zoom: {Math.round(zoom * 100)}%</div>
+            <input type="range" min={0.2} max={1.5} step={0.05} value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} style={{ width: "100%" }} />
+          </label>
+
+          <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Innstillinger</div>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 8 }}>
+            <input type="checkbox" checked={settings.show_burst ?? true} onChange={(e) => setSettings({ ...settings, show_burst: e.target.checked })} />
+            Vis rabatt-burst
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 8 }}>
+            <input type="checkbox" checked={settings.show_qr ?? true} onChange={(e) => setSettings({ ...settings, show_qr: e.target.checked })} />
+            Vis QR-kode
+          </label>
+          <label style={{ display: "block", fontSize: 11, marginBottom: 4, marginTop: 12 }}>
+            Aksent-farge
+            <input type="color" value={settings.accent_color ?? "#ed1c24"} onChange={(e) => setSettings({ ...settings, accent_color: e.target.value })} style={{ width: "100%", height: 32, border: "none", background: "transparent", marginTop: 4 }} />
+          </label>
+          {format.startsWith("slideshow") && (
+            <label style={{ display: "block", fontSize: 11, marginBottom: 4, marginTop: 12 }}>
+              Sekunder per slide: {settings.seconds_per_slide ?? 12}
+              <input type="range" min={5} max={30} step={1} value={settings.seconds_per_slide ?? 12} onChange={(e) => setSettings({ ...settings, seconds_per_slide: parseInt(e.target.value, 10) })} style={{ width: "100%" }} />
+            </label>
+          )}
+
+          <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Info</div>
+          <div style={{ fontSize: 11, color: "var(--chrome-muted)", lineHeight: 1.5 }}>
+            {format.startsWith("a4_") ? "A4-print: bruk «Eksporter PDF» for å laste ned printbart ark." : "Slideshow: lagre playlist, åpne /prisplakat/[id]/play for fullskjerm-visning."}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

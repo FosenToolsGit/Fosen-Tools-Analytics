@@ -41,6 +41,8 @@ export interface Product {
   in_stock: boolean;
   category: string;
   bullets?: string[];
+  /** Fosen Tools-artikkelnummer (ikke produsentens MPN). */
+  sku?: string | null;
 }
 
 // --- Object types ---
@@ -143,6 +145,22 @@ export interface GalleryProps {
   gap: number;
 }
 
+export type SigillVariant = "ring" | "solid" | "dual" | "square";
+
+export interface SigillProps {
+  variant: SigillVariant;
+  /** Rotasjon i grader (default -12). */
+  rotate: number;
+  /** Farge — null = bruk brand red. */
+  color: string | null;
+  /** Sirkulær label rundt sigillet. */
+  label: string;
+  /** Stor tekst i midten. */
+  inner: string;
+  /** Liten sub-tekst under inner. */
+  innerSub: string;
+}
+
 export interface ComboCardProps {
   productA: Product;
   productB: Product;
@@ -166,7 +184,8 @@ export type PageObject =
   | { id: string; type: "contact"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: ContactProps }
   | { id: string; type: "footer"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: FooterProps }
   | { id: string; type: "gallery"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: GalleryProps }
-  | { id: string; type: "comboCard"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: ComboCardProps };
+  | { id: string; type: "comboCard"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: ComboCardProps }
+  | { id: string; type: "sigill"; x: number; y: number; w: number; h: number; rot: number; locked: boolean; props: SigillProps };
 
 export type ObjectType = PageObject["type"];
 

@@ -7,6 +7,7 @@ import type { LibPayload, PageObject, BrandTokens, BrochureDoc, Product } from "
 import { PAPER_SIZES, EditorStore, DUMMY_PRODUCTS, formatNOK, makeProductCardObj } from "./store";
 import type { BrochureListItem } from "./store";
 import { TEMPLATES } from "./templates";
+import { DYNAMIC_TEMPLATES, applyTemplate, applyBackCover } from "./dynamic-templates";
 import { exportBrochureToPdf } from "./export-pdf";
 
 // ---------- Venstre panel ----------
@@ -159,32 +160,123 @@ function ComponentsTab() {
 
 function TemplatesTab({ store }: { store: EditorStore }) {
   const cats = [...new Set(TEMPLATES.map(t => t.category))];
+  const dynCats = [...new Set(DYNAMIC_TEMPLATES.map(t => t.category))];
+  const activeIdx = store.doc.pages.findIndex(p => p.id === store.activePageId);
+  const activePage = activeIdx >= 0 ? store.doc.pages[activeIdx] : null;
+  const [lastApply, setLastApply] = useState<string | null>(null);
+
   return (
-    <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 14 }}>
-      {cats.map(cat => (
-        <div key={cat}>
-          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--chrome-muted)", marginBottom: 6, fontWeight: 700 }}>{cat}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {TEMPLATES.filter(t => t.category === cat).map(t => (
-              <button
-                key={t.id}
-                onClick={() => store.addPage((idx, doc) => t.build(idx, doc))}
-                style={{
-                  background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)",
-                  borderRadius: 6, padding: 10, cursor: "pointer", color: "#fff", textAlign: "left",
-                  display: "flex", flexDirection: "column", gap: 6,
-                }}
-              >
-                <div style={{ background: "#fff", aspectRatio: "210/297", borderRadius: 2, position: "relative", overflow: "hidden" }}>
-                  <div style={{ width: "100%", height: "20%", background: "var(--ft-red)" }} />
-                  <div style={{ padding: 4, fontSize: 6, color: "#111" }}>{t.label}</div>
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 600 }}>{t.label}</div>
-              </button>
-            ))}
-          </div>
+    <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 18 }}>
+      {/* Dynamiske maler — bytt LAYOUT på eksisterende side */}
+      <div>
+        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ft-red)", marginBottom: 6, fontWeight: 800 }}>
+          DYNAMISKE — bytt layout, behold produkter
         </div>
-      ))}
+        <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginBottom: 10, lineHeight: 1.4 }}>
+          Klikk «Anvend» for å bytte layout på <span style={{ color: "#fff", fontWeight: 600 }}>aktiv side</span> — produktene blir flyttet inn i ny grid. Produkter som ikke får plass, droppes.
+        </div>
+        {lastApply && (
+          <div style={{ fontSize: 11, color: "#22c55e", marginBottom: 10, padding: 6, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 4 }}>
+            {lastApply}
+          </div>
+        )}
+        {dynCats.map(cat => (
+          <div key={cat} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--chrome-muted)", marginBottom: 6, fontWeight: 700 }}>{cat}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {DYNAMIC_TEMPLATES.filter(t => t.category === cat).map(t => (
+                <div key={t.id} style={{ background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)", borderRadius: 4, padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{t.label}</div>
+                      <div style={{ fontSize: 10, color: "var(--chrome-muted)" }}>{t.capacityLabel}</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!activePage) return;
+                        const result = applyTemplate(activePage, t, {
+                          pageNo: activeIdx + 1,
+                          totalPages: store.doc.pages.length,
+                          brandLabel: store.doc.title,
+                        });
+                        store.setPageProp(activePage.id, { objects: result.newObjects });
+                        const msg = result.overflowProducts > 0
+                          ? `Anvendt «${t.label}» — ${result.placedProducts} plassert, ${result.overflowProducts} ikke fikk plass`
+                          : `Anvendt «${t.label}» — ${result.placedProducts} produkter`;
+                        setLastApply(msg);
+                        setTimeout(() => setLastApply(null), 5000);
+                      }}
+                      disabled={!activePage}
+                      style={{
+                        background: "var(--ft-red)", color: "#fff", border: "none", borderRadius: 3,
+                        padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: activePage ? "pointer" : "not-allowed",
+                        opacity: activePage ? 1 : 0.4,
+                      }}
+                    >
+                      Anvend
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {/* FT-bakside — egen "Anvend"-knapp */}
+        <div style={{ background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)", borderRadius: 4, padding: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>FT-bakside (offisielle logoer)</div>
+            <div style={{ fontSize: 10, color: "var(--chrome-muted)" }}>Mørk bunn · 25-års- og 100-årslogo · kontakt</div>
+          </div>
+          <button
+            onClick={() => {
+              if (!activePage) return;
+              const updated = applyBackCover(activePage, activePage.paper);
+              store.setPageProp(activePage.id, { objects: updated.objects, bg: updated.bg });
+              setLastApply("Anvendt FT-bakside");
+              setTimeout(() => setLastApply(null), 5000);
+            }}
+            disabled={!activePage}
+            style={{
+              background: "var(--ft-red)", color: "#fff", border: "none", borderRadius: 3,
+              padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: activePage ? "pointer" : "not-allowed",
+              opacity: activePage ? 1 : 0.4,
+            }}
+          >
+            Anvend
+          </button>
+        </div>
+      </div>
+
+      {/* Statiske maler — sett inn NY side */}
+      <div style={{ borderTop: "1px solid var(--chrome-border)", paddingTop: 14 }}>
+        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--chrome-muted)", marginBottom: 6, fontWeight: 700 }}>
+          Statiske — sett inn ny side
+        </div>
+        {cats.map(cat => (
+          <div key={cat} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--chrome-muted)", marginBottom: 6, fontWeight: 700, opacity: 0.6 }}>{cat}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {TEMPLATES.filter(t => t.category === cat).map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => store.addPage((idx, doc) => t.build(idx, doc))}
+                  style={{
+                    background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)",
+                    borderRadius: 6, padding: 10, cursor: "pointer", color: "#fff", textAlign: "left",
+                    display: "flex", flexDirection: "column", gap: 6,
+                  }}
+                >
+                  <div style={{ background: "#fff", aspectRatio: "210/297", borderRadius: 2, position: "relative", overflow: "hidden" }}>
+                    <div style={{ width: "100%", height: "20%", background: "var(--ft-red)" }} />
+                    <div style={{ padding: 4, fontSize: 6, color: "#111" }}>{t.label}</div>
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600 }}>{t.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
