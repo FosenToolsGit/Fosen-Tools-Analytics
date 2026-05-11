@@ -10,6 +10,7 @@ import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer"
 import { Slideshow } from "./slideshow";
 
 type ListItem = { id: string; title: string; format: PricetagFormat; updated_at: string; products: PricetagProduct[] };
+type BrochureListItem = { id: string; title: string; page_count: number; updated_at: string };
 
 export function PrisplakatEditor() {
   const [playlists, setPlaylists] = useState<ListItem[]>([]);
@@ -24,6 +25,9 @@ export function PrisplakatEditor() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showPlaylistList, setShowPlaylistList] = useState(false);
   const [zoom, setZoom] = useState(0.55);
+  const [showImport, setShowImport] = useState(false);
+  const [brochures, setBrochures] = useState<BrochureListItem[]>([]);
+  const [importing, setImporting] = useState(false);
 
   // Last spillelister
   const loadList = useCallback(async () => {
@@ -105,6 +109,48 @@ export function PrisplakatEditor() {
     await fetch(`/api/prisplakat/${id}`, { method: "DELETE" });
     if (currentId === id) newPlaylist();
     loadList();
+  };
+
+  // Hent liste over brosjyrer for "Importer fra brosjyre"
+  const loadBrochures = async () => {
+    try {
+      const r = await fetch("/api/brosjyre/list");
+      if (!r.ok) return;
+      const d = await r.json();
+      setBrochures(d.brochures || []);
+    } catch { /* ignore */ }
+  };
+
+  // Importer alle produkter fra en spesifikk brosjyre
+  const importFromBrochure = async (brochureId: string) => {
+    setImporting(true);
+    try {
+      const r = await fetch(`/api/brosjyre/${brochureId}`);
+      if (!r.ok) throw new Error("Failed");
+      const d = await r.json();
+      const doc = d.brochure?.doc;
+      if (!doc) throw new Error("No doc");
+      // Plukk ut unike produkter
+      const seen = new Map<string, PricetagProduct>();
+      for (const page of doc.pages) {
+        for (const o of page.objects) {
+          if (o.props?.product?.source_url) seen.set(o.props.product.source_url, o.props.product);
+          if (o.props?.productA?.source_url) seen.set(o.props.productA.source_url, o.props.productA);
+          if (o.props?.productB?.source_url) seen.set(o.props.productB.source_url, o.props.productB);
+        }
+      }
+      const newProducts = [...seen.values()];
+      setProducts(prev => {
+        const existing = new Set(prev.map(p => p.source_url));
+        return [...prev, ...newProducts.filter(p => !existing.has(p.source_url))];
+      });
+      setShowImport(false);
+    } catch (e) {
+      console.error(e);
+      alert("Import feilet");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const removeProduct = (idx: number) => {
@@ -262,6 +308,39 @@ export function PrisplakatEditor() {
                 cursor: scrapeUrl.trim() ? "pointer" : "not-allowed", opacity: scrapeUrl.trim() ? 1 : 0.5,
               }}>{scraping ? "Henter..." : "Hent fra URL"}</button>
               {scrapeError && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 6 }}>{scrapeError}</div>}
+
+              {/* Importer fra brosjyre */}
+              <button onClick={() => { setShowImport(true); loadBrochures(); }} style={{
+                width: "100%", background: "transparent", color: "#fff",
+                border: "1px solid var(--chrome-border)",
+                padding: "8px 12px", borderRadius: 4, fontSize: 12, marginTop: 8,
+                cursor: "pointer",
+              }}>↥ Importér fra brosjyre</button>
+
+              {showImport && (
+                <div style={{
+                  background: "var(--chrome-bg-3)", padding: 10, borderRadius: 4, marginTop: 8,
+                  maxHeight: 240, overflowY: "auto",
+                }}>
+                  <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginBottom: 6, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Velg brosjyre</div>
+                  {brochures.length === 0 && <div style={{ fontSize: 11, color: "var(--chrome-muted)" }}>Laster…</div>}
+                  {brochures.map(b => (
+                    <button key={b.id} onClick={() => importFromBrochure(b.id)} disabled={importing} style={{
+                      width: "100%", textAlign: "left", background: "transparent", color: "#fff",
+                      border: "none", padding: "6px 4px", cursor: "pointer", fontSize: 11, marginBottom: 2,
+                      display: "flex", flexDirection: "column", gap: 2,
+                    }}>
+                      <span style={{ fontWeight: 600 }}>{b.title}</span>
+                      <span style={{ fontSize: 9, color: "var(--chrome-muted)" }}>{b.page_count} sider</span>
+                    </button>
+                  ))}
+                  <button onClick={() => setShowImport(false)} style={{
+                    width: "100%", background: "transparent", color: "var(--chrome-muted)",
+                    border: "1px solid var(--chrome-border)", padding: "4px 8px",
+                    borderRadius: 4, fontSize: 11, marginTop: 6, cursor: "pointer",
+                  }}>Avbryt</button>
+                </div>
+              )}
 
               <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 Produkter ({products.length})

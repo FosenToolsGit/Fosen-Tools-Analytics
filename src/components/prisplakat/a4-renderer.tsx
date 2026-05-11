@@ -6,6 +6,7 @@
 import type { PricetagProduct, PricetagSettings } from "./types";
 import { PriceBurst, Eyebrow, RedDivider } from "@/components/brosjyre/ft-svg";
 import { formatNOK } from "@/components/brosjyre/store";
+import { QrCode } from "./qr-code";
 
 const FT_RED = "#ed1c24";
 const FT_INK = "#0f1115";
@@ -14,22 +15,7 @@ const FT_INK = "#0f1115";
 const A4_W_MM = 210;
 const A4_H_MM = 297;
 
-// QR-placeholder (deterministisk mønster) — vi bytter til ekte qrcode-bibliotek senere
-function MiniQR({ size = 80, dark = "#111" }: { size?: number; dark?: string }) {
-  const cells = 9;
-  const blocks: React.ReactNode[] = [];
-  for (let i = 0; i < cells * cells; i++) {
-    const fill = ((i * 13 + i % 7) % 5 === 0) || (i % 4 === 0) || (i % 6 === 0);
-    blocks.push(<div key={i} style={{ background: fill ? dark : "transparent" }} />);
-  }
-  return (
-    <div style={{
-      width: size, height: size, background: "#fff", display: "grid",
-      gridTemplateColumns: `repeat(${cells},1fr)`, gridTemplateRows: `repeat(${cells},1fr)`,
-      padding: 4, gap: 1, border: "1px solid #111",
-    }}>{blocks}</div>
-  );
-}
+// (MiniQR-placeholder fjernet — bruker nå QrCode med ekte SVG-rendering)
 
 function PlaceholderImage({ label, tone = "light" }: { label: string; tone?: "light" | "dark" }) {
   const bg = tone === "dark" ? "#1c1f23" : "#f5f7fa";
@@ -189,7 +175,7 @@ export function PricetagA4Single({
           </div>
           {settings.show_qr && (
             <div style={{ textAlign: "center", marginLeft: "auto", alignSelf: "flex-start" }}>
-              <MiniQR size={70} />
+              <QrCode url={product.source_url} size={70} />
               <div style={{
                 fontFamily: "Roboto Mono, monospace", fontSize: 7,
                 color: "#6b7280", marginTop: "1mm", letterSpacing: "0.04em",

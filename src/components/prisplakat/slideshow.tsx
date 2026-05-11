@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { PricetagProduct, PricetagSettings } from "./types";
 import { PriceBurst, Eyebrow } from "@/components/brosjyre/ft-svg";
 import { formatNOK } from "@/components/brosjyre/store";
+import { QrCode } from "./qr-code";
 
 const FT_RED = "#ed1c24";
 const FT_INK = "#0f1115";
