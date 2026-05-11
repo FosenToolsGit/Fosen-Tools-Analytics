@@ -79,7 +79,7 @@ function CredentialsSlide() {
         marginTop: "5cqh", fontFamily: HEAD, fontWeight: 500,
         fontSize: "1.8cqh", letterSpacing: "0.16em", color: "rgba(255,255,255,0.55)", textTransform: "uppercase",
       }}>
-        SIDEN 2008  ·  HDFI  ·  CADLAB
+        HDFI  ·  CADLAB  ·  BREKSTAD
       </div>
     </div>
   );
@@ -143,7 +143,7 @@ function OutroSlide() {
         marginTop: "4cqh", fontFamily: HEAD, fontWeight: 500,
         fontSize: "2.2cqh", letterSpacing: "0.16em", color: "rgba(255,255,255,0.55)", textTransform: "uppercase",
       }}>
-        MAN — FRE  07:30 — 16:00
+        MAN — FRE  07:00 — 15:00
       </div>
       <div style={{
         marginTop: "5cqh", fontFamily: HEAD, fontWeight: 900,

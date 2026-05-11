@@ -464,7 +464,7 @@ const buildCoverDarkPremium = (ctx: BuildCtx): { pre: PageObject[]; post: PageOb
     txt(15, 274, W - 30, 5, "fosen-tools.no  ·  Industrigata 1, 7130 Brekstad", "h5", {
       align: "center", color: "rgba(255,255,255,0.55)", weight: 500,
     }),
-    txt(15, 282, W - 30, 4, "Man — fre  07:30 — 16:00", "h5", {
+    txt(15, 282, W - 30, 4, "Man — fre  07:00 — 15:00", "h5", {
       align: "center", color: "rgba(255,255,255,0.35)", weight: 500,
     }),
   ];

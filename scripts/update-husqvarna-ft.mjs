@@ -145,7 +145,7 @@ function makeFosenBackCover(index = 0, W = 210, H = 297) {
       txt(0, 222, W, 6, "fosen-tools.no   ·   post@fosen-tools.no", "h4", { align: "center", color: "#ffffff", weight: 400 }),
       txt(0, 248, W, 6, "BESØK OSS", "h5", { align: "center", color: "rgba(255,255,255,0.65)", weight: 600 }),
       txt(0, 256, W, 8, "Industrigata 1  ·  7130 Brekstad", "h3", { align: "center", color: "#ffffff" }),
-      txt(0, 268, W, 6, "Man – fre  07:30 – 16:00", "h5", { align: "center", color: "rgba(255,255,255,0.65)", weight: 400 }),
+      txt(0, 268, W, 6, "Man – fre  07:00 – 15:00", "h5", { align: "center", color: "rgba(255,255,255,0.65)", weight: 400 }),
       txt(0, 285, W, 5, "♻ MILJØFYRTÅRN-SERTIFISERT  ·  100 % FORNYBAR ENERGI", "h5", {
         align: "center", color: "rgba(255,255,255,0.55)", weight: 400,
       }),

@@ -141,7 +141,7 @@ function newFtBackCover(index = 0, W = 210, H = 297) {
       txt(0, 220, W, 4, "RING OSS", "h5", { align: "center", color: "rgba(255,255,255,0.4)", weight: 700 }),
       txt(0, 226, W, 12, "72 51 51 20", "h1", { align: "center", color: "#ffffff" }),
 
-      txt(0, 250, W, 5, "Industrigata 1  ·  7130 Brekstad  ·  Man — fre  07:30 — 16:00", "h5", {
+      txt(0, 250, W, 5, "Industrigata 1  ·  7130 Brekstad  ·  Man — fre  07:00 — 15:00", "h5", {
         align: "center", color: "rgba(255,255,255,0.5)", weight: 500,
       }),
       txt(0, 258, W, 5, "fosen-tools.no  ·  post@fosen-tools.no", "h5", {
