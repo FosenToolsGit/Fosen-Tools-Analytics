@@ -583,18 +583,28 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
           </div>
         )}
       </div>
-      <div style={{ padding: "5% 6%", display: "flex", flexDirection: "column", flex: 1, gap: "3%" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      <div style={{ padding: "5% 6%", display: "flex", flexDirection: "column", flex: 1, gap: "3%", minHeight: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
           <span style={{ width: 10, height: 1.5, background: accent }} />
           <ManufacturerBadge product={product} accent={accent} heightEm={0.95} />
         </div>
-        <div className="ft-heading" style={{ fontSize: "1.17em", color: "#111", lineHeight: 1.1 }}>
+        <div className="ft-heading" style={{
+          fontSize: "1.17em", color: "#111", lineHeight: 1.1, flexShrink: 0,
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>
           {product?.name}
         </div>
-        <SkuLabel sku={product?.sku} sizeEm={0.6} />
+        <div style={{ flexShrink: 0 }}>
+          <SkuLabel sku={product?.sku} sizeEm={0.6} />
+        </div>
         {bullets.length > 0 && (
-          <ul className="ft-body" style={{ fontSize: "0.68em", color: "#4b5563", marginTop: "2%", paddingLeft: 0, lineHeight: 1.4, listStyle: "none", flexGrow: 1 }}>
-            {bullets.map((b, i) => (
+          <ul className="ft-body" style={{
+            fontSize: "0.68em", color: "#4b5563", marginTop: "1%", paddingLeft: 0,
+            lineHeight: 1.4, listStyle: "none",
+            flex: "1 1 0", minHeight: 0, overflow: "hidden",
+            display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
+          }}>
+            {bullets.slice(0, 2).map((b, i) => (
               <li key={i} style={{ position: "relative", paddingLeft: "0.8em", marginBottom: "0.25em" }}>
                 <span style={{ position: "absolute", left: 0, top: "0.55em", width: 4, height: 1.2, background: accent }} />
                 {b}
@@ -602,7 +612,11 @@ function ProductCard({ props, ctx }: { props: ProductCardProps; ctx: RendererCtx
             ))}
           </ul>
         )}
-        <div style={{ marginTop: "auto", paddingTop: "3%", borderTop: `1px solid ${ctx.tokens.borderSoft}` }}>
+        <div style={{
+          marginTop: "auto", paddingTop: "3%",
+          borderTop: `1px solid ${ctx.tokens.borderSoft}`,
+          flexShrink: 0,
+        }}>
           <PriceBlock priceBefore={product?.price_before} priceNow={product?.price_now} vatMode={vatMode} strikeStyle="diagonal" suffixSize={0.5} color={accent} size={0.85} ctx={ctx} />
         </div>
       </div>
