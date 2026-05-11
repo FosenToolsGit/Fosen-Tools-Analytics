@@ -414,12 +414,14 @@ function PricetagQuarterCell({
   const showSavings = priceBefore > priceNow;
   const discountPct = showSavings && priceBefore > 0 ? Math.round((1 - priceNow / priceBefore) * 100) : 0;
   const burstText = settings.show_burst && discountPct > 0 ? `−${discountPct}%` : null;
+  const savings = showSavings ? priceBefore - priceNow : 0;
 
   return (
     <div style={{
       background: "#fff", borderLeft: `2mm solid ${accent}`, borderRight: `2mm solid ${accent}`,
       borderTop: "0.5mm solid rgba(148,163,184,0.4)", borderBottom: "0.5mm solid rgba(148,163,184,0.4)",
       display: "flex", flexDirection: "column", overflow: "hidden",
+      position: "relative",
     }}>
       <div style={{ height: "55%", position: "relative" }}>
         <ProductImage src={product.image_url} label={product.name || "Produkt"} />
@@ -443,7 +445,7 @@ function PricetagQuarterCell({
         }}>Art.nr {product.sku || "—"}</div>
         <div style={{ marginTop: "auto", display: "flex", gap: "2mm", alignItems: "stretch" }}>
           <div style={{ width: "1.5mm", background: accent }} />
-          <div>
+          <div style={{ flex: 1 }}>
             {showSavings && (
               <div style={{
                 fontFamily: "Roboto Mono, monospace", fontSize: 7,
@@ -452,10 +454,17 @@ function PricetagQuarterCell({
             )}
             <div style={{
               fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-              fontWeight: 900, fontSize: 20, color: accent, lineHeight: 0.95, marginTop: "0.5mm",
+              fontWeight: 900, fontSize: 22, color: accent, lineHeight: 0.95, marginTop: "0.5mm",
             }}>{formatNOK(priceNow)}</div>
-            <div style={{ fontFamily: "Roboto Mono, monospace", fontSize: 6, color: "#6b7280" }}>Eks. mva</div>
+            <div style={{ fontFamily: "Roboto Mono, monospace", fontSize: 6, color: "#6b7280", marginTop: "0.5mm" }}>
+              Eks. mva{savings > 0 ? ` · Spar ${formatNOK(savings)}` : ""}
+            </div>
           </div>
+          {settings.show_qr && (
+            <div style={{ marginLeft: "auto", alignSelf: "flex-end" }}>
+              <QrCode url={product.source_url} size={32} />
+            </div>
+          )}
         </div>
       </div>
     </div>
