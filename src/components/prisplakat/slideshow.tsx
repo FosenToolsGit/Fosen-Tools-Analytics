@@ -3,12 +3,18 @@
 // Slideshow-renderer for butikk-skjermer.
 // Bruker container queries (cqh) så ALLE størrelser skalerer proporsjonalt
 // med container-høyden — fungerer like bra på 1920×1080 som i embedded preview.
+//
+// Spesial-slides (intro/credentials/certified/outro/brand_spotlight/multi_product/combo/blank)
+// rendres data-drevet fra `settings.custom_slides` via CustomSlideRenderer.
+// Brukeren kan redigere alle felter (tekst, farger, logoer, bakgrunn) fra editoren.
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import type { PricetagProduct, PricetagSettings } from "./types";
-import { effective } from "./types";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import type { PricetagProduct, PricetagSettings, SlideListItem } from "./types";
+import { buildSlideList, defaultCustomSlides, effective } from "./types";
 import { PriceBurst } from "@/components/brosjyre/ft-svg";
 import { formatNOK } from "@/components/brosjyre/store";
+import { CustomSlideRenderer } from "./custom-slide-renderer";
+import { QrCode } from "./qr-code";
 
 const FT_RED = "#ed1c24";
 const FT_INK = "#0f1115";
@@ -28,145 +34,35 @@ function proxyImage(src: string | null | undefined): string | null {
   return src;
 }
 
-// ─── Spesielle "atmosfæriske" slides — intro/credentials/avslutning ────
+// ─── Klokke-overlay ─────────────────────────────────────────────────────
 
-type SpecialSlideType = "intro" | "credentials" | "certified" | "outro";
-
-interface Slide {
-  kind: "product" | "special";
-  product?: PricetagProduct;
-  specialType?: SpecialSlideType;
-}
-
-function IntroSlide() {
+function ClockOverlay() {
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const dateStr = now.toLocaleDateString("no-NO", { weekday: "long", day: "numeric", month: "long" });
   return (
     <div style={{
-      width: "100%", height: "100%", background: FT_RED, color: "#fff",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "8cqh",
+      position: "absolute", top: "2cqh", right: "2.5cqh", zIndex: 5,
+      fontFamily: HEAD, color: "rgba(255,255,255,0.7)",
+      display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.4cqh",
+      pointerEvents: "none",
     }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/brosjyre/Fosen-Tools_white.svg" alt="Fosen Tools" style={{ width: "40%", maxHeight: "12cqh", marginBottom: "4cqh" }} />
-      <div style={{
-        fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.3em",
-        fontSize: "2.4cqh", textTransform: "uppercase", opacity: 0.92,
-      }}>KAMPANJE VÅR 2026</div>
-      <div style={{ width: "8cqh", height: "0.3cqh", background: "#fff", margin: "3cqh 0" }} />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/brosjyre/Jubileumslogo-25aar.svg" alt="25 år" style={{ width: "32%", maxHeight: "16cqh", marginTop: "3cqh" }} />
+      <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: "2cqh", letterSpacing: "0.04em" }}>{hh}:{mm}</div>
+      <div style={{ fontSize: "1.1cqh", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.7 }}>{dateStr}</div>
     </div>
   );
 }
 
-function CredentialsSlide() {
-  return (
-    <div style={{
-      width: "100%", height: "100%", background: FT_INK, color: "#fff",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "8cqh", textAlign: "center",
-    }}>
-      <div style={{
-        fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.3em",
-        fontSize: "1.8cqh", textTransform: "uppercase", color: "rgba(255,255,255,0.55)",
-      }}>FOSEN TOOLS-STANDARDEN</div>
-      <div style={{ width: "8cqh", height: "0.4cqh", background: FT_RED, margin: "4cqh 0" }} />
-      <div style={{
-        fontFamily: HEAD, fontWeight: 900,
-        fontSize: "9cqh", lineHeight: 0.95, textTransform: "uppercase",
-      }}>
-        SERTIFISERT<br/>LEVERANDØR<br/>TIL FORSVARET
-      </div>
-      <div style={{
-        marginTop: "5cqh", fontFamily: HEAD, fontWeight: 500,
-        fontSize: "1.8cqh", letterSpacing: "0.16em", color: "rgba(255,255,255,0.55)", textTransform: "uppercase",
-      }}>
-        HDFI  ·  CADLAB  ·  BREKSTAD
-      </div>
-    </div>
-  );
-}
-
-function CertifiedSlide() {
-  const certs = ["MILJØFYRTÅRN", "GASELLE 2023", "25 ÅR", "4. GENERASJON", "GRØNT PUNKT"];
-  return (
-    <div style={{
-      width: "100%", height: "100%", background: "#fff", color: FT_INK,
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "8cqh", textAlign: "center",
-    }}>
-      <div style={{
-        fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.3em",
-        fontSize: "1.6cqh", textTransform: "uppercase", color: "#6b7280",
-      }}>SERTIFISERT</div>
-      <div style={{ width: "8cqh", height: "0.4cqh", background: FT_RED, margin: "4cqh 0" }} />
-      <div style={{
-        fontFamily: HEAD, fontWeight: 900,
-        fontSize: "7cqh", lineHeight: 0.95, textTransform: "uppercase",
-      }}>
-        100 %<br/>FORNYBAR ENERGI
-      </div>
-      <div style={{
-        display: "flex", flexWrap: "wrap", justifyContent: "center",
-        gap: "3cqh", marginTop: "5cqh",
-      }}>
-        {certs.map((c) => (
-          <div key={c} style={{
-            fontFamily: HEAD, fontWeight: 700,
-            fontSize: "1.4cqh", letterSpacing: "0.16em", color: "#111",
-            padding: "1.2cqh 2.4cqh", border: "1px solid rgba(148,163,184,0.4)", borderRadius: 999,
-          }}>{c}</div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function OutroSlide() {
-  return (
-    <div style={{
-      width: "100%", height: "100%", background: FT_INK, color: "#fff",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "8cqh", textAlign: "center", position: "relative",
-    }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "0.8cqh", background: FT_RED }} />
-      <div style={{
-        fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.3em",
-        fontSize: "1.6cqh", textTransform: "uppercase", color: "rgba(255,255,255,0.55)",
-      }}>VELKOMMEN INN</div>
-      <div style={{ width: "8cqh", height: "0.4cqh", background: FT_RED, margin: "4cqh 0" }} />
-      <div style={{
-        fontFamily: HEAD, fontWeight: 900,
-        fontSize: "8cqh", lineHeight: 0.95, textTransform: "uppercase",
-      }}>
-        INDUSTRIGATA 1<br/>BREKSTAD
-      </div>
-      <div style={{
-        marginTop: "4cqh", fontFamily: HEAD, fontWeight: 500,
-        fontSize: "2.2cqh", letterSpacing: "0.16em", color: "rgba(255,255,255,0.55)", textTransform: "uppercase",
-      }}>
-        MAN — FRE  07:00 — 15:00
-      </div>
-      <div style={{
-        marginTop: "5cqh", fontFamily: HEAD, fontWeight: 900,
-        fontSize: "10cqh", color: "#fff",
-      }}>
-        72 51 51 20
-      </div>
-      <div style={{
-        marginTop: "2cqh", fontSize: "1.8cqh", fontFamily: MONO,
-        color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em",
-      }}>
-        fosen-tools.no
-      </div>
-    </div>
-  );
-}
-
-// ─── Produkt-slide ────────────────────────────────────────────────────
+// ─── Produkt-slide ──────────────────────────────────────────────────────
 
 function ProductSlideContent({
-  product, settings, landscape, active, durationMs,
-}: { product: PricetagProduct; settings: PricetagSettings; landscape: boolean; active: boolean; durationMs: number }) {
+  product, settings, landscape, active, durationMs, animatePrice,
+}: { product: PricetagProduct; settings: PricetagSettings; landscape: boolean; active: boolean; durationMs: number; animatePrice: boolean }) {
   const accent = settings.accent_color || FT_RED;
   const eff = effective(product);
   const burstText = settings.show_burst && !eff.hideBurst ? eff.burstText : null;
@@ -176,10 +72,31 @@ function ProductSlideContent({
   const priceBefore = eff.priceBefore;
   const showSavings = eff.showSavings;
   const savings = eff.savings;
+  const showQr = settings.show_product_qr && !eff.hideQr;
+  const showStock = settings.show_stock_status && product.in_stock != null;
+  const stockOnStock = product.in_stock === true;
 
   // Burst-size — fixed px så PriceBurst SVG ikke trenger å re-rendre
   const burstSize = landscape ? 180 : 140;
   const burstPrimary = landscape ? 48 : 36;
+
+  // Pris-reveal-animasjon: scale + fade når aktiv
+  const priceAnim: React.CSSProperties = animatePrice ? {
+    opacity: active ? 1 : 0,
+    transform: active ? "scale(1)" : "scale(0.85)",
+    transition: "opacity 700ms cubic-bezier(0.16, 1, 0.3, 1) 250ms, transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 250ms",
+  } : {};
+
+  const StockPill = showStock ? (
+    <span style={{
+      fontFamily: HEAD, fontWeight: 800,
+      fontSize: landscape ? "1.4cqh" : "1.1cqh",
+      color: "#fff",
+      background: stockOnStock ? "#16a34a" : "#a3a3a3",
+      padding: "0.6cqh 1.4cqh", borderRadius: 999,
+      letterSpacing: "0.08em", textTransform: "uppercase",
+    }}>{stockOnStock ? "På lager" : "Bestilling"}</span>
+  ) : null;
 
   if (landscape) {
     return (
@@ -206,7 +123,13 @@ function ProductSlideContent({
           )}
           {burstText && (
             <div style={{ position: "absolute", top: "5cqh", left: "5cqh" }}>
-              <PriceBurst variant="bullseye" size={burstSize} primary={burstText} secondary="SPAR" primarySize={burstPrimary} />
+              <PriceBurst variant="bullseye" size={burstSize} primary={burstText} secondary={eff.burstSubLabel || ""} primarySize={burstPrimary} />
+            </div>
+          )}
+          {showQr && (
+            <div style={{ position: "absolute", bottom: "3cqh", right: "3cqh", background: "#fff", padding: "1cqh", borderRadius: "0.6cqh", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6cqh" }}>
+              <QrCode url={product.source_url} size={120} utmSource="prisplakat" utmMedium="slideshow" />
+              <div style={{ fontFamily: HEAD, fontWeight: 700, fontSize: "1.1cqh", color: "#0f1115", letterSpacing: "0.12em", textTransform: "uppercase" }}>Skann →</div>
             </div>
           )}
         </div>
@@ -225,6 +148,7 @@ function ProductSlideContent({
               fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.28em",
               fontSize: "1.4cqh", color: "rgba(255,255,255,0.6)", textTransform: "uppercase",
             }}>BREKSTAD · 25 ÅR</div>
+            {StockPill && <div style={{ marginLeft: "auto" }}>{StockPill}</div>}
           </div>
 
           {/* Produkt-info */}
@@ -246,7 +170,7 @@ function ProductSlideContent({
           </div>
 
           {/* Pris */}
-          <div style={{ display: "flex", alignItems: "stretch", gap: "2.5cqh", minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "stretch", gap: "2.5cqh", minWidth: 0, ...priceAnim }}>
             <div style={{ width: "1cqh", background: accent, alignSelf: "stretch", flexShrink: 0 }} />
             <div style={{ minWidth: 0, flex: 1 }}>
               {showSavings && (
@@ -321,7 +245,12 @@ function ProductSlideContent({
         )}
         {burstText && (
           <div style={{ position: "absolute", top: "3cqh", right: "3cqh" }}>
-            <PriceBurst variant="bullseye" size={burstSize} primary={burstText} secondary="SPAR" primarySize={burstPrimary} />
+            <PriceBurst variant="bullseye" size={burstSize} primary={burstText} secondary={eff.burstSubLabel || ""} primarySize={burstPrimary} />
+          </div>
+        )}
+        {showQr && (
+          <div style={{ position: "absolute", bottom: "2cqh", right: "2cqh", background: "#fff", padding: "0.8cqh", borderRadius: "0.6cqh" }}>
+            <QrCode url={product.source_url} size={80} utmSource="prisplakat" utmMedium="slideshow" />
           </div>
         )}
       </div>
@@ -338,6 +267,7 @@ function ProductSlideContent({
             fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.28em",
             fontSize: "1.1cqh", color: "rgba(255,255,255,0.6)", textTransform: "uppercase",
           }}>BREKSTAD · 25 ÅR</div>
+          {StockPill && <div style={{ marginLeft: "auto" }}>{StockPill}</div>}
         </div>
 
         <div style={{ minWidth: 0 }}>
@@ -357,7 +287,7 @@ function ProductSlideContent({
           }}>Art.nr {product.sku || "—"}</div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "stretch", gap: "2cqh", minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "stretch", gap: "2cqh", minWidth: 0, ...priceAnim }}>
           <div style={{ width: "0.8cqh", background: accent, alignSelf: "stretch", flexShrink: 0 }} />
           <div style={{ minWidth: 0, flex: 1 }}>
             {showSavings && (
@@ -410,40 +340,43 @@ function ProductSlideContent({
 export function Slideshow({
   products, settings, landscape, autoplay, embedded,
 }: { products: PricetagProduct[]; settings: PricetagSettings; landscape: boolean; autoplay?: boolean; embedded?: boolean }) {
-  // Bygg slide-liste — intro + produkter + credentials + outro
-  const slides: Slide[] = [
-    { kind: "special", specialType: "intro" },
-    ...products.map((p) => ({ kind: "product" as const, product: p })),
-    { kind: "special", specialType: "credentials" as const },
-    { kind: "special", specialType: "certified" as const },
-    { kind: "special", specialType: "outro" as const },
-  ];
+  // Bygg slide-liste — bruker custom_slides hvis satt, ellers default (intro/credentials/certified/outro)
+  const slides: SlideListItem[] = useMemo(() => {
+    const customSlides = settings.custom_slides ?? defaultCustomSlides();
+    return buildSlideList(products, customSlides);
+  }, [products, settings.custom_slides]);
 
-  const [idx, setIdx] = useState(0);
+  const [rawIdx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const durationMs = (settings.seconds_per_slide ?? 12) * 1000;
+  const animatePrice = settings.animate_price_reveal ?? true;
+  const showClock = settings.show_clock ?? false;
+
+  // Klem idx inn i [0, slides.length) på render i tilfelle slide-listen krymper.
+  // (Vi bruker den klemte verdien — neste advance/prev oppdaterer state stabilt.)
+  const idx = slides.length === 0 ? 0 : rawIdx % slides.length;
 
   const advance = useCallback(() => {
-    setIdx((i) => (i + 1) % slides.length);
+    setIdx((i) => (slides.length === 0 ? 0 : (i + 1) % slides.length));
   }, [slides.length]);
 
   const prev = useCallback(() => {
-    setIdx((i) => (i - 1 + slides.length) % slides.length);
+    setIdx((i) => (slides.length === 0 ? 0 : (i - 1 + slides.length) % slides.length));
   }, [slides.length]);
 
   // Auto-advance
   useEffect(() => {
-    if (paused) return;
+    if (paused || slides.length === 0) return;
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(advance, durationMs);
     return () => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
     };
-  }, [idx, paused, advance, durationMs]);
+  }, [idx, paused, advance, durationMs, slides.length]);
 
   // Fullscreen helper — bruk documentElement som primær target, fallback til container
   const enterFullscreen = useCallback(async () => {
@@ -451,7 +384,6 @@ export function Slideshow({
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       } else {
-        // Prøv documentElement først (mer pålitelig), fallback til container
         const target = document.documentElement || containerRef.current;
         if (target?.requestFullscreen) {
           await target.requestFullscreen({ navigationUI: "hide" } as FullscreenOptions);
@@ -483,14 +415,13 @@ export function Slideshow({
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
-  const renderSlide = (slide: Slide, isActive: boolean) => {
-    if (slide.kind === "special") {
-      if (slide.specialType === "intro") return <IntroSlide />;
-      if (slide.specialType === "credentials") return <CredentialsSlide />;
-      if (slide.specialType === "certified") return <CertifiedSlide />;
-      if (slide.specialType === "outro") return <OutroSlide />;
+  const renderSlide = (slide: SlideListItem, isActive: boolean) => {
+    if (slide.kind === "custom" && slide.custom) {
+      return <CustomSlideRenderer slide={slide.custom} allProducts={products} settings={settings} landscape={landscape} active={isActive} />;
     }
-    if (slide.product) return <ProductSlideContent product={slide.product} settings={settings} landscape={landscape} active={isActive} durationMs={durationMs} />;
+    if (slide.kind === "product" && slide.product) {
+      return <ProductSlideContent product={slide.product} settings={settings} landscape={landscape} active={isActive} durationMs={durationMs} animatePrice={animatePrice} />;
+    }
     return null;
   };
 
@@ -512,6 +443,13 @@ export function Slideshow({
         // KRITISK: container-type så cqh-units inni virker
         containerType: "size",
       } as React.CSSProperties}>
+        {slides.length === 0 && (
+          <div style={{
+            width: "100%", height: "100%", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            color: "rgba(255,255,255,0.5)", fontFamily: HEAD, fontSize: 18, letterSpacing: "0.16em", textTransform: "uppercase",
+          }}>Ingen slides</div>
+        )}
         {slides.map((s, i) => (
           <div key={i} style={{
             position: "absolute", inset: 0,
@@ -523,6 +461,9 @@ export function Slideshow({
             {renderSlide(s, i === idx)}
           </div>
         ))}
+
+        {/* Klokke-overlay (vises på alle slides) */}
+        {showClock && <ClockOverlay />}
       </div>
 
       {/* Controls overlay (vises kun når ikke i fullscreen, og ikke embedded) */}
@@ -591,4 +532,3 @@ export function Slideshow({
     </div>
   );
 }
-

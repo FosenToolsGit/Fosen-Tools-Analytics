@@ -1,5 +1,7 @@
 // Prisplakat-systemet — brukes både for A4-print og butikk-skjerm-slideshow.
 
+export type ProductMode = "sale" | "new" | "feature" | "stock";
+
 export interface PricetagProduct {
   source_url: string;
   // ── Manuelle overrides (settes av bruker i editor) ──
@@ -15,6 +17,8 @@ export interface PricetagProduct {
   hide_qr?: boolean;
   /** Override-produktnavn */
   name_override?: string;
+  /** Modus — "new"=NYHET-burst, "feature"=VÅRT VALG, "stock"=PÅ LAGER, ellers SPAR-burst fra discount */
+  mode?: ProductMode;
   // Resten hentes ved scraping (cached i UI-state)
   name?: string;
   manufacturer?: string;
@@ -36,16 +40,36 @@ export function effective(p: PricetagProduct) {
   const computedDiscount = showSavings && priceBefore > 0
     ? Math.round((1 - priceNow / priceBefore) * 100)
     : 0;
+  const mode: ProductMode = p.mode ?? "sale";
+
+  // Burst-text følger denne prioriteringen: eksplisitt override → mode → auto
+  let burstText: string | null;
+  let burstSubLabel = "";
+  if (p.burst_text_override !== undefined && p.burst_text_override !== "") {
+    burstText = p.burst_text_override;
+  } else if (mode === "new") {
+    burstText = "NYHET";
+  } else if (mode === "feature") {
+    burstText = "VÅRT VALG";
+  } else if (mode === "stock") {
+    burstText = "PÅ LAGER";
+  } else {
+    burstText = computedDiscount > 0 ? `−${computedDiscount}%` : null;
+    burstSubLabel = computedDiscount > 0 ? "SPAR" : "";
+  }
+
   return {
     priceNow,
     priceBefore,
     showSavings,
     savings: showSavings ? priceBefore - priceNow : 0,
     discountPct: computedDiscount,
-    burstText: p.burst_text_override ?? (computedDiscount > 0 ? `−${computedDiscount}%` : null),
+    burstText,
+    burstSubLabel,
     name: p.name_override ?? p.name ?? "",
     hideBurst: p.hide_burst ?? false,
     hideQr: p.hide_qr ?? false,
+    mode,
   };
 }
 
@@ -56,12 +80,106 @@ export type PricetagFormat =
   | "slideshow_landscape"
   | "slideshow_portrait";
 
+/** Hvilken "mal i bunnen" en custom slide bruker. Maler kan tilpasses helt fritt etterpå. */
+export type SlideTemplate =
+  | "intro"            // FT-logo + jubileumslogo + eyebrow + linje
+  | "credentials"      // Stor 2-3-linje statement m/ accent-divider
+  | "certified"        // Stor tekst + pill-rad
+  | "outro"            // Kontakt-info (telefon + adresse + åpningstider)
+  | "brand_spotlight"  // Merke-logo + tagline + accent
+  | "multi_product"    // 2/4 produkter på én slide
+  | "combo"            // 2 produkter med kombi-pris
+  | "blank";           // Fri layout
+
+/** Hvilken logo som vises i topp/bunn av en custom slide */
+export type LogoKey =
+  | "ft-white"   // Fosen Tools wordmark hvit
+  | "ft-black"   // Fosen Tools wordmark mørk
+  | "jub-25"     // 25-årslogo (offisiell SVG)
+  | "jub-100"    // 100-årslogo (konsernet)
+  | "custom"     // Egen URL via custom_logo_url
+  | null;
+
+/** Plassering av en custom slide relativt til produktene */
+export type SlidePlacement = "start" | "end" | "after_product";
+
+export interface CustomSlide {
+  id: string;
+  /** Kan slå av en slide uten å slette den */
+  enabled: boolean;
+  /** Brukervennlig navn vist i listen */
+  label?: string;
+  /** Hvilken "mal i bunnen" denne slide-en starter med */
+  template: SlideTemplate;
+  /** Hvor i sekvensen — start/end eller etter et spesifikt produkt-index */
+  placement: SlidePlacement;
+  /** Hvis placement === "after_product": 0-indeksert produkt-pekepinn */
+  after_product_idx?: number;
+  /** Sortering innen samme placement-bucket */
+  order: number;
+
+  // ─── Bakgrunn ──────────────────────────────
+  bg_color: string;
+  bg_image_url?: string | null;
+  /** Mørk overlay over bakgrunnsbilde (0-1) */
+  bg_dim?: number;
+
+  // ─── Tekst-styling ─────────────────────────
+  text_color: string;
+  accent_color: string;
+
+  // ─── Logoer ────────────────────────────────
+  top_logo?: LogoKey;
+  bottom_logo?: LogoKey;
+  custom_logo_url?: string;
+
+  // ─── Tekstblokker (alle valgfrie) ──────────
+  /** Liten label-tekst på toppen (allcaps, sperret) */
+  eyebrow?: string;
+  /** Hoved-overskrift — kan ha \n for linjeskift */
+  title?: string;
+  /** Liten tekst under tittel */
+  subtitle?: string;
+  /** Vis horisontal accent-divider */
+  divider?: boolean;
+
+  // ─── Pills ─────────────────────────────────
+  pills?: string[];
+
+  // ─── Footer-info (vises uavhengig av mal) ──
+  phone?: string;
+  url?: string;
+  hours?: string;
+  address?: string;
+
+  // ─── Layout-knobs ──────────────────────────
+  align?: "center" | "left";
+  /** 0.5-2.0 multiplier på title-font-size */
+  title_scale?: number;
+
+  // ─── For brand_spotlight ───────────────────
+  brand_name?: string;
+  brand_logo_url?: string;
+
+  // ─── For multi_product ─────────────────────
+  /** Indices inn i playlist.products[] — viser N produkter i grid */
+  product_indexes?: number[];
+
+  // ─── For combo ─────────────────────────────
+  /** Produkt A index (combo-slide) */
+  combo_a_idx?: number;
+  /** Produkt B index (combo-slide) */
+  combo_b_idx?: number;
+  combo_price?: number;
+  combo_badge?: string;
+}
+
 export interface PricetagSettings {
   /** Sekunder per slide (kun for slideshow) — default 12 */
   seconds_per_slide?: number;
   /** Transition-type (kun for slideshow) — default "fade" */
   transition?: "fade" | "slide" | "ken_burns";
-  /** Vis QR-kode med lenke til produktet */
+  /** Vis QR-kode på A4-print */
   show_qr?: boolean;
   /** Vis rabatt-burst */
   show_burst?: boolean;
@@ -69,6 +187,18 @@ export interface PricetagSettings {
   accent_color?: string;
   /** Vis "også populært"-pris-bånd nederst (slideshow) */
   show_period_band?: boolean;
+
+  // ─── Nye globale slideshow-justeringer (mai 12) ──
+  /** Vis klokke/dato i hjørnet på alle slides */
+  show_clock?: boolean;
+  /** Vis "PÅ LAGER"/"BESTILLING"-pill på produkt-slides */
+  show_stock_status?: boolean;
+  /** Animer pris-reveal når produkt-slide blir aktiv */
+  animate_price_reveal?: boolean;
+  /** Vis QR-kode i hjørnet på produkt-slide (slideshow) */
+  show_product_qr?: boolean;
+  /** Custom slides (intro/credentials/etc) — fullt redigerbar liste */
+  custom_slides?: CustomSlide[];
 }
 
 export interface PricetagPlaylist {
@@ -82,6 +212,127 @@ export interface PricetagPlaylist {
   updated_at: string;
 }
 
+/**
+ * Default custom slides — speiler de 4 originale hardkodede slides:
+ * intro / credentials / certified / outro.
+ * Brukeren kan redigere alle felter fritt.
+ */
+export function defaultCustomSlides(): CustomSlide[] {
+  return [
+    {
+      id: "intro",
+      enabled: true,
+      label: "Intro",
+      template: "intro",
+      placement: "start",
+      order: 0,
+      bg_color: "#ed1c24",
+      text_color: "#ffffff",
+      accent_color: "#ffffff",
+      top_logo: "ft-white",
+      bottom_logo: "jub-25",
+      eyebrow: "KAMPANJE VÅR 2026",
+      divider: true,
+      align: "center",
+      title_scale: 1,
+    },
+    {
+      id: "credentials",
+      enabled: true,
+      label: "Sertifisert leverandør",
+      template: "credentials",
+      placement: "end",
+      order: 0,
+      bg_color: "#0f1115",
+      text_color: "#ffffff",
+      accent_color: "#ed1c24",
+      eyebrow: "FOSEN TOOLS-STANDARDEN",
+      title: "SERTIFISERT\nLEVERANDØR\nTIL FORSVARET",
+      subtitle: "HDFI · CADLAB · BREKSTAD",
+      divider: true,
+      align: "center",
+      title_scale: 1,
+    },
+    {
+      id: "certified",
+      enabled: true,
+      label: "100% fornybar",
+      template: "certified",
+      placement: "end",
+      order: 1,
+      bg_color: "#ffffff",
+      text_color: "#0f1115",
+      accent_color: "#ed1c24",
+      eyebrow: "SERTIFISERT",
+      title: "100 %\nFORNYBAR ENERGI",
+      pills: ["MILJØFYRTÅRN", "GASELLE 2023", "25 ÅR", "4. GENERASJON", "GRØNT PUNKT"],
+      divider: true,
+      align: "center",
+      title_scale: 1,
+    },
+    {
+      id: "outro",
+      enabled: true,
+      label: "Velkommen inn (kontakt)",
+      template: "outro",
+      placement: "end",
+      order: 2,
+      bg_color: "#0f1115",
+      text_color: "#ffffff",
+      accent_color: "#ed1c24",
+      eyebrow: "VELKOMMEN INN",
+      title: "INDUSTRIGATA 1\nBREKSTAD",
+      hours: "MAN — FRE  07:00 — 15:00",
+      phone: "72 51 51 20",
+      url: "fosen-tools.no",
+      divider: true,
+      align: "center",
+      title_scale: 1,
+    },
+  ];
+}
+
+/** Unik ID for en ny custom slide (kalles utenfor React-render) */
+export function newSlideId(): string {
+  return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Nytt-template-fabrikk — brukes når man klikker «+ Ny slide» */
+export function makeNewSlide(template: SlideTemplate): CustomSlide {
+  const id = newSlideId();
+  const base: CustomSlide = {
+    id,
+    enabled: true,
+    template,
+    placement: "end",
+    order: 100,
+    bg_color: "#0f1115",
+    text_color: "#ffffff",
+    accent_color: "#ed1c24",
+    align: "center",
+    title_scale: 1,
+    divider: true,
+  };
+  switch (template) {
+    case "intro":
+      return { ...base, label: "Ny intro", bg_color: "#ed1c24", accent_color: "#ffffff", top_logo: "ft-white", bottom_logo: "jub-25", eyebrow: "KAMPANJE 2026" };
+    case "credentials":
+      return { ...base, label: "Stor tekst", eyebrow: "FOSEN TOOLS-STANDARDEN", title: "STOR TITTEL\nPÅ FLERE LINJER" };
+    case "certified":
+      return { ...base, label: "Sertifikater", bg_color: "#ffffff", text_color: "#0f1115", eyebrow: "SERTIFISERT", title: "100 %\nFORNYBAR ENERGI", pills: ["MILJØFYRTÅRN", "GASELLE"] };
+    case "outro":
+      return { ...base, label: "Kontakt-info", eyebrow: "VELKOMMEN INN", title: "INDUSTRIGATA 1\nBREKSTAD", phone: "72 51 51 20", url: "fosen-tools.no", hours: "MAN — FRE  07:00 — 15:00" };
+    case "brand_spotlight":
+      return { ...base, label: "Brand-spotlight", eyebrow: "NYTT FRA", brand_name: "Husqvarna", subtitle: "Diamantblad · Kjernebor · Sagverktøy" };
+    case "multi_product":
+      return { ...base, label: "Multi-produkt", product_indexes: [], align: "center" };
+    case "combo":
+      return { ...base, label: "Kombi-pris", combo_badge: "KOMBI-PRIS", combo_a_idx: 0, combo_b_idx: 1 };
+    case "blank":
+      return { ...base, label: "Tom slide", eyebrow: "", title: "" };
+  }
+}
+
 export const DEFAULT_SETTINGS: PricetagSettings = {
   seconds_per_slide: 12,
   transition: "fade",
@@ -89,6 +340,10 @@ export const DEFAULT_SETTINGS: PricetagSettings = {
   show_burst: true,
   accent_color: "#ed1c24",
   show_period_band: true,
+  show_clock: false,
+  show_stock_status: false,
+  animate_price_reveal: true,
+  show_product_qr: false,
 };
 
 export const FORMAT_LABELS: Record<PricetagFormat, string> = {
@@ -98,3 +353,74 @@ export const FORMAT_LABELS: Record<PricetagFormat, string> = {
   slideshow_landscape: "Slideshow — landskap 16:9",
   slideshow_portrait: "Slideshow — portrett 9:16",
 };
+
+export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
+  intro: "Intro (logo + jubileum)",
+  credentials: "Stor tekst-blokk",
+  certified: "Sertifikater (med pills)",
+  outro: "Kontakt-info (telefon + adresse)",
+  brand_spotlight: "Brand-spotlight",
+  multi_product: "Multi-produkt (2 / 4-up)",
+  combo: "Kombi-tilbud (2 produkter)",
+  blank: "Tom — fri redigering",
+};
+
+export const LOGO_LABELS: Record<NonNullable<LogoKey>, string> = {
+  "ft-white": "Fosen Tools (hvit)",
+  "ft-black": "Fosen Tools (mørk)",
+  "jub-25": "Jubileumslogo 25 år",
+  "jub-100": "Jubileumslogo 100 år (konsern)",
+  "custom": "Egen logo (URL)",
+};
+
+export const PRODUCT_MODE_LABELS: Record<ProductMode, string> = {
+  sale: "Salg (SPAR-burst)",
+  new: "Nyhet (NYHET-burst)",
+  feature: "Vårt valg",
+  stock: "På lager",
+};
+
+/** URL-er til logoer brukt i custom slides */
+export const LOGO_URLS: Record<NonNullable<Exclude<LogoKey, "custom">>, string> = {
+  "ft-white": "/brosjyre/Fosen-Tools_white.svg",
+  "ft-black": "/brosjyre/fosentools_logo_ny.png",
+  "jub-25": "/brosjyre/Jubileumslogo-25aar.svg",
+  "jub-100": "/brosjyre/Jubileumslogo-100aar.svg",
+};
+
+/** Type for ferdig-bygd slide-liste (intern i renderer) */
+export interface SlideListItem {
+  kind: "product" | "custom";
+  product?: PricetagProduct;
+  custom?: CustomSlide;
+}
+
+/**
+ * Bygg flat slide-rekkefølge fra products + custom slides.
+ * Respekterer placement + order.
+ */
+export function buildSlideList(
+  products: PricetagProduct[],
+  customSlides: CustomSlide[] | undefined
+): SlideListItem[] {
+  const enabled = (customSlides ?? []).filter((s) => s.enabled);
+  const starts = enabled.filter((s) => s.placement === "start").sort((a, b) => a.order - b.order);
+  const ends = enabled.filter((s) => s.placement === "end").sort((a, b) => a.order - b.order);
+  const afters = enabled.filter((s) => s.placement === "after_product");
+
+  const slides: SlideListItem[] = [];
+
+  for (const s of starts) slides.push({ kind: "custom", custom: s });
+
+  for (let i = 0; i < products.length; i++) {
+    slides.push({ kind: "product", product: products[i] });
+    const here = afters
+      .filter((s) => s.after_product_idx === i)
+      .sort((a, b) => a.order - b.order);
+    for (const s of here) slides.push({ kind: "custom", custom: s });
+  }
+
+  for (const s of ends) slides.push({ kind: "custom", custom: s });
+
+  return slides;
+}

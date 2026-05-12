@@ -4,10 +4,11 @@
 // Bruker felles produkt-velger og rendering for begge formater.
 
 import { useState, useEffect, useCallback } from "react";
-import type { PricetagProduct, PricetagPlaylist, PricetagFormat, PricetagSettings } from "./types";
-import { DEFAULT_SETTINGS, FORMAT_LABELS } from "./types";
+import type { PricetagProduct, PricetagPlaylist, PricetagFormat, PricetagSettings, ProductMode, CustomSlide } from "./types";
+import { DEFAULT_SETTINGS, FORMAT_LABELS, defaultCustomSlides, PRODUCT_MODE_LABELS } from "./types";
 import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer";
 import { Slideshow } from "./slideshow";
+import { SlideEditor } from "./slide-editor";
 
 type ListItem = { id: string; title: string; format: PricetagFormat; updated_at: string; products: PricetagProduct[] };
 type BrochureListItem = { id: string; title: string; page_count: number; updated_at: string };
@@ -62,7 +63,6 @@ export function PrisplakatEditor() {
         if (state.currentId) setCurrentId(state.currentId);
       }
     } catch { /* ignore */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save til localStorage
@@ -71,6 +71,19 @@ export function PrisplakatEditor() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentId, title, format, products, settings }));
     } catch { /* ignore quota etc */ }
   }, [currentId, title, format, products, settings]);
+
+  // Når slideshow-format velges og custom_slides mangler, last inn default-slides.
+  // (For A4-formater trenger vi ikke disse.)
+  useEffect(() => {
+    if (format.startsWith("slideshow") && !settings.custom_slides) {
+      setSettings((s) => ({ ...s, custom_slides: defaultCustomSlides() }));
+    }
+  }, [format, settings.custom_slides]);
+
+  // Re-bygg slide-handler som kan gjenbrukes
+  const updateCustomSlides = (slides: CustomSlide[]) => {
+    setSettings((s) => ({ ...s, custom_slides: slides }));
+  };
 
   // Scrape produkt fra URL
   const scrapeProduct = async () => {
@@ -133,6 +146,7 @@ export function PrisplakatEditor() {
     setFormat("a4_single");
     setProducts([]);
     setSettings(DEFAULT_SETTINGS);
+    setShowPlaylistList(false);
   };
 
   const deletePlaylist = async (id: string) => {
@@ -313,6 +327,12 @@ export function PrisplakatEditor() {
         }}>
           {showPlaylistList ? (
             <div>
+              <button onClick={() => setShowPlaylistList(false)} style={{
+                width: "100%", background: "transparent", color: "#fff",
+                border: "1px solid var(--chrome-border)",
+                padding: "6px 10px", borderRadius: 4, fontSize: 12,
+                cursor: "pointer", marginBottom: 10, textAlign: "left",
+              }}>← Tilbake til editor</button>
               <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Mine prisplakater</div>
               {playlists.length === 0 && <div style={{ fontSize: 12, color: "var(--chrome-muted)" }}>Ingen lagret ennå</div>}
               {playlists.map(pl => (
@@ -427,7 +447,7 @@ export function PrisplakatEditor() {
                   const expanded = expandedIdx === i;
                   const displayName = p.name_override || p.name || "(uten navn)";
                   const displayPrice = p.price_override ?? p.price_now;
-                  const hasOverrides = !!(p.price_override || p.price_before_override || p.burst_text_override || p.name_override || p.hide_burst || p.hide_qr);
+                  const hasOverrides = !!(p.price_override || p.price_before_override || p.burst_text_override || p.name_override || p.hide_burst || p.hide_qr || p.mode);
                   return (
                     <div key={i} style={{ background: "var(--chrome-bg-3)", borderRadius: 4, border: hasOverrides ? "1px solid var(--ft-red)" : "1px solid transparent" }}>
                       <div style={{ padding: 8, display: "flex", gap: 6, alignItems: "center" }}>
@@ -474,6 +494,19 @@ export function PrisplakatEditor() {
                           </div>
 
                           <label style={{ fontSize: 10, color: "var(--chrome-muted)" }}>
+                            Modus
+                            <select
+                              value={p.mode ?? "sale"}
+                              onChange={(e) => setProductOverride(i, { mode: e.target.value === "sale" ? undefined : (e.target.value as ProductMode) })}
+                              style={{ width: "100%", marginTop: 2, padding: "4px 6px", fontSize: 11, background: "var(--chrome-bg)", border: "1px solid var(--chrome-border)", color: "#fff", borderRadius: 3 }}
+                            >
+                              {(Object.entries(PRODUCT_MODE_LABELS) as [ProductMode, string][]).map(([k, v]) => (
+                                <option key={k} value={k}>{v}</option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label style={{ fontSize: 10, color: "var(--chrome-muted)" }}>
                             Burst-tekst (overstyr rabatt, f.eks. «−30%», «KAMPANJE», «NYHET»)
                             <input type="text" value={p.burst_text_override ?? ""} onChange={(e) => setProductOverride(i, { burst_text_override: e.target.value || undefined })}
                               placeholder={`Auto: ${p.discount_pct ? `−${p.discount_pct}%` : "ingen"}`}
@@ -492,7 +525,7 @@ export function PrisplakatEditor() {
                           </div>
 
                           {hasOverrides && (
-                            <button onClick={() => setProductOverride(i, { name_override: undefined, price_override: undefined, price_before_override: undefined, burst_text_override: undefined, hide_burst: undefined, hide_qr: undefined })} style={{
+                            <button onClick={() => setProductOverride(i, { name_override: undefined, price_override: undefined, price_before_override: undefined, burst_text_override: undefined, hide_burst: undefined, hide_qr: undefined, mode: undefined })} style={{
                               background: "transparent", color: "var(--chrome-muted)", border: "1px solid var(--chrome-border)",
                               padding: "4px 8px", borderRadius: 3, fontSize: 10, marginTop: 4, cursor: "pointer",
                             }}>↺ Tilbakestill overstyringer</button>
@@ -560,24 +593,62 @@ export function PrisplakatEditor() {
             <input type="range" min={0.2} max={1.5} step={0.05} value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} style={{ width: "100%" }} />
           </label>
 
-          <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Innstillinger</div>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Globalt</div>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6 }}>
             <input type="checkbox" checked={settings.show_burst ?? true} onChange={(e) => setSettings({ ...settings, show_burst: e.target.checked })} />
             Vis rabatt-burst
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6 }}>
             <input type="checkbox" checked={settings.show_qr ?? true} onChange={(e) => setSettings({ ...settings, show_qr: e.target.checked })} />
-            Vis QR-kode
+            Vis QR-kode (A4-print)
           </label>
-          <label style={{ display: "block", fontSize: 11, marginBottom: 4, marginTop: 12 }}>
+          <label style={{ display: "block", fontSize: 11, marginBottom: 4, marginTop: 10 }}>
             Aksent-farge
             <input type="color" value={settings.accent_color ?? "#ed1c24"} onChange={(e) => setSettings({ ...settings, accent_color: e.target.value })} style={{ width: "100%", height: 32, border: "none", background: "transparent", marginTop: 4 }} />
           </label>
+
+          {/* Slideshow-spesifikke toggles */}
           {format.startsWith("slideshow") && (
-            <label style={{ display: "block", fontSize: 11, marginBottom: 4, marginTop: 12 }}>
-              Sekunder per slide: {settings.seconds_per_slide ?? 12}
-              <input type="range" min={5} max={30} step={1} value={settings.seconds_per_slide ?? 12} onChange={(e) => setSettings({ ...settings, seconds_per_slide: parseInt(e.target.value, 10) })} style={{ width: "100%" }} />
-            </label>
+            <>
+              <label style={{ display: "block", fontSize: 11, marginBottom: 4, marginTop: 12 }}>
+                Sekunder per slide: {settings.seconds_per_slide ?? 12}
+                <input type="range" min={5} max={30} step={1} value={settings.seconds_per_slide ?? 12} onChange={(e) => setSettings({ ...settings, seconds_per_slide: parseInt(e.target.value, 10) })} style={{ width: "100%" }} />
+              </label>
+
+              <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Slideshow-overlays</div>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6 }}>
+                <input type="checkbox" checked={settings.show_clock ?? false} onChange={(e) => setSettings({ ...settings, show_clock: e.target.checked })} />
+                Vis klokke + dato i hjørnet
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6 }}>
+                <input type="checkbox" checked={settings.show_stock_status ?? false} onChange={(e) => setSettings({ ...settings, show_stock_status: e.target.checked })} />
+                Vis lager-pill (på lager / bestilling)
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6 }}>
+                <input type="checkbox" checked={settings.animate_price_reveal ?? true} onChange={(e) => setSettings({ ...settings, animate_price_reveal: e.target.checked })} />
+                Animér pris-reveal når slide aktiverer
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6 }}>
+                <input type="checkbox" checked={settings.show_product_qr ?? false} onChange={(e) => setSettings({ ...settings, show_product_qr: e.target.checked })} />
+                Vis QR på produkt-slide
+              </label>
+
+              <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>Special slides</span>
+                <span style={{ fontSize: 9, fontWeight: 500, color: "var(--chrome-muted)", textTransform: "none", letterSpacing: 0 }}>
+                  {(settings.custom_slides ?? []).filter(s => s.enabled).length} / {(settings.custom_slides ?? []).length}
+                </span>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--chrome-muted)", marginBottom: 8, lineHeight: 1.45 }}>
+                Redigerbare maler — intro, sertifisert, kontakt-info, brand-spotlight, multi-produkt, kombi-pris. Klikk ▸ for å endre tekst, farger og bakgrunn.
+              </div>
+              <SlideEditor
+                slides={settings.custom_slides}
+                products={products}
+                onChange={updateCustomSlides}
+              />
+            </>
           )}
 
           <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Info</div>
