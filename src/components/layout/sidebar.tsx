@@ -134,6 +134,7 @@ const navItems: NavEntry[] = [
   },
   { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
   { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
+  { label: "Etiketter", href: "/etikett", icon: BookOpen },
 
   // ── Søkeord ─────────────────────────────────────
   { kind: "section", label: "Søkeord" },
