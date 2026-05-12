@@ -700,8 +700,63 @@ function ToggleField({ label, value, onChange }: { label: string; value: boolean
   );
 }
 
+function AlignControls({ store }: { store: EditorStore }) {
+  const page = store.activePage;
+  if (!page) return null;
+
+  const center = (axis: "h" | "v" | "both") => {
+    for (const id of store.selection) {
+      const o = page.objects.find((oo) => oo.id === id);
+      if (!o || o.locked) continue;
+      const patch: { x?: number; y?: number } = {};
+      if (axis === "h" || axis === "both") patch.x = (page.w - o.w) / 2;
+      if (axis === "v" || axis === "both") patch.y = (page.h - o.h) / 2;
+      store.updateObject(id, patch);
+    }
+  };
+
+  const snapEdge = (edge: "left" | "right" | "top" | "bottom") => {
+    for (const id of store.selection) {
+      const o = page.objects.find((oo) => oo.id === id);
+      if (!o || o.locked) continue;
+      const patch: { x?: number; y?: number } = {};
+      if (edge === "left") patch.x = 0;
+      else if (edge === "right") patch.x = page.w - o.w;
+      else if (edge === "top") patch.y = 0;
+      else if (edge === "bottom") patch.y = page.h - o.h;
+      store.updateObject(id, patch);
+    }
+  };
+
+  return (
+    <details open style={{ marginBottom: 10 }}>
+      <summary style={{ fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer", marginBottom: 6 }}>Juster på siden</summary>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 6 }}>
+        <button className="ft-btn" onClick={() => center("h")} title="Midtstill horisontalt på siden">⇔ Midt H</button>
+        <button className="ft-btn" onClick={() => center("v")} title="Midtstill vertikalt på siden">⇕ Midt V</button>
+        <button className="ft-btn" onClick={() => center("both")} title="Midtstill begge akser">⊕ Begge</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
+        <button className="ft-btn" onClick={() => snapEdge("left")} title="Snap til venstre kant">⇤ V</button>
+        <button className="ft-btn" onClick={() => snapEdge("right")} title="Snap til høyre kant">H ⇥</button>
+        <button className="ft-btn" onClick={() => snapEdge("top")} title="Snap til topp">⤒ T</button>
+        <button className="ft-btn" onClick={() => snapEdge("bottom")} title="Snap til bunn">⤓ B</button>
+      </div>
+    </details>
+  );
+}
+
 function PropertiesTab({ store, obj, multiSel }: { store: EditorStore; obj: PageObject | null; multiSel: boolean }) {
-  if (multiSel) return <div style={{ padding: 16, color: "var(--chrome-muted)", fontSize: 12 }}>{store.selection.length} objekter valgt — bruk geometri-feltene under.</div>;
+  if (multiSel) {
+    return (
+      <div style={{ padding: 14 }}>
+        <div style={{ padding: "0 0 12px", color: "var(--chrome-muted)", fontSize: 12 }}>
+          {store.selection.length} objekter valgt
+        </div>
+        <AlignControls store={store} />
+      </div>
+    );
+  }
   if (!obj) return (
     <div style={{ padding: 16, color: "var(--chrome-muted)", fontSize: 12 }}>
       <div style={{ fontWeight: 600, color: "#fff", marginBottom: 6 }}>Ingen valgt</div>
@@ -726,6 +781,8 @@ function PropertiesTab({ store, obj, multiSel }: { store: EditorStore; obj: Page
           <ToggleField label="Lås" value={obj.locked} onChange={(v) => update({ locked: v })} />
         </div>
       </details>
+
+      <AlignControls store={store} />
 
       <details open style={{ marginBottom: 10 }}>
         <summary style={{ fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer", marginBottom: 6 }}>Innhold</summary>
