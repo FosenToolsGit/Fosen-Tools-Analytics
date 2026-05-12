@@ -1,6 +1,6 @@
 // PDF-eksport for etiketter.
 //
-// Genererer én PDF med én side per produkt, hver side eksakt 60×28mm.
+// Genererer én PDF med én side per produkt, hver side eksakt 62×29mm.
 // Tekst rendres som vektor via jsPDF.text(). QR rendres som PNG (300dpi)
 // via qrcode-pakken → toDataURL → jsPDF.addImage.
 //
@@ -27,7 +27,7 @@ function withUtm(url: string): string {
 
 /**
  * Renderer en etikett til en eksisterende jsPDF-side.
- * Forutsetter at sidedimensjonen allerede er satt riktig (60×28mm).
+ * Forutsetter at sidedimensjonen allerede er satt riktig (62×29mm).
  */
 async function renderLabel(pdf: jsPDF, product: EtikettProduct): Promise<void> {
   const W = LABEL_W_MM;
@@ -90,10 +90,9 @@ export async function exportEtiketterToPdf(
     throw new Error("Ingen produkter — legg til minst ett før eksport.");
   }
 
-  // jsPDF: format [width, height] for portrait. For en 60mm bred × 28mm høy
-  // etikett (bredere enn høy) bruker vi landscape-orientering med format [28, 60]
-  // — da blir sidene 60×28 etter rotasjon. (Eller portrait med [60, 28], jsPDF
-  // tar største som høyde i portrait; vi velger landscape eksplisitt for klarhet.)
+  // jsPDF: format [width, height] for portrait. For en 62mm bred × 29mm høy
+  // etikett (bredere enn høy) bruker vi landscape-orientering med format [29, 62]
+  // — da blir sidene 62×29 etter rotasjon. Vi velger landscape eksplisitt for klarhet.
   const pdf = new jsPDF({
     orientation: "landscape",
     unit: "mm",

@@ -1,6 +1,6 @@
 "use client";
 
-// Etikett-editor — Brother QL-580N hyllekant-etiketter (60×28mm, DK-11209).
+// Etikett-editor — Brother QL-580N hyllekant-etiketter (62×29mm, DK-11209).
 // Gjenbruker produktvelger-flyt fra prisplakat (URL-scrape, topp populære,
 // import fra brosjyre/prisplakat). PDF-eksport via jsPDF (en side per etikett).
 
@@ -374,7 +374,7 @@ export function EtikettEditor() {
               Legg til produkter til venstre.<br/>
               Bruk URL fra fosen-tools.no, importer fra brosjyre/prisplakat, eller velg populære.
               <div style={{ fontSize: 11, marginTop: 16, opacity: 0.6 }}>
-                Hver etikett blir én side på 60×28mm i PDF-eksporten.
+                Hver etikett blir én side på 62×29mm i PDF-eksporten.
                 <br/>Skriv ut på Brother QL-580N med DK-11209 + «Skala: 100%».
               </div>
             </div>

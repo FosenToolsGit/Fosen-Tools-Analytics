@@ -1,5 +1,5 @@
 // Etikett-systemet — for hyllekant-etiketter på Brother QL-580N
-// Dimensjoner: 60×28mm (passer DK-11209 29×62mm pre-cut etikett).
+// Dimensjoner: 62×29mm (matcher DK-11209 pre-cut etikett eksakt).
 // Innhold per etikett: produktnavn + artikkelnummer + QR-kode (UTM-tagget).
 
 export interface EtikettProduct {
@@ -22,6 +22,6 @@ export function effective(p: EtikettProduct) {
   };
 }
 
-/** Faste dimensjoner for etikett (mm) — matcher DK-11209 brutto (29×62mm) med 1mm margin per side */
-export const LABEL_W_MM = 60;
-export const LABEL_H_MM = 28;
+/** Faste dimensjoner for etikett (mm) — eksakt DK-11209 (29×62mm) */
+export const LABEL_W_MM = 62;
+export const LABEL_H_MM = 29;

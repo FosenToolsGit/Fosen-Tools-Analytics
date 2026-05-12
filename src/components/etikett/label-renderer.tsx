@@ -1,6 +1,6 @@
 "use client";
 
-// On-screen preview av en 60×28mm etikett.
+// On-screen preview av en 62×29mm etikett.
 // PDF-eksporten bruker jsPDF direkte (export-pdf.ts), ikke denne komponenten —
 // dette er kun for visning i editoren.
 
