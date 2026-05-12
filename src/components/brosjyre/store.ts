@@ -361,15 +361,30 @@ export function useEditorStore(initialTemplates: TemplatesArray | null = null) {
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextDirty = useRef(false);
+  // Sist server-synkroniserte doc-state (JSON-stringifiet). Brukes til å hindre
+  // at auto-save sender en uendret cached doc tilbake og overskriver server-state.
+  const lastSyncedDocStr = useRef<string>("");
 
   const setCurrentBrochureId = (id: string | null) => {
     setCurrentBrochureIdRaw(id);
     saveBrochureIdToStorage(id);
   };
 
-  // Initial active page
+  // Initial active page + baseline doc-state for auto-save-sammenligning.
+  // Ved første mount fra cached localStorage anses doc som "synkronisert" —
+  // ingen save trigges før brukeren faktisk gjør en endring.
   useEffect(() => {
     if (!activePageId && doc.pages[0]) setActivePageId(doc.pages[0].id);
+    lastSyncedDocStr.current = JSON.stringify(doc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ved oppstart med en lagret brosjyre: hent friskeste server-versjon over
+  // den cached'e localStorage-versjonen, så vi ikke overskriver server med stale state.
+  useEffect(() => {
+    if (currentBrochureId) {
+      void loadFromServer(currentBrochureId);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -379,12 +394,19 @@ export function useEditorStore(initialTemplates: TemplatesArray | null = null) {
   }, [doc]);
 
   // Mark dirty + schedule auto-save if linked til en lagret brosjyre.
+  // Sammenligner stringified doc mot sist synkronisert state — hopper over
+  // save når doc er identisk (typisk ved mount fra localStorage-cache).
   useEffect(() => {
     if (skipNextDirty.current) { skipNextDirty.current = false; return; }
     if (!currentBrochureId) return;
+    const docStr = JSON.stringify(doc);
+    if (docStr === lastSyncedDocStr.current) return;
     setSaveStatus("unsaved");
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => { void saveToServer(); }, AUTOSAVE_DELAY_MS);
+    autoSaveTimer.current = setTimeout(async () => {
+      const result = await saveToServer();
+      if (result) lastSyncedDocStr.current = docStr;
+    }, AUTOSAVE_DELAY_MS);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, currentBrochureId]);
@@ -426,6 +448,7 @@ export function useEditorStore(initialTemplates: TemplatesArray | null = null) {
       setDocRaw(data.brochure.doc as BrochureDoc);
       setCurrentBrochureId(data.brochure.id);
       setLastSavedAt(data.brochure.updated_at);
+      lastSyncedDocStr.current = JSON.stringify(data.brochure.doc);
       setSaveStatus("saved");
       // Reset undo-stack — den gamle historikken hører til en annen brosjyre
       undoStack.current = [];
