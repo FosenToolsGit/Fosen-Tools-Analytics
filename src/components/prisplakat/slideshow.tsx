@@ -339,7 +339,20 @@ function ProductSlideContent({
 
 export function Slideshow({
   products, settings, landscape, autoplay, embedded,
-}: { products: PricetagProduct[]; settings: PricetagSettings; landscape: boolean; autoplay?: boolean; embedded?: boolean }) {
+  pinIdx, pausedOverride, onIdxChange,
+}: {
+  products: PricetagProduct[];
+  settings: PricetagSettings;
+  landscape: boolean;
+  autoplay?: boolean;
+  embedded?: boolean;
+  /** Pinner preview til denne idx — auto-advance slås av. Brukes fra editor for å fokusere på redigert slide. */
+  pinIdx?: number | null;
+  /** Eksternt pause-toggle — overrider internt state. */
+  pausedOverride?: boolean;
+  /** Rapporterer idx tilbake til parent ved manuell navigasjon. */
+  onIdxChange?: (idx: number) => void;
+}) {
   // Bygg slide-liste — bruker custom_slides hvis satt, ellers default (intro/credentials/certified/outro)
   const slides: SlideListItem[] = useMemo(() => {
     const customSlides = settings.custom_slides ?? defaultCustomSlides();
@@ -356,27 +369,43 @@ export function Slideshow({
   const animatePrice = settings.animate_price_reveal ?? true;
   const showClock = settings.show_clock ?? false;
 
-  // Klem idx inn i [0, slides.length) på render i tilfelle slide-listen krymper.
-  // (Vi bruker den klemte verdien — neste advance/prev oppdaterer state stabilt.)
-  const idx = slides.length === 0 ? 0 : rawIdx % slides.length;
+  // Hvis pinIdx er satt: bruk den i stedet for internt state.
+  // Klem inn i [0, slides.length) i begge tilfeller.
+  const pinned = pinIdx != null;
+  const idx = slides.length === 0
+    ? 0
+    : pinned
+      ? Math.max(0, Math.min(pinIdx, slides.length - 1))
+      : rawIdx % slides.length;
+
+  // Effektiv pause-state: enten internt eller eksternt.
+  const effectivePaused = paused || (pausedOverride ?? false) || pinned;
 
   const advance = useCallback(() => {
-    setIdx((i) => (slides.length === 0 ? 0 : (i + 1) % slides.length));
-  }, [slides.length]);
+    setIdx((i) => {
+      const next = slides.length === 0 ? 0 : (i + 1) % slides.length;
+      onIdxChange?.(next);
+      return next;
+    });
+  }, [slides.length, onIdxChange]);
 
   const prev = useCallback(() => {
-    setIdx((i) => (slides.length === 0 ? 0 : (i - 1 + slides.length) % slides.length));
-  }, [slides.length]);
+    setIdx((i) => {
+      const next = slides.length === 0 ? 0 : (i - 1 + slides.length) % slides.length;
+      onIdxChange?.(next);
+      return next;
+    });
+  }, [slides.length, onIdxChange]);
 
   // Auto-advance
   useEffect(() => {
-    if (paused || slides.length === 0) return;
+    if (effectivePaused || slides.length === 0) return;
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(advance, durationMs);
     return () => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
     };
-  }, [idx, paused, advance, durationMs, slides.length]);
+  }, [idx, effectivePaused, advance, durationMs, slides.length]);
 
   // Fullscreen helper — bruk documentElement som primær target, fallback til container
   const enterFullscreen = useCallback(async () => {

@@ -3,9 +3,9 @@
 // Prisplakat-editor — A4-print + slideshow.
 // Bruker felles produkt-velger og rendering for begge formater.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PricetagProduct, PricetagPlaylist, PricetagFormat, PricetagSettings, ProductMode, CustomSlide } from "./types";
-import { DEFAULT_SETTINGS, FORMAT_LABELS, defaultCustomSlides, PRODUCT_MODE_LABELS } from "./types";
+import { DEFAULT_SETTINGS, FORMAT_LABELS, defaultCustomSlides, PRODUCT_MODE_LABELS, buildSlideList, SLIDE_TEMPLATE_LABELS } from "./types";
 import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer";
 import { Slideshow } from "./slideshow";
 import { SlideEditor } from "./slide-editor";
@@ -32,6 +32,31 @@ export function PrisplakatEditor() {
   const [brochures, setBrochures] = useState<BrochureListItem[]>([]);
   const [importing, setImporting] = useState(false);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  // Slideshow-redigering: hvilken slide som er fokusert (ekspandert i SlideEditor)
+  // og om preview er pauset manuelt.
+  const [focusedSlideId, setFocusedSlideId] = useState<string | null>(null);
+  const [previewPaused, setPreviewPaused] = useState(false);
+  const [previewIdx, setPreviewIdx] = useState(0);
+
+  // Bygg slide-listen for å finne hvilken idx den fokuserte slide-en har
+  const previewSlides = useMemo(() => {
+    if (!format.startsWith("slideshow")) return [];
+    return buildSlideList(products, settings.custom_slides ?? defaultCustomSlides());
+  }, [products, settings.custom_slides, format]);
+
+  const focusedIdx = useMemo(() => {
+    if (!focusedSlideId) return null;
+    return previewSlides.findIndex((s) => s.kind === "custom" && s.custom?.id === focusedSlideId);
+  }, [focusedSlideId, previewSlides]);
+
+  // Når fokuset endres til en gyldig slide: hopp preview dit + pause automatisk
+  // (Slik at brukeren ikke ser slide-en hoppe videre mens hen redigerer.)
+  useEffect(() => {
+    if (focusedIdx != null && focusedIdx >= 0) {
+      setPreviewIdx(focusedIdx);
+      setPreviewPaused(true);
+    }
+  }, [focusedIdx]);
 
   // Oppdater override på et produkt
   const setProductOverride = (idx: number, patch: Partial<PricetagProduct>) => {
@@ -560,21 +585,104 @@ export function PrisplakatEditor() {
             </div>
           ))}
           {format.startsWith("slideshow") && products.length > 0 && (
-            <div style={{
-              width: "100%",
-              maxWidth: format === "slideshow_landscape" ? 1100 : 480,
-              aspectRatio: format === "slideshow_landscape" ? "16 / 9" : "9 / 16",
-              maxHeight: "calc(100vh - 160px)",
-              boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
-              position: "relative", overflow: "hidden",
-              background: "#000",
-            }}>
-              <Slideshow
-                products={products}
-                settings={settings}
-                landscape={format === "slideshow_landscape"}
-                embedded
-              />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", alignItems: "center" }}>
+              {/* Preview-toolbar: pause + slide-navigasjon */}
+              <div style={{
+                display: "flex", gap: 6, alignItems: "center",
+                background: "rgba(0,0,0,0.4)", padding: "6px 10px", borderRadius: 6,
+                maxWidth: format === "slideshow_landscape" ? 1100 : 480,
+                width: "100%", flexWrap: "wrap",
+              }}>
+                <button onClick={() => setPreviewPaused(p => !p)} style={{
+                  background: previewPaused ? "var(--ft-red)" : "var(--chrome-bg-3)",
+                  color: "#fff", border: "none",
+                  padding: "5px 12px", borderRadius: 4, fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", flexShrink: 0,
+                }}>{previewPaused ? "▶ Spill" : "❚❚ Pause"}</button>
+                <button onClick={() => {
+                  setFocusedSlideId(null);
+                  setPreviewPaused(true);
+                  setPreviewIdx(i => (i - 1 + previewSlides.length) % previewSlides.length);
+                }} style={{
+                  background: "var(--chrome-bg-3)", color: "#fff", border: "none",
+                  padding: "5px 10px", borderRadius: 4, fontSize: 12, cursor: "pointer", flexShrink: 0,
+                }}>◀</button>
+                <button onClick={() => {
+                  setFocusedSlideId(null);
+                  setPreviewPaused(true);
+                  setPreviewIdx(i => (i + 1) % previewSlides.length);
+                }} style={{
+                  background: "var(--chrome-bg-3)", color: "#fff", border: "none",
+                  padding: "5px 10px", borderRadius: 4, fontSize: 12, cursor: "pointer", flexShrink: 0,
+                }}>▶</button>
+
+                {/* Slide-numerisk strip */}
+                <div style={{
+                  display: "flex", gap: 3, flex: 1, overflowX: "auto",
+                  paddingLeft: 6, alignItems: "center",
+                }}>
+                  {previewSlides.map((s, i) => {
+                    const isActive = i === previewIdx;
+                    const isCustom = s.kind === "custom";
+                    const label = isCustom
+                      ? (s.custom?.label || (s.custom?.template ? SLIDE_TEMPLATE_LABELS[s.custom.template] : "Slide"))
+                      : (s.product?.name_override || s.product?.name || `Produkt ${i + 1}`);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (isCustom && s.custom) {
+                            // useEffect setter previewIdx + paused via focusedIdx
+                            setFocusedSlideId(s.custom.id);
+                          } else {
+                            setFocusedSlideId(null);
+                            setPreviewPaused(true);
+                            setPreviewIdx(i);
+                          }
+                        }}
+                        title={label}
+                        style={{
+                          background: isActive ? "var(--ft-red)" : isCustom ? "rgba(168,85,247,0.18)" : "var(--chrome-bg-3)",
+                          color: "#fff", border: isActive ? "1px solid #fff" : "1px solid transparent",
+                          padding: "4px 9px", borderRadius: 3, fontSize: 11,
+                          cursor: "pointer", flexShrink: 0,
+                          fontWeight: isActive ? 700 : 500,
+                          fontFamily: '"Roboto Mono", ui-monospace, monospace',
+                        }}
+                      >
+                        {isCustom ? "·" : ""}{i + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <span style={{
+                  fontSize: 11, color: "var(--chrome-muted)", flexShrink: 0,
+                  fontFamily: '"Roboto Mono", monospace',
+                }}>
+                  {previewIdx + 1} / {previewSlides.length}
+                </span>
+              </div>
+
+              <div style={{
+                width: "100%",
+                maxWidth: format === "slideshow_landscape" ? 1100 : 480,
+                aspectRatio: format === "slideshow_landscape" ? "16 / 9" : "9 / 16",
+                maxHeight: "calc(100vh - 220px)",
+                boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
+                position: "relative", overflow: "hidden",
+                background: "#000",
+              }}>
+                <Slideshow
+                  products={products}
+                  settings={settings}
+                  landscape={format === "slideshow_landscape"}
+                  embedded
+                  pinIdx={previewPaused ? previewIdx : null}
+                  pausedOverride={previewPaused}
+                  onIdxChange={setPreviewIdx}
+                />
+              </div>
             </div>
           )}
           {format.startsWith("slideshow") && products.length === 0 && (
@@ -647,6 +755,8 @@ export function PrisplakatEditor() {
                 slides={settings.custom_slides}
                 products={products}
                 onChange={updateCustomSlides}
+                expandedId={focusedSlideId}
+                onExpandedIdChange={setFocusedSlideId}
               />
             </>
           )}

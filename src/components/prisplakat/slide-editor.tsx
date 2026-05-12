@@ -45,11 +45,20 @@ interface Props {
   slides: CustomSlide[] | undefined;
   products: PricetagProduct[];
   onChange: (slides: CustomSlide[]) => void;
+  /** Controlled expandedId — hvis satt, blir SlideEditor controlled av parent */
+  expandedId?: string | null;
+  onExpandedIdChange?: (id: string | null) => void;
 }
 
-export function SlideEditor({ slides, products, onChange }: Props) {
+export function SlideEditor({ slides, products, onChange, expandedId: controlledExpanded, onExpandedIdChange }: Props) {
   const current = slides ?? [];
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [internalExpanded, setInternalExpanded] = useState<string | null>(null);
+  const isControlled = controlledExpanded !== undefined;
+  const expandedId = isControlled ? controlledExpanded : internalExpanded;
+  const setExpandedId = (id: string | null) => {
+    if (isControlled) onExpandedIdChange?.(id);
+    else setInternalExpanded(id);
+  };
   const [showAdd, setShowAdd] = useState(false);
 
   const update = (id: string, patch: Partial<CustomSlide>) => {
