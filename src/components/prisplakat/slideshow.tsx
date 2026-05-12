@@ -424,14 +424,21 @@ export function Slideshow({
     }
   }, []);
 
-  // Keyboard
+  // Keyboard. Hopper over alle shortcuts hvis brukeren skriver i et input/textarea
+  // (ellers ville f/space/piler trigge mens man redigerer tekst).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+
       if (e.key === "ArrowRight") advance();
       else if (e.key === "ArrowLeft") prev();
       else if (e.key === " ") { e.preventDefault(); setPaused(p => !p); }
       else if (e.key === "Escape" && document.fullscreenElement) document.exitFullscreen();
-      else if (e.key === "f" || e.key === "F") enterFullscreen();
+      else if ((e.ctrlKey || e.metaKey) && (e.key === "f" || e.key === "F")) {
+        e.preventDefault();
+        enterFullscreen();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
