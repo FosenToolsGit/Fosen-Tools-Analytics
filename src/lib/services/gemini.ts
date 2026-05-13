@@ -110,11 +110,23 @@ export async function generateCaptionsJson(
   return { json, raw, model };
 }
 
+export interface ImageRef {
+  /** Base64-encoded image data (uten data:image-prefix) */
+  base64: string;
+  /** image/png, image/jpeg, image/webp */
+  mimeType: string;
+  /** Beskrivelse av hva bildet er (sendes som tekst-part rett etter) — Nano Banana bruker det */
+  label?: string;
+}
+
 export interface ImageGenInput {
   prompt: string;
   aspectRatio?: "1:1" | "4:5" | "16:9" | "9:16" | "3:4";
   model?: string;
   numberOfImages?: number;
+  /** Referansebilder som Nano Banana skal bruke som stil/innholds-grunnlag.
+   * Brukes til å pakke FT-logo, brand-palett og produkt-foto inn i hver call. */
+  referenceImages?: ImageRef[];
 }
 
 export interface ImageGenResult {
@@ -128,13 +140,11 @@ export interface ImageGenResult {
 /**
  * Generér bilder med Gemini 2.5 Flash Image (Nano Banana 2).
  *
- * VIKTIG: gemini-2.5-flash-image bruker `generateContent` med
- * `responseModalities: ["IMAGE"]`, IKKE `generateImages`-API-et.
+ * Multi-image input støttes: pass FT-logo + brand-palett + produkt-foto som
+ * `referenceImages` så modellen brand-matcher output. Dette er hvordan Native
+ * holder visuell konsistens.
  *
- * Aspect ratio styres via prompt-tekst (modellen støtter ikke aspectRatio-flag
- * direkte for free-tier). Vi inkluderer ratio i prompten.
- *
- * Free-tier har strenge rate-limits — fang 429 og rapporter tydelig.
+ * Aspect ratio styres via prompt-tekst.
  */
 export async function generateImage(
   input: ImageGenInput
@@ -143,12 +153,26 @@ export async function generateImage(
   const model = input.model ?? DEFAULT_IMAGE_MODEL;
   const aspect = input.aspectRatio ?? "1:1";
 
-  // Inkluder aspect ratio i prompten siden modellen ikke har eksplisitt flag
-  const promptWithAspect = `${input.prompt}\n\nAspect ratio: ${aspect}. Render at high resolution suitable for social media.`;
+  // Bygg multi-part contents: [referansebilder med labels] + [hovedprompt]
+  const parts: Array<
+    | { text: string }
+    | { inlineData: { data: string; mimeType: string } }
+  > = [];
+
+  for (const ref of input.referenceImages ?? []) {
+    if (ref.label) parts.push({ text: ref.label });
+    parts.push({
+      inlineData: { data: ref.base64, mimeType: ref.mimeType },
+    });
+  }
+
+  parts.push({
+    text: `${input.prompt}\n\nAspect ratio: ${aspect}. Render at 2048×2048 (or matching aspect) for social media.`,
+  });
 
   const response = await ai.models.generateContent({
     model,
-    contents: promptWithAspect,
+    contents: [{ role: "user", parts }],
     config: {
       responseModalities: ["IMAGE"],
     },

@@ -4,7 +4,9 @@ import {
   generateImage,
   DEFAULT_TEXT_MODEL,
   DEFAULT_IMAGE_MODEL,
+  type ImageRef,
 } from "./gemini";
+import { brandRefsFor, fetchImageAsRef } from "./brand-assets";
 import { scrapeProductByUrl, type ScrapedProduct } from "./scrape-product";
 
 /**
@@ -294,8 +296,11 @@ export function buildUserPrompt(input: GenerateDraftInput): string {
 // =============================================================================
 
 /**
- * Bygger Imagen-prompt fra archetype + kontekst.
- * Bruker archetype-spec sin "AI-prompt mal"-seksjon som mal.
+ * Bygger Nano Banana-prompt fra archetype + kontekst.
+ *
+ * KRITISK for 0 typos: hold TEKST KORT i bildet. Hovedord + minimal label kun.
+ * Definisjoner, USPs, lengre tekst hører hjemme i caption (post-tekst), ikke
+ * i bildet. Multi-image input via referenceImages gir brand-konsistens.
  */
 export function buildImagePrompt(
   archetype: Archetype,
@@ -303,9 +308,12 @@ export function buildImagePrompt(
     title: string;
     captions?: GenerateDraftResult["captions"];
     statement?: string;
+    /** Kort hovedord til bildet (1-3 ord) — separat fra evt. lang tittel */
+    hero_text?: string;
+    /** Lite kontekst-label (1 ord, f.eks. "adjektiv") */
+    eyebrow?: string;
   }
 ): { prompt: string; aspectRatio: "1:1" | "4:5" | "16:9" | "9:16" } {
-  // Aspect ratio per archetype (matcher corpus archetype-metadata)
   const aspectMap: Record<Archetype, "1:1" | "4:5" | "16:9" | "9:16"> = {
     foto: "1:1",
     definisjon: "1:1",
@@ -316,79 +324,115 @@ export function buildImagePrompt(
     sertifikat: "1:1",
   };
 
-  // Negative prompt-segmenter for ALLE — Forbudene fra Native-avvisningene
-  const sharedNegative = `STRICTLY NO: photorealistic foam inserts, photorealistic tool boxes, AI-generated humans or faces, cartoon characters, hand-drawn illustrations, flowers, abstract CAD sketches with empty rectangles, fake product photos, blue or green accents, gradient backgrounds (except gold on jubilee numbers), watermarks, stock-photo aesthetics, decorative noise, hashtag visualizations.`;
+  const negatives = `STRICTLY DO NOT INCLUDE: AI-generated humans or faces, cartoon characters, hand-drawn illustrations, flowers, abstract CAD sketches with empty rectangles, fake product photos, blue or green accents, gradient backgrounds (except gold on jubilee marks), watermarks, stock-photo aesthetics, decorative noise, fake certification logos.`;
 
-  const palette = `COLOR PALETTE STRICTLY LIMITED: FT-red #ED1C24, FT-ink #0F1115, white #FFFFFF. Optional gold gradient (#85704D → #DBB78B) only for jubilee numbers. Manrope font family.`;
+  const referenceUsage = `You have been provided BRAND REFERENCE images at the start of this conversation: the official Fosen Tools wordmark logo and the FT color palette. USE THE WORDMARK LOGO EXACTLY AS PROVIDED — do not redraw, restyle, or invent alternative wordmarks. Place it as a small footer or top-strip element. Match the color palette PRECISELY.`;
+
+  // Hero-text = kortest mulig hovedord, max 2-3 ord
+  const heroText = (context.hero_text ?? context.statement ?? context.title)
+    .toUpperCase()
+    .trim();
+  const eyebrow = context.eyebrow?.toLowerCase().trim() ?? "";
 
   switch (archetype) {
     case "definisjon":
       return {
-        prompt: `Dictionary-style poster, solid background (choose FT-red #ED1C24 OR FT-ink #0F1115).
-Center-aligned typography ONLY:
-  - Top: small italic word-class label (e.g. "adjektiv", "substantiv")
-  - Hero line: the keyword "${context.title}" in MASSIVE Manrope 800, white, tight tracking
-  - Below: 2-line definition in Manrope 500 sentence case
-Footer: small FT-logo wordmark (white) bottom-left, 4mm equivalent height.
-Editorial swiss-design feel. ${palette} ${sharedNegative}`,
+        prompt: `Editorial dictionary-style poster on solid FT-red #ED1C24 background.
+
+EXACT TEXT TO RENDER (spell precisely):
+  - Small italic label at top: "${eyebrow || "adjektiv"}"
+  - Hero word centered: "${heroText}"
+  - Footer: the Fosen Tools wordmark logo (from brand reference) bottom-center, white, small.
+
+The hero word MUST be in a bold sans-serif font (Manrope 800 style), pure white, MASSIVE (60% canvas width), tight letter-spacing.
+NO definition text, NO additional sentences in the image — just the eyebrow + hero word + logo.
+Editorial swiss-design feel, generous whitespace.
+${referenceUsage}
+${negatives}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "statement":
       return {
-        prompt: `Maximalist typography poster, solid FT-red #ED1C24 full bleed.
-ONE bold short statement centered: "${context.statement ?? context.title}" in Manrope 900, pure white.
-Tight tracking, MASSIVE size (text fills 70% of canvas width).
-Period/punctuation same size.
-Footer: small FT-logo (white) bottom-center.
-No other elements. ${palette} ${sharedNegative}`,
+        prompt: `Maximalist typography poster, full-bleed solid FT-red #ED1C24 background.
+
+EXACT TEXT TO RENDER (spell precisely):
+  - Main statement centered (max 4 short words): "${heroText}"
+  - Footer: Fosen Tools wordmark (from brand reference) bottom-center, white, small.
+
+Statement in Manrope 900 style, white, MASSIVE (fills 75% canvas width), tight tracking.
+Period or punctuation rendered same size.
+NO other text. NO supporting elements.
+${referenceUsage}
+${negatives}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "kontrast":
       return {
-        prompt: `Two-column comparison poster, vertical center divider.
-LEFT column (50% width): muted gray #6E6E6E background. Header: negative side label. 3 bullets in white Manrope 500.
-RIGHT column (50% width): FT-red #ED1C24 background. Header: "${context.title}". 3 bullets in white Manrope 600.
-Top center: small FT-logo wordmark (white) bridging both columns.
-${palette} ${sharedNegative}`,
+        prompt: `Vertical two-column comparison poster, 4:5 aspect ratio.
+
+LEFT column (50% width): muted gray #6E6E6E background.
+  Top label (small white): "HYLLEVARE"
+RIGHT column (50% width): FT-red #ED1C24 background.
+  Top label (small white): "${heroText}"
+
+Center divider: thin white vertical line.
+Top center: Fosen Tools wordmark (from brand reference) bridging both columns, white, small.
+
+NO body text, NO bullets — just the two header labels. Typography only.
+${referenceUsage}
+${negatives}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "milepael":
       return {
-        prompt: `Massive number poster. Background: solid FT-ink #0F1115.
-Center: the number "${context.title}" in Manrope 900, MASSIVE (filling 80% of canvas height).
-Number color: FT-red #ED1C24 OR gold gradient (#85704D → #DBB78B) for jubilee context.
-Crisp edges, no glow, no shadows.
-Above number: small uppercase Manrope 500 label (white, tracked).
-Below number: single-line caption (white, Manrope 400).
-Footer: small FT-logo wordmark (white).
-${palette} ${sharedNegative}`,
+        prompt: `Massive number poster, full-bleed solid FT-ink #0F1115 background.
+
+EXACT TEXT TO RENDER:
+  - Hero number centered: "${heroText}"
+  - Small uppercase label above (tracked, white): "${eyebrow || "år"}"
+  - Footer: Fosen Tools wordmark (from brand reference) bottom-center, white, small.
+
+The number MUST be in Manrope 900 style, MASSIVE (80% canvas height).
+If the number is "25" or "100", color it with the gold gradient style (#85704D → #DBB78B) — otherwise white.
+NO supporting sentences in the image.
+${referenceUsage}
+${negatives}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "sitat":
       return {
-        prompt: `Quote-card poster. Background: solid FT-ink #0F1115.
-Center: large pull-quote text in Manrope 500 italic, white, occupying 55% of canvas height.
-Quote: "${context.statement ?? context.title}"
-Top-left: huge red opening-quote glyph (FT-red #ED1C24), about 1/3 canvas size, behind text.
-Below quote: attribution line in Manrope 400, white, smaller — but actual attribution text will be in the post caption.
-Footer: small FT-logo wordmark (white) bottom-center.
-${palette} ${sharedNegative}`,
+        prompt: `Quote-card poster, 4:5 aspect ratio, solid FT-ink #0F1115 background.
+
+EXACT TEXT TO RENDER (spell every character precisely):
+  "${heroText}"
+  (the quote text above, surrounded by quotation marks, centered)
+
+  - Quote in Manrope 500 italic, white, ~55% canvas height.
+  - Large red opening-quote glyph (FT-red #ED1C24) behind the quote, decorative.
+  - NO attribution line in the image (it goes in the caption).
+  - Footer: Fosen Tools wordmark (from brand reference) bottom-center, white, small.
+${referenceUsage}
+${negatives}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "sertifikat":
       return {
         prompt: `Trust-signal poster on solid white #FFFFFF background.
-Top: heading "${context.title}" in Manrope 700, FT-ink #0F1115.
-Center: 3-5 ABSTRACT geometric placeholder marks (circles, hexagons) — NOT real certification logos — each with a short text label in Manrope 600 below it.
-Bottom: 2-line explainer text in Manrope 400 FT-ink.
-Right edge: full-height vertical FT-red #ED1C24 stripe, ~4mm wide.
-Footer: small FT-logo wordmark (FT-ink) bottom-left.
-${palette} ${sharedNegative}`,
+
+EXACT TEXT TO RENDER:
+  - Heading at top, Manrope 700, FT-ink #0F1115: "${heroText}"
+  - 3-5 ABSTRACT geometric shapes (circles or hexagons in FT-red and FT-ink) representing certifications — NO real logos, NO text labels under them in the image
+  - Vertical FT-red #ED1C24 stripe along right edge (4% width, full height)
+  - Footer: Fosen Tools wordmark (from brand reference, ink/dark variant) bottom-left, small.
+
+Editorial layout, generous whitespace.
+${referenceUsage}
+${negatives}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -397,6 +441,66 @@ ${palette} ${sharedNegative}`,
       // foto = ekte foto, ingen AI-bilde-gen
       return { prompt: "", aspectRatio: "1:1" };
   }
+}
+
+/**
+ * Velg hvilken wordmark-variant som passer bakgrunnen til archetype.
+ */
+function wordmarkVariantFor(archetype: Archetype): "white" | "red" | "ink" {
+  // sertifikat har hvit bg → ink wordmark
+  if (archetype === "sertifikat") return "ink";
+  // alle andre har rød eller mørk bg → hvit wordmark
+  return "white";
+}
+
+/**
+ * Detect 25/100-jubileum fra hero-tekst.
+ */
+function detectJubilee(heroText: string): 25 | 100 | null {
+  const t = heroText.trim();
+  if (t === "25" || /\b25\s*år/i.test(t)) return 25;
+  if (t === "100" || /\b100\s*år/i.test(t)) return 100;
+  return null;
+}
+
+/**
+ * Pakker ut hero-tekst (max 2-3 ord) fra input. For definisjon: hovedordet.
+ * For milepael: tallet. For statement: kort påstand.
+ */
+function extractHeroText(
+  archetype: Archetype,
+  input: GenerateDraftInput
+): string {
+  const brief = input.brief?.trim() ?? "";
+  const title = input.title.trim();
+
+  // Hvis brief inneholder en kort one-liner (under ~30 tegn), bruk den
+  if (brief && brief.length <= 30 && !brief.includes("\n")) return brief;
+
+  // Hvis tittel er kort, bruk den
+  if (title.length <= 30) return title;
+
+  // Ellers: ta første ordet av tittel
+  const firstWord = title.split(/\s+/)[0] ?? title;
+  // Spesialtilfeller
+  if (archetype === "milepael") {
+    const numMatch = (brief + " " + title).match(/\b(\d{1,3})\b/);
+    if (numMatch) return numMatch[1];
+  }
+  return firstWord;
+}
+
+function extractEyebrow(
+  archetype: Archetype,
+  input: GenerateDraftInput
+): string {
+  if (archetype === "definisjon") return "adjektiv";
+  if (archetype === "milepael") {
+    const heroNum = extractHeroText(archetype, input);
+    if (/^\d+$/.test(heroNum)) return "år";
+  }
+  if (archetype === "sertifikat") return "sertifisert";
+  return "";
 }
 
 // =============================================================================
@@ -464,20 +568,43 @@ export async function generateDraft(
   // 4. Generér bilde hvis archetype krever det og user_id finnes
   const aiImages: GenerateDraftResult["ai_images"] = [];
   if (input.archetype !== "foto" && !input.skip_image && input.user_id) {
+    // Hero-tekst (kort, max 2-3 ord) — bruker hero_text fra brief eller title.
+    // Eyebrow = ordklasse for definisjon, "år" for milepael.
+    const heroText = extractHeroText(input.archetype, input);
+    const eyebrow = extractEyebrow(input.archetype, input);
+
     const { prompt: imgPrompt, aspectRatio } = buildImagePrompt(
       input.archetype,
       {
         title: input.title,
         statement: input.brief,
         captions,
+        hero_text: heroText,
+        eyebrow,
       }
     );
 
     if (imgPrompt) {
       try {
+        // Bygg referansebilder: brand-assets + evt. scrapet produktbilde
+        const refs: ImageRef[] = brandRefsFor(input.archetype, {
+          isJubilee: detectJubilee(heroText),
+          wordmarkVariant: wordmarkVariantFor(input.archetype),
+        });
+
+        const scraped = input.source_data as Partial<ScrapedProduct> | null;
+        if (scraped?.image_url) {
+          const productRef = await fetchImageAsRef(
+            scraped.image_url,
+            "PRODUCT REFERENCE: scraped product photo from fosen-tools.no for visual/content context. You may incorporate the product theme but DO NOT redraw the product photorealistically — the image should be typography-focused per the archetype spec."
+          );
+          if (productRef) refs.push(productRef);
+        }
+
         const imgResult = await generateImage({
           prompt: imgPrompt,
           aspectRatio,
+          referenceImages: refs,
         });
 
         for (const img of imgResult.images) {
