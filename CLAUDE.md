@@ -1124,6 +1124,7 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 7. mai | **Levende ft-catgrid-system bygget** for alle `/produkter/*`-sider. Dynamisk JS-script som leser `.ProductMenu` i DOM, finner `Level1Selected` og bygger ft-catgrid med bilder. **Dual-mode:** toppnivå `/produkter` viser alle Level1 fra `/userfiles/image/menuicons/{slug}.png`, sub-kategori-sider viser Level2-søsken fra `/userfiles/image/Kategoribilder/{Hovedkategori}/{slug}.png`. **Multicase-strikking-quirk oppdaget:** `<img>`-attributter blir strikket fra raw HTML i publiseringsfelt (sannsynligvis XSS-beskyttelse) → løsning er å bygge tekst-celle først via `innerHTML`, deretter injisere `<img>`-elementer via `document.createElement` etter at DOM er klar. MutationObserver + polling som fallback siden ProductMenu kan lastes via AJAX. Verifisert virker på `/produkter/momentverktøy` (sub-modus, 4 underkategorier) og `/produkter` (toppnivå, 39 hovedkategorier). **URL-endring:** `/produkter/momentverktøy/momentnøkler` → `/produkter/momentverktøy/momentnøkkel` (entall, hører bedre til kategori-side med ett produkt-type) + 60+ land-prefiks-redirects bekreftet via Multicase' auto-redirect-modul. **SCSS for megameny oppdatert:** filnavn endret til URL-slug-konvensjon (`momentverktøy.png` ikke `moment.png`) så samme bilder kan brukes i både megameny og catgrid. **Identifisert 5 manglende CSS-klasser i megameny** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger) — må legges til via Avansert→Css klasse i Multicase admin. **Manglende ikoner:** `verktøy-elbil.png` og `verneutstyr1.png` ikke lastet opp (men `verktøy-for-elbil.png` finnes med feil navn). |
 | 8. mai | **Stor dag — Pmax-fix, Vercel-reaktivering, brosjyre-features, kampanje-leveranser.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: Pmax brand-exclusions diagnostisert + 4 negative keywords lagt inn (forventer 5-15% brand-andel mot dagens 66,7%); CenterContentArticleSearch-sonen på `/search` skjult via SCSS (rotnet med Wera→Zweibrüder-mismatch); CNC-terminologi-regel låst inn («CNC-maskinert», ikke «CNC-frest»); Skreddersydd-definisjon-innlegg + Kraftpipe-sett TESS VEST-innlegg publisert med UTM-tracking; **Vercel reaktivert** etter 3 ukers pause (Erik + Torstein lagt til som brukere, daglig auto-sync via cron kl 7 norsk, GitHub-repo recovered); ny **comboCard**-objekt-type i brosjyre-editoren; **Husqvarna Vårkampanje 2026** brosjyre bygget (8 sider, 36 produkter scrapet, kombi-pris på K1 PACE-pakke). |
 | 11. mai | **Mega-dag — dynamiske maler, jubileumslogoer, prisplakat-system, slideshow for butikk-TV.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **14 dynamiske maler** i brosjyre-editoren (bytter layout uten å miste produkter — 5 forsider + 8 produktgrid + bakside); **offisielle jubileumslogoer** (25-år + 100-år, gull-gradient SVG) integrert som ny **sigill-objekt-type** (12. type) med edit-panel; **Husqvarna-brosjyren bygd fra grunnen** med dynamiske maler (8 sider, 33 produkter, Husqvarna-logo som image på forsiden); **prisplakat-system helt nytt** (`/prisplakat`) med 5 formater (A4 single/2up/4up + slideshow landscape/portrait), container queries (cqh) for responsiv skalering, fullscreen API med klikk-overlay, ekte QR-koder med UTM, «Importér fra brosjyre», «Topp 8 populære», 4 atmosfæriske spesialslides (intro/credentials/sertifisert/avslutning); **per-produkt overrides** (pris, før-pris, burst-tekst, navn, vis/skjul burst+QR); **klikkbare PDF-lenker** via jsPDF.link; **FT-artikkelnummer** scraping (`.prd-num-label`); fix av pris-klipping i standard productCard; fix av FT-logo-størrelse i topp-stripe (3.4mm → 6.3mm); åpningstider rettet 07:00-15:00 (var feil 07:30-16:00 åtte steder); fjernet udokumentert «siden 2008»-claim; bruker `brit@fosen-tools.no` opprettet; **alt pushet til Vercel main**. |
+| 12. mai | **Native AI-app brand-bygging + prisplakat-utvidelse + Etiketter-system + brosjyre-fixes.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **Native AI-innholds-app** (app.native.no) konfigurert med full FT-merkevare — Skrivestil-tekst (2332/2500 tegn) med Eriks doktrine («riktig verktøy for hverdagen», ikke antall), 5 plattform-spesifikke regler (LinkedIn, FB, IG, TikTok, Bluesky), 13 toppinnlegg fra Meta-engagement-data (Husqvarna Automower, Alier Trondheim, Andøya Space, Kampfly+FOD, Norwegian Aero, Fosen VGS Flyfag, Forsvaret 20 år, Widerøe, Fribo Bygg, Norsk Transformator, Ordførerkjedet), 11 avviste innholdsposter med konkrete eksempler (tom skuff-mantra, fake spokesmodel, AI-HDFI, blå/rød fargemix, antall-som-feature, plastplate-vs-HDFI-terminologi); **prisplakat utvidet** med data-drevne redigerbare special slides + 10 nye justeringer (klokke, lager-pill, pris-reveal, QR på produkt-slide, brand-spotlight, multi-produkt, combo, custom-slide-rekkefølge, pause-knapp + slide-navigasjon-strip i preview, fokuser-på-redigert-slide); **Etiketter-system** bygd for Brother QL-580N (`/etikett`, 62×29mm DK-11209, navn + SKU + QR med auto-UTM, jsPDF-eksport, importér fra brosjyre/prisplakat); **brosjyre-fixes** (FT-hvit-SVG CSS-klasse-kollisjon fjernet, midtstill-verktøy i Egenskaper-panel, **auto-save-bug** som overskrev server med cached localStorage, Husqvarna-logo lagt på forsiden via Supabase PATCH, åpningstider 07:00-15:00 fikset i resterende preset). **9 Vercel-deploys** gjennom dagen. **Husqvarna-brosjyren stemmer nå på Vercel.** |
 
 ---
 
@@ -1863,91 +1864,204 @@ Ingen nye memory-filer denne sesjonen — alt er kode-endringer og dokumentasjon
 
 ---
 
-## Klar for neste sesjon (tirsdag 12. mai 2026)
+## Siste sesjons-sammendrag (12. mai 2026 — lang økt)
+
+Tema: tre parallelle arbeidstråder (1) Native AI-app brand-konfigurasjon (bytte ut testet feedback-loop), (2) prisplakat-utvidelse med redigerbare special slides + 10 nye justeringer, (3) brosjyre-fixes for Husqvarna (logo, åpningstider, midtstill-verktøy, auto-save-bug).
+
+### Native AI-innholds-app brand-bygging
+Brukeren har gått til kjøp av Native (app.native.no) — AI-app som genererer innhold via Nano Banana 2. Vi konfigurerte hele brand-strukturen:
+
+**Skrivestil & Regler** (2332/2500 tegn) — inkluderer Eriks doktrine («riktig verktøy for hverdagen», ikke antall), CNC-maskinert-terminologi, datadrevet timing (tor/fre kl 12:00, +93% engasjement ved emoji-start), FG-godkjent-våpenskap-avvisning.
+
+**5 plattform-spesifikke regler** — LinkedIn (400-700 tegn, fagspråk), Facebook (100-280 tegn, +144%-mønster: «Levert til X»), Instagram (visuelt fokus, hashtags i kommentar, ALT-tekst-workaround), TikTok (markert «ikke i bruk»), Bluesky (markert «ikke i bruk»).
+
+**13 toppinnlegg** fra Meta-engagement-data: Husqvarna Automower (542), Alier Trondheim HDFI (282), Andøya Space (272), Kampfly+FOD (265), Norwegian Aero (201), Fosen VGS Flyfag (189), Forsvaret 20 år (strategisk gull), Widerøe (kommersiell aviation), Fribo Bygg (bygg), Norsk Transformator (energi), Ordførerkjedet (kommune/nisje) + de 2 originale (Odde Elektronett 762, Harley-Davidson 398).
+
+**11 avviste innholdsposter** med konkrete eksempler — Native genererte hver gang dårlig innhold, og brukeren ba om Avvist-prompt: (1) tom skuff-mantraet, (2) «Seks tomme skuffer»-karusell, (3) abstrakte CAD-skisser, (4) «Full vogn er best?» spørsmål-åpning, (5) HDFI som blomst + cartoon-mennesker, (6) AI-spokesmodel «tenkende mann ved tre-bord», (7) blå/rød fargemix (kun FT-palett), (8) AI-HDFI generelt, (9) «6 ledige skuffer til eget behov» (antall som feature), (10) AI-HDFI for pipe-sett FTMEGA9 WIDE, (11) AI-mann med blanke røde rektangler. Plus separate prompts om «plastplate»-vs-HDFI-terminologi og spørsmål-åpning (Spørsmålet er ikke om…).
+
+**3 kundehistorier i Strategi** — Pelicase 1535 til Forsvaret, OPTI-koffert til TESS VEST, Sertifisert leverandør gjennom 25 år.
+
+**Farger** — la til FT Ink (#0F1115) som 4. brand-farge. **Fonter** — la til Manrope (FT brosjyre-font).
+
+**Native-progresjon observert i sesjonen:**
+- Tidlig: «Kjøp verktøy, organiser etterpå?»-bilde (kaotisk koffert som problem-fokus)
+- Midt: «Hver posisjon i et HDFI-innlegg er CAD-tegnet…» (god caption, dårlig HDFI-illustrasjon)
+- Senere: «Full vogn er best?»-spørsmål (regel-brudd, bedre design)
+- Til slutt: «8 skuffer. To målesystemer. Én vogn.» (FTMEGA9 WIDE) — caption nesten perfekt, men AI-mann i hettegenser + blanke røde rektangler (avvist)
+- Beste: «Skuffen før og etter HDFI — Samme verktøy. Helt annen kontroll.» — Eriks vinkling i ren form
+- Verste: «Tre verksteder, 42 vogner, én standard» med AI-spokesmodel i konsulent-setting
+
+Brukeren ga opp å iterere med Native og fikset siste post manuelt. Native ble levert komplett brand-regelbok som modellen lærer av over tid.
+
+### Prisplakat: 10 nye justeringer + redigerbare special slides
+
+**Endringer i [types.ts](src/components/prisplakat/types.ts):**
+- Ny `ProductMode`-type: «sale» (default) / «new» (NYHET-burst) / «feature» (VÅRT VALG) / «stock» (PÅ LAGER)
+- Ny `CustomSlide`-interface — 8 templates: intro, credentials, certified, outro, brand_spotlight, multi_product, combo, blank
+- Ny `LogoKey` (ft-white, ft-black, jub-25, jub-100, custom) + `LOGO_URLS`-mapping
+- `PricetagSettings` utvidet med 4 nye toggles: show_clock, show_stock_status, animate_price_reveal, show_product_qr
+- Default `custom_slides` (intro/credentials/certified/outro) i `defaultCustomSlides()`
+- `buildSlideList()`-helper som sorterer custom slides via placement (start/end/after_product) + order
+
+**Ny fil [custom-slide-renderer.tsx](src/components/prisplakat/custom-slide-renderer.tsx):**
+- Renderer alle 8 templates data-drevent
+- Per-template-rendering: brand_spotlight, multi_product (2-up/4-up grid), combo (2 produkter + samlet pris)
+- Bruker `cqh`-units for skalerbar tekst, `proxyImage()` for Azure Blob-håndtering, `effective()` for per-produkt overrides
+
+**Ny fil [slide-editor.tsx](src/components/prisplakat/slide-editor.tsx):**
+- Liste over custom slides med flytt/duplisér/slett/aktivér/skjul
+- Per-slide-edit-panel: etikett, mal, plassering, bakgrunn (farge + bilde + dim), accent, tekst (eyebrow/title/subtitle/pills/footer), logoer (top/bottom), title-scale, brand_logo_url (brand_spotlight), product_indexes (multi_product), combo_a/b_idx (combo)
+- Controlled fra parent via `expandedId` + `onExpandedIdChange`
+
+**Slideshow-refaktor [slideshow.tsx](src/components/prisplakat/slideshow.tsx):**
+- Data-drevent rendering via `CustomSlideRenderer`
+- Klokke-overlay (når `show_clock`), lager-pill, pris-reveal-animasjon, QR på produkt-slide
+- Nye props: `pinIdx`, `pausedOverride`, `onIdxChange` for ekstern kontroll
+- Keyboard-handlers ignorerer events fra input/textarea (Ctrl/Cmd+F for fullskjerm i stedet for F alene)
+
+**Editor-utvidelse [editor.tsx](src/components/prisplakat/editor.tsx):**
+- `focusedSlideId`-state + `previewPaused` + `previewIdx`
+- Når slide ekspanderes i SlideEditor: preview hopper til den slide-en + pauser automatisk
+- Pause/Spill-knapp + slide-navigasjons-strip over preview (numerisk indikatorer, lilla bg for custom slides)
+- Per-produkt `mode`-dropdown (Salg/Nyhet/Vårt valg/På lager) i overrides
+- 4 nye global-toggles (klokke, lager-pill, pris-reveal, QR på produkt-slide)
+- «Mine prisplakater»-toggle fikset (newPlaylist lukker liste-visning + «Tilbake til editor»-knapp)
+
+### Etiketter-system for Brother QL-580N (ny seksjon `/etikett`)
+
+Bygd 3-fil system:
+- [types.ts](src/components/etikett/types.ts) — `EtikettProduct`, dimensjoner (62×29mm)
+- [label-renderer.tsx](src/components/etikett/label-renderer.tsx) — skalerbar preview (cqh-style)
+- [export-pdf.ts](src/components/etikett/export-pdf.ts) — jsPDF direkte (tekst som vektor + QR via qrcode-pakken som PNG)
+- [editor.tsx](src/components/etikett/editor.tsx) — produkt-velger med URL-scrape, import fra brosjyre/prisplakat, topp 8 populære
+
+Workflow: åpne PDF → Cmd+P → Brother QL-580N-driver + DK-11209 + «Skala 100%» → print. Auto-UTM på QR: `utm_source=etikett&utm_medium=hyllekant`.
+
+### Brosjyre-fixes
+
+**FT-hvit-SVG CSS-klasse-kollisjon** — hvit FT-logo manglet på Husqvarna-brosjyre fordi `.cls-1` klassen kolliderte med 25-årslogoens `.cls-1{fill:url(#linear-gradient)}`. Fix: erstattet `class="cls-1"` med inline `fill="#fff"` på alle 10 paths + fjernet XML-prolog.
+
+**Midtstill-verktøy** — nytt «Juster på siden»-panel i Egenskaper-tab med 7 knapper: ⇔ Midt H, ⇕ Midt V, ⊕ Begge, ⇤ V, H ⇥, ⤒ T, ⤓ B. Fungerer på enkelt-objekt OG multi-select, respekterer låste objekter.
+
+**Auto-save-bug** (kritisk) — Editor's `useEffect([doc, currentBrochureId])` trigget auto-save på cached localStorage-versjon ved mount, og overskrev server-state. Resultat: Supabase PATCH-er ble overskrevet av editor 4 sekunder etter mount. Fix i [store.ts](src/components/brosjyre/store.ts):
+1. Ny `lastSyncedDocStr`-ref med JSON av sist server-synket doc
+2. Auto-save sammenligner JSON.stringify(doc) mot lastSyncedDocStr — hopper over save når identisk
+3. Ved mount med `currentBrochureId`: kaller `loadFromServer` for å hente friskeste server-versjon
+4. `loadFromServer` og `saveToServer` (success) oppdaterer lastSyncedDocStr
+
+**Husqvarna-brosjyren fikset via Supabase PATCH:**
+- «HUSQVARNA / VÅRKAMPANJE / 2026»-tekst byttet til Husqvarna PNG-logo (med tint=«white») på forsiden + separat «VÅRKAMPANJE 2026»-tekst
+- Åpningstider 07:30-16:00 → 07:00-15:00 (forside + bakside)
+- Måtte PATCH-es 3 ganger fordi editor's auto-save overskrev (bug-en over forklarer hvorfor)
+
+**Sommersalg-2026.json preset** — åpningstider 07:30 → 07:00 også i preset-fil.
+
+### Vercel-deploys gjennom dagen (alle pushed til main)
+- `b0eb0d2` — redigerbare special slides + 10 nye prisplakat-justeringer
+- `fb15e59` — pause + slide-navigasjon i prisplakat-preview
+- `615c655` — Ctrl/Cmd+F for fullskjerm + ignorer shortcuts ved tekstinput
+- `7395d1f` — Etiketter-system Brother QL-580N (62×29mm DK-11209)
+- `a8d001d` — korrigert dimensjoner 60×28 → 62×29mm
+- `0ea6715` — prisplakat-delelink fungerer for andre team-medlemmer (RLS-fix migrasjon 013)
+- `a6b6868` — hvit FT-logo CSS-klasse-kollisjon fjernet
+- `c3f0189` — midtstill-verktøy + åpningstider-fix i preset
+- `77a5c6e` — auto-save-bug fikset (cached localStorage overskrev server)
+
+### Bonus: PDF-analyse av Arvid Nilsson sales order
+Brukeren sendte Sales-Order-Confirmation_12022386 — verifiserte alle 9 varelinjer:
+- Spikerplugg TC-CC 8x80: PDF har 250 stk (150 + 100 etter-levering 27.05.2026), FT-system viser kun 150 stk
+- Spikerplugg 8x100: type-mismatch — FT har «TC-CC», PDF har «TC-CA» (produktkode 5263408100 matcher CA)
+- Terrasseskrue: beskrivelses-feil i FT — sa 4,8x56 men produktkode 48608656 er 4,2x56
+- Differansen 119,97 NOK mellom FT-total (3 443,51) og PDF-total (3 563,48) = bakbestilling-kostnad for 100 stk Spikerplugg 8x80 (1,1992/stk × 100)
+- Frakt: brukeren sa først 40 kr, men matematikken viste at det er ca 120 NOK frakt (eller utelukkende bakbestilling-kostnad)
+
+### Memory-oppdateringer
+Ingen nye memory-filer denne sesjonen — alt er kode-endringer eller eksterne app-konfigurasjoner (Native).
+
+---
+
+## Klar for neste sesjon (onsdag 13. mai 2026)
 
 ### Pre-sesjon sjekkliste
 
-**1. Verifiser at Vercel-deploy fungerer**
-- Sjekk [vercel.com/dashboard](https://vercel.com/dashboard) at siste build (commit `f25d07c`) er deployd til production
-- Åpne production-URL `/prisplakat` og bekreft at editoren laster
-- Test «Importér fra brosjyre» med Husqvarna → 33 produkter skal komme inn
-- Test «Test fullskjerm» — skulle nå fungere med localStorage-fix
-- Test «Eksporter PDF» fra A4-single og verifiser at klikkbare lenker er der i Adobe Reader
+**1. Verifiser Husqvarna-brosjyren på Vercel**
+- Åpne `fosen-tools-analytics.vercel.app/brosjyre`
+- Klikk «Husqvarna Vårkampanje 2026» fra Mine brosjyrer
+- Bekreft på forsiden: Husqvarna-logo (PNG, ikke tekst) + «VÅRKAMPANJE 2026» + åpningstider 07:00-15:00
+- Bekreft på baksiden: åpningstider 07:00-15:00
+- Test PDF-eksport
+- **Hvis tekstversjonen vises i stedet:** verifiser at commit 77a5c6e er deployd; refresh hard (Cmd+Shift+R)
 
-**2. Pmax brand-andel sjekk (mandag-pending)**
+**2. Test midtstill-verktøyet**
+- Klikk et objekt i brosjyre-editor
+- «Juster på siden»-blokken skal vise 7 knapper (⇔/⇕/⊕ midtstill + ⇤/⇥/⤒/⤓ snap til kant)
+- Verifiser med multi-select også
+
+**3. Pmax brand-andel re-sjekk (overført fra 12. mai)**
 - Trigge sync først: `POST /api/sync/google_ads` med Bearer SYNC_SECRET_KEY
 - Sjekk `brand_share_pct` i `/ga4/google-ads/analyse`
-- Mål: under 50%, retning 5-15% (var 66,7% før brand-exclusions + negative keywords 8. mai)
-- Hvis fortsatt høy: verifiser at Pmax-kampanjen faktisk har brand-exclusions aktive i Google Ads UI
+- Mål: under 50%, retning 5-15% (var 66,7% før negative keywords 8. mai)
+- Vi rakk ikke denne 12. mai — alt fokus var på Native
 
-**3. Engagement-sjekk (12. mai-deadline)**
+**4. Engagement-sjekk: skreddersydd-definisjon + kraftpipe TESS VEST (overført)**
 - Skreddersydd-definisjon-innlegg (publisert 8. mai 11:30 fre)
 - Kraftpipe-sett TESS VEST-innlegg (publisert 8. mai)
-- Pelicase 1535-Forsvaret-innlegg (publisert 1. mai)
 - Sammenlign mot +144%-mønsteret fra `feedback_social_caption_optimization.md`
 
-**4. Sjekk prisplakat på butikk-TV (hvis tilgjengelig)**
-- Åpne slideshow-URL i Chrome på TV-en
-- Trykk F11 for fullskjerm
-- La det loope og sjekk om Ken Burns + transitions virker greit
-- Verifiser at bilder loader (proxy fungerer fra Vercel)
+**5. Sjekk Native AI-app — produserer den FT-stemmen nå?**
+- Åpne https://app.native.no/fosen-toolss-konto/fosen-tools
+- Klikk «Nytt innlegg»
+- Vent på første forslag etter at all brand-regelbok er lagret
+- Sjekk: ingen «tomme skuffer», ingen AI-spokesmodel, ingen AI-HDFI, korrekt FT-rød palett, Eriks vinkling
 
-### Tirsdag-fokus
+### Onsdag-fokus
 
-**A. Test produksjons-deployet av prisplakat-systemet**
-- A4-print: eksporter PDF, verifiser klikkbare lenker
-- Slideshow: åpne i ny tab, klikk fullskjerm, la auto-advance kjøre
-- Per-produkt overrides: sett en custom pris, verifiser at det reflekteres i alle 5 formater
-- «Importér fra brosjyre»: sjekk at Husqvarna-produktene kommer inn med riktig data
-- Lagre playlist, sjekk at den vises i «Mine prisplakater»
+**A. Hvis Husqvarna-brosjyren stemmer på Vercel — videreutvikling**
+- Lag flere produsent-brosjyrer (Wera? Stahlwille? FACOM?) basert på samme mønster
+- Eller: bygg et «Brand-kit»-system der hver produsent har sitt eget set med logoer/farger/tone
 
-**B. Eventuell polering basert på testing**
-Hvis det er issues på prod, fix dem. Vanlige områder:
-- Bildelasting via proxy
-- Vercel function timeouts ved scraping (8 produkter sekvensielt)
-- Browser-kompatibilitet (testet i Chrome — også sjekk Safari/Firefox hvis relevant)
+**B. Hvis Native genererer dårlig innhold — flere avviste poster**
+- Brukeren gir opp Native iterering etter 8. fix-runde 12. mai — kanskje rolig sjekk uten ny krig
+- Hvis fortsatt feil-mønster: legg inn flere konkrete Avvist-eksempler
 
-**C. Dokumentere flyt for butikk-TV-bruk**
-Lag en kort 1-pager til Erik/butikkansatte:
-1. Åpne fosen-tools-analytics.vercel.app i Chrome
-2. Logg inn med butikk-bruker (eventuelt opprett egen «butikk@fosen-tools.no»)
-3. Gå til `/prisplakat`
-4. Importér produkter fra eksisterende kampanje eller velg topp 8 populære
-5. Bytt format til «Slideshow — landskap 16:9»
-6. Lagre med beskrivende navn
-7. Klikk «Spill av» → åpner i ny fane → trykk F11 for fullskjerm
+**C. Ferdiggjøre PDF-analyse-flyten**
+- Verifiser at Spikerplugg TC-CC 8x80 etter-leveransen 27.05.2026 ble registrert i FT-systemet etter at den ble levert
+- Sjekk om type-mismatch på Spikerplugg 8x100 (TC-CC vs TC-CA) er reell eller kun katalog-feil
+- Rett opp Terrasseskrue 4,8x56 → 4,2x56 i FT-katalogen
 
-**D. Sjekke Multicase ProductMenu-CSS-klasser (fra 7. mai)**
+**D. Sjekke Multicase-CSS-klasser (overført fra 7. mai)**
 5 menypunkter mangler CSS-klasse i megameny:
 - Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger
-
-Også laste opp manglende ikoner: `verktøy-elbil.png`, `verneutstyr1.png`.
+- Last opp manglende ikoner: `verktøy-elbil.png`, `verneutstyr1.png`
 
 ### Pending fra tidligere sesjoner (overført)
 
-- **Wildcard-redirect-svar fra Multicase** — `/manufacturers/(.*) → /$1` (etterfølgende svar fra 29. april)
-- **Selv-aktivering av produsent-sider** i Multicase admin (samme)
+- **Wildcard-redirect-svar fra Multicase** — `/manufacturers/(.*) → /$1` (avventer)
+- **Selv-aktivering av produsent-sider** i Multicase admin
 - **301-redirect-modul pris-bekreftelse** (Erik godkjente «om det betaler seg selv»)
-- **SEO-fall på `/leatherman`** (pos 18.9, 0 klikk april) — sjekk om inline JSON-LD-konvertering 29. april forbedret rangeringen (sjekk 14. mai)
+- **SEO-fall på `/leatherman`** (pos 18.9, 0 klikk april) — sjekk om inline JSON-LD-konvertering 29. april forbedret rangeringen (14. mai)
 - **Facom-fallet** (pos 2.0 → 16.7 på én uke 30. april) — sjekk om siden fortsatt er indeksert
 - **Bransjer-pause re-evaluering** (5. juni — kampanjen pauset 5. mai)
 - **GSC re-indeksering** — Dag 4 av re-indekserings-planen (8. mai-pending)
 
-### Prompt-mal for tirsdag
+### Prompt-mal for onsdag
 
 ```
-Hei! Vi fortsetter der vi slapp 11. mai. Hovedoppgaver:
+Hei! Vi fortsetter der vi slapp 12. mai. Hovedoppgaver:
 
-1. Sjekk at Vercel-deploy er live på production (siste commit f25d07c)
-2. Test prisplakat-systemet på produksjons-URL
-3. Sjekk Pmax brand-andel (mål: <50%)
-4. Engagement-sjekk på 8. mai-innleggene (Skreddersydd + Kraftpipe TESS VEST)
+1. Verifiser Husqvarna-brosjyren på Vercel (logo + tider) — bør stemme nå etter auto-save-bug-fix
+2. Test midtstill-verktøyet i brosjyre-editor
+3. Pmax brand-andel-sjekk (overført fra 12. mai — vi rakk ikke denne)
+4. Sjekk om Native AI-app produserer FT-stemmen nå etter at all brand-regelbok er lagret
+5. PDF-analyse-oppfølging: Arvid Nilsson bakbestilling 27.05 + type-mismatch på Spikerplugg 8x100
 
-Les CLAUDE.md, særlig 11. mai sesjons-sammendrag. Brukerne tilgjengelig på Supabase:
+Les CLAUDE.md, særlig 12. mai sesjons-sammendrag. Native-brand-konfigurasjon er ferdig (13 toppinnlegg + 11 avviste poster). Brukeren ga opp Native-iterering etter 8 runder, alt er låst inn.
+
+Brukerne tilgjengelig på Supabase:
 - adrian@fosen-tools.no (deg)
 - erik@fosen-tools.no
 - torstein@fosen-tools.no
-- brit@fosen-tools.no (NY 11. mai)
+- brit@fosen-tools.no
 
 Si fra når du har full kontekst, så avgjør vi prioriteringen for dagen.
 ```
