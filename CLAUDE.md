@@ -486,6 +486,9 @@ LINKEDIN_ORGANIZATION_ID=
 # Sync
 SYNC_SECRET_KEY=fosen-sync-2026
 SYNC_DAYS=90                   (konfigurerbart sync-vindu, default 90)
+
+# Gemini (Innholdsmotor)
+GEMINI_API_KEY=...             (Google AI Studio API-key med paid plan / $900-kreditt)
 ```
 
 Alle er også lagt inn i Vercel som Environment Variables.
@@ -950,6 +953,64 @@ Hvis du endrer slug på en underkategori (f.eks. `momentnøkler` → `momentnøk
 
 ---
 
+## Innholdsmotor (Gemini-drevet content engine, ny 13. mai 2026)
+
+`/innholdsmotor` — AI-drevet caption + bilde-gen for sosiale medier. Erstatter Native.
+
+### Arkitektur
+- **Caption:** `gemini-2.5-flash` (strukturert JSON-output med per-plattform-varianter)
+- **Bilde:** `gemini-2.5-flash-image` (a.k.a. **Nano Banana 2** — samme Native bruker)
+- **Pull fra fosen-tools.no:** gjenbruker `scrape-product.ts` (JSON-LD + DOM)
+- **Korpus + feedback-loop:** DB-backet, editerbart fra UI
+
+### Modellvalg (testet 13. mai 2026)
+Testet `imagen-4.0-fast-generate-001`, `imagen-4.0-generate-001`, `gemini-2.5-flash-image` på samme FT-«definisjon»-archetype:
+- **Nano Banana** vant — renest layout, FT-rød perfekt, swiss-design feel. Tekstfeil forekommer (definisjons-tekst kan få 1-3 typos) — håndteres av feedback-loop.
+- Imagen 4.0 fast: bedre tekst-nøyaktighet men glitches på hovedord.
+- Imagen 4.0 HQ: rendret prompt-instruksjonene SOM tekst på bildet — useless for vår use-case.
+
+### Tabeller (migration 014)
+- `social_corpus` — kunnskaps-base (kind: voice/visual_rules/platform/archetype/topic_template/product/top_post/rejected_pattern/company)
+- `social_drafts` — utkast med status-flyt: draft → approved → scheduled → posted (eller rejected)
+- `social_feedback` — rejection/edit-grunner som mater fremtidige prompts
+
+### 7 FT-spesifikke archetypes (visuelle stiler)
+| Archetype | AI-bilde? | Bruk |
+|---|---|---|
+| `foto` | Nei (ekte foto) | Leveranser, prosess, kundehistorier |
+| `definisjon` | Ja | Ordbok-stil («Skreddersydd / adjektiv / ...») |
+| `statement` | Ja | Kort kraftig påstand («0 mm slark.») |
+| `kontrast` | Ja | Hyllevare vs HDFI to-kolonne |
+| `milepael` | Ja | Store tall (25, 100, 40+) |
+| `sitat` | Ja | Kundesitat med atribuering |
+| `sertifikat` | Ja | Trust-signaler (ISO, Miljøfyrtårn, Forsvaret) |
+
+Hver archetype har eksplisitte forbud i prompten: ingen AI-HDFI, ingen AI-mennesker, ingen cartoon, kun FT-palett (#ED1C24/#0F1115/#FFFFFF), kun Manrope. Basert på Native sine 11 avvisninger 12. mai.
+
+### Kost-budsjett ($900 over 3 mnd)
+- Caption-gen (`gemini-2.5-flash`): ~$0.075 input + $0.30 output per 1M tokens → marginal kost per draft
+- Bilde-gen (`gemini-2.5-flash-image`): pay-as-you-go per bilde
+- Estimert månedlig forbruk for FT: $10-30 — godt under $300/mnd-budsjett
+- API-key er knyttet til prosjekt med paid plan + $900-kreditt aktiv
+
+### Filer
+- [src/lib/services/gemini.ts](src/lib/services/gemini.ts) — Google GenAI-wrapper (tekst + bilde)
+- [src/lib/services/social-engine.ts](src/lib/services/social-engine.ts) — orchestrator: korpus → prompt → caption + bilde → Storage
+- [src/app/(dashboard)/innholdsmotor/page.tsx](src/app/(dashboard)/innholdsmotor/page.tsx) — UI med 4 tabs (Ny/Kø/Kalender/Korpus)
+- [src/app/api/social/](src/app/api/social/) — drafts CRUD + from-url + corpus CRUD + feedback + upload
+- [docs/migrations/014_social_content_engine.sql](docs/migrations/014_social_content_engine.sql), [015](docs/migrations/015_social_assets_storage.sql), [016](docs/migrations/016_social_corpus_seed.sql) — DB + Storage + ~30 seed-entries
+
+### Feedback-loop
+Når operatør avviser eller redigerer en draft → reason + before/after lagres i `social_feedback`. Neste prompt-bygging leser siste 30 entries og inkluderer dem som «⚠️ ALDRI GJENTA disse feilene»-seksjon. Korpus + feedback = full Native-replacement-doktrine, alt editerbart fra UI.
+
+### Kjente begrensninger
+- Nano Banana **forvrenger noen ganger tekst** i bildet (særlig norske bokstaver i lange setninger). Mitigering: hold archetype-prompts korte, eller la AI bare lage hovedordet og legg detalj-tekst i caption.
+- Imagen 4.0 er DÅRLIGERE for vårt formål til tross for høyere kostnad — vi bruker Nano Banana.
+- Free-tier hadde 5-10 bilder/dag rate-limit. Paid plan løser dette.
+- Auto-publisering ikke implementert (Meta-token har bare read-scopes; LinkedIn API venter).
+
+---
+
 ## Kjente quirks
 
 1. **Vercel Hobby-plan blokkerer multi-author commits** — bruker må selv pushe fra terminal
@@ -1125,7 +1186,7 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 8. mai | **Stor dag — Pmax-fix, Vercel-reaktivering, brosjyre-features, kampanje-leveranser.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: Pmax brand-exclusions diagnostisert + 4 negative keywords lagt inn (forventer 5-15% brand-andel mot dagens 66,7%); CenterContentArticleSearch-sonen på `/search` skjult via SCSS (rotnet med Wera→Zweibrüder-mismatch); CNC-terminologi-regel låst inn («CNC-maskinert», ikke «CNC-frest»); Skreddersydd-definisjon-innlegg + Kraftpipe-sett TESS VEST-innlegg publisert med UTM-tracking; **Vercel reaktivert** etter 3 ukers pause (Erik + Torstein lagt til som brukere, daglig auto-sync via cron kl 7 norsk, GitHub-repo recovered); ny **comboCard**-objekt-type i brosjyre-editoren; **Husqvarna Vårkampanje 2026** brosjyre bygget (8 sider, 36 produkter scrapet, kombi-pris på K1 PACE-pakke). |
 | 11. mai | **Mega-dag — dynamiske maler, jubileumslogoer, prisplakat-system, slideshow for butikk-TV.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **14 dynamiske maler** i brosjyre-editoren (bytter layout uten å miste produkter — 5 forsider + 8 produktgrid + bakside); **offisielle jubileumslogoer** (25-år + 100-år, gull-gradient SVG) integrert som ny **sigill-objekt-type** (12. type) med edit-panel; **Husqvarna-brosjyren bygd fra grunnen** med dynamiske maler (8 sider, 33 produkter, Husqvarna-logo som image på forsiden); **prisplakat-system helt nytt** (`/prisplakat`) med 5 formater (A4 single/2up/4up + slideshow landscape/portrait), container queries (cqh) for responsiv skalering, fullscreen API med klikk-overlay, ekte QR-koder med UTM, «Importér fra brosjyre», «Topp 8 populære», 4 atmosfæriske spesialslides (intro/credentials/sertifisert/avslutning); **per-produkt overrides** (pris, før-pris, burst-tekst, navn, vis/skjul burst+QR); **klikkbare PDF-lenker** via jsPDF.link; **FT-artikkelnummer** scraping (`.prd-num-label`); fix av pris-klipping i standard productCard; fix av FT-logo-størrelse i topp-stripe (3.4mm → 6.3mm); åpningstider rettet 07:00-15:00 (var feil 07:30-16:00 åtte steder); fjernet udokumentert «siden 2008»-claim; bruker `brit@fosen-tools.no` opprettet; **alt pushet til Vercel main**. |
 | 12. mai | **Native AI-app brand-bygging + prisplakat-utvidelse + Etiketter-system + brosjyre-fixes.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **Native AI-innholds-app** (app.native.no) konfigurert med full FT-merkevare — Skrivestil-tekst (2332/2500 tegn) med Eriks doktrine («riktig verktøy for hverdagen», ikke antall), 5 plattform-spesifikke regler (LinkedIn, FB, IG, TikTok, Bluesky), 13 toppinnlegg fra Meta-engagement-data (Husqvarna Automower, Alier Trondheim, Andøya Space, Kampfly+FOD, Norwegian Aero, Fosen VGS Flyfag, Forsvaret 20 år, Widerøe, Fribo Bygg, Norsk Transformator, Ordførerkjedet), 11 avviste innholdsposter med konkrete eksempler (tom skuff-mantra, fake spokesmodel, AI-HDFI, blå/rød fargemix, antall-som-feature, plastplate-vs-HDFI-terminologi); **prisplakat utvidet** med data-drevne redigerbare special slides + 10 nye justeringer (klokke, lager-pill, pris-reveal, QR på produkt-slide, brand-spotlight, multi-produkt, combo, custom-slide-rekkefølge, pause-knapp + slide-navigasjon-strip i preview, fokuser-på-redigert-slide); **Etiketter-system** bygd for Brother QL-580N (`/etikett`, 62×29mm DK-11209, navn + SKU + QR med auto-UTM, jsPDF-eksport, importér fra brosjyre/prisplakat); **brosjyre-fixes** (FT-hvit-SVG CSS-klasse-kollisjon fjernet, midtstill-verktøy i Egenskaper-panel, **auto-save-bug** som overskrev server med cached localStorage, Husqvarna-logo lagt på forsiden via Supabase PATCH, åpningstider 07:00-15:00 fikset i resterende preset). **9 Vercel-deploys** gjennom dagen. **Husqvarna-brosjyren stemmer nå på Vercel.** |
-| 13. mai | **Pmax brand-andel-diagnose.** Verifisert via Google Ads API at alle 4 negative keywords (`fosen tools`/`fosentools` × EXACT+PHRASE) er ENABLED på Pmax + delt liste «Konkurrent-brands» (28 keywords) er applied. Brand-andel synker jevnt: 69.2% (20. apr) → 66.7% (4. mai) → 65.1% (9. mai) → **64.8% (13. mai)** — absolutt brand-klikk -28% (1135 → 816). Forventet 5-15% nås rundt 8. juli-aug. **Kritisk quirk oppdaget:** `google_ads_search_terms` med `source=pmax_insight` er **rullende 90-dagers aggregat** per snapshot — ikke daglig data. Hver snapshot inneholder samme 90d-vindu, så effekten av endringer tar opptil 90d å reflekteres. Lagret som memory `feedback_pmax_insight_rolling_90d.md`. Cron-sync verifisert: kjørte 13. mai 07:23 norsk tid, 2 888 records Google Ads. |
+| 13. mai | **Pmax brand-andel-diagnose + Innholdsmotor MVP bygd.** Pmax: verifisert via Google Ads API at alle 4 negative keywords (`fosen tools`/`fosentools` × EXACT+PHRASE) er ENABLED på Pmax + delt liste «Konkurrent-brands» (28 keywords) er applied. Brand-andel synker jevnt: 69.2% (20. apr) → 64.8% (13. mai) — absolutt brand-klikk -28%. **Kritisk quirk oppdaget:** `google_ads_search_terms` med `source=pmax_insight` er **rullende 90-dagers aggregat** per snapshot. **Innholdsmotor:** AI-drevet content engine på `/innholdsmotor` som erstatter Native. Bruker `gemini-2.5-flash` for caption + `gemini-2.5-flash-image` (Nano Banana 2) for bilde. 7 FT-spesifikke archetypes (foto/definisjon/statement/kontrast/milepael/sitat/sertifikat) med eksplisitte forbud mot AI-HDFI/AI-mennesker. DB-backet korpus + live feedback-loop. Migrations 014-016 + ~30 seed-entries. Modell-sammenligning: Nano Banana >> Imagen 4.0 for FT-stilen. $900 Gemini-kreditt over 3 mnd, estimert ~$10-30/mnd faktisk forbruk. |
 
 ---
 
