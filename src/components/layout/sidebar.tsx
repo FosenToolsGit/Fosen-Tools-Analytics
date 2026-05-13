@@ -132,6 +132,7 @@ const navItems: NavEntry[] = [
       { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
     ],
   },
+  { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
   { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
   { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
   { label: "Etiketter", href: "/etikett", icon: BookOpen },
