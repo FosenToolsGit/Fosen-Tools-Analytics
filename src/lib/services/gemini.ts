@@ -166,17 +166,12 @@ export async function generateImage(
     });
   }
 
-  const aspectDirective =
-    aspect === "1:1"
-      ? `MANDATORY OUTPUT FORMAT: render as a PERFECT SQUARE 1:1 image (2048×2048 pixels). NOT a wide banner. NOT landscape. NOT portrait. Width MUST EQUAL height exactly. Composition must work within square frame — do not stretch or letterbox.`
-      : aspect === "4:5"
-        ? `MANDATORY OUTPUT FORMAT: render as 4:5 portrait aspect (1638×2048 pixels). NOT square. NOT 16:9. Vertical orientation, slightly taller than wide.`
-        : aspect === "9:16"
-          ? `MANDATORY OUTPUT FORMAT: render as 9:16 portrait aspect (1152×2048 pixels). Vertical stories/reels format.`
-          : `MANDATORY OUTPUT FORMAT: render as 16:9 landscape aspect (2048×1152 pixels).`;
+  // Nano Banana 2 støtter "1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9", "21:9".
+  // IKKE "4:5" — vi mapper det til nærmeste "3:4" portrait.
+  const sdkAspect = aspect === "4:5" ? "3:4" : aspect;
 
   parts.push({
-    text: `${input.prompt}\n\n${aspectDirective}`,
+    text: `${input.prompt}\n\nMANDATORY OUTPUT FORMAT: ${sdkAspect} aspect ratio. The composition must work within this frame.`,
   });
 
   const response = await ai.models.generateContent({
@@ -184,6 +179,11 @@ export async function generateImage(
     contents: [{ role: "user", parts }],
     config: {
       responseModalities: ["IMAGE"],
+      // Eksplisitt aspect ratio via SDK — text-direktivet alene ignoreres ofte
+      // av Nano Banana 2, men imageConfig.aspectRatio er hard constraint.
+      imageConfig: {
+        aspectRatio: sdkAspect,
+      },
     },
   });
 
