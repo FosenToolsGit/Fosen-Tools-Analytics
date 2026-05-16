@@ -127,6 +127,11 @@ export async function generateCaptionsJson(
             description:
               "Valgfri kort italic-linje under hovedheadline (3-6 ord). Eksempler: «Bygget for null feilmargin.», «Visuell kontroll. Ikke fredagsdugnad.», «5S skal gjøre rot umulig.» La være tomt hvis ingen passer.",
           },
+          image_body: {
+            type: "string",
+            description:
+              "Valgfri støttesetning for arketyper som krever det (definisjon, sertifikat, milepael). Maks 12 ord, naturlig norsk. For definisjon: kort presis ordbok-stil-definisjon. For sertifikat: trust-anker-setning. For milepael: kontekst-setning. La være tomt hvis ingen passer. Eksempel for «Skreddersydd»: «CAD-tegnet, CNC-maskinert og segmentert etter brukerens arbeidsflyt.»",
+          },
           internal_notes: { type: "string" },
         },
         required: [

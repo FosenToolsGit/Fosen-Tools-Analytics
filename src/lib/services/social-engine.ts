@@ -98,6 +98,8 @@ export interface GenerateDraftResult {
     image_headline_red_word?: string;
     /** Optional kort tagline-linje under hovedheadline (3-6 ord italic) */
     image_subtagline?: string;
+    /** Optional støttesetning (definisjon-tekst, trust-anker, kontekst — maks 12 ord) */
+    image_body?: string;
     internal_notes?: string;
   };
   ai_images: Array<{
@@ -253,6 +255,7 @@ Du skal returnere én JSON-objekt med disse feltene:
   "image_headline": "<KORT FT-stil hovedheadline for poster-bildet. 5-8 ord på norsk. Naturlig setning som splitter pent over 2-3 linjer. SELVSTENDIG (ikke avhengig av annet for kontekst). End med . eller ?. Eksempler: «Halvparten av skuffene bør stå tomme.» / «Bygget for null feilmargin.» / «Forsvarets standard i din hverdag.»>",
   "image_headline_red_word": "<ETT nøkkelord fra image_headline som skal være FT-rødt for emphasis (resten av teksten er hvit). Velg ordet som visuelt anker meningen. Hvis ingen åpenbar, la være tomt.>",
   "image_subtagline": "<Valgfri kort italic-linje under headline (3-6 ord). Tomt hvis ingen passer. Eksempler: «Bygget for null feilmargin.», «Visuell kontroll. Ikke fredagsdugnad.»>",
+  "image_body": "<Valgfri støttesetning for arketyper som krever det (definisjon, sertifikat, milepael). Maks 12 ord, naturlig korrekt norsk. For DEFINISJON: kort presis ordbok-stil-definisjon (eks: «CAD-tegnet, CNC-maskinert og segmentert etter brukerens arbeidsflyt.»). For SERTIFIKAT: trust-anker-setning. For MILEPAEL: kontekst. La være tomt hvis ingen passer.>",
   "internal_notes": "<valgfri: noe operatøren bør vite>"
 }
 \`\`\`
@@ -377,7 +380,7 @@ export function buildUserPrompt(input: GenerateDraftInput): string {
 const FT_DESIGN = {
   bgRed: `Full-bleed solid FT-red #ED1C24 background — saturated, no gradient.`,
   bgInk: `Full-bleed FT-ink #0F1115 background (deep dark gray-black) with a subtle FT-red #ED1C24 radial glow originating from one corner (15-20% opacity max), fading smoothly to near-black at the opposite corner.`,
-  bgCream: `Solid warm off-white #F8F5EE background (NOT pure white — slightly cream/parchment colored).`,
+  bgCream: `Solid light beige newspaper-print background, color #F5F1E8 — warm BUT NOT pink, NOT rosa, NOT salmon. Think uncoated cream paper / vintage book page. Slightly desaturated yellow-beige, not warm enough to look orange. If unsure, lean toward more gray than warm.`,
 
   decorOnDark: `MANDATORY blueprint decoration (thin white lines, 1-1.5px, 50-60% opacity — this is FT's engineering DNA signature, EVERY FT poster has it):
 - TOP-RIGHT corner: a CAD-style dimension/ruler line with small tickmarks, length ~10-15% of canvas width
@@ -459,6 +462,8 @@ export function buildImagePrompt(
     red_word?: string | null;
     /** Kort italic-tagline under hero (LLM-komponert) */
     subtagline?: string | null;
+    /** Støttesetning (verbatim) — brukes i definisjon/sertifikat (LLM-komponert) */
+    body?: string | null;
   }
 ): { prompt: string; aspectRatio: "1:1" | "4:5" | "16:9" | "9:16" } {
   const aspectMap: Record<Archetype, "1:1" | "4:5" | "16:9" | "9:16"> = {
@@ -511,6 +516,7 @@ export function buildImagePrompt(
   const eyebrow = context.eyebrow?.toLowerCase().trim() ?? "";
   const redWord = context.red_word?.trim() ?? "";
   const subtagline = context.subtagline?.trim() ?? "";
+  const body = context.body?.trim() ?? "";
 
   // Instruks om red-keyword-emphasis (kun hvis caption-LLM ga oss et ord
   // som faktisk finnes i hero-teksten).
@@ -536,10 +542,15 @@ LAYOUT (match the FT «Skreddersydd» reference exactly):
 3. Immediately to the right of the hero word, in smaller italic gray: "${eyebrow || "adjektiv"}"
 4. Phonetic pronunciation in tracked monospace gray (small), to the right of the italic label: "/${(eyebrow ? eyebrow : "kort-form")}/"
 5. Thin horizontal hairline below the hero word, FT-ink at 20% opacity, full width
-6. ONE definition sentence below the hairline, Manrope Regular, FT-ink, smaller (~5% canvas height). Compose a SHORT crisp definition (max ~14 words) that captures the FT-meaning of "${heroTextShort}" — engineering, precision, brukerflyt-orientert. ONE noun inside the sentence MAY be visually underlined with a thin FT-red curved hand-drawn underline (sparingly). End sentence with an asterisk.
-7. Asterisk footnote at very bottom-left in tiny gray italic: short context-line (e.g. "Oppnådd gjennom HDFI-presisjon."). Compose to match.
+6. ${
+          body
+            ? `Definition sentence below the hairline — render this text EXACTLY (verbatim, do not paraphrase, do not invent words), Manrope Regular, FT-ink, smaller (~5% canvas height): "${body}" — end with an asterisk. ONE noun MAY be visually underlined with a thin FT-red curved hand-drawn underline.`
+            : `(No definition body for this post — leave whitespace below hairline.)`
+        }
+7. Asterisk footnote at very bottom-left in tiny gray italic: "*Oppnådd gjennom HDFI-presisjon."
 
 ${FT_DESIGN.spellingRule}
+IMPORTANT: do NOT compose or invent any definition text yourself. Only render the verbatim definition above. If no definition body was given, skip step 6 entirely — do not generate placeholder words.
 
 ${FT_DESIGN.decorOnCream}
 
@@ -669,7 +680,11 @@ LAYOUT:
 3. LOWER HALF (40% canvas height): set on a slightly darker black band that ends at the shield's bottom edge (subtle band-cut effect). Render the headline EXACTLY as given below, broken across 2-3 lines, MASSIVE bold sans-serif (Manrope Black, fills 75% canvas width).
    Headline text (use VERBATIM — do not paraphrase, do not add words): "${heroTextShort}"
    ${redWordInstruction}
-4. ${subtaglineInstruction}
+4. ${
+        body
+          ? `Trust-anchor sentence below headline (white, small, italic-ish, single line, ~50% opacity) — render EXACTLY: "${body}"`
+          : subtaglineInstruction
+      }
 
 ${FT_DESIGN.spellingRule}
 
@@ -835,6 +850,7 @@ export async function generateDraft(
         style: input.style ?? null,
         red_word: captions.image_headline_red_word?.trim() || null,
         subtagline: captions.image_subtagline?.trim() || null,
+        body: captions.image_body?.trim() || null,
       }
     );
 
