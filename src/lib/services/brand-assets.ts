@@ -120,7 +120,9 @@ export function brandRefsFor(
  *
  * Per-process cache så vi bare leser disk én gang per archetype.
  */
-const approvedCache = new Map<string, ImageRef[]>();
+// Cache HELE listen (disk-IO sparing) — men shuffle skjer per call så vi
+// får faktisk variasjon på tvers av genereringer i samme prosess.
+const approvedDiskCache = new Map<string, ImageRef[]>();
 
 const APPROVED_MIME: Record<string, string> = {
   ".png": "image/png",
@@ -157,28 +159,35 @@ export function approvedRefsFor(
 ): ImageRef[] {
   const limit = options.limit ?? 3;
   const style = options.style && options.style !== "auto" ? options.style : null;
-  const cacheKey = `${archetype}|${style ?? "-"}|${limit}`;
-  const cached = approvedCache.get(cacheKey);
-  if (cached) return cached;
 
-  // _all/: alltid-på godkjente refs uavhengig av archetype/stil
-  // <archetype>/: refs som matcher innholdstype
-  // _<style>/: refs som matcher bruker-valgt visuell stil (profesjonell, skreddersydd, ...)
-  const all = [
-    ...readApprovedDir("_all"),
-    ...readApprovedDir(archetype),
-    ...(style ? readApprovedDir(`_${style}`) : []),
-  ];
-  if (all.length === 0) {
-    approvedCache.set(cacheKey, []);
-    return [];
+  // Disk-cache nøkkel: bare archetype+style (samme pool hver gang)
+  const diskKey = `${archetype}|${style ?? "-"}`;
+  let all = approvedDiskCache.get(diskKey);
+  if (!all) {
+    // _all/: alltid-på godkjente refs uavhengig av archetype/stil
+    // <archetype>/: refs som matcher innholdstype
+    // _<style>/: refs som matcher bruker-valgt visuell stil (profesjonell, skreddersydd, ...)
+    all = [
+      ...readApprovedDir("_all"),
+      ...readApprovedDir(archetype),
+      ...(style ? readApprovedDir(`_${style}`) : []),
+    ];
+    approvedDiskCache.set(diskKey, all);
   }
 
-  // Stokk og kutt til limit. Math.random gir variasjon på tvers av sesjoner —
-  // brukeren vil at ulike runs skal se forskjellige refs etter hvert.
-  const shuffled = all.slice().sort(() => Math.random() - 0.5).slice(0, limit);
-  approvedCache.set(cacheKey, shuffled);
-  return shuffled;
+  if (all.length === 0) return [];
+
+  // Fisher-Yates partial shuffle: gir oss `limit` tilfeldige refs UTEN å
+  // mutere kilde-listen, og kjøres på hver call (ikke cachet) → faktisk
+  // variasjon mellom genereringer.
+  const pool = all.slice();
+  const out: ImageRef[] = [];
+  for (let i = 0; i < limit && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    out.push(pool[idx]);
+    pool.splice(idx, 1);
+  }
+  return out;
 }
 
 /**
