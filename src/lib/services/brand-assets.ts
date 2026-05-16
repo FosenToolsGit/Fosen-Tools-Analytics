@@ -109,6 +109,71 @@ export function brandRefsFor(
 }
 
 /**
+ * Last godkjente-innlegg som style-refs for en gitt archetype.
+ *
+ * Du kuratører lokalt: drop bilder i `public/social/approved-posts/<archetype>/`
+ * (foto/definisjon/statement/kontrast/milepael/sitat/sertifikat — eller `_all/`
+ * for refs som skal gjelde uansett archetype). Støttet filtype: .png/.jpg/.jpeg/.webp.
+ *
+ * Vi plukker tilfeldig opp til `limit` filer (default 3) for å holde ref-bunken
+ * fokusert — for mange refs forvirrer Gemini. `_all/` blandes inn.
+ *
+ * Per-process cache så vi bare leser disk én gang per archetype.
+ */
+const approvedCache = new Map<string, ImageRef[]>();
+
+const APPROVED_MIME: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+};
+
+function readApprovedDir(subdir: string): ImageRef[] {
+  const dir = path.join(process.cwd(), "public/social/approved-posts", subdir);
+  if (!fs.existsSync(dir)) return [];
+  const out: ImageRef[] = [];
+  for (const name of fs.readdirSync(dir)) {
+    const ext = path.extname(name).toLowerCase();
+    const mime = APPROVED_MIME[ext];
+    if (!mime) continue;
+    const full = path.join(dir, name);
+    const stat = fs.statSync(full);
+    if (!stat.isFile()) continue;
+    if (stat.size > 5 * 1024 * 1024) continue; // Cap 5 MB per fil
+    const buf = fs.readFileSync(full);
+    out.push({
+      base64: buf.toString("base64"),
+      mimeType: mime,
+      label: `STYLE REFERENCE (approved post — ${subdir}/${name}): match the visual style, composition, mood and typography approach of this image. This is a reference for HOW the output should look, not WHAT it should contain.`,
+    });
+  }
+  return out;
+}
+
+export function approvedRefsFor(
+  archetype: string,
+  options: { limit?: number } = {}
+): ImageRef[] {
+  const limit = options.limit ?? 3;
+  const cacheKey = `${archetype}|${limit}`;
+  const cached = approvedCache.get(cacheKey);
+  if (cached) return cached;
+
+  const all = [...readApprovedDir(archetype), ...readApprovedDir("_all")];
+  if (all.length === 0) {
+    approvedCache.set(cacheKey, []);
+    return [];
+  }
+
+  // Stokk og kutt til limit. Math.random gir variasjon på tvers av sesjoner —
+  // brukeren vil at ulike runs skal se forskjellige refs etter hvert.
+  const shuffled = all.slice().sort(() => Math.random() - 0.5).slice(0, limit);
+  approvedCache.set(cacheKey, shuffled);
+  return shuffled;
+}
+
+/**
  * Hent eksternt bilde (f.eks. scrapet produkt-foto fra fosen-tools.no) som
  * ImageRef. Returnerer null hvis fetch feiler eller responsen ikke er et bilde.
  */

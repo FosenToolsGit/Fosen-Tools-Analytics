@@ -6,7 +6,7 @@ import {
   DEFAULT_IMAGE_MODEL,
   type ImageRef,
 } from "./gemini";
-import { brandRefsFor, fetchImageAsRef } from "./brand-assets";
+import { brandRefsFor, approvedRefsFor, fetchImageAsRef } from "./brand-assets";
 import {
   scrapeProductByUrl,
   scrapePageByUrl,
@@ -591,11 +591,14 @@ export async function generateDraft(
 
     if (imgPrompt) {
       try {
-        // Bygg referansebilder: brand-assets + evt. scrapet produktbilde
+        // Bygg referansebilder: brand-assets + godkjente innlegg + evt. produktbilde
         const refs: ImageRef[] = brandRefsFor(input.archetype, {
           isJubilee: detectJubilee(heroText),
           wordmarkVariant: wordmarkVariantFor(input.archetype),
         });
+
+        // Style-refs fra kuratert public/social/approved-posts/<archetype>/-mappe
+        for (const ref of approvedRefsFor(input.archetype)) refs.push(ref);
 
         const scraped = input.source_data as Partial<ScrapedProduct> | null;
         if (scraped?.image_url) {
