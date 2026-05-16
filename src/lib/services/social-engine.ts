@@ -681,20 +681,16 @@ function extractHeroText(
   const brief = input.brief?.trim() ?? "";
   const title = input.title.trim();
 
-  // Hvis brief inneholder en kort one-liner (under ~30 tegn), bruk den
-  if (brief && brief.length <= 30 && !brief.includes("\n")) return brief;
-
-  // Hvis tittel er kort, bruk den
-  if (title.length <= 30) return title;
-
-  // Ellers: ta første ordet av tittel
-  const firstWord = title.split(/\s+/)[0] ?? title;
-  // Spesialtilfeller
+  // Milepael: prøv å trekke ut tall først (matcher FT-mønsteret «100 år»)
   if (archetype === "milepael") {
-    const numMatch = (brief + " " + title).match(/\b(\d{1,3})\b/);
+    const numMatch = (brief + " " + title).match(/\b(\d{1,4}\+?)\b/);
     if (numMatch) return numMatch[1];
   }
-  return firstWord;
+
+  // Foretrekk brief (mer kuratert), ellers tittel.
+  // Returnerer den FULLE strengen — shortenForImage() i buildImagePrompt
+  // kutter til riktig lengde på ord-grense per archetype-behov.
+  return brief || title;
 }
 
 function extractEyebrow(
