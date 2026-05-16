@@ -100,6 +100,10 @@ export interface GenerateDraftResult {
     image_subtagline?: string;
     /** Optional støttesetning (definisjon-tekst, trust-anker, kontekst — maks 12 ord) */
     image_body?: string;
+    /** Kontrast venstre-spalte-label (default «HYLLEVARE») */
+    image_kontrast_left_label?: string;
+    /** Kontrast høyre-spalte-label (default «SKREDDERSYDD») */
+    image_kontrast_right_label?: string;
     internal_notes?: string;
   };
   ai_images: Array<{
@@ -256,6 +260,8 @@ Du skal returnere én JSON-objekt med disse feltene:
   "image_headline_red_word": "<ETT nøkkelord fra image_headline som skal være FT-rødt for emphasis (resten av teksten er hvit). Velg ordet som visuelt anker meningen. Hvis ingen åpenbar, la være tomt.>",
   "image_subtagline": "<Valgfri kort italic-linje under headline (3-6 ord). Tomt hvis ingen passer. Eksempler: «Bygget for null feilmargin.», «Visuell kontroll. Ikke fredagsdugnad.»>",
   "image_body": "<MAKS 8 ord. KORT, presis, naturlig norsk. Foretrekk enkle ord (Nano Banana misstaver komplekse). For DEFINISJON: ordbok-stil. For SERTIFIKAT: trust-anker. For MILEPAEL: kontekst. Eksempler: «CAD-tegnet og CNC-maskinert.», «Bygget for null feilmargin.», «Levert til Forsvaret i tjuesju år.» La være tomt hvis ingen kort passer.>",
+  "image_kontrast_left_label": "<KUN for archetype=kontrast. 1-2 ord. Default «HYLLEVARE» når kontrasten er FT vs hyllevare. Tomt hvis ikke kontrast.>",
+  "image_kontrast_right_label": "<KUN for archetype=kontrast. 1-2 ord. Default «SKREDDERSYDD». Tomt hvis ikke kontrast.>",
   "internal_notes": "<valgfri: noe operatøren bør vite>"
 }
 \`\`\`
@@ -470,6 +476,10 @@ export function buildImagePrompt(
     subtagline?: string | null;
     /** Støttesetning (verbatim) — brukes i definisjon/sertifikat (LLM-komponert) */
     body?: string | null;
+    /** Kontrast venstre-spalte-label (verbatim) */
+    kontrast_left?: string | null;
+    /** Kontrast høyre-spalte-label (verbatim) */
+    kontrast_right?: string | null;
   }
 ): { prompt: string; aspectRatio: "1:1" | "4:5" | "16:9" | "9:16" } {
   const aspectMap: Record<Archetype, "1:1" | "4:5" | "16:9" | "9:16"> = {
@@ -523,6 +533,8 @@ export function buildImagePrompt(
   const redWord = context.red_word?.trim() ?? "";
   const subtagline = context.subtagline?.trim() ?? "";
   const body = context.body?.trim() ?? "";
+  const kontrastLeft = context.kontrast_left?.trim() || "HYLLEVARE";
+  const kontrastRight = context.kontrast_right?.trim() || "SKREDDERSYDD";
 
   // Instruks om red-keyword-emphasis (kun hvis caption-LLM ga oss et ord
   // som faktisk finnes i hero-teksten).
@@ -546,17 +558,17 @@ LAYOUT (match the FT «Skreddersydd» reference exactly):
 1. ${FT_DESIGN.bgCream}
 2. Hero word at upper-left third, MASSIVE (Manrope Black, FT-ink #0F1115, 55-65% canvas width): "${heroTextShort}"
 3. Immediately to the right of the hero word, in smaller italic gray: "${eyebrow || "adjektiv"}"
-4. Phonetic pronunciation in tracked monospace gray (small), to the right of the italic label: "/${(eyebrow ? eyebrow : "kort-form")}/"
+4. (Skip pronunciation guide — Nano Banana misspells phonetic transcriptions. Leave space here clean.)
 5. Thin horizontal hairline below the hero word, FT-ink at 20% opacity, full width
 6. ${
           body
-            ? `Definition sentence below the hairline — render this text EXACTLY (verbatim, do not paraphrase, do not invent words), Manrope Regular, FT-ink, smaller (~5% canvas height): "${body}" — end with an asterisk. ONE noun MAY be visually underlined with a thin FT-red curved hand-drawn underline.`
+            ? `Definition sentence below the hairline — render this text EXACTLY (verbatim, do not paraphrase, do not invent words), Manrope Regular, FT-ink, smaller (~5% canvas height): "${body}" — end with a period. ONE noun MAY be visually underlined with a thin FT-red curved hand-drawn underline.`
             : `(No definition body for this post — leave whitespace below hairline.)`
         }
-7. Asterisk footnote at very bottom-left in tiny gray italic: "*Oppnådd gjennom HDFI-presisjon."
+
+NO OTHER TEXT in the image (no footnote, no pronunciation guide, no examples). The hero word + eyebrow + optional body are the COMPLETE text content. Do NOT invent supporting text.
 
 ${FT_DESIGN.spellingRule}
-IMPORTANT: do NOT compose or invent any definition text yourself. Only render the verbatim definition above. If no definition body was given, skip step 6 entirely — do not generate placeholder words.
 
 ${FT_DESIGN.decorOnCream}
 
@@ -599,17 +611,20 @@ ${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
 
     case "kontrast":
       // 4:5 to-spalter sammenligning, men nå med FT-decor + framed wordmark.
+      // ALL tekst er VERBATIM fra caller — ingen AI-komposisjon (eliminer typo-risk).
       return {
         prompt: `Vertical two-column comparison poster (4:5), FT-style.
 
 LAYOUT:
-1. LEFT column (50% width): muted gray #4D4D4D background (NOT pure gray — slightly desaturated cool).
-   - Small white uppercase label top, tracked: "HYLLEVARE"
+1. LEFT column (50% width): muted gray #4D4D4D background (slightly desaturated cool, NOT pure gray).
+   - At top: small white uppercase label, tracked, rendered EXACTLY as: "${kontrastLeft}"
 2. RIGHT column (50% width): FT-red #ED1C24 background.
-   - Small white uppercase label top, tracked: composed dynamically from headline "${heroTextShort}" (extract the FT-side concept, max 1-2 words, e.g. "SKREDDERSYDD")
-3. Center divider: thin white vertical line (1.5px), full height.
-4. Below the labels in each column: optional small visual icon (wireframe outline, white) representing the contrast. Same line-weight as decoration. Optional — only include if the contrast suggests a clear visual pair (e.g. caliper vs tape-measure, neat-vs-chaotic drawer).
-5. Above the two columns at very top-center: ONE short framing line in white (small italic): a phrase from "${heroTextShort}".
+   - At top: small white uppercase label, tracked, rendered EXACTLY as: "${kontrastRight}"
+3. Center divider: thin white vertical line (1.5px), full height of the columns.
+4. Optional small wireframe icon in each column (white line-art, 1.5px) representing the contrast — only abstract icons (e.g. messy-vs-organized drawer outline). NO text labels on icons.
+5. Top center above columns: ${heroTextShort ? `render the framing line EXACTLY as: "${heroTextShort}" (small white italic, single line)` : "(no top framing line)"}.
+
+NO OTHER TEXT in the image. Do NOT compose bullets, descriptions, or supporting sentences. The two labels and optional top line are the COMPLETE text content. Any additional text would be a typo and must be omitted.
 
 ${FT_DESIGN.spellingRule}
 
@@ -632,8 +647,10 @@ LAYOUT:
 1. ${FT_DESIGN.bgRed}
 2. Hero number stacked at upper half — MASSIVE (60% canvas height), Manrope Black italic-slanted display style, white. Extract the primary number from the text: "${heroTextShort}" — render JUST the number (e.g. "100", "25", "20+", "1200+").
 3. Small italic label inline to the right of the number, lowercase, smaller (15-20% of number height): the unit (e.g. "år", "timer", "kunder")
-4. Below the number, supporting headline in 2-3 lines of bold white sans-serif (Manrope Black, ~12-15% canvas height per line): the rest of the statement from "${heroTextShort}", broken naturally. RENDER EXACTLY — do not paraphrase.
+4. ${body ? `Below the number, supporting headline in 2-3 lines of bold white sans-serif (Manrope Black, ~12-15% canvas height per line). Render EXACTLY as: "${body}". Do NOT paraphrase, do NOT add words.` : `(No supporting body for this post — leave whitespace below number.)`}
 5. If the number is "25" or "100" (jubileum), color the number with a gold gradient: #85704D at top → #DBB78B at bottom.
+
+NO OTHER TEXT in the image. The number + eyebrow + optional body are the COMPLETE text content.
 ${redWordInstruction}
 ${subtaglineInstruction}
 
@@ -658,8 +675,8 @@ LAYOUT:
 1. ${FT_DESIGN.bgRed}
 2. The quote IS the hero. Render this text EXACTLY in white Manrope Black wrapped across 2-3 lines, fills 65-75% canvas width, surrounded by chevron-style quotation marks «...»:
 «${heroTextShort}»
-3. BELOW the quote (slightly smaller, regular weight): the framing reaction-line: ${subtagline ? `"${subtagline}"` : "(compose a SHORT 2-3 word reaction in white, e.g. \"Feil startpunkt.\", \"Riktig spørsmål.\" — match topic tone)"}
-4. NO attribution in the image (attribution goes in the caption).
+3. ${subtagline ? `BELOW the quote (slightly smaller, regular weight, white): render EXACTLY as: "${subtagline}"` : "(No reaction-line for this post — leave whitespace below quote.)"}
+4. NO attribution, NO supporting sentence in the image. The quote + optional reaction-line are the COMPLETE text content.
 ${redWordInstruction}
 
 ${FT_DESIGN.spellingRule}
@@ -868,6 +885,8 @@ export async function generateDraft(
         red_word: captions.image_headline_red_word?.trim() || null,
         subtagline: captions.image_subtagline?.trim() || null,
         body: captions.image_body?.trim() || null,
+        kontrast_left: captions.image_kontrast_left_label?.trim() || null,
+        kontrast_right: captions.image_kontrast_right_label?.trim() || null,
       }
     );
 

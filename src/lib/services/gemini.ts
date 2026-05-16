@@ -132,6 +132,16 @@ export async function generateCaptionsJson(
             description:
               "Valgfri støttesetning for arketyper som krever det (definisjon, sertifikat, milepael). MAKS 8 ord. KORT, presis, naturlig norsk. Foretrekk enkle ord — Nano Banana misstaver lange/sammensatte ord, så bytt ut komplekse ord med enklere synonymer der mulig. For definisjon: ordbok-stil. For sertifikat: trust-anker. For milepael: kontekst. La være tomt hvis ingen kort passer. Eksempler: «CAD-tegnet og CNC-maskinert etter din arbeidsflyt.», «Bygget for null feilmargin.», «Levert til Forsvaret i tjuesju år.»",
           },
+          image_kontrast_left_label: {
+            type: "string",
+            description:
+              "KUN for archetype=kontrast. Venstre spalte sin etikett (1-2 ord). Default «HYLLEVARE» når kontrasten er FT vs hyllevare. Andre eksempler: «GENERISK», «FØR», «STANDARD». La være tomt hvis ikke kontrast.",
+          },
+          image_kontrast_right_label: {
+            type: "string",
+            description:
+              "KUN for archetype=kontrast. Høyre spalte sin etikett (1-2 ord). Default «SKREDDERSYDD». Andre eksempler: «HDFI», «ETTER», «FT-LØSNING». La være tomt hvis ikke kontrast.",
+          },
           internal_notes: { type: "string" },
         },
         required: [
