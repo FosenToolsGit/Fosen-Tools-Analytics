@@ -39,13 +39,13 @@ const TOPIC_KINDS = [
 ] as const;
 
 const ARCHETYPES = [
-  { value: "foto", label: "Foto (ekte bilde, ingen AI)" },
-  { value: "definisjon", label: "Definisjon (ordbok-stil)" },
-  { value: "statement", label: "Statement (kort kraftig)" },
-  { value: "kontrast", label: "Kontrast (sammenligning)" },
-  { value: "milepael", label: "Milepæl (store tall)" },
-  { value: "sitat", label: "Sitat (kundehistorie)" },
-  { value: "sertifikat", label: "Sertifikat (trust-signaler)" },
+  { value: "foto", label: "Foto — ekte bilde, hopper over AI-bildegen" },
+  { value: "definisjon", label: "Definisjon — ordbok-stil («Skreddersydd / adj. / CAD-tegnet...»)" },
+  { value: "statement", label: "Statement — kort kraftig utsagn («Halvparten av skuffene bør stå tomme»)" },
+  { value: "kontrast", label: "Kontrast — X vs Y / FØR vs ETTER" },
+  { value: "milepael", label: "Milepæl — store tall (20+ år, 100 år, 1 200 timer)" },
+  { value: "sitat", label: "Sitat — direkte ord («Vi trenger åtte skuffer.»)" },
+  { value: "sertifikat", label: "Sertifikat — trust-anker (Forsvaret, Miljøfyrtårn, ISO)" },
 ] as const;
 
 // Visuell stil — bestemmer hvilken _<style>/-mappe Gemini får refs fra.
