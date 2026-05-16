@@ -1187,6 +1187,7 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 11. mai | **Mega-dag — dynamiske maler, jubileumslogoer, prisplakat-system, slideshow for butikk-TV.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **14 dynamiske maler** i brosjyre-editoren (bytter layout uten å miste produkter — 5 forsider + 8 produktgrid + bakside); **offisielle jubileumslogoer** (25-år + 100-år, gull-gradient SVG) integrert som ny **sigill-objekt-type** (12. type) med edit-panel; **Husqvarna-brosjyren bygd fra grunnen** med dynamiske maler (8 sider, 33 produkter, Husqvarna-logo som image på forsiden); **prisplakat-system helt nytt** (`/prisplakat`) med 5 formater (A4 single/2up/4up + slideshow landscape/portrait), container queries (cqh) for responsiv skalering, fullscreen API med klikk-overlay, ekte QR-koder med UTM, «Importér fra brosjyre», «Topp 8 populære», 4 atmosfæriske spesialslides (intro/credentials/sertifisert/avslutning); **per-produkt overrides** (pris, før-pris, burst-tekst, navn, vis/skjul burst+QR); **klikkbare PDF-lenker** via jsPDF.link; **FT-artikkelnummer** scraping (`.prd-num-label`); fix av pris-klipping i standard productCard; fix av FT-logo-størrelse i topp-stripe (3.4mm → 6.3mm); åpningstider rettet 07:00-15:00 (var feil 07:30-16:00 åtte steder); fjernet udokumentert «siden 2008»-claim; bruker `brit@fosen-tools.no` opprettet; **alt pushet til Vercel main**. |
 | 12. mai | **Native AI-app brand-bygging + prisplakat-utvidelse + Etiketter-system + brosjyre-fixes.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **Native AI-innholds-app** (app.native.no) konfigurert med full FT-merkevare — Skrivestil-tekst (2332/2500 tegn) med Eriks doktrine («riktig verktøy for hverdagen», ikke antall), 5 plattform-spesifikke regler (LinkedIn, FB, IG, TikTok, Bluesky), 13 toppinnlegg fra Meta-engagement-data (Husqvarna Automower, Alier Trondheim, Andøya Space, Kampfly+FOD, Norwegian Aero, Fosen VGS Flyfag, Forsvaret 20 år, Widerøe, Fribo Bygg, Norsk Transformator, Ordførerkjedet), 11 avviste innholdsposter med konkrete eksempler (tom skuff-mantra, fake spokesmodel, AI-HDFI, blå/rød fargemix, antall-som-feature, plastplate-vs-HDFI-terminologi); **prisplakat utvidet** med data-drevne redigerbare special slides + 10 nye justeringer (klokke, lager-pill, pris-reveal, QR på produkt-slide, brand-spotlight, multi-produkt, combo, custom-slide-rekkefølge, pause-knapp + slide-navigasjon-strip i preview, fokuser-på-redigert-slide); **Etiketter-system** bygd for Brother QL-580N (`/etikett`, 62×29mm DK-11209, navn + SKU + QR med auto-UTM, jsPDF-eksport, importér fra brosjyre/prisplakat); **brosjyre-fixes** (FT-hvit-SVG CSS-klasse-kollisjon fjernet, midtstill-verktøy i Egenskaper-panel, **auto-save-bug** som overskrev server med cached localStorage, Husqvarna-logo lagt på forsiden via Supabase PATCH, åpningstider 07:00-15:00 fikset i resterende preset). **9 Vercel-deploys** gjennom dagen. **Husqvarna-brosjyren stemmer nå på Vercel.** |
 | 13. mai | **Pmax brand-andel-diagnose + Innholdsmotor MVP bygd.** Pmax: verifisert via Google Ads API at alle 4 negative keywords (`fosen tools`/`fosentools` × EXACT+PHRASE) er ENABLED på Pmax + delt liste «Konkurrent-brands» (28 keywords) er applied. Brand-andel synker jevnt: 69.2% (20. apr) → 64.8% (13. mai) — absolutt brand-klikk -28%. **Kritisk quirk oppdaget:** `google_ads_search_terms` med `source=pmax_insight` er **rullende 90-dagers aggregat** per snapshot. **Innholdsmotor:** AI-drevet content engine på `/innholdsmotor` som erstatter Native. Bruker `gemini-2.5-flash` for caption + `gemini-2.5-flash-image` (Nano Banana 2) for bilde. 7 FT-spesifikke archetypes (foto/definisjon/statement/kontrast/milepael/sitat/sertifikat) med eksplisitte forbud mot AI-HDFI/AI-mennesker. DB-backet korpus + live feedback-loop. Migrations 014-016 + ~30 seed-entries. Modell-sammenligning: Nano Banana >> Imagen 4.0 for FT-stilen. $900 Gemini-kreditt over 3 mnd, estimert ~$10-30/mnd faktisk forbruk. |
+| 16. mai | **SEO-helsesjekk + Innholdsmotor UI-bygging.** `scripts/seo-health-check.mjs` (GSC API-basert) + `scripts/video-vs-image-seo.mjs` (video-hero -1.9 pos vs image-hero +1.6 — venter 2 uker). Innholdsmotor Ny-tab fått **PopularPagesPanel** — fetcher topp 12 sider fra GA4+Mailchimp, checkboxes for multi-select, batch-generér via `/api/social/crawl-batch`. Photoshop generative fill prompts for Facom HDFI-bilder. Sosiale medier-captions for Lufttransport AS Facom JET verktøyskap-leveranse (FB/IG/LinkedIn med UTM). |
 
 ---
 
@@ -2106,24 +2107,103 @@ Ingen nye memory-filer denne sesjonen — alt er kode-endringer eller eksterne a
 - **Bransjer-pause re-evaluering** (5. juni — kampanjen pauset 5. mai)
 - **GSC re-indeksering** — Dag 4 av re-indekserings-planen (8. mai-pending)
 
-### Prompt-mal for onsdag
+---
+
+## Siste sesjons-sammendrag (16. mai 2026)
+
+Tema: SEO-helsesjekk, video-vs-image-hero SEO-analyse, Photoshop generative fill prompts for Facom HDFI-produktbilder, sosiale medier-captions for Lufttransport AS verktøyskap-leveranse, og Innholdsmotor UI-bygging.
+
+### Bygget i kronologisk rekkefølge
+
+**1. SEO-helsesjekk-script (`scripts/seo-health-check.mjs`)**
+- Comprehensive GSC-helse: tracker key pages-posisjon, /manufacturers/ + /categories/ kannibaliserings-sjekk, movers/fallers, per-side-keyword-analyse, total site health
+- Bruker google-auth-library med GA4 service account credentials
+- Sammenligner 14-dagers perioder (siste vs forrige)
+- **Funn:** /manufacturers/-kannibalisering dør ut (redirect fungerer), men 26 URLer fra Dag 3-4 av re-indekseringslisten aldri ble gjort
+
+**2. Video-vs-image hero SEO-analyse (`scripts/video-vs-image-seo.mjs`)**
+- Sammenlignet 4 video-hero-sider (FACOM, Husqvarna, Brockhaus HEUER, Stahlwille) vs 13 image-hero-sider
+- Resultat: video-hero gjennomsnitt **-1.9 posisjoner**, image-hero **+1.6 posisjoner**
+- Konklusjon: korrelasjon, ikke kausalitet — redirect-stormen 6. mai rammet video-sidene hardest. **Venter 2 uker** (sjekk ~27. mai)
+
+**3. Photoshop generative fill prompts (Facom HDFI)**
+- Itererte bakgrunn-prompts for produktfotografering: mørk → lys → premium → flyhangar-gulv
+- Final prompt-stil: «Light grey epoxy aviation hangar floor, clean matte surface, subtle tool marks, soft diffused overhead lighting, perspective matching product angle, professional product photography studio»
+
+**4. Sosiale medier-captions: Lufttransport AS Facom JET verktøyskap**
+- FB/IG/LinkedIn med tilpassede captions per plattform
+- UTM-linker: `utm_campaign=lufttransport-facom-jet-2026-05`, `utm_content=skap-leveranse`
+- Neutral formulering: «luftfartøy» (ikke helikopter/fly) siden bruker ikke visste hvilken maskintype
+
+**5. Innholdsmotor UI — PopularPagesPanel (commit `7c3e7fe`)**
+- Erstattet statisk «Slik virker det»-infokort med dynamisk PopularPagesPanel i Ny-tab
+- Fetcher `/api/social/popular-pages?days=60&limit=12`
+- Checkboxes per side med GA4-views + Mailchimp-klikk
+- Velg alle / fjern alle toggle
+- Batch-generér-knapp → `/api/social/crawl-batch` med `skip_image: true`
+- Progress-indikator under generering, auto-switch til Kø-tab når ferdig
+- TypeScript kompilerer rent
+
+### Branch-status
+- Branch: `claude/determined-heyrovsky-e245f8`
+- 1 commit ahead of origin (trenger `git push`)
+- PR-link (manuelt): https://github.com/FosenToolsGit/Fosen-Tools-Analytics/pull/new/claude/determined-heyrovsky-e245f8
+- **gh CLI er ikke installert** — PR må opprettes manuelt via GitHub UI
+
+### Migrasjoner som MÅ kjøres i Supabase SQL editor
+- `014_social_content_engine.sql` — social_corpus + social_drafts + social_feedback
+- `015_social_assets_storage.sql` — Storage bucket for social assets
+- `016_social_corpus_seed.sql` — ~30 seed-entries for korpus
+
+### Env-variabler som MÅ legges til i Vercel
+- `GEMINI_API_KEY` — Google AI Studio API-nøkkel (paid plan, $900-kreditt)
+
+### Neste gjøremål (prioritert)
+
+**A. Innholdsmotor ferdigstilling**
+1. ~~Popular-pages panel~~ ✅ Ferdig
+2. Push branch + merge til main (eller opprett PR via GitHub UI)
+3. Kjør migrasjoner 014-016 i Supabase
+4. Legg til GEMINI_API_KEY i Vercel env vars
+5. Test ende-til-ende: fra URL → draft i kø → captions vises korrekt
+6. Vurder om batch-crawl trenger mer UX (progress-bar per URL, retry-knapp for feilede)
+
+**B. SEO-oppfølging**
+- **GSC re-indeksering Dag 3-4:** 26 URLer aldri gjort (carry-over fra 7-8. mai). Prioritet: pelicase (594 vis), wera (530), pb-swiss-tools (349)
+- **Video-hero re-sjekk ~27. mai:** Bekreft om video-sidene henter seg inn etter redirect-storm
+- **Facom-fallet:** pos 2.0 → 16.7 (sjekk om indeksert + har Facom H1-fix fra 5. mai hjulpet)
+
+**C. Operasjonelt**
+- **Pmax brand-andel:** Siste sjekk viste jevnt fall (69.2% → 64.8%). Fortsett monitorering — mål 5-15%
+- **Bransjer-pause re-evaluering** (5. juni — kampanjen pauset 5. mai)
+
+**D. Eksisterende pending**
+- Wildcard-redirect-svar fra Multicase
+- Selv-aktivering av produsent-sider i Multicase admin
+- 5 megameny CSS-klasser (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger)
+- Manglende ikoner: `verktøy-elbil.png`, `verneutstyr1.png`
+
+---
+
+### Prompt-mal for neste sesjon
 
 ```
-Hei! Vi fortsetter der vi slapp 12. mai. Hovedoppgaver:
+Hei! Vi fortsetter der vi slapp 16. mai.
 
-1. Verifiser Husqvarna-brosjyren på Vercel (logo + tider) — bør stemme nå etter auto-save-bug-fix
-2. Test midtstill-verktøyet i brosjyre-editor
-3. Pmax brand-andel-sjekk (overført fra 12. mai — vi rakk ikke denne)
-4. Sjekk om Native AI-app produserer FT-stemmen nå etter at all brand-regelbok er lagret
-5. PDF-analyse-oppfølging: Arvid Nilsson bakbestilling 27.05 + type-mismatch på Spikerplugg 8x100
+Hovedoppgaver (velg prioritet):
 
-Les CLAUDE.md, særlig 12. mai sesjons-sammendrag. Native-brand-konfigurasjon er ferdig (13 toppinnlegg + 11 avviste poster). Brukeren ga opp Native-iterering etter 8 runder, alt er låst inn.
+1. **Innholdsmotor deploy:** Push branch `claude/determined-heyrovsky-e245f8` → merge til main. Kjør migrasjoner 014-016 i Supabase. Legg GEMINI_API_KEY i Vercel. Test ende-til-ende.
 
-Brukerne tilgjengelig på Supabase:
-- adrian@fosen-tools.no (deg)
-- erik@fosen-tools.no
-- torstein@fosen-tools.no
-- brit@fosen-tools.no
+2. **GSC re-indeksering Dag 3-4:** 26 URLer gjenstår fra mai-planen (docs/seo/gsc-reindex-list-2026-05-05.md). Topp-prioritet: pelicase, wera, pb-swiss-tools, stahlwille.
 
-Si fra når du har full kontekst, så avgjør vi prioriteringen for dagen.
+3. **SEO-helsesjekk:** Kjør `node scripts/seo-health-check.mjs` for oppdatert status. Video-hero re-sjekk planlagt ~27. mai.
+
+4. **Pmax brand-andel:** Trigge sync, sjekk brand_share_pct i /ga4/google-ads/analyse. Mål: under 50%.
+
+Branch-status: `claude/determined-heyrovsky-e245f8` er 1 commit ahead (popular-pages panel). Trenger push + PR/merge.
+
+Migrasjoner 014-016 er IKKE kjørt — Innholdsmotor-API-er vil gi 500 uten disse.
+GEMINI_API_KEY er IKKE i Vercel — draft-generering feiler uten.
+
+gh CLI er IKKE installert — PR via GitHub UI: https://github.com/FosenToolsGit/Fosen-Tools-Analytics/pull/new/claude/determined-heyrovsky-e245f8
 ```
