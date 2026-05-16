@@ -351,6 +351,38 @@ export function buildUserPrompt(input: GenerateDraftInput): string {
  * Definisjoner, USPs, lengre tekst hører hjemme i caption (post-tekst), ikke
  * i bildet. Multi-image input via referenceImages gir brand-konsistens.
  */
+/**
+ * Stil-overstyringer som appenderes ETTER archetype-prompten. Recency-bias i
+ * Gemini gjør at de siste direktivene vinner — derfor kan vi bytte ut bakgrunn
+ * og mood her uten å rewrite hele prompten. Tomme strings = ingen overstyring.
+ */
+function styleModifier(style: string | null | undefined): string {
+  if (style === "profesjonell") {
+    return `
+
+=== STYLE OVERRIDE: PROFESJONELL (CINEMATIC) ===
+OVERRIDE the background and mood instructions above with this:
+- Background: full-bleed FT-ink #0F1115 (deep dark gray-black), NOT white. Apply a subtle FT-red #ED1C24 radial glow from one corner (15-25% opacity max), then fade to dark.
+- Atmosphere element: include a FADED, BLURRED background silhouette evoking precision/defense quality — a faint military jet, technical schematic line-art, or industrial machinery contour at 8-15% opacity, positioned bottom or behind text. Must not compete with hero text.
+- Lighting: cinematic, dramatic, premium-defense aesthetic.
+- All text remains the same color hierarchy but on dark bg: hero text = pure white, accents = FT-red.
+- Wordmark in white variant (not ink), positioned per archetype spec.
+Reference image «jagerfly-industriell-kvalitet.jpg» shows the exact target mood — match its darkness, depth, and ghost-element placement.`;
+  }
+  if (style === "skreddersydd") {
+    return `
+
+=== STYLE OVERRIDE: SKREDDERSYDD (CAD/WIREFRAME) ===
+OVERRIDE the background and mood instructions above with this:
+- Background: full-bleed FT-red #ED1C24, overlaid with thin white wireframe technical drawings — calipers, gears, CNC tool outlines, blueprint grids (15-25% opacity, no fills).
+- Atmosphere: engineering precision, CAD-blueprint mood, hand-drafted technical illustration aesthetic.
+- Hero text remains as specified, layered ON TOP of wireframe with full opacity. Text stays readable.
+- Wordmark in white variant, positioned per archetype spec.
+Reference image «skum-er-bare-skum.jpg» shows the exact target aesthetic — match its red bg + white wireframe overlay.`;
+  }
+  return "";
+}
+
 export function buildImagePrompt(
   archetype: Archetype,
   context: {
@@ -361,6 +393,8 @@ export function buildImagePrompt(
     hero_text?: string;
     /** Lite kontekst-label (1 ord, f.eks. "adjektiv") */
     eyebrow?: string;
+    /** Visuell stil-overstyring (profesjonell/skreddersydd) */
+    style?: string | null;
   }
 ): { prompt: string; aspectRatio: "1:1" | "4:5" | "16:9" | "9:16" } {
   const aspectMap: Record<Archetype, "1:1" | "4:5" | "16:9" | "9:16"> = {
@@ -397,7 +431,7 @@ The hero word MUST be in a bold sans-serif font (Manrope 800 style), pure white,
 NO definition text, NO additional sentences in the image — just the eyebrow + hero word + logo.
 Editorial swiss-design feel, generous whitespace.
 ${referenceUsage}
-${negatives}`,
+${negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -413,7 +447,7 @@ Statement in Manrope 900 style, white, MASSIVE (fills 75% canvas width), tight t
 Period or punctuation rendered same size.
 NO other text. NO supporting elements.
 ${referenceUsage}
-${negatives}`,
+${negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -431,7 +465,7 @@ Top center: Fosen Tools wordmark (from brand reference) bridging both columns, w
 
 NO body text, NO bullets — just the two header labels. Typography only.
 ${referenceUsage}
-${negatives}`,
+${negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -448,7 +482,7 @@ The number MUST be in Manrope 900 style, MASSIVE (80% canvas height).
 If the number is "25" or "100", color it with the gold gradient style (#85704D → #DBB78B) — otherwise white.
 NO supporting sentences in the image.
 ${referenceUsage}
-${negatives}`,
+${negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -465,7 +499,7 @@ EXACT TEXT TO RENDER (spell every character precisely):
   - NO attribution line in the image (it goes in the caption).
   - Footer: Fosen Tools wordmark (from brand reference) bottom-center, white, small.
 ${referenceUsage}
-${negatives}`,
+${negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -481,7 +515,7 @@ EXACT TEXT TO RENDER:
 
 Editorial layout, generous whitespace.
 ${referenceUsage}
-${negatives}`,
+${negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -630,6 +664,7 @@ export async function generateDraft(
         captions,
         hero_text: heroText,
         eyebrow,
+        style: input.style ?? null,
       }
     );
 
