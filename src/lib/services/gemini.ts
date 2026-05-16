@@ -127,6 +127,10 @@ export interface ImageGenInput {
   /** Referansebilder som Nano Banana skal bruke som stil/innholds-grunnlag.
    * Brukes til å pakke FT-logo, brand-palett og produkt-foto inn i hver call. */
   referenceImages?: ImageRef[];
+  /** Cached content name (fra ai.caches.create). Brukes for FT brand-assets
+   * så vi ikke re-uploader 6 PNG-er ved hver call. Per-call refs sendes
+   * fortsatt inline. */
+  cachedContent?: string | null;
 }
 
 export interface ImageGenResult {
@@ -184,6 +188,8 @@ export async function generateImage(
       imageConfig: {
         aspectRatio: sdkAspect,
       },
+      // Referer til pre-cached FT brand-assets (sparer ~9000 tokens per call)
+      ...(input.cachedContent ? { cachedContent: input.cachedContent } : {}),
     },
   });
 

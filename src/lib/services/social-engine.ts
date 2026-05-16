@@ -6,11 +6,12 @@ import {
   DEFAULT_IMAGE_MODEL,
   type ImageRef,
 } from "./gemini";
-import { brandRefsFor, approvedRefsFor, fetchImageAsRef } from "./brand-assets";
+import { approvedRefsFor, fetchImageAsRef } from "./brand-assets";
 import {
   compositeFosenToolsWordmark,
   wordmarkVariantForBg,
 } from "./composite-wordmark";
+import { getOrCreateImageBrandCache } from "./gemini-cache";
 import {
   scrapeProductByUrl,
   scrapePageByUrl,
@@ -806,11 +807,10 @@ export async function generateDraft(
 
     if (imgPrompt) {
       try {
-        // Bygg referansebilder: brand-assets + godkjente innlegg + evt. produktbilde
-        const refs: ImageRef[] = brandRefsFor(input.archetype, {
-          isJubilee: detectJubilee(heroText),
-          wordmarkVariant: wordmarkVariantFor(input.archetype),
-        });
+        // FT brand-assets ligger i Gemini context-cache (opprettes/oppdateres
+        // ved første call, gjenbrukes i 1 time). Vi sender kun DYNAMISKE refs
+        // inline: stil-refs (kuratert per archetype/style) + evt. produktbilde.
+        const refs: ImageRef[] = [];
 
         // Style-refs: archetype-mappe + _all/ + valgfri _<style>/
         for (const ref of approvedRefsFor(input.archetype, { style: input.style ?? null })) {
@@ -826,10 +826,22 @@ export async function generateDraft(
           if (productRef) refs.push(productRef);
         }
 
+        // Hent cached brand-assets-navn (auto-opprettes hvis utløpt)
+        let brandCacheName: string | null = null;
+        try {
+          brandCacheName = await getOrCreateImageBrandCache();
+        } catch (cacheErr) {
+          console.warn(
+            "Brand-cache utilgjengelig, fortsetter uten:",
+            cacheErr
+          );
+        }
+
         const imgResult = await generateImage({
           prompt: imgPrompt,
           aspectRatio,
           referenceImages: refs,
+          cachedContent: brandCacheName,
         });
 
         // Wordmark-overlay: AI rendrer IKKE wordmark (typo-risk), vi
