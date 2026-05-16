@@ -7,7 +7,12 @@ import {
   type ImageRef,
 } from "./gemini";
 import { brandRefsFor, fetchImageAsRef } from "./brand-assets";
-import { scrapeProductByUrl, type ScrapedProduct } from "./scrape-product";
+import {
+  scrapeProductByUrl,
+  scrapePageByUrl,
+  ScrapeProductError,
+  type ScrapedProduct,
+} from "./scrape-product";
 
 /**
  * Social Engine — caption + bilde-gen for Innholdsmotor.
@@ -645,6 +650,10 @@ export async function generateDraft(
 /**
  * Tar en fosen-tools.no URL, scraper produktdata, og pakker som GenerateDraftInput.
  * Caller må selv velge topic_kind og archetype.
+ *
+ * Fallback: hvis URL-en ikke er en produktside (mangler JSON-LD Product/ProductGroup),
+ * scrapes generisk side-innhold (title, meta, h1, intro-paragrafer) i stedet — så
+ * bransje-sider, custom-sider og landingssider også kan brukes som tema-kilde.
  */
 export async function buildDraftInputFromUrl(
   url: string,
@@ -655,19 +664,42 @@ export async function buildDraftInputFromUrl(
     user_id?: string;
   } = {}
 ): Promise<GenerateDraftInput> {
-  const scraped = await scrapeProductByUrl(url);
-  return {
-    topic_kind: options.topic_kind ?? "produktlansering",
-    archetype: options.archetype ?? "foto",
-    title: scraped.name,
-    brief: options.brief,
-    source_url: url,
-    source_data: scraped,
-    user_photos: scraped.image_url
-      ? [{ path: scraped.image_url, public_url: scraped.image_url }]
-      : [],
-    user_id: options.user_id,
-  };
+  try {
+    const scraped = await scrapeProductByUrl(url);
+    return {
+      topic_kind: options.topic_kind ?? "produktlansering",
+      archetype: options.archetype ?? "foto",
+      title: scraped.name,
+      brief: options.brief,
+      source_url: url,
+      source_data: scraped,
+      user_photos: scraped.image_url
+        ? [{ path: scraped.image_url, public_url: scraped.image_url }]
+        : [],
+      user_id: options.user_id,
+    };
+  } catch (err) {
+    if (!(err instanceof ScrapeProductError) || err.status !== 422) throw err;
+
+    const page = await scrapePageByUrl(url);
+    return {
+      topic_kind: options.topic_kind ?? "evergreen",
+      archetype: options.archetype ?? "foto",
+      title: page.name,
+      brief: options.brief,
+      source_url: url,
+      source_data: {
+        name: page.name,
+        bullets: page.bullets,
+        ...(page.description ? { description: page.description } : {}),
+        ...(page.image_url ? { image_url: page.image_url } : {}),
+      },
+      user_photos: page.image_url
+        ? [{ path: page.image_url, public_url: page.image_url }]
+        : [],
+      user_id: options.user_id,
+    };
+  }
 }
 
 export { DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL };

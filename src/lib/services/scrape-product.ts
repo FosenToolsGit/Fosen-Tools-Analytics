@@ -256,3 +256,111 @@ export async function scrapeProductByUrl(url: string): Promise<ScrapedProduct> {
 
   return buildFromJsonLd(node, parsed.toString(), html);
 }
+
+// =============================================================================
+// Generisk side-scraper (fallback for ikke-produkt-URLer)
+// =============================================================================
+
+export interface ScrapedPage {
+  source_url: string;
+  name: string;
+  description: string | null;
+  bullets: string[];
+  image_url: string | null;
+}
+
+function pickMeta(html: string, name: string): string | null {
+  const re = new RegExp(
+    `<meta\\s+(?:name|property)=["']${name}["']\\s+content=["']([^"']+)["']`,
+    "i"
+  );
+  const m = html.match(re);
+  return m ? decodeEntities(m[1]).trim() : null;
+}
+
+function pickFirstTag(html: string, tag: string): string | null {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = html.match(re);
+  if (!m) return null;
+  const text = m[1].replace(/<[^>]+>/g, "").trim();
+  return text ? decodeEntities(text) : null;
+}
+
+function extractIntroParagraphs(html: string, max = 3): string[] {
+  // Foretrekk innhold i ftseo-blokk hvis den finnes
+  const seoMatch = html.match(/<section\s+class="ftseo"[\s\S]*?<\/section>/i);
+  const region = seoMatch ? seoMatch[0] : html;
+  const paragraphs: string[] = [];
+  const re = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(region)) !== null) {
+    const text = m[1].replace(/<[^>]+>/g, "").trim();
+    if (!text) continue;
+    const clean = decodeEntities(text);
+    if (clean.length < 30) continue; // hopp over kort boilerplate
+    paragraphs.push(clean);
+    if (paragraphs.length >= max) break;
+  }
+  return paragraphs;
+}
+
+/**
+ * Henter generisk innhold fra en fosen-tools.no-side (custom-side, bransje-side,
+ * produsent-side, kategori-side osv). Brukes som fallback når scrapeProductByUrl
+ * ikke finner JSON-LD Product/ProductGroup.
+ */
+export async function scrapePageByUrl(url: string): Promise<ScrapedPage> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new ScrapeProductError("Invalid url", 400);
+  }
+  if (!SCRAPE_ALLOWED_HOSTS.includes(parsed.hostname)) {
+    throw new ScrapeProductError("Host not allowed", 403);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(parsed.toString(), {
+      headers: { "User-Agent": "FosenToolsAnalytics/1.0 Page-Scraper" },
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch (err) {
+    throw new ScrapeProductError(
+      err instanceof Error ? err.message : "Fetch failed",
+      500
+    );
+  }
+  if (!response.ok) {
+    throw new ScrapeProductError(`Upstream ${response.status}`, 502);
+  }
+  const html = await response.text();
+
+  const ogTitle = pickMeta(html, "og:title");
+  const docTitle = pickFirstTag(html, "title");
+  const h1 = pickFirstTag(html, "h1");
+  const description =
+    pickMeta(html, "description") ?? pickMeta(html, "og:description");
+  const ogImage = pickMeta(html, "og:image");
+  const bullets = extractIntroParagraphs(html);
+
+  // Foretrekk H1 (mest brand-spesifikk), fall tilbake til og:title, så <title>
+  // (sistnevnte har ofte "| Fosen Tools"-suffiks som vi rydder).
+  const rawName =
+    h1 ?? ogTitle ?? docTitle?.replace(/\s*\|\s*Fosen Tools.*$/i, "") ?? "";
+  if (!rawName.trim()) {
+    throw new ScrapeProductError(
+      "Fant ingen tittel på siden (verken H1, og:title eller <title>).",
+      422
+    );
+  }
+
+  return {
+    source_url: parsed.toString(),
+    name: rawName.trim(),
+    description,
+    bullets,
+    image_url: ogImage,
+  };
+}
