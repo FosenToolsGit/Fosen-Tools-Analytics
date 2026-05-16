@@ -166,8 +166,17 @@ export async function generateImage(
     });
   }
 
+  const aspectDirective =
+    aspect === "1:1"
+      ? `MANDATORY OUTPUT FORMAT: render as a PERFECT SQUARE 1:1 image (2048×2048 pixels). NOT a wide banner. NOT landscape. NOT portrait. Width MUST EQUAL height exactly. Composition must work within square frame — do not stretch or letterbox.`
+      : aspect === "4:5"
+        ? `MANDATORY OUTPUT FORMAT: render as 4:5 portrait aspect (1638×2048 pixels). NOT square. NOT 16:9. Vertical orientation, slightly taller than wide.`
+        : aspect === "9:16"
+          ? `MANDATORY OUTPUT FORMAT: render as 9:16 portrait aspect (1152×2048 pixels). Vertical stories/reels format.`
+          : `MANDATORY OUTPUT FORMAT: render as 16:9 landscape aspect (2048×1152 pixels).`;
+
   parts.push({
-    text: `${input.prompt}\n\nAspect ratio: ${aspect}. Render at 2048×2048 (or matching aspect) for social media.`,
+    text: `${input.prompt}\n\n${aspectDirective}`,
   });
 
   const response = await ai.models.generateContent({

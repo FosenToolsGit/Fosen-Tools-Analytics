@@ -386,6 +386,8 @@ Do not skip these. They are mandatory brand signature.`,
 
   negatives: `STRICTLY AVOID: AI-generated humans or faces, cartoon characters, photo-realistic stock photography, decorative noise, watermarks, fake or clip-art certification badges, generic shield-with-checkmark icons that look like clip-art (if a shield is needed it must be custom geometric FT-style), blue/green/orange/yellow accents (palette is ONLY FT-red #ED1C24, FT-ink #0F1115, white, plus optional gold gradient #85704D→#DBB78B on jubilee marks), gradient backgrounds, abstract empty circles or hexagons "representing" things, sketch-doodle illustrations, hand-drawn-marker aesthetics, beveled 3D effects, lens flares, fake product photos.`,
 
+  spellingRule: `NORWEGIAN SPELLING IS CRITICAL: render every Norwegian word EXACTLY as written, character-by-character, including æ ø å. DO NOT invent letters, combine words, or substitute English-looking spellings. DO NOT add extra letters at word-ends. If a word feels long, render it correctly anyway — never truncate mid-word, never approximate. Examples of FORBIDDEN typos: "verktøylössurnees" (correct: "verktøyløsninger"), "skuffenne" (correct: "skuffen"). If unsure of a word, prefer to OMIT IT rather than misspell. Better short and correct than long and wrong.`,
+
   references: `BRAND REFERENCE images at the start of this conversation: (1) the official FT wordmark — use EXACTLY, do not redraw or invent letterforms; (2) the official FT color palette — match precisely; (3) approved-post style references showing the target visual language with the mandatory blueprint decoration, multi-line bold typography, and framed wordmark. Replicate that language.`,
 };
 
@@ -450,8 +452,7 @@ export function buildImagePrompt(
     sertifikat: "1:1",
   };
 
-  // Hero-tekst — natural case, kan være multi-line (FT-postene har 3-5 linjer).
-  // Trunkér til ~140 tegn så den passer poster-format uten å bli kaos.
+  // Hero-tekst for caption-bruk (kan være lang)
   const rawHero = (
     context.hero_text ??
     context.statement ??
@@ -460,6 +461,23 @@ export function buildImagePrompt(
   ).trim();
   const heroText =
     rawHero.length > 140 ? rawHero.slice(0, 137).trim() + "…" : rawHero;
+
+  // KORT hero-tekst for IMAGE-rendering — Nano Banana misstaver lange norske
+  // ord. Maks ~50 tegn / 5-7 ord. Foretrekk briefen om den er kort, ellers
+  // ta de første få ordene av tittelen. Aldri midt-i-ord-trunkering.
+  function shortenForImage(text: string, maxChars = 50): string {
+    if (text.length <= maxChars) return text;
+    const words = text.split(/\s+/);
+    let out = "";
+    for (const w of words) {
+      const next = out ? `${out} ${w}` : w;
+      if (next.length > maxChars) break;
+      out = next;
+    }
+    return out || words[0]; // fallback til første ordet om alt er for langt
+  }
+  const heroTextShort = shortenForImage(heroText);
+
   const eyebrow = context.eyebrow?.toLowerCase().trim() ?? "";
 
   switch (archetype) {
@@ -470,12 +488,14 @@ export function buildImagePrompt(
 
 LAYOUT (match the FT «Skreddersydd» reference exactly):
 1. ${FT_DESIGN.bgCream}
-2. Hero word at upper-left third, MASSIVE (Manrope Black, FT-ink #0F1115, 55-65% canvas width): "${heroText}"
+2. Hero word at upper-left third, MASSIVE (Manrope Black, FT-ink #0F1115, 55-65% canvas width): "${heroTextShort}"
 3. Immediately to the right of the hero word, in smaller italic gray: "${eyebrow || "adjektiv"}"
 4. Phonetic pronunciation in tracked monospace gray (small), to the right of the italic label: "/${(eyebrow ? eyebrow : "kort-form")}/"
 5. Thin horizontal hairline below the hero word, FT-ink at 20% opacity, full width
-6. ONE definition sentence below the hairline, Manrope Regular, FT-ink, smaller (~5% canvas height). Compose a SHORT crisp definition (max ~14 words) that captures the FT-meaning of "${heroText}" — engineering, precision, brukerflyt-orientert. ONE noun inside the sentence MAY be visually underlined with a thin FT-red curved hand-drawn underline (sparingly). End sentence with an asterisk.
+6. ONE definition sentence below the hairline, Manrope Regular, FT-ink, smaller (~5% canvas height). Compose a SHORT crisp definition (max ~14 words) that captures the FT-meaning of "${heroTextShort}" — engineering, precision, brukerflyt-orientert. ONE noun inside the sentence MAY be visually underlined with a thin FT-red curved hand-drawn underline (sparingly). End sentence with an asterisk.
 7. Asterisk footnote at very bottom-left in tiny gray italic: short context-line (e.g. "Oppnådd gjennom HDFI-presisjon."). Compose to match.
+
+${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnCream}
 
@@ -496,10 +516,12 @@ ${FT_DESIGN.negatives}${styleModifier(context.style)}`,
 
 LAYOUT:
 1. ${FT_DESIGN.bgRed}
-2. The headline IS the hero — render this text exactly, broken across 3-5 lines, MASSIVE bold sans-serif (Manrope Black, white, fills 70-80% of canvas width when wrapped):
-"${heroText}"
+2. The headline IS the hero — render this text EXACTLY, broken across 2-4 lines, MASSIVE bold sans-serif (Manrope Black, white, fills 70-80% of canvas width when wrapped):
+"${heroTextShort}"
    Break lines on natural phrase boundaries (do NOT hyphenate words). End with a period if statement-form. ONE single keyword in the headline MAY be FT-red (use only if it visually anchors the meaning).
 3. NO subtitle, NO support text in image.
+
+${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
@@ -524,10 +546,12 @@ LAYOUT:
 1. LEFT column (50% width): muted gray #4D4D4D background (NOT pure gray — slightly desaturated cool).
    - Small white uppercase label top, tracked: "HYLLEVARE"
 2. RIGHT column (50% width): FT-red #ED1C24 background.
-   - Small white uppercase label top, tracked: composed dynamically from headline "${heroText}" (extract the FT-side concept, max 1-2 words, e.g. "SKREDDERSYDD")
+   - Small white uppercase label top, tracked: composed dynamically from headline "${heroTextShort}" (extract the FT-side concept, max 1-2 words, e.g. "SKREDDERSYDD")
 3. Center divider: thin white vertical line (1.5px), full height.
 4. Below the labels in each column: optional small visual icon (wireframe outline, white) representing the contrast. Same line-weight as decoration. Optional — only include if the contrast suggests a clear visual pair (e.g. caliper vs tape-measure, neat-vs-chaotic drawer).
-5. Above the two columns at very top-center: ONE short framing line in white (small italic): a phrase from "${heroText}".
+5. Above the two columns at very top-center: ONE short framing line in white (small italic): a phrase from "${heroTextShort}".
+
+${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
@@ -546,10 +570,12 @@ ${FT_DESIGN.negatives}${styleModifier(context.style)}`,
 
 LAYOUT:
 1. ${FT_DESIGN.bgRed}
-2. Hero number stacked at upper half — MASSIVE (60% canvas height), Manrope Black italic-slanted display style, white. Extract the primary number from the text: "${heroText}" — render JUST the number (e.g. "100", "25", "20+", "1200+").
+2. Hero number stacked at upper half — MASSIVE (60% canvas height), Manrope Black italic-slanted display style, white. Extract the primary number from the text: "${heroTextShort}" — render JUST the number (e.g. "100", "25", "20+", "1200+").
 3. Small italic label inline to the right of the number, lowercase, smaller (15-20% of number height): the unit (e.g. "år", "timer", "kunder")
-4. Below the number, supporting headline in 2-3 lines of bold white sans-serif (Manrope Black, ~12-15% canvas height per line): the rest of the statement from "${heroText}", broken naturally.
+4. Below the number, supporting headline in 2-3 lines of bold white sans-serif (Manrope Black, ~12-15% canvas height per line): the rest of the statement from "${heroTextShort}", broken naturally. RENDER EXACTLY — do not paraphrase.
 5. If the number is "25" or "100" (jubileum), color the number with a gold gradient: #85704D at top → #DBB78B at bottom.
+
+${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
@@ -568,10 +594,12 @@ ${FT_DESIGN.negatives}${styleModifier(context.style)}`,
 
 LAYOUT:
 1. ${FT_DESIGN.bgRed}
-2. The quote IS the hero. Render this text in white Manrope Black wrapped across 2-4 lines, fills 65-75% canvas width, surrounded by chevron-style quotation marks «...»:
-«${heroText}»
+2. The quote IS the hero. Render this text EXACTLY in white Manrope Black wrapped across 2-3 lines, fills 65-75% canvas width, surrounded by chevron-style quotation marks «...»:
+«${heroTextShort}»
 3. BELOW the quote (slightly smaller, regular weight): a 2-3 word reaction/judgment in white (compose a SHORT framing line that reacts to the quote — e.g. "Feil startpunkt.", "Riktig spørsmål.", "Bygget på dette."). Composed to match the topic tone.
 4. NO attribution in the image (attribution goes in the caption).
+
+${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
@@ -592,9 +620,11 @@ ${FT_DESIGN.negatives}${styleModifier(context.style)}`,
 LAYOUT:
 1. ${FT_DESIGN.bgInk}
 2. UPPER HALF (60% canvas height): a single LARGE FT-red #ED1C24 SHIELD shape, centered horizontally. The shield is a custom geometric FT-style shape (rounded top, pointed bottom — NOT a generic clip-art shield, NOT a heraldic crest). Inside the shield, a single bold WHITE checkmark glyph, centered, filling ~50% of shield interior.
-3. LOWER HALF (40% canvas height): set on a slightly darker black band that ends at the shield's bottom edge (subtle band-cut effect). Render the headline text in 2-3 lines of bold white sans-serif (Manrope Black), MASSIVE (fills 75% canvas width). ONE keyword from the headline may be in FT-red for emphasis (e.g. if headline is "Forsvarets verktøykontroll i din hverdag" → "verktøykontroll" in red).
-   Headline source: "${heroText}" — if longer than 12 words, compose a 6-10 word headline that captures the trust/standard theme of the source.
+3. LOWER HALF (40% canvas height): set on a slightly darker black band that ends at the shield's bottom edge (subtle band-cut effect). Render the headline EXACTLY as given below, broken across 2-3 lines, MASSIVE bold sans-serif (Manrope Black, fills 75% canvas width). ONE keyword from the headline may be in FT-red for emphasis (use sparingly).
+   Headline text (use VERBATIM — do not paraphrase, do not add words): "${heroTextShort}"
 4. Just below headline: ONE small supporting sentence in white (~50% opacity), single line, italic-ish, like a tagline.
+
+${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
