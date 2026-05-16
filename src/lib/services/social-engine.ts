@@ -8,6 +8,10 @@ import {
 } from "./gemini";
 import { brandRefsFor, approvedRefsFor, fetchImageAsRef } from "./brand-assets";
 import {
+  compositeFosenToolsWordmark,
+  wordmarkVariantForBg,
+} from "./composite-wordmark";
+import {
   scrapeProductByUrl,
   scrapePageByUrl,
   ScrapeProductError,
@@ -374,9 +378,10 @@ Do not skip these. They are mandatory brand signature.`,
 
   decorOnCream: `MANDATORY: same blueprint decoration as the FT signature (CAD-dimension line top-right, grid bottom-left, gear bottom-right, connector top-left), but rendered in FT-ink #0F1115 at 25-30% opacity (since background is light).`,
 
-  wordmarkOnDark: `MANDATORY WORDMARK: render the official "FOSEN TOOLS" wordmark (provided as a brand reference image — use it EXACTLY, do not invent letterforms) at bottom-center of canvas. WRAP the wordmark inside a thin (1-1.5px) white rectangular frame with rounded corners — frame width is wordmark-width + 30% padding, frame height is wordmark-height + 12% vertical padding. Wordmark size is 10-14% of canvas width.`,
-
-  wordmarkOnCream: `MANDATORY WORDMARK: same as above but the wordmark and frame are rendered in FT-ink #0F1115 (dark variant) since background is cream.`,
+  // VIKTIG: AI skal IKKE rendre FOSEN TOOLS wordmark — vi composite-r den ekte
+  // PNG-en server-side via compositeFosenToolsWordmark(). Nano Banana 2 misstaver
+  // den konsekvent («SUSEN TOOLS» etc). Reserve plass i layout, men ikke skriv.
+  wordmarkReservedSpace: `WORDMARK SPACE — leave the bottom 15% of canvas EMPTY (or with only blueprint decoration). DO NOT render any "Fosen Tools" text, logo, wordmark, or signature in the image — we composite the official FT wordmark PNG onto this space server-side afterward. Any AI-rendered FT text would be a typo and must be omitted.`,
 
   typographyOnDark: `TYPOGRAPHY: Manrope Black/800 or near-identical geometric sans-serif. Headline text is MASSIVE — fills 65-80% of canvas width when stacked. Tight line-height (1.0-1.1), tight tracking. ALL text in pure white #FFFFFF. ONE single keyword inside the statement MAY be FT-red #ED1C24 for emphasis (used sparingly — only if it visually anchors the meaning, see "Forsvarets *verktøykontroll* i din hverdag" reference). Natural sentence case — NOT ALL CAPS unless a single short label.`,
 
@@ -510,7 +515,7 @@ ${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnCream}
 
-${FT_DESIGN.wordmarkOnCream}
+${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.typographyOnCream}
 
@@ -536,7 +541,7 @@ ${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
-${FT_DESIGN.wordmarkOnDark}
+${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.typographyOnDark}
 
@@ -566,7 +571,7 @@ ${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
-${FT_DESIGN.wordmarkOnDark}
+${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.references}
 
@@ -590,7 +595,7 @@ ${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
-${FT_DESIGN.wordmarkOnDark}
+${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.references}
 
@@ -614,7 +619,7 @@ ${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
-${FT_DESIGN.wordmarkOnDark}
+${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.references}
 
@@ -639,7 +644,7 @@ ${FT_DESIGN.spellingRule}
 
 ${FT_DESIGN.decorOnDark}
 
-${FT_DESIGN.wordmarkOnDark}
+${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.typographyOnDark}
 
@@ -827,11 +832,34 @@ export async function generateDraft(
           referenceImages: refs,
         });
 
+        // Wordmark-overlay: AI rendrer IKKE wordmark (typo-risk), vi
+        // composite-r ekte PNG på etterpå. Variant matcher bakgrunns-type.
+        const bgType: "red" | "ink" | "cream" =
+          input.archetype === "definisjon"
+            ? "cream"
+            : input.archetype === "sertifikat" || input.archetype === "sitat"
+              ? "ink"
+              : "red";
+
         for (const img of imgResult.images) {
+          let processed = { base64: img.base64, mimeType: img.mimeType };
+          try {
+            processed = await compositeFosenToolsWordmark(
+              img.base64,
+              img.mimeType,
+              { variant: wordmarkVariantForBg(bgType) }
+            );
+          } catch (compErr) {
+            console.error(
+              "Wordmark-composite feilet, bruker rå AI-bilde:",
+              compErr
+            );
+            // Faller tilbake til AI-bilde uten overlay
+          }
           const saved = await saveBase64ImageToStorage(
             supabase,
-            img.base64,
-            img.mimeType,
+            processed.base64,
+            processed.mimeType,
             input.user_id,
             `${input.topic_kind}-${input.archetype}`
           );
