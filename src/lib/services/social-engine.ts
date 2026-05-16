@@ -255,7 +255,7 @@ Du skal returnere én JSON-objekt med disse feltene:
   "image_headline": "<KORT FT-stil hovedheadline for poster-bildet. 5-8 ord på norsk. Naturlig setning som splitter pent over 2-3 linjer. SELVSTENDIG (ikke avhengig av annet for kontekst). End med . eller ?. Eksempler: «Halvparten av skuffene bør stå tomme.» / «Bygget for null feilmargin.» / «Forsvarets standard i din hverdag.»>",
   "image_headline_red_word": "<ETT nøkkelord fra image_headline som skal være FT-rødt for emphasis (resten av teksten er hvit). Velg ordet som visuelt anker meningen. Hvis ingen åpenbar, la være tomt.>",
   "image_subtagline": "<Valgfri kort italic-linje under headline (3-6 ord). Tomt hvis ingen passer. Eksempler: «Bygget for null feilmargin.», «Visuell kontroll. Ikke fredagsdugnad.»>",
-  "image_body": "<Valgfri støttesetning for arketyper som krever det (definisjon, sertifikat, milepael). Maks 12 ord, naturlig korrekt norsk. For DEFINISJON: kort presis ordbok-stil-definisjon (eks: «CAD-tegnet, CNC-maskinert og segmentert etter brukerens arbeidsflyt.»). For SERTIFIKAT: trust-anker-setning. For MILEPAEL: kontekst. La være tomt hvis ingen passer.>",
+  "image_body": "<MAKS 8 ord. KORT, presis, naturlig norsk. Foretrekk enkle ord (Nano Banana misstaver komplekse). For DEFINISJON: ordbok-stil. For SERTIFIKAT: trust-anker. For MILEPAEL: kontekst. Eksempler: «CAD-tegnet og CNC-maskinert.», «Bygget for null feilmargin.», «Levert til Forsvaret i tjuesju år.» La være tomt hvis ingen kort passer.>",
   "internal_notes": "<valgfri: noe operatøren bør vite>"
 }
 \`\`\`
@@ -419,7 +419,13 @@ function ftHeroWireframe(subject: string): string {
  * Gemini gjør at de siste direktivene vinner — derfor kan vi bytte ut bakgrunn
  * og mood her uten å rewrite hele prompten. Tomme strings = ingen overstyring.
  */
-function styleModifier(style: string | null | undefined): string {
+function styleModifier(
+  style: string | null | undefined,
+  archetype?: Archetype
+): string {
+  // Definisjon har unik cream-bg-layout som IKKE skal overstyres av style.
+  // Style-overrides gir mening for andre archetyper som har red/ink-bg.
+  if (archetype === "definisjon") return "";
   if (style === "profesjonell") {
     return `
 
@@ -560,7 +566,7 @@ ${FT_DESIGN.typographyOnCream}
 
 ${FT_DESIGN.references}
 
-${FT_DESIGN.negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -587,7 +593,7 @@ ${FT_DESIGN.typographyOnDark}
 
 ${FT_DESIGN.references}
 
-${FT_DESIGN.negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -613,7 +619,7 @@ ${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.references}
 
-${FT_DESIGN.negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -639,7 +645,7 @@ ${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.references}
 
-${FT_DESIGN.negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -664,7 +670,7 @@ ${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.references}
 
-${FT_DESIGN.negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -696,7 +702,7 @@ ${FT_DESIGN.typographyOnDark}
 
 ${FT_DESIGN.references}
 
-${FT_DESIGN.negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -757,10 +763,21 @@ function extractEyebrow(
   archetype: Archetype,
   input: GenerateDraftInput
 ): string {
-  if (archetype === "definisjon") return "adjektiv";
+  if (archetype === "definisjon") {
+    // Smart ordklasse-deteksjon basert på endings (Norwegian)
+    const word = (input.brief || input.title).trim().toLowerCase();
+    // Substantiv-endings: ing, het, dom, skap, sjon, ment, isme, else
+    if (/(ing|het|dom|skap|sjon|ment|isme|else|tet)$/.test(word))
+      return "substantiv";
+    // Verb-endings (presens-form): rer, ner, der, der
+    if (/(erer|enter|ifiserer)$/.test(word)) return "verb";
+    // Adjektiv-endings: sk, ig, lig, løs, full, et, dd, bar
+    if (/(sk|ig|lig|løs|full|et|dd|bar)$/.test(word)) return "adjektiv";
+    return "substantiv"; // safe default — de fleste FT-hovedord er substantiver
+  }
   if (archetype === "milepael") {
     const heroNum = extractHeroText(archetype, input);
-    if (/^\d+$/.test(heroNum)) return "år";
+    if (/^\d+\+?$/.test(heroNum)) return "år";
   }
   if (archetype === "sertifikat") return "sertifisert";
   return "";

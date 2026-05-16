@@ -130,7 +130,7 @@ export async function generateCaptionsJson(
           image_body: {
             type: "string",
             description:
-              "Valgfri støttesetning for arketyper som krever det (definisjon, sertifikat, milepael). Maks 12 ord, naturlig norsk. For definisjon: kort presis ordbok-stil-definisjon. For sertifikat: trust-anker-setning. For milepael: kontekst-setning. La være tomt hvis ingen passer. Eksempel for «Skreddersydd»: «CAD-tegnet, CNC-maskinert og segmentert etter brukerens arbeidsflyt.»",
+              "Valgfri støttesetning for arketyper som krever det (definisjon, sertifikat, milepael). MAKS 8 ord. KORT, presis, naturlig norsk. Foretrekk enkle ord — Nano Banana misstaver lange/sammensatte ord, så bytt ut komplekse ord med enklere synonymer der mulig. For definisjon: ordbok-stil. For sertifikat: trust-anker. For milepael: kontekst. La være tomt hvis ingen kort passer. Eksempler: «CAD-tegnet og CNC-maskinert etter din arbeidsflyt.», «Bygget for null feilmargin.», «Levert til Forsvaret i tjuesju år.»",
           },
           internal_notes: { type: "string" },
         },
