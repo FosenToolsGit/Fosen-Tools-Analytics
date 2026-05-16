@@ -270,12 +270,23 @@ export interface ScrapedPage {
 }
 
 function pickMeta(html: string, name: string): string | null {
-  const re = new RegExp(
-    `<meta\\s+(?:name|property)=["']${name}["']\\s+content=["']([^"']+)["']`,
-    "i"
-  );
-  const m = html.match(re);
-  return m ? decodeEntities(m[1]).trim() : null;
+  // Multicase serverer attributter både med og uten anførselstegn, og rekkefølgen
+  // på (name|property) og content kan variere — derfor to permutasjoner.
+  const valuePattern = `(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`;
+  const nameKey = `(?:name|property)\\s*=\\s*["']?${name}["']?`;
+  const contentKey = `content\\s*=\\s*${valuePattern}`;
+  const patterns = [
+    new RegExp(`<meta\\s+${nameKey}\\s+${contentKey}`, "i"),
+    new RegExp(`<meta\\s+${contentKey}\\s+${nameKey}`, "i"),
+  ];
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (m) {
+      const value = m[1] ?? m[2] ?? m[3];
+      if (value) return decodeEntities(value).trim();
+    }
+  }
+  return null;
 }
 
 function pickFirstTag(html: string, tag: string): string | null {
