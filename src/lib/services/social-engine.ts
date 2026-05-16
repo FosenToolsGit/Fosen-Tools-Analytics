@@ -402,9 +402,21 @@ Do not skip these. They are mandatory brand signature.`,
   // den konsekvent («SUSEN TOOLS» etc). Reserve plass i layout, men ikke skriv.
   wordmarkReservedSpace: `WORDMARK SPACE — leave the bottom 15% of canvas EMPTY (or with only blueprint decoration). DO NOT render any "Fosen Tools" text, logo, wordmark, or signature in the image — we composite the official FT wordmark PNG onto this space server-side afterward. Any AI-rendered FT text would be a typo and must be omitted.`,
 
-  typographyOnDark: `TYPOGRAPHY: Manrope Black/800 or near-identical geometric sans-serif. Headline text is MASSIVE — fills 65-80% of canvas width when stacked. Tight line-height (1.0-1.1), tight tracking. ALL text in pure white #FFFFFF. ONE single keyword inside the statement MAY be FT-red #ED1C24 for emphasis (used sparingly — only if it visually anchors the meaning, see "Forsvarets *verktøykontroll* i din hverdag" reference). Natural sentence case — NOT ALL CAPS unless a single short label.`,
+  typographyOnDark: `TYPOGRAPHY — Fosen Tools nettside-stil (matcher fosen-tools.no/ftseo-heading):
+- PRIMARY: Korolev Bold 700 (commercial) — substitute with closest visual match like Heebo Bold or Manrope ExtraBold. The font MUST be a condensed/semi-condensed geometric sans-serif with sharp terminals and industrial precision feel.
+- Headlines: ALL UPPERCASE, letter-spacing 0.08em (tracked), pure white #FFFFFF
+- Hero-text size: MASSIVE — fills 65-80% of canvas width when stacked
+- Line-height: tight (1.1-1.15) for multi-line stacks
+- Multi-line: break on natural phrase boundaries, NEVER hyphenate
+- ONE keyword inside headline MAY be FT-red #ED1C24 for emphasis (sparingly)
+- Below H1: optional thin FT-red #ED1C24 horizontal accent-line (70px wide), 2-3px thick, centered or left-aligned, sits ~20px below the headline. This is the FT signature underline from ftseo-heading::after.`,
 
-  typographyOnCream: `TYPOGRAPHY: Manrope Black/800. Headline in FT-ink #0F1115. Same scale, line-height and tracking as on dark.`,
+  typographyOnCream: `TYPOGRAPHY — Fosen Tools nettside-stil:
+- PRIMARY: Korolev Bold 700 — substitute with Heebo Bold / Manrope ExtraBold (condensed geometric sans-serif).
+- Headlines: ALL UPPERCASE for short labels (under 5 words), letter-spacing 0.08em. For the dictionary-style hero word in definisjon: lowercase or mixed-case is OK if it matches the «Skreddersydd»-ref.
+- Hero-text color: FT-ink #111111 (NOT pure black — slightly softer)
+- Body text: 17px proportional, color #222222, line-height 1.7
+- Below H1: optional thin FT-red 70px horizontal accent-line below headline.`,
 
   optionalSubtagline: `OPTIONAL SUBTAGLINE: ONE short italic line above the wordmark frame, small (3-5% canvas height), 60-70% opacity. Example tone: "Bygget for null feilmargin", "Visuell kontroll. Ikke fredagsdugnad.", "5S skal gjøre rot umulig." Include ONLY if you can compose one that genuinely fits the topic — otherwise omit entirely. NEVER include if it would mean inventing new claims.`,
 
@@ -435,25 +447,28 @@ function styleModifier(
   if (style === "profesjonell") {
     return `
 
-=== STYLE OVERRIDE: PROFESJONELL (CINEMATIC) ===
+=== STYLE OVERRIDE: PROFESJONELL (FT-HVERDAG) ===
 OVERRIDE the background and mood instructions above with this:
-- Background: full-bleed FT-ink #0F1115 (deep dark gray-black), NOT white. Apply a subtle FT-red #ED1C24 radial glow from one corner (15-25% opacity max), then fade to dark.
-- Atmosphere element: include a FADED, BLURRED background silhouette evoking precision/defense quality — a faint military jet, technical schematic line-art, or industrial machinery contour at 8-15% opacity, positioned bottom or behind text. Must not compete with hero text.
-- Lighting: cinematic, dramatic, premium-defense aesthetic.
-- All text remains the same color hierarchy but on dark bg: hero text = pure white, accents = FT-red.
-- Wordmark in white variant (not ink), positioned per archetype spec.
-Reference image «jagerfly-industriell-kvalitet.jpg» shows the exact target mood — match its darkness, depth, and ghost-element placement.`;
+- Background: full-bleed FT-ink #111111 (deep gray-black, matches fosen-tools.no ft-color-ink), apply a subtle FT-red #ED1C24 radial glow from one corner (10-20% opacity max), fading to near-black at opposite corner.
+- ATMOSPHERE ELEMENT — center/lower area: include a FADED, BLURRED background sketch (white/light-gray outline drawing, NO fill, 10-18% opacity) of a FOSEN TOOLS-themed scene — choose one:
+  (a) A modular verktøyvogn (tool cart) with multiple open drawers showing color-segmented HDFI foam inserts holding tools in precise outlined positions (THIS IS THE PRIMARY CHOICE — matches FT product DNA)
+  (b) A workshop bench with a HDFI insert and a few tools (wrenches, screwdrivers) cut precisely into the foam
+  (c) A close-up of an HDFI drawer with one tool slot empty (highlighting visual control)
+  Do NOT use military jets, vehicles, or aviation imagery unless the brief explicitly references aviation/defense use cases.
+- Style: clean wireframe blueprint sketch lines (1.5px) — engineering CAD aesthetic, NOT marker-doodle. Same line-weight as the corner decoration but larger and centrally placed behind the text.
+- Lighting: cinematic depth, premium engineering brand feel.
+- Text: hero in white, ONE keyword may be FT-red.
+- Wordmark variant: white.`;
   }
   if (style === "skreddersydd") {
     return `
 
 === STYLE OVERRIDE: SKREDDERSYDD (CAD/WIREFRAME) ===
 OVERRIDE the background and mood instructions above with this:
-- Background: full-bleed FT-red #ED1C24, overlaid with thin white wireframe technical drawings — calipers, gears, CNC tool outlines, blueprint grids (15-25% opacity, no fills).
-- Atmosphere: engineering precision, CAD-blueprint mood, hand-drafted technical illustration aesthetic.
+- Background: full-bleed FT-red #ED1C24, overlaid with thin white wireframe technical drawings — verktøyvogn med HDFI-skuffer, calipers, gears, CNC tool outlines, blueprint grids (15-25% opacity, no fills).
+- Atmosphere: engineering precision, CAD-blueprint mood, hand-drafted technical illustration aesthetic. Wireframe should evoke Fosen Tools' HDFI-CADLAB engineering process specifically.
 - Hero text remains as specified, layered ON TOP of wireframe with full opacity. Text stays readable.
-- Wordmark in white variant, positioned per archetype spec.
-Reference image «skum-er-bare-skum.jpg» shows the exact target aesthetic — match its red bg + white wireframe overlay.`;
+- Wordmark in white variant, positioned per archetype spec.`;
   }
   return "";
 }
