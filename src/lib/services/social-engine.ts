@@ -255,37 +255,75 @@ KRITISKE REGLER:
 
 /**
  * Bygger user-prompt fra topic-kontekst.
+ *
+ * Vi sender IKKE source_url eller rå HTML til Gemini — kun strukturert
+ * data som ble scrapet og kuratert server-side. Det gir bedre kontroll
+ * over hva modellen ser, hindrer URL-overslukning, og gir den klar
+ * side-spesifikk kontekst i stedet for å la den gjette fra URL-shape.
  */
 export function buildUserPrompt(input: GenerateDraftInput): string {
   const parts: string[] = [];
 
-  parts.push(`# Topic-input\n\nKind: ${input.topic_kind}\nArchetype: ${input.archetype}\nTittel: ${input.title}`);
+  parts.push(
+    `# Topic-input\n\nKind: ${input.topic_kind}\nArchetype: ${input.archetype}\nTittel: ${input.title}`
+  );
 
   if (input.brief) {
     parts.push(`\n## Brief fra operatør\n\n${input.brief}`);
   }
 
-  if (input.source_url) {
-    parts.push(`\n## Kilde-URL\n\n${input.source_url}`);
-  }
-
   if (input.source_data && Object.keys(input.source_data).length > 0) {
-    const scraped = input.source_data as Partial<ScrapedProduct>;
-    const lines: string[] = [];
-    if (scraped.name) lines.push(`Navn: ${scraped.name}`);
-    if (scraped.manufacturer) lines.push(`Produsent: ${scraped.manufacturer}`);
-    if (scraped.sku) lines.push(`FT-art.nr: ${scraped.sku}`);
-    if (scraped.price_now) lines.push(`Pris: ${scraped.price_now} NOK`);
-    if (scraped.price_before)
-      lines.push(`Før-pris: ${scraped.price_before} NOK`);
-    if (scraped.discount_pct)
-      lines.push(`Rabatt: ${scraped.discount_pct}%`);
-    if (scraped.in_stock !== undefined)
-      lines.push(`På lager: ${scraped.in_stock ? "ja" : "nei"}`);
-    if (scraped.bullets?.length)
-      lines.push(`USP-punkter:\n  - ${scraped.bullets.join("\n  - ")}`);
-    if (lines.length > 0) {
-      parts.push(`\n## Scrapet produkt-data\n\n${lines.join("\n")}`);
+    const scraped = input.source_data as Partial<ScrapedProduct> & {
+      sections?: string[];
+      description?: string;
+    };
+    const isProduct = !!(
+      scraped.manufacturer ||
+      scraped.sku ||
+      scraped.price_now ||
+      scraped.discount_pct
+    );
+
+    if (isProduct) {
+      // Produktside-flow (har JSON-LD Product)
+      const lines: string[] = [];
+      if (scraped.name) lines.push(`Navn: ${scraped.name}`);
+      if (scraped.manufacturer)
+        lines.push(`Produsent: ${scraped.manufacturer}`);
+      if (scraped.sku) lines.push(`FT-art.nr: ${scraped.sku}`);
+      if (scraped.price_now) lines.push(`Pris: ${scraped.price_now} NOK`);
+      if (scraped.price_before)
+        lines.push(`Før-pris: ${scraped.price_before} NOK`);
+      if (scraped.discount_pct)
+        lines.push(`Rabatt: ${scraped.discount_pct}%`);
+      if (scraped.in_stock !== undefined)
+        lines.push(`På lager: ${scraped.in_stock ? "ja" : "nei"}`);
+      if (scraped.bullets?.length)
+        lines.push(`USP-punkter:\n  - ${scraped.bullets.join("\n  - ")}`);
+      if (lines.length > 0) {
+        parts.push(`\n## Scrapet produkt-data\n\n${lines.join("\n")}`);
+      }
+    } else {
+      // Side-fallback-flow (custom-side, bransje-side, landingsside)
+      const lines: string[] = [];
+      if (scraped.name) lines.push(`Sidetittel (H1): ${scraped.name}`);
+      if (scraped.description)
+        lines.push(`Meta-beskrivelse: ${scraped.description}`);
+      if (scraped.sections?.length)
+        lines.push(
+          `Under-temaer på siden (H2):\n  - ${scraped.sections.join("\n  - ")}`
+        );
+      if (scraped.bullets?.length)
+        lines.push(
+          `Intro-tekst fra siden:\n  - ${scraped.bullets.join("\n  - ")}`
+        );
+      if (lines.length > 0) {
+        parts.push(
+          `\n## Strukturert sideinnhold\n\n` +
+            `(Disse feltene er scrapet og rensket server-side fra fosen-tools.no — bruk dem som kilde til vinkling, men ikke siter dem direkte.)\n\n` +
+            lines.join("\n")
+        );
+      }
     }
   }
 
@@ -701,15 +739,16 @@ export async function buildDraftInputFromUrl(
       title: page.name,
       brief: options.brief,
       source_url: url,
+      // Strukturert side-innhold til prompt-bygger — sender IKKE URL videre.
       source_data: {
         name: page.name,
         bullets: page.bullets,
+        sections: page.sections,
         ...(page.description ? { description: page.description } : {}),
-        ...(page.image_url ? { image_url: page.image_url } : {}),
       },
-      user_photos: page.image_url
-        ? [{ path: page.image_url, public_url: page.image_url }]
-        : [],
+      // Ingen user_photos: og:image er typisk global FT-default, ikke
+      // sidens faktiske innhold. Brukeren kan laste opp manuelt om ønskelig.
+      user_photos: [],
       user_id: options.user_id,
       style: options.style ?? null,
     };

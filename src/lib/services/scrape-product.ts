@@ -265,8 +265,10 @@ export interface ScrapedPage {
   source_url: string;
   name: string;
   description: string | null;
+  /** Tekst-snutter fra intro/ftseo-blokk (gir Gemini side-spesifikk kontekst). */
   bullets: string[];
-  image_url: string | null;
+  /** H2-overskrifter på siden — viser hvilke under-temaer som dekkes. */
+  sections: string[];
 }
 
 function pickMeta(html: string, name: string): string | null {
@@ -315,6 +317,35 @@ function extractIntroParagraphs(html: string, max = 3): string[] {
   return paragraphs;
 }
 
+function extractSectionHeadings(html: string, max = 8): string[] {
+  // H2-overskrifter avslører hvilke under-temaer siden faktisk dekker.
+  // Filtrerer ut footer-/nav-headers som er like på alle sider.
+  const skip = new Set([
+    "kundesenter",
+    "utforsk",
+    "fosen tools",
+    "kontakt oss",
+    "om oss",
+    "følg oss",
+  ]);
+  const result: string[] = [];
+  const seen = new Set<string>();
+  const re = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const text = m[1].replace(/<[^>]+>/g, "").trim();
+    if (!text) continue;
+    const clean = decodeEntities(text);
+    const key = clean.toLowerCase();
+    if (skip.has(key)) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(clean);
+    if (result.length >= max) break;
+  }
+  return result;
+}
+
 /**
  * Henter generisk innhold fra en fosen-tools.no-side (custom-side, bransje-side,
  * produsent-side, kategori-side osv). Brukes som fallback når scrapeProductByUrl
@@ -351,10 +382,11 @@ export async function scrapePageByUrl(url: string): Promise<ScrapedPage> {
   const ogTitle = pickMeta(html, "og:title");
   const docTitle = pickFirstTag(html, "title");
   const h1 = pickFirstTag(html, "h1");
-  const description =
-    pickMeta(html, "description") ?? pickMeta(html, "og:description");
-  const ogImage = pickMeta(html, "og:image");
+  // Bruker page-spesifikk description (<meta name="description">) — IKKE
+  // og:description som ofte er global FT-default ("Skreddersydde verktøy...").
+  const description = pickMeta(html, "description");
   const bullets = extractIntroParagraphs(html);
+  const sections = extractSectionHeadings(html);
 
   // Foretrekk H1 (mest brand-spesifikk), fall tilbake til og:title, så <title>
   // (sistnevnte har ofte "| Fosen Tools"-suffiks som vi rydder).
@@ -367,11 +399,14 @@ export async function scrapePageByUrl(url: string): Promise<ScrapedPage> {
     );
   }
 
+  // og:image utelates bevisst — den er typisk den globale fosen-tools-og.jpg
+  // (samme på alle custom-sider) og ikke side-spesifikt innhold. Vi vil ikke
+  // at den skal lekke inn som "user_photo" i UI eller som visuell ref til Gemini.
   return {
     source_url: parsed.toString(),
     name: rawName.trim(),
     description,
     bullets,
-    image_url: ogImage,
+    sections,
   };
 }
