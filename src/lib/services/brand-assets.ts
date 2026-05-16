@@ -153,14 +153,22 @@ function readApprovedDir(subdir: string): ImageRef[] {
 
 export function approvedRefsFor(
   archetype: string,
-  options: { limit?: number } = {}
+  options: { limit?: number; style?: string | null } = {}
 ): ImageRef[] {
   const limit = options.limit ?? 3;
-  const cacheKey = `${archetype}|${limit}`;
+  const style = options.style && options.style !== "auto" ? options.style : null;
+  const cacheKey = `${archetype}|${style ?? "-"}|${limit}`;
   const cached = approvedCache.get(cacheKey);
   if (cached) return cached;
 
-  const all = [...readApprovedDir(archetype), ...readApprovedDir("_all")];
+  // _all/: alltid-på godkjente refs uavhengig av archetype/stil
+  // <archetype>/: refs som matcher innholdstype
+  // _<style>/: refs som matcher bruker-valgt visuell stil (profesjonell, skreddersydd, ...)
+  const all = [
+    ...readApprovedDir("_all"),
+    ...readApprovedDir(archetype),
+    ...(style ? readApprovedDir(`_${style}`) : []),
+  ];
   if (all.length === 0) {
     approvedCache.set(cacheKey, []);
     return [];

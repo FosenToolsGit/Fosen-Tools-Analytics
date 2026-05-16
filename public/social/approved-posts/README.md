@@ -4,17 +4,26 @@ Dropp bilder her du er fornøyd med — Innholdsmotor sender dem som **STYLE REF
 
 ## Konvensjon
 
+To dimensjoner: **archetype** (innholdstype) og **stil** (visuell DNA).
+
 ```
 public/social/approved-posts/
-├── _all/          ← refs som alltid skal med, uansett archetype
-├── foto/          ← brukes når archetype = "foto"
-├── definisjon/    ← når archetype = "definisjon"
-├── statement/     ← når archetype = "statement"
-├── kontrast/      ← når archetype = "kontrast" (FØR/ETTER osv)
-├── milepael/      ← når archetype = "milepael" (25-år, leveranser, jubileer)
-├── sitat/         ← når archetype = "sitat"
-└── sertifikat/    ← når archetype = "sertifikat"
+├── _all/             ← alltid med, uansett archetype + stil
+│
+├── _profesjonell/    ← stil-valg «Profesjonell» (cinematic, jagerfly-stil)
+├── _skreddersydd/    ← stil-valg «Skreddersydd» (sketched/CAD/wireframe)
+│
+├── foto/             ← archetype = "foto"
+├── definisjon/       ← archetype = "definisjon"
+├── statement/        ← archetype = "statement"
+├── kontrast/         ← archetype = "kontrast" (FØR/ETTER osv)
+├── milepael/         ← archetype = "milepael" (25-år, leveranser, jubileer)
+├── sitat/            ← archetype = "sitat"
+└── sertifikat/       ← archetype = "sertifikat"
 ```
+
+**Archetype-mapper** = matches innholdstypen brukeren genererer.
+**Stil-mapper** (med `_`-prefiks) = matches «Visuell stil»-dropdown i UI. Drop bilder her for å lære AI hvordan disse stilene ser ut.
 
 ## Bruk
 

@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     topic_kind?: TopicKind;
     archetype?: Archetype;
     brief?: string;
+    style?: string | null;
   };
 
   if (!body.url) {
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       archetype: body.archetype,
       brief: body.brief,
       user_id: user.id,
+      style: body.style ?? null,
     });
 
     const result = await generateDraft(supabase, draftInput);
@@ -54,7 +56,10 @@ export async function POST(request: NextRequest) {
         title: draftInput.title,
         brief: draftInput.brief ?? null,
         source_url: draftInput.source_url,
-        source_data: draftInput.source_data ?? {},
+        source_data: {
+          ...(draftInput.source_data ?? {}),
+          ...(body.style ? { _style: body.style } : {}),
+        },
         user_photos: draftInput.user_photos ?? [],
         captions: result.captions,
         ai_images: result.ai_images,

@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     topic_kind?: TopicKind;
     archetype?: Archetype;
     skip_image?: boolean;
+    style?: string | null;
   };
 
   if (!Array.isArray(body.urls) || body.urls.length === 0) {
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
         topic_kind: topicKind,
         archetype,
         user_id: user.id,
+        style: body.style ?? null,
       });
       // Tving skip_image hvis bruker valgte det (sparer kost)
       if (skipImage) draftInput.skip_image = true;
@@ -77,7 +79,10 @@ export async function POST(request: NextRequest) {
           title: draftInput.title,
           brief: draftInput.brief ?? null,
           source_url: draftInput.source_url,
-          source_data: draftInput.source_data ?? {},
+          source_data: {
+            ...(draftInput.source_data ?? {}),
+            ...(body.style ? { _style: body.style } : {}),
+          },
           user_photos: draftInput.user_photos ?? [],
           captions: result.captions,
           ai_images: result.ai_images,

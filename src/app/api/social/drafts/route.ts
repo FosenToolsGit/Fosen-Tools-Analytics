@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       user_photos: body.user_photos ?? [],
       user_id: user.id,
       skip_image: body.skip_image,
+      style: body.style ?? null,
     });
 
     const { data: inserted, error: insErr } = await supabase
@@ -83,7 +84,10 @@ export async function POST(request: NextRequest) {
         title: body.title,
         brief: body.brief ?? null,
         source_url: body.source_url ?? null,
-        source_data: body.source_data ?? {},
+        source_data: {
+          ...(body.source_data ?? {}),
+          ...(body.style ? { _style: body.style } : {}),
+        },
         user_photos: body.user_photos ?? [],
         captions: result.captions,
         ai_images: result.ai_images,

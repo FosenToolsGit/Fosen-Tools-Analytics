@@ -74,6 +74,12 @@ export interface GenerateDraftInput {
   user_id?: string;
   /** Hopp over AI-bilde-gen selv om archetype != 'foto' */
   skip_image?: boolean;
+  /**
+   * Visuell stil for bildegen. Henter ekstra refs fra public/social/approved-posts/_<style>/.
+   * "auto" eller undefined = bare archetype + _all/-refs.
+   * Faktiske mapper bestemmer hva som er gyldig (profesjonell, skreddersydd, ...).
+   */
+  style?: string | null;
 }
 
 export interface GenerateDraftResult {
@@ -597,8 +603,10 @@ export async function generateDraft(
           wordmarkVariant: wordmarkVariantFor(input.archetype),
         });
 
-        // Style-refs fra kuratert public/social/approved-posts/<archetype>/-mappe
-        for (const ref of approvedRefsFor(input.archetype)) refs.push(ref);
+        // Style-refs: archetype-mappe + _all/ + valgfri _<style>/
+        for (const ref of approvedRefsFor(input.archetype, { style: input.style ?? null })) {
+          refs.push(ref);
+        }
 
         const scraped = input.source_data as Partial<ScrapedProduct> | null;
         if (scraped?.image_url) {
@@ -665,6 +673,7 @@ export async function buildDraftInputFromUrl(
     archetype?: Archetype;
     brief?: string;
     user_id?: string;
+    style?: string | null;
   } = {}
 ): Promise<GenerateDraftInput> {
   try {
@@ -680,6 +689,7 @@ export async function buildDraftInputFromUrl(
         ? [{ path: scraped.image_url, public_url: scraped.image_url }]
         : [],
       user_id: options.user_id,
+      style: options.style ?? null,
     };
   } catch (err) {
     if (!(err instanceof ScrapeProductError) || err.status !== 422) throw err;
@@ -701,6 +711,7 @@ export async function buildDraftInputFromUrl(
         ? [{ path: page.image_url, public_url: page.image_url }]
         : [],
       user_id: options.user_id,
+      style: options.style ?? null,
     };
   }
 }

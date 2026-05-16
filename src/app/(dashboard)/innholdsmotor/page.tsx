@@ -48,6 +48,14 @@ const ARCHETYPES = [
   { value: "sertifikat", label: "Sertifikat (trust-signaler)" },
 ] as const;
 
+// Visuell stil — bestemmer hvilken _<style>/-mappe Gemini får refs fra.
+// Drop bilder i public/social/approved-posts/_<value>/ for å påvirke output.
+const STYLES = [
+  { value: "auto", label: "Auto (bare archetype + _all/)" },
+  { value: "profesjonell", label: "Profesjonell (jagerfly-stil)" },
+  { value: "skreddersydd", label: "Skreddersydd (sketch/CAD-stil)" },
+] as const;
+
 const STATUS_LABELS: Record<string, string> = {
   draft: "Utkast",
   approved: "Godkjent",
@@ -170,6 +178,7 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
   const [url, setUrl] = useState("");
   const [topicKind, setTopicKind] = useState<string>("leveranse");
   const [archetype, setArchetype] = useState<string>("foto");
+  const [style, setStyle] = useState<string>("profesjonell");
   const [title, setTitle] = useState("");
   const [brief, setBrief] = useState("");
   const [photos, setPhotos] = useState<
@@ -220,7 +229,7 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
         res = await fetch("/api/social/from-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, topic_kind: topicKind, archetype, brief }),
+          body: JSON.stringify({ url, topic_kind: topicKind, archetype, brief, style }),
         });
       } else {
         if (!title.trim()) throw new Error("Tittel er påkrevd");
@@ -233,6 +242,7 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
             title,
             brief,
             user_photos: photos,
+            style,
           }),
         });
       }
@@ -310,7 +320,7 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="text-sm text-gray-400 block mb-1">Topic-type</label>
             <select
@@ -326,7 +336,7 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
             </select>
           </div>
           <div>
-            <label className="text-sm text-gray-400 block mb-1">Archetype (visuell stil)</label>
+            <label className="text-sm text-gray-400 block mb-1">Archetype (innholdstype)</label>
             <select
               value={archetype}
               onChange={(e) => setArchetype(e.target.value)}
@@ -335,6 +345,20 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
               {ARCHETYPES.map((a) => (
                 <option key={a.value} value={a.value}>
                   {a.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm text-gray-400 block mb-1">Visuell stil</label>
+            <select
+              value={style}
+              onChange={(e) => setStyle(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+            >
+              {STYLES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
                 </option>
               ))}
             </select>
@@ -423,7 +447,12 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
         </button>
       </Card>
 
-      <PopularPagesPanel topicKind={topicKind} archetype={archetype} onBatchDone={onCreated} />
+      <PopularPagesPanel
+        topicKind={topicKind}
+        archetype={archetype}
+        style={style}
+        onBatchDone={onCreated}
+      />
     </div>
   );
 }
@@ -435,10 +464,12 @@ function TabNy({ onCreated }: { onCreated: () => void }) {
 function PopularPagesPanel({
   topicKind,
   archetype,
+  style,
   onBatchDone,
 }: {
   topicKind: string;
   archetype: string;
+  style: string;
   onBatchDone: () => void;
 }) {
   const { data, isLoading } = useSWR<{ pages: PopularPage[]; period_days: number }>(
@@ -484,6 +515,7 @@ function PopularPagesPanel({
           urls: [...selected],
           topic_kind: topicKind,
           archetype,
+          style,
           skip_image: true,
         }),
       });

@@ -99,6 +99,8 @@ export async function PATCH(
 
   if (action === "regenerate-image") {
     try {
+      const persistedStyle =
+        (existing.source_data as { _style?: string } | null)?._style ?? null;
       const result = await generateDraft(supabase, {
         topic_kind: existing.topic_kind,
         archetype: existing.archetype,
@@ -108,6 +110,7 @@ export async function PATCH(
         source_data: existing.source_data,
         user_photos: existing.user_photos,
         user_id: user.id,
+        style: persistedStyle,
       });
       const { data: updated, error: updErr } = await supabase
         .from("social_drafts")
