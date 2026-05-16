@@ -409,14 +409,14 @@ Do not skip these. They are mandatory brand signature.`,
 - Line-height: tight (1.1-1.15) for multi-line stacks
 - Multi-line: break on natural phrase boundaries, NEVER hyphenate
 - ONE keyword inside headline MAY be FT-red #ED1C24 for emphasis (sparingly)
-- Below H1: optional thin FT-red #ED1C24 horizontal accent-line (70px wide), 2-3px thick, centered or left-aligned, sits ~20px below the headline. This is the FT signature underline from ftseo-heading::after.`,
+- REQUIRED: thin FT-red #ED1C24 horizontal accent-line (70px wide, 2-3px thick), centered horizontally, sits 16-24px BELOW the headline. This is the FT signature underline from .ftseo-heading::after on fosen-tools.no — every FT heading has it. Do not skip.`,
 
   typographyOnCream: `TYPOGRAPHY — Fosen Tools nettside-stil:
 - PRIMARY: Korolev Bold 700 — substitute with Heebo Bold / Manrope ExtraBold (condensed geometric sans-serif).
 - Headlines: ALL UPPERCASE for short labels (under 5 words), letter-spacing 0.08em. For the dictionary-style hero word in definisjon: lowercase or mixed-case is OK if it matches the «Skreddersydd»-ref.
 - Hero-text color: FT-ink #111111 (NOT pure black — slightly softer)
 - Body text: 17px proportional, color #222222, line-height 1.7
-- Below H1: optional thin FT-red 70px horizontal accent-line below headline.`,
+- REQUIRED: thin FT-red #ED1C24 70px horizontal accent-line (2-3px thick), positioned below the hero word's hairline area. Same as ftseo-heading::after — every FT heading has it.`,
 
   optionalSubtagline: `OPTIONAL SUBTAGLINE: ONE short italic line above the wordmark frame, small (3-5% canvas height), 60-70% opacity. Example tone: "Bygget for null feilmargin", "Visuell kontroll. Ikke fredagsdugnad.", "5S skal gjøre rot umulig." Include ONLY if you can compose one that genuinely fits the topic — otherwise omit entirely. NEVER include if it would mean inventing new claims.`,
 
@@ -542,10 +542,22 @@ export function buildImagePrompt(
     }
     return out || words[0]; // fallback
   }
-  const heroTextShort = shortenForImage(heroText);
+  const heroTextShortMixedCase = shortenForImage(heroText);
+  // Korolev FT-stil = ALL UPPERCASE for headlines. Uppercase server-side så
+  // Gemini bare rendrer verbatim (eliminerer "Title Case"-inkonsistens).
+  // Definisjon-archetype beholder mixed case (matcher ordbok-stil).
+  const heroTextShort =
+    archetype === "definisjon"
+      ? heroTextShortMixedCase
+      : heroTextShortMixedCase.toUpperCase();
 
   const eyebrow = context.eyebrow?.toLowerCase().trim() ?? "";
-  const redWord = context.red_word?.trim() ?? "";
+  // red_word må også uppercases for å matche heroTextShort-renderingen
+  const redWord = context.red_word?.trim()
+    ? archetype === "definisjon"
+      ? context.red_word.trim()
+      : context.red_word.trim().toUpperCase()
+    : "";
   const subtagline = context.subtagline?.trim() ?? "";
   const body = context.body?.trim() ?? "";
   const kontrastLeft = context.kontrast_left?.trim() || "HYLLEVARE";
@@ -555,7 +567,7 @@ export function buildImagePrompt(
   // som faktisk finnes i hero-teksten).
   const redWordInstruction =
     redWord && heroTextShort.toLowerCase().includes(redWord.toLowerCase())
-      ? `RED EMPHASIS: render the word "${redWord}" in FT-red #ED1C24 — all other headline words remain white. This is ONE word only.`
+      ? `MANDATORY RED EMPHASIS — CRITICAL: the EXACT word "${redWord}" inside the headline MUST be rendered in FT-red #ED1C24 (vivid red, not maroon). All OTHER headline words remain pure white #FFFFFF. This red-word treatment is REQUIRED, not optional — it is the FT signature visual hook. Do not skip it. Do not change which word is red. Render exactly: where "${redWord}" appears in the headline, color it FT-red; everything else white.`
       : `(No red-keyword emphasis for this post — all headline text is white.)`;
 
   // Subtagline-instruks (overstyrer FT_DESIGN.optionalSubtagline når satt)
