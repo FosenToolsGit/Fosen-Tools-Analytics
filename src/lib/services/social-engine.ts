@@ -351,6 +351,49 @@ export function buildUserPrompt(input: GenerateDraftInput): string {
  * Definisjoner, USPs, lengre tekst hører hjemme i caption (post-tekst), ikke
  * i bildet. Multi-image input via referenceImages gir brand-konsistens.
  */
+// =============================================================================
+// FT VISUAL LANGUAGE — felles design-tokens for ALLE archetype-prompts
+//
+// Analysert fra 29 godkjente FT-poster. Tre signature-elementer som er
+// gjennomgangende i alle: (1) blueprint-tekniske dekor-linjer i hjørner,
+// (2) Manrope Black multi-line typografi, (3) FOSEN TOOLS wordmark i frame
+// bunn-senter. Disse må være med på HVER bildegenerering.
+// =============================================================================
+
+const FT_DESIGN = {
+  bgRed: `Full-bleed solid FT-red #ED1C24 background — saturated, no gradient.`,
+  bgInk: `Full-bleed FT-ink #0F1115 background (deep dark gray-black) with a subtle FT-red #ED1C24 radial glow originating from one corner (15-20% opacity max), fading smoothly to near-black at the opposite corner.`,
+  bgCream: `Solid warm off-white #F8F5EE background (NOT pure white — slightly cream/parchment colored).`,
+
+  decorOnDark: `MANDATORY blueprint decoration (thin white lines, 1-1.5px, 50-60% opacity — this is FT's engineering DNA signature, EVERY FT poster has it):
+- TOP-RIGHT corner: a CAD-style dimension/ruler line with small tickmarks, length ~10-15% of canvas width
+- BOTTOM-LEFT corner: a small 3x3 grid pattern + thin technical corner-bracket line
+- BOTTOM-RIGHT corner: a small gear/cog outline OR a circle-with-radiating-dots pattern, + a thin connecting callout line
+- TOP-LEFT corner: a thin technical line-connector with a tiny terminator dot
+Do not skip these. They are mandatory brand signature.`,
+
+  decorOnCream: `MANDATORY: same blueprint decoration as the FT signature (CAD-dimension line top-right, grid bottom-left, gear bottom-right, connector top-left), but rendered in FT-ink #0F1115 at 25-30% opacity (since background is light).`,
+
+  wordmarkOnDark: `MANDATORY WORDMARK: render the official "FOSEN TOOLS" wordmark (provided as a brand reference image — use it EXACTLY, do not invent letterforms) at bottom-center of canvas. WRAP the wordmark inside a thin (1-1.5px) white rectangular frame with rounded corners — frame width is wordmark-width + 30% padding, frame height is wordmark-height + 12% vertical padding. Wordmark size is 10-14% of canvas width.`,
+
+  wordmarkOnCream: `MANDATORY WORDMARK: same as above but the wordmark and frame are rendered in FT-ink #0F1115 (dark variant) since background is cream.`,
+
+  typographyOnDark: `TYPOGRAPHY: Manrope Black/800 or near-identical geometric sans-serif. Headline text is MASSIVE — fills 65-80% of canvas width when stacked. Tight line-height (1.0-1.1), tight tracking. ALL text in pure white #FFFFFF. ONE single keyword inside the statement MAY be FT-red #ED1C24 for emphasis (used sparingly — only if it visually anchors the meaning, see "Forsvarets *verktøykontroll* i din hverdag" reference). Natural sentence case — NOT ALL CAPS unless a single short label.`,
+
+  typographyOnCream: `TYPOGRAPHY: Manrope Black/800. Headline in FT-ink #0F1115. Same scale, line-height and tracking as on dark.`,
+
+  optionalSubtagline: `OPTIONAL SUBTAGLINE: ONE short italic line above the wordmark frame, small (3-5% canvas height), 60-70% opacity. Example tone: "Bygget for null feilmargin", "Visuell kontroll. Ikke fredagsdugnad.", "5S skal gjøre rot umulig." Include ONLY if you can compose one that genuinely fits the topic — otherwise omit entirely. NEVER include if it would mean inventing new claims.`,
+
+  negatives: `STRICTLY AVOID: AI-generated humans or faces, cartoon characters, photo-realistic stock photography, decorative noise, watermarks, fake or clip-art certification badges, generic shield-with-checkmark icons that look like clip-art (if a shield is needed it must be custom geometric FT-style), blue/green/orange/yellow accents (palette is ONLY FT-red #ED1C24, FT-ink #0F1115, white, plus optional gold gradient #85704D→#DBB78B on jubilee marks), gradient backgrounds, abstract empty circles or hexagons "representing" things, sketch-doodle illustrations, hand-drawn-marker aesthetics, beveled 3D effects, lens flares, fake product photos.`,
+
+  references: `BRAND REFERENCE images at the start of this conversation: (1) the official FT wordmark — use EXACTLY, do not redraw or invent letterforms; (2) the official FT color palette — match precisely; (3) approved-post style references showing the target visual language with the mandatory blueprint decoration, multi-line bold typography, and framed wordmark. Replicate that language.`,
+};
+
+/** Lag en wireframe-illustrasjon-instruksjon for et gitt subject. */
+function ftHeroWireframe(subject: string): string {
+  return `HERO ELEMENT — wireframe line-illustration: a single large CAD-blueprint line drawing of ${subject}, rendered in thin white lines (1.5-2px) with NO fills, isometric or 3/4 perspective. Size: 40-55% of canvas. Position: behind/around text, must not overlap critical text. Style: clean technical drafting (NOT sketchy, NOT realistic render, NOT marker-doodle). Same line-weight and aesthetic as the corner decoration but larger.`;
+}
+
 /**
  * Stil-overstyringer som appenderes ETTER archetype-prompten. Recency-bias i
  * Gemini gjør at de siste direktivene vinner — derfor kan vi bytte ut bakgrunn
@@ -407,115 +450,163 @@ export function buildImagePrompt(
     sertifikat: "1:1",
   };
 
-  const negatives = `STRICTLY DO NOT INCLUDE: AI-generated humans or faces, cartoon characters, hand-drawn illustrations, flowers, abstract CAD sketches with empty rectangles, fake product photos, blue or green accents, gradient backgrounds (except gold on jubilee marks), watermarks, stock-photo aesthetics, decorative noise, fake certification logos.`;
-
-  const referenceUsage = `You have been provided BRAND REFERENCE images at the start of this conversation: the official Fosen Tools wordmark logo and the FT color palette. USE THE WORDMARK LOGO EXACTLY AS PROVIDED — do not redraw, restyle, or invent alternative wordmarks. Place it as a small footer or top-strip element. Match the color palette PRECISELY.`;
-
-  // Hero-text = kortest mulig hovedord, max 2-3 ord
-  const heroText = (context.hero_text ?? context.statement ?? context.title)
-    .toUpperCase()
-    .trim();
+  // Hero-tekst — natural case, kan være multi-line (FT-postene har 3-5 linjer).
+  // Trunkér til ~140 tegn så den passer poster-format uten å bli kaos.
+  const rawHero = (
+    context.hero_text ??
+    context.statement ??
+    context.title ??
+    ""
+  ).trim();
+  const heroText =
+    rawHero.length > 140 ? rawHero.slice(0, 137).trim() + "…" : rawHero;
   const eyebrow = context.eyebrow?.toLowerCase().trim() ?? "";
 
   switch (archetype) {
     case "definisjon":
+      // Ordbok-stil på krem bg. Match referansene «Skreddersydd» og «Verktøykontroll».
       return {
-        prompt: `Editorial dictionary-style poster on solid FT-red #ED1C24 background.
+        prompt: `Editorial dictionary-entry poster.
 
-EXACT TEXT TO RENDER (spell precisely):
-  - Small italic label at top: "${eyebrow || "adjektiv"}"
-  - Hero word centered: "${heroText}"
-  - Footer: the Fosen Tools wordmark logo (from brand reference) bottom-center, white, small.
+LAYOUT (match the FT «Skreddersydd» reference exactly):
+1. ${FT_DESIGN.bgCream}
+2. Hero word at upper-left third, MASSIVE (Manrope Black, FT-ink #0F1115, 55-65% canvas width): "${heroText}"
+3. Immediately to the right of the hero word, in smaller italic gray: "${eyebrow || "adjektiv"}"
+4. Phonetic pronunciation in tracked monospace gray (small), to the right of the italic label: "/${(eyebrow ? eyebrow : "kort-form")}/"
+5. Thin horizontal hairline below the hero word, FT-ink at 20% opacity, full width
+6. ONE definition sentence below the hairline, Manrope Regular, FT-ink, smaller (~5% canvas height). Compose a SHORT crisp definition (max ~14 words) that captures the FT-meaning of "${heroText}" — engineering, precision, brukerflyt-orientert. ONE noun inside the sentence MAY be visually underlined with a thin FT-red curved hand-drawn underline (sparingly). End sentence with an asterisk.
+7. Asterisk footnote at very bottom-left in tiny gray italic: short context-line (e.g. "Oppnådd gjennom HDFI-presisjon."). Compose to match.
 
-The hero word MUST be in a bold sans-serif font (Manrope 800 style), pure white, MASSIVE (60% canvas width), tight letter-spacing.
-NO definition text, NO additional sentences in the image — just the eyebrow + hero word + logo.
-Editorial swiss-design feel, generous whitespace.
-${referenceUsage}
-${negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.decorOnCream}
+
+${FT_DESIGN.wordmarkOnCream}
+
+${FT_DESIGN.typographyOnCream}
+
+${FT_DESIGN.references}
+
+${FT_DESIGN.negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "statement":
+      // Stor multi-line statement på rød bg (FT-signatur-stil).
       return {
-        prompt: `Maximalist typography poster, full-bleed solid FT-red #ED1C24 background.
+        prompt: `FT-style typographic poster — match the «Du trenger ikke militært budsjett» reference.
 
-EXACT TEXT TO RENDER (spell precisely):
-  - Main statement centered (max 4 short words): "${heroText}"
-  - Footer: Fosen Tools wordmark (from brand reference) bottom-center, white, small.
+LAYOUT:
+1. ${FT_DESIGN.bgRed}
+2. The headline IS the hero — render this text exactly, broken across 3-5 lines, MASSIVE bold sans-serif (Manrope Black, white, fills 70-80% of canvas width when wrapped):
+"${heroText}"
+   Break lines on natural phrase boundaries (do NOT hyphenate words). End with a period if statement-form. ONE single keyword in the headline MAY be FT-red (use only if it visually anchors the meaning).
+3. NO subtitle, NO support text in image.
 
-Statement in Manrope 900 style, white, MASSIVE (fills 75% canvas width), tight tracking.
-Period or punctuation rendered same size.
-NO other text. NO supporting elements.
-${referenceUsage}
-${negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.decorOnDark}
+
+${FT_DESIGN.wordmarkOnDark}
+
+${FT_DESIGN.typographyOnDark}
+
+${FT_DESIGN.optionalSubtagline}
+
+${FT_DESIGN.references}
+
+${FT_DESIGN.negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "kontrast":
+      // 4:5 to-spalter sammenligning, men nå med FT-decor + framed wordmark.
       return {
-        prompt: `Vertical two-column comparison poster, 4:5 aspect ratio.
+        prompt: `Vertical two-column comparison poster (4:5), FT-style.
 
-LEFT column (50% width): muted gray #6E6E6E background.
-  Top label (small white): "HYLLEVARE"
-RIGHT column (50% width): FT-red #ED1C24 background.
-  Top label (small white): "${heroText}"
+LAYOUT:
+1. LEFT column (50% width): muted gray #4D4D4D background (NOT pure gray — slightly desaturated cool).
+   - Small white uppercase label top, tracked: "HYLLEVARE"
+2. RIGHT column (50% width): FT-red #ED1C24 background.
+   - Small white uppercase label top, tracked: composed dynamically from headline "${heroText}" (extract the FT-side concept, max 1-2 words, e.g. "SKREDDERSYDD")
+3. Center divider: thin white vertical line (1.5px), full height.
+4. Below the labels in each column: optional small visual icon (wireframe outline, white) representing the contrast. Same line-weight as decoration. Optional — only include if the contrast suggests a clear visual pair (e.g. caliper vs tape-measure, neat-vs-chaotic drawer).
+5. Above the two columns at very top-center: ONE short framing line in white (small italic): a phrase from "${heroText}".
 
-Center divider: thin white vertical line.
-Top center: Fosen Tools wordmark (from brand reference) bridging both columns, white, small.
+${FT_DESIGN.decorOnDark}
 
-NO body text, NO bullets — just the two header labels. Typography only.
-${referenceUsage}
-${negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.wordmarkOnDark}
+
+${FT_DESIGN.references}
+
+${FT_DESIGN.negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "milepael":
+      // Massiv tall + støttekst — match «100 år med verktøy i familien»-referansen.
       return {
-        prompt: `Massive number poster, full-bleed solid FT-ink #0F1115 background.
+        prompt: `Milestone poster — match the FT «100 år med verktøy i familien» reference exactly.
 
-EXACT TEXT TO RENDER:
-  - Hero number centered: "${heroText}"
-  - Small uppercase label above (tracked, white): "${eyebrow || "år"}"
-  - Footer: Fosen Tools wordmark (from brand reference) bottom-center, white, small.
+LAYOUT:
+1. ${FT_DESIGN.bgRed}
+2. Hero number stacked at upper half — MASSIVE (60% canvas height), Manrope Black italic-slanted display style, white. Extract the primary number from the text: "${heroText}" — render JUST the number (e.g. "100", "25", "20+", "1200+").
+3. Small italic label inline to the right of the number, lowercase, smaller (15-20% of number height): the unit (e.g. "år", "timer", "kunder")
+4. Below the number, supporting headline in 2-3 lines of bold white sans-serif (Manrope Black, ~12-15% canvas height per line): the rest of the statement from "${heroText}", broken naturally.
+5. If the number is "25" or "100" (jubileum), color the number with a gold gradient: #85704D at top → #DBB78B at bottom.
 
-The number MUST be in Manrope 900 style, MASSIVE (80% canvas height).
-If the number is "25" or "100", color it with the gold gradient style (#85704D → #DBB78B) — otherwise white.
-NO supporting sentences in the image.
-${referenceUsage}
-${negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.decorOnDark}
+
+${FT_DESIGN.wordmarkOnDark}
+
+${FT_DESIGN.references}
+
+${FT_DESIGN.negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "sitat":
+      // Sitat-kort. Match «Vi trenger åtte skuffer.»-referansen.
       return {
-        prompt: `Quote-card poster, 4:5 aspect ratio, solid FT-ink #0F1115 background.
+        prompt: `Quote-card poster (4:5), FT-style.
 
-EXACT TEXT TO RENDER (spell every character precisely):
-  "${heroText}"
-  (the quote text above, surrounded by quotation marks, centered)
+LAYOUT:
+1. ${FT_DESIGN.bgRed}
+2. The quote IS the hero. Render this text in white Manrope Black wrapped across 2-4 lines, fills 65-75% canvas width, surrounded by chevron-style quotation marks «...»:
+«${heroText}»
+3. BELOW the quote (slightly smaller, regular weight): a 2-3 word reaction/judgment in white (compose a SHORT framing line that reacts to the quote — e.g. "Feil startpunkt.", "Riktig spørsmål.", "Bygget på dette."). Composed to match the topic tone.
+4. NO attribution in the image (attribution goes in the caption).
 
-  - Quote in Manrope 500 italic, white, ~55% canvas height.
-  - Large red opening-quote glyph (FT-red #ED1C24) behind the quote, decorative.
-  - NO attribution line in the image (it goes in the caption).
-  - Footer: Fosen Tools wordmark (from brand reference) bottom-center, white, small.
-${referenceUsage}
-${negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.decorOnDark}
+
+${FT_DESIGN.wordmarkOnDark}
+
+${FT_DESIGN.references}
+
+${FT_DESIGN.negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
     case "sertifikat":
+      // Trust-anker. Match «Forsvarets verktøykontroll i din hverdag»-referansen
+      // EKSAKT — mørk bg med skjold som hero, ikke abstrakte sirkler.
       return {
-        prompt: `Trust-signal poster on solid white #FFFFFF background.
+        prompt: `Trust-signal poster — match the FT «Forsvarets verktøykontroll i din hverdag» reference EXACTLY.
 
-EXACT TEXT TO RENDER:
-  - Heading at top, Manrope 700, FT-ink #0F1115: "${heroText}"
-  - 3-5 ABSTRACT geometric shapes (circles or hexagons in FT-red and FT-ink) representing certifications — NO real logos, NO text labels under them in the image
-  - Vertical FT-red #ED1C24 stripe along right edge (4% width, full height)
-  - Footer: Fosen Tools wordmark (from brand reference, ink/dark variant) bottom-left, small.
+LAYOUT:
+1. ${FT_DESIGN.bgInk}
+2. UPPER HALF (60% canvas height): a single LARGE FT-red #ED1C24 SHIELD shape, centered horizontally. The shield is a custom geometric FT-style shape (rounded top, pointed bottom — NOT a generic clip-art shield, NOT a heraldic crest). Inside the shield, a single bold WHITE checkmark glyph, centered, filling ~50% of shield interior.
+3. LOWER HALF (40% canvas height): set on a slightly darker black band that ends at the shield's bottom edge (subtle band-cut effect). Render the headline text in 2-3 lines of bold white sans-serif (Manrope Black), MASSIVE (fills 75% canvas width). ONE keyword from the headline may be in FT-red for emphasis (e.g. if headline is "Forsvarets verktøykontroll i din hverdag" → "verktøykontroll" in red).
+   Headline source: "${heroText}" — if longer than 12 words, compose a 6-10 word headline that captures the trust/standard theme of the source.
+4. Just below headline: ONE small supporting sentence in white (~50% opacity), single line, italic-ish, like a tagline.
 
-Editorial layout, generous whitespace.
-${referenceUsage}
-${negatives}${styleModifier(context.style)}`,
+${FT_DESIGN.decorOnDark}
+
+${FT_DESIGN.wordmarkOnDark}
+
+${FT_DESIGN.typographyOnDark}
+
+${FT_DESIGN.optionalSubtagline}
+
+${FT_DESIGN.references}
+
+${FT_DESIGN.negatives}${styleModifier(context.style)}`,
         aspectRatio: aspectMap[archetype],
       };
 
@@ -525,6 +616,9 @@ ${negatives}${styleModifier(context.style)}`,
       return { prompt: "", aspectRatio: "1:1" };
   }
 }
+
+// Mark ftHeroWireframe as referenced for future use (kontrast wireframes etc).
+void ftHeroWireframe;
 
 /**
  * Velg hvilken wordmark-variant som passer bakgrunnen til archetype.
