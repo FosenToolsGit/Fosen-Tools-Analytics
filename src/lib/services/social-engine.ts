@@ -463,10 +463,21 @@ export function buildImagePrompt(
     rawHero.length > 140 ? rawHero.slice(0, 137).trim() + "…" : rawHero;
 
   // KORT hero-tekst for IMAGE-rendering — Nano Banana misstaver lange norske
-  // ord. Maks ~50 tegn / 5-7 ord. Foretrekk briefen om den er kort, ellers
-  // ta de første få ordene av tittelen. Aldri midt-i-ord-trunkering.
-  function shortenForImage(text: string, maxChars = 50): string {
+  // ord. Maks ~60 tegn. Strategi: (1) prøv å kutte på setningsgrense (.!?)
+  // innenfor max-grensen — beholder komplette setninger. (2) ellers kutt på
+  // ord-grense. Aldri midt-i-ord, aldri midt-i-setning hvis vi kan unngå det.
+  function shortenForImage(text: string, maxChars = 60): string {
     if (text.length <= maxChars) return text;
+
+    // (1) Setnings-kutt: finn siste .!? innenfor maxChars
+    const window = text.slice(0, maxChars + 1);
+    const sentenceMatch = window.match(/^[\s\S]*[.!?](?=\s|$)/);
+    if (sentenceMatch) {
+      const cut = sentenceMatch[0].trim();
+      if (cut.length >= 20) return cut; // unngå for korte sentence-cuts
+    }
+
+    // (2) Ord-kutt: bygg opp ord for ord til vi treffer maxChars
     const words = text.split(/\s+/);
     let out = "";
     for (const w of words) {
@@ -474,7 +485,7 @@ export function buildImagePrompt(
       if (next.length > maxChars) break;
       out = next;
     }
-    return out || words[0]; // fallback til første ordet om alt er for langt
+    return out || words[0]; // fallback
   }
   const heroTextShort = shortenForImage(heroText);
 
