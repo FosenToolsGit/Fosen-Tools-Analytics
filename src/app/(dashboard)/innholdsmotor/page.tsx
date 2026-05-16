@@ -86,6 +86,12 @@ interface DraftRow {
     facebook?: { caption: string; alt_text?: string };
     instagram?: { caption: string; first_comment_hashtags?: string; alt_text?: string };
     linkedin?: { caption: string; hashtags?: string; alt_text?: string };
+    image_headline?: string;
+    image_headline_red_word?: string;
+    image_subtagline?: string;
+    image_body?: string;
+    image_kontrast_left_label?: string;
+    image_kontrast_right_label?: string;
     internal_notes?: string;
   };
   ai_images: Array<{ public_url: string; archetype: string }>;
@@ -720,6 +726,15 @@ function DraftCard({ draft, onChange }: { draft: DraftRow; onChange: () => void 
   const [showReject, setShowReject] = useState(false);
   const [editPlatform, setEditPlatform] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [showImageEdit, setShowImageEdit] = useState(false);
+  const [imgEdit, setImgEdit] = useState({
+    image_headline: draft.captions.image_headline ?? "",
+    image_headline_red_word: draft.captions.image_headline_red_word ?? "",
+    image_subtagline: draft.captions.image_subtagline ?? "",
+    image_body: draft.captions.image_body ?? "",
+    image_kontrast_left_label: draft.captions.image_kontrast_left_label ?? "",
+    image_kontrast_right_label: draft.captions.image_kontrast_right_label ?? "",
+  });
 
   const callAction = async (
     action: string,
@@ -861,6 +876,160 @@ function DraftCard({ draft, onChange }: { draft: DraftRow; onChange: () => void 
               <img src={p.public_url} alt="" className="w-full h-full object-cover" />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Image-tekst-edit-panel (kun for AI-genererte archetyper) */}
+      {draft.archetype !== "foto" && (
+        <div className="border border-gray-800 rounded">
+          <button
+            onClick={() => setShowImageEdit(!showImageEdit)}
+            className="w-full px-3 py-2 text-left flex items-center justify-between text-xs text-gray-300 hover:bg-gray-900"
+          >
+            <span>
+              🎨 Bilde-tekst overstyring{" "}
+              <span className="text-gray-500">
+                (overstyr LLM-komponert tekst før regenerering)
+              </span>
+            </span>
+            <span className="text-gray-500">{showImageEdit ? "▼" : "▶"}</span>
+          </button>
+          {showImageEdit && (
+            <div className="p-3 space-y-3 border-t border-gray-800 bg-gray-950">
+              <div>
+                <label className="text-[11px] text-gray-400 block mb-1">
+                  Hovedheadline (rendres UPPERCASE i bildet)
+                </label>
+                <input
+                  type="text"
+                  value={imgEdit.image_headline}
+                  onChange={(e) =>
+                    setImgEdit({ ...imgEdit, image_headline: e.target.value })
+                  }
+                  placeholder="F.eks. Forsvarets standard i din hverdag."
+                  className="w-full px-2 py-1.5 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] text-gray-400 block mb-1">
+                    Rødt nøkkelord (1 ord fra headline)
+                  </label>
+                  <input
+                    type="text"
+                    value={imgEdit.image_headline_red_word}
+                    onChange={(e) =>
+                      setImgEdit({
+                        ...imgEdit,
+                        image_headline_red_word: e.target.value,
+                      })
+                    }
+                    placeholder="F.eks. standard"
+                    className="w-full px-2 py-1.5 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-gray-400 block mb-1">
+                    Subtagline (italic, ≤6 ord)
+                  </label>
+                  <input
+                    type="text"
+                    value={imgEdit.image_subtagline}
+                    onChange={(e) =>
+                      setImgEdit({
+                        ...imgEdit,
+                        image_subtagline: e.target.value,
+                      })
+                    }
+                    placeholder="F.eks. Bygget for null feilmargin."
+                    className="w-full px-2 py-1.5 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 block mb-1">
+                  Body (≤8 ord, for definisjon/sertifikat/milepael)
+                </label>
+                <input
+                  type="text"
+                  value={imgEdit.image_body}
+                  onChange={(e) =>
+                    setImgEdit({ ...imgEdit, image_body: e.target.value })
+                  }
+                  placeholder="F.eks. CAD-tegnet og CNC-maskinert."
+                  className="w-full px-2 py-1.5 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+                />
+              </div>
+              {draft.archetype === "kontrast" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] text-gray-400 block mb-1">
+                      Venstre-label (default «HYLLEVARE»)
+                    </label>
+                    <input
+                      type="text"
+                      value={imgEdit.image_kontrast_left_label}
+                      onChange={(e) =>
+                        setImgEdit({
+                          ...imgEdit,
+                          image_kontrast_left_label: e.target.value,
+                        })
+                      }
+                      placeholder="HYLLEVARE"
+                      className="w-full px-2 py-1.5 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-gray-400 block mb-1">
+                      Høyre-label (default «SKREDDERSYDD»)
+                    </label>
+                    <input
+                      type="text"
+                      value={imgEdit.image_kontrast_right_label}
+                      onChange={(e) =>
+                        setImgEdit({
+                          ...imgEdit,
+                          image_kontrast_right_label: e.target.value,
+                        })
+                      }
+                      placeholder="SKREDDERSYDD"
+                      className="w-full px-2 py-1.5 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() =>
+                    callAction("regenerate-image", { overrides: imgEdit })
+                  }
+                  disabled={busy || !imgEdit.image_headline.trim()}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 disabled:text-gray-500 text-black text-sm font-medium rounded"
+                >
+                  {busy ? "Genererer..." : "🎨 Regenerér bilde med endringer"}
+                </button>
+                <button
+                  onClick={() =>
+                    setImgEdit({
+                      image_headline: draft.captions.image_headline ?? "",
+                      image_headline_red_word:
+                        draft.captions.image_headline_red_word ?? "",
+                      image_subtagline: draft.captions.image_subtagline ?? "",
+                      image_body: draft.captions.image_body ?? "",
+                      image_kontrast_left_label:
+                        draft.captions.image_kontrast_left_label ?? "",
+                      image_kontrast_right_label:
+                        draft.captions.image_kontrast_right_label ?? "",
+                    })
+                  }
+                  disabled={busy}
+                  className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded"
+                >
+                  Tilbakestill
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
