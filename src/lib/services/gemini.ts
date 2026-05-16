@@ -89,9 +89,29 @@ export async function generateCaptionsJson(
             },
             required: ["caption", "hashtags", "alt_text", "reasoning"],
           },
+          image_headline: {
+            type: "string",
+            description:
+              "Kort FT-stil hovedheadline for poster-bildet. 5-8 ord på norsk, naturlig setning, splitter pent over 2-3 linjer. Skal være selvstendig (ikke avhengig av annet for kontekst). Eksempler: «Halvparten av skuffene bør stå tomme.» / «Forsvarets standard i din hverdag.» / «Bygget for null feilmargin.»",
+          },
+          image_headline_red_word: {
+            type: "string",
+            description:
+              "ETT nøkkelord fra image_headline som skal være FT-rødt for emphasis (resten av teksten er hvit). Velg ordet som visuelt anker meningen. Eksempel: i «Forsvarets verktøykontroll i din hverdag» → «verktøykontroll». La være tomt hvis ingen åpenbar.",
+          },
+          image_subtagline: {
+            type: "string",
+            description:
+              "Valgfri kort italic-linje under hovedheadline (3-6 ord). Eksempler: «Bygget for null feilmargin.», «Visuell kontroll. Ikke fredagsdugnad.», «5S skal gjøre rot umulig.» La være tomt hvis ingen passer.",
+          },
           internal_notes: { type: "string" },
         },
-        required: ["facebook", "instagram", "linkedin"],
+        required: [
+          "facebook",
+          "instagram",
+          "linkedin",
+          "image_headline",
+        ],
       },
       temperature: 0.7,
     },

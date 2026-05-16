@@ -92,6 +92,12 @@ export interface GenerateDraftResult {
     facebook: { caption: string; first_comment_hashtags?: string; alt_text: string; reasoning: string };
     instagram: { caption: string; first_comment_hashtags: string; alt_text: string; reasoning: string };
     linkedin: { caption: string; hashtags: string; alt_text: string; reasoning: string };
+    /** Kort headline optimalisert for poster-display (5-8 ord, FT-tone) */
+    image_headline?: string;
+    /** ETT nøkkelord fra image_headline som skal være FT-rødt for emphasis */
+    image_headline_red_word?: string;
+    /** Optional kort tagline-linje under hovedheadline (3-6 ord italic) */
+    image_subtagline?: string;
     internal_notes?: string;
   };
   ai_images: Array<{
@@ -244,6 +250,9 @@ Du skal returnere én JSON-objekt med disse feltene:
     "alt_text": "<beskrivelse av bilde>",
     "reasoning": "<begrunnelse>"
   },
+  "image_headline": "<KORT FT-stil hovedheadline for poster-bildet. 5-8 ord på norsk. Naturlig setning som splitter pent over 2-3 linjer. SELVSTENDIG (ikke avhengig av annet for kontekst). End med . eller ?. Eksempler: «Halvparten av skuffene bør stå tomme.» / «Bygget for null feilmargin.» / «Forsvarets standard i din hverdag.»>",
+  "image_headline_red_word": "<ETT nøkkelord fra image_headline som skal være FT-rødt for emphasis (resten av teksten er hvit). Velg ordet som visuelt anker meningen. Hvis ingen åpenbar, la være tomt.>",
+  "image_subtagline": "<Valgfri kort italic-linje under headline (3-6 ord). Tomt hvis ingen passer. Eksempler: «Bygget for null feilmargin.», «Visuell kontroll. Ikke fredagsdugnad.»>",
   "internal_notes": "<valgfri: noe operatøren bør vite>"
 }
 \`\`\`
@@ -446,6 +455,10 @@ export function buildImagePrompt(
     eyebrow?: string;
     /** Visuell stil-overstyring (profesjonell/skreddersydd) */
     style?: string | null;
+    /** Ett ord fra hero_text som skal være FT-rødt (LLM-komponert) */
+    red_word?: string | null;
+    /** Kort italic-tagline under hero (LLM-komponert) */
+    subtagline?: string | null;
   }
 ): { prompt: string; aspectRatio: "1:1" | "4:5" | "16:9" | "9:16" } {
   const aspectMap: Record<Archetype, "1:1" | "4:5" | "16:9" | "9:16"> = {
@@ -496,6 +509,20 @@ export function buildImagePrompt(
   const heroTextShort = shortenForImage(heroText);
 
   const eyebrow = context.eyebrow?.toLowerCase().trim() ?? "";
+  const redWord = context.red_word?.trim() ?? "";
+  const subtagline = context.subtagline?.trim() ?? "";
+
+  // Instruks om red-keyword-emphasis (kun hvis caption-LLM ga oss et ord
+  // som faktisk finnes i hero-teksten).
+  const redWordInstruction =
+    redWord && heroTextShort.toLowerCase().includes(redWord.toLowerCase())
+      ? `RED EMPHASIS: render the word "${redWord}" in FT-red #ED1C24 — all other headline words remain white. This is ONE word only.`
+      : `(No red-keyword emphasis for this post — all headline text is white.)`;
+
+  // Subtagline-instruks (overstyrer FT_DESIGN.optionalSubtagline når satt)
+  const subtaglineInstruction = subtagline
+    ? `SUBTAGLINE — render EXACTLY this short line just above the wordmark area, small italic white at 70% opacity: "${subtagline}"`
+    : `(Skip subtagline for this post.)`;
 
   switch (archetype) {
     case "definisjon":
@@ -535,8 +562,9 @@ LAYOUT:
 1. ${FT_DESIGN.bgRed}
 2. The headline IS the hero — render this text EXACTLY, broken across 2-4 lines, MASSIVE bold sans-serif (Manrope Black, white, fills 70-80% of canvas width when wrapped):
 "${heroTextShort}"
-   Break lines on natural phrase boundaries (do NOT hyphenate words). End with a period if statement-form. ONE single keyword in the headline MAY be FT-red (use only if it visually anchors the meaning).
-3. NO subtitle, NO support text in image.
+   Break lines on natural phrase boundaries (do NOT hyphenate words). End with a period if statement-form.
+   ${redWordInstruction}
+3. ${subtaglineInstruction}
 
 ${FT_DESIGN.spellingRule}
 
@@ -545,8 +573,6 @@ ${FT_DESIGN.decorOnDark}
 ${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.typographyOnDark}
-
-${FT_DESIGN.optionalSubtagline}
 
 ${FT_DESIGN.references}
 
@@ -591,6 +617,8 @@ LAYOUT:
 3. Small italic label inline to the right of the number, lowercase, smaller (15-20% of number height): the unit (e.g. "år", "timer", "kunder")
 4. Below the number, supporting headline in 2-3 lines of bold white sans-serif (Manrope Black, ~12-15% canvas height per line): the rest of the statement from "${heroTextShort}", broken naturally. RENDER EXACTLY — do not paraphrase.
 5. If the number is "25" or "100" (jubileum), color the number with a gold gradient: #85704D at top → #DBB78B at bottom.
+${redWordInstruction}
+${subtaglineInstruction}
 
 ${FT_DESIGN.spellingRule}
 
@@ -613,8 +641,9 @@ LAYOUT:
 1. ${FT_DESIGN.bgRed}
 2. The quote IS the hero. Render this text EXACTLY in white Manrope Black wrapped across 2-3 lines, fills 65-75% canvas width, surrounded by chevron-style quotation marks «...»:
 «${heroTextShort}»
-3. BELOW the quote (slightly smaller, regular weight): a 2-3 word reaction/judgment in white (compose a SHORT framing line that reacts to the quote — e.g. "Feil startpunkt.", "Riktig spørsmål.", "Bygget på dette."). Composed to match the topic tone.
+3. BELOW the quote (slightly smaller, regular weight): the framing reaction-line: ${subtagline ? `"${subtagline}"` : "(compose a SHORT 2-3 word reaction in white, e.g. \"Feil startpunkt.\", \"Riktig spørsmål.\" — match topic tone)"}
 4. NO attribution in the image (attribution goes in the caption).
+${redWordInstruction}
 
 ${FT_DESIGN.spellingRule}
 
@@ -637,9 +666,10 @@ ${FT_DESIGN.negatives}${styleModifier(context.style)}`,
 LAYOUT:
 1. ${FT_DESIGN.bgInk}
 2. UPPER HALF (60% canvas height): a single LARGE FT-red #ED1C24 SHIELD shape, centered horizontally. The shield is a custom geometric FT-style shape (rounded top, pointed bottom — NOT a generic clip-art shield, NOT a heraldic crest). Inside the shield, a single bold WHITE checkmark glyph, centered, filling ~50% of shield interior.
-3. LOWER HALF (40% canvas height): set on a slightly darker black band that ends at the shield's bottom edge (subtle band-cut effect). Render the headline EXACTLY as given below, broken across 2-3 lines, MASSIVE bold sans-serif (Manrope Black, fills 75% canvas width). ONE keyword from the headline may be in FT-red for emphasis (use sparingly).
+3. LOWER HALF (40% canvas height): set on a slightly darker black band that ends at the shield's bottom edge (subtle band-cut effect). Render the headline EXACTLY as given below, broken across 2-3 lines, MASSIVE bold sans-serif (Manrope Black, fills 75% canvas width).
    Headline text (use VERBATIM — do not paraphrase, do not add words): "${heroTextShort}"
-4. Just below headline: ONE small supporting sentence in white (~50% opacity), single line, italic-ish, like a tagline.
+   ${redWordInstruction}
+4. ${subtaglineInstruction}
 
 ${FT_DESIGN.spellingRule}
 
@@ -648,8 +678,6 @@ ${FT_DESIGN.decorOnDark}
 ${FT_DESIGN.wordmarkReservedSpace}
 
 ${FT_DESIGN.typographyOnDark}
-
-${FT_DESIGN.optionalSubtagline}
 
 ${FT_DESIGN.references}
 
@@ -788,9 +816,11 @@ export async function generateDraft(
   // 4. Generér bilde hvis archetype krever det og user_id finnes
   const aiImages: GenerateDraftResult["ai_images"] = [];
   if (input.archetype !== "foto" && !input.skip_image && input.user_id) {
-    // Hero-tekst (kort, max 2-3 ord) — bruker hero_text fra brief eller title.
-    // Eyebrow = ordklasse for definisjon, "år" for milepael.
-    const heroText = extractHeroText(input.archetype, input);
+    // Hero-tekst: foretrekk LLM-komponert image_headline (fluent norsk + FT-tone)
+    // over mekanisk brief/title-trunkering. Faller tilbake til extractHeroText
+    // hvis caption-modellen ikke leverte image_headline.
+    const llmHeadline = captions.image_headline?.trim();
+    const heroText = llmHeadline || extractHeroText(input.archetype, input);
     const eyebrow = extractEyebrow(input.archetype, input);
 
     const { prompt: imgPrompt, aspectRatio } = buildImagePrompt(
@@ -802,6 +832,8 @@ export async function generateDraft(
         hero_text: heroText,
         eyebrow,
         style: input.style ?? null,
+        red_word: captions.image_headline_red_word?.trim() || null,
+        subtagline: captions.image_subtagline?.trim() || null,
       }
     );
 
