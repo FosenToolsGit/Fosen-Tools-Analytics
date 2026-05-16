@@ -815,6 +815,7 @@ export async function generateDraft(
 
   // 4. Generér bilde hvis archetype krever det og user_id finnes
   const aiImages: GenerateDraftResult["ai_images"] = [];
+  let lastImageUsage: import("./gemini").UsageStats | undefined;
   if (input.archetype !== "foto" && !input.skip_image && input.user_id) {
     // Hero-tekst: foretrekk LLM-komponert image_headline (fluent norsk + FT-tone)
     // over mekanisk brief/title-trunkering. Faller tilbake til extractHeroText
@@ -875,6 +876,15 @@ export async function generateDraft(
           referenceImages: refs,
           cachedContent: brandCacheName,
         });
+        lastImageUsage = imgResult.usage;
+
+        // Logg om cache faktisk traff (debugging)
+        if (imgResult.usage) {
+          const cacheHit = imgResult.usage.cachedTokens > 0;
+          console.log(
+            `[image-gen] tokens: prompt=${imgResult.usage.promptTokens} cached=${imgResult.usage.cachedTokens} output=${imgResult.usage.outputTokens} → cache ${cacheHit ? "HIT ✓" : "MISS"}`
+          );
+        }
 
         // Wordmark-overlay: AI rendrer IKKE wordmark (typo-risk), vi
         // composite-r ekte PNG på etterpå. Variant matcher bakgrunns-type.
@@ -921,12 +931,33 @@ export async function generateDraft(
     }
   }
 
+  // Cost-kalkulering basert på REELL usage fra Gemini-responses.
+  // Pricing per modell (USD per token, gjeldende 2026 Q2):
+  //   gemini-2.5-flash:           input 0.075/M, cached 0.019/M, output 0.30/M
+  //   gemini-2.5-flash-image:     input 0.30/M, cached 0.075/M, output 30.00/M
+  // (Image-output prises som "image tokens" ~1290/bilde × $30/M ≈ $0.04/bilde)
+  const captionUsage = captionResult.usage;
+  const imageUsage = lastImageUsage;
+  const captionCost = captionUsage
+    ? ((captionUsage.promptTokens - captionUsage.cachedTokens) * 0.075 +
+        captionUsage.cachedTokens * 0.019 +
+        captionUsage.outputTokens * 0.3) /
+      1_000_000
+    : 0.0002;
+  const imageCost = imageUsage
+    ? ((imageUsage.promptTokens - imageUsage.cachedTokens) * 0.3 +
+        imageUsage.cachedTokens * 0.075 +
+        imageUsage.outputTokens * 30) /
+      1_000_000
+    : aiImages.length > 0
+      ? 0.04
+      : 0;
+
   return {
     captions,
     ai_images: aiImages,
     model_used: captionResult.model,
-    generation_cost_estimate:
-      0.0002 + (aiImages.length > 0 ? 0.04 : 0), // rough estimate
+    generation_cost_estimate: Number((captionCost + imageCost).toFixed(6)),
   };
 }
 

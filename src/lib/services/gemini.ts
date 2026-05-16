@@ -34,10 +34,33 @@ export interface CaptionGenInput {
   model?: string;
 }
 
+export interface UsageStats {
+  /** Tokens i request (uten cached del) */
+  promptTokens: number;
+  /** Tokens fra cached content (priset til ~25%) */
+  cachedTokens: number;
+  /** Tokens i output (modellens generering) */
+  outputTokens: number;
+  /** Sum tokens (alle delene) */
+  totalTokens: number;
+}
+
 export interface CaptionGenResult {
   json: unknown;
   raw: string;
   model: string;
+  usage?: UsageStats;
+}
+
+function extractUsage(usageMetadata: unknown): UsageStats | undefined {
+  if (!usageMetadata || typeof usageMetadata !== "object") return undefined;
+  const m = usageMetadata as Record<string, number | undefined>;
+  return {
+    promptTokens: m.promptTokenCount ?? 0,
+    cachedTokens: m.cachedContentTokenCount ?? 0,
+    outputTokens: m.candidatesTokenCount ?? m.totalTokenCount ?? 0,
+    totalTokens: m.totalTokenCount ?? 0,
+  };
 }
 
 /**
@@ -127,7 +150,12 @@ export async function generateCaptionsJson(
     );
   }
 
-  return { json, raw, model };
+  return {
+    json,
+    raw,
+    model,
+    usage: extractUsage(response.usageMetadata),
+  };
 }
 
 export interface ImageRef {
@@ -159,6 +187,7 @@ export interface ImageGenResult {
     mimeType: string;
   }>;
   model: string;
+  usage?: UsageStats;
 }
 
 /**
@@ -228,5 +257,5 @@ export async function generateImage(
     );
   }
 
-  return { images, model };
+  return { images, model, usage: extractUsage(response.usageMetadata) };
 }
