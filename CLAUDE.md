@@ -1188,6 +1188,7 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 12. mai | **Native AI-app brand-bygging + prisplakat-utvidelse + Etiketter-system + brosjyre-fixes.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **Native AI-innholds-app** (app.native.no) konfigurert med full FT-merkevare — Skrivestil-tekst (2332/2500 tegn) med Eriks doktrine («riktig verktøy for hverdagen», ikke antall), 5 plattform-spesifikke regler (LinkedIn, FB, IG, TikTok, Bluesky), 13 toppinnlegg fra Meta-engagement-data (Husqvarna Automower, Alier Trondheim, Andøya Space, Kampfly+FOD, Norwegian Aero, Fosen VGS Flyfag, Forsvaret 20 år, Widerøe, Fribo Bygg, Norsk Transformator, Ordførerkjedet), 11 avviste innholdsposter med konkrete eksempler (tom skuff-mantra, fake spokesmodel, AI-HDFI, blå/rød fargemix, antall-som-feature, plastplate-vs-HDFI-terminologi); **prisplakat utvidet** med data-drevne redigerbare special slides + 10 nye justeringer (klokke, lager-pill, pris-reveal, QR på produkt-slide, brand-spotlight, multi-produkt, combo, custom-slide-rekkefølge, pause-knapp + slide-navigasjon-strip i preview, fokuser-på-redigert-slide); **Etiketter-system** bygd for Brother QL-580N (`/etikett`, 62×29mm DK-11209, navn + SKU + QR med auto-UTM, jsPDF-eksport, importér fra brosjyre/prisplakat); **brosjyre-fixes** (FT-hvit-SVG CSS-klasse-kollisjon fjernet, midtstill-verktøy i Egenskaper-panel, **auto-save-bug** som overskrev server med cached localStorage, Husqvarna-logo lagt på forsiden via Supabase PATCH, åpningstider 07:00-15:00 fikset i resterende preset). **9 Vercel-deploys** gjennom dagen. **Husqvarna-brosjyren stemmer nå på Vercel.** |
 | 13. mai | **Pmax brand-andel-diagnose + Innholdsmotor MVP bygd.** Pmax: verifisert via Google Ads API at alle 4 negative keywords (`fosen tools`/`fosentools` × EXACT+PHRASE) er ENABLED på Pmax + delt liste «Konkurrent-brands» (28 keywords) er applied. Brand-andel synker jevnt: 69.2% (20. apr) → 64.8% (13. mai) — absolutt brand-klikk -28%. **Kritisk quirk oppdaget:** `google_ads_search_terms` med `source=pmax_insight` er **rullende 90-dagers aggregat** per snapshot. **Innholdsmotor:** AI-drevet content engine på `/innholdsmotor` som erstatter Native. Bruker `gemini-2.5-flash` for caption + `gemini-2.5-flash-image` (Nano Banana 2) for bilde. 7 FT-spesifikke archetypes (foto/definisjon/statement/kontrast/milepael/sitat/sertifikat) med eksplisitte forbud mot AI-HDFI/AI-mennesker. DB-backet korpus + live feedback-loop. Migrations 014-016 + ~30 seed-entries. Modell-sammenligning: Nano Banana >> Imagen 4.0 for FT-stilen. $900 Gemini-kreditt over 3 mnd, estimert ~$10-30/mnd faktisk forbruk. |
 | 16. mai | **SEO-helsesjekk + Innholdsmotor UI-bygging.** `scripts/seo-health-check.mjs` (GSC API-basert) + `scripts/video-vs-image-seo.mjs` (video-hero -1.9 pos vs image-hero +1.6 — venter 2 uker). Innholdsmotor Ny-tab fått **PopularPagesPanel** — fetcher topp 12 sider fra GA4+Mailchimp, checkboxes for multi-select, batch-generér via `/api/social/crawl-batch`. Photoshop generative fill prompts for Facom HDFI-bilder. Sosiale medier-captions for Lufttransport AS Facom JET verktøyskap-leveranse (FB/IG/LinkedIn med UTM). |
+| 16.-18. mai | **Mega-økt — Innholdsmotor produksjonsklar + prisplakat-share-token + YouTube-slides.** 16 commits + 17 deploys. Detaljert sammendrag nedenfor. Hovedpunkter: **Innholdsmotor deployd** (branch merged via direct fast-forward push siden gh CLI ikke installert); fallback-scrape for ikke-produkt-URLer (`/bransjer/forsvaret`); Multicase unquoted-meta-regex-fix; iterative prompt-polish for FT-stil → **server-side wordmark composite** med sharp (eliminert «SUSEN TOOLS»-typos); **brand-asset context-caching** (Gemini SDK, 1h TTL); **SDK aspectRatio som hard constraint** (var bare prompt-hint før, ga 16:5-banner i stedet for 1:1); **caption-LLM komponerer ALL image-tekst** (`image_headline`/`image_body`/`image_subtagline`/`kontrast_labels` — eliminer typo-fylt AI-komposisjon); UPPERCASE server-side; FT Korolev-typografi-spec lest fra `FosenTools.scss`; **verktøyvogn+HDFI-mood** erstattet jagerfly i `_profesjonell`-stil; **manuell tekst-override-UI** for image-regenerering; **Imagen-4-vurderings-memo** lagret som HTML på Desktop til daglig leder. **Shadowoaths-spec** (~30kB markdown) lagret på Desktop for separat Claude-sesjon (klær + Pact-app). **Prisplakat for UniFi US Cast Pro**: migration 017 share_token UUID, public `/prisplakat/share/[token]/play`-route utenfor (dashboard), service-role-API, middleware whitelist, kioskMode-prop skipper auto-fullscreen-overlay og controls-bar, auto-reload hvert 5. min. Editor: **📺 Skjerm-URL**-kopi-knapp per playlist. **YouTube-video som slide-type**: extractYouTubeId helper, iframe med autoplay+muted+playsinline, postMessage 'onStateChange' end-event → auto-advance, kun aktiv slide rendrer iframen (sparer båndbredde). Brit kan nå ha én URL per skjerm i butikken, redigere playlist → endring vises automatisk. |
 
 ---
 
@@ -2158,52 +2159,201 @@ Tema: SEO-helsesjekk, video-vs-image-hero SEO-analyse, Photoshop generative fill
 ### Env-variabler som MÅ legges til i Vercel
 - `GEMINI_API_KEY` — Google AI Studio API-nøkkel (paid plan, $900-kreditt)
 
-### Neste gjøremål (prioritert)
-
-**A. Innholdsmotor ferdigstilling**
-1. ~~Popular-pages panel~~ ✅ Ferdig
-2. Push branch + merge til main (eller opprett PR via GitHub UI)
-3. Kjør migrasjoner 014-016 i Supabase
-4. Legg til GEMINI_API_KEY i Vercel env vars
-5. Test ende-til-ende: fra URL → draft i kø → captions vises korrekt
-6. Vurder om batch-crawl trenger mer UX (progress-bar per URL, retry-knapp for feilede)
-
-**B. SEO-oppfølging**
-- **GSC re-indeksering Dag 3-4:** 26 URLer aldri gjort (carry-over fra 7-8. mai). Prioritet: pelicase (594 vis), wera (530), pb-swiss-tools (349)
-- **Video-hero re-sjekk ~27. mai:** Bekreft om video-sidene henter seg inn etter redirect-storm
-- **Facom-fallet:** pos 2.0 → 16.7 (sjekk om indeksert + har Facom H1-fix fra 5. mai hjulpet)
-
-**C. Operasjonelt**
-- **Pmax brand-andel:** Siste sjekk viste jevnt fall (69.2% → 64.8%). Fortsett monitorering — mål 5-15%
-- **Bransjer-pause re-evaluering** (5. juni — kampanjen pauset 5. mai)
-
-**D. Eksisterende pending**
-- Wildcard-redirect-svar fra Multicase
-- Selv-aktivering av produsent-sider i Multicase admin
-- 5 megameny CSS-klasser (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger)
-- Manglende ikoner: `verktøy-elbil.png`, `verneutstyr1.png`
+### Status etter 16-18. mai-økten
+- ✅ Branch merget direkte til main via fast-forward push
+- ✅ Migrasjoner 014-017 alle kjørt i Supabase
+- ✅ GEMINI_API_KEY på plass i Vercel
+- ✅ Innholdsmotor produksjonsklar med wordmark-composite + brand-cache
+- ✅ Prisplakat har share-token-URL for UniFi US Cast Pro (Brit kan bruke kiosk-URL uten innlogging)
+- ✅ YouTube-video som slide-type
+- 📋 Imagen-4-vurderings-memo levert til daglig leder — venter på beslutning
 
 ---
 
-### Prompt-mal for neste sesjon
+## Siste sesjons-sammendrag (16-18. mai 2026 — 3-dagers mega-økt)
+
+Tema: Innholdsmotor fra MVP til produksjonsklar + helt nytt prisplakat-share-token-system for UniFi-skjermer + Shadowoaths-spec til separat Claude-sesjon.
+
+### Innholdsmotor-deploy + Bransje-side-fallback (16. mai)
+- **Deploy:** Branch `claude/determined-heyrovsky-e245f8` fast-forward-pushet direkte til main (gh CLI ikke installert). Vercel auto-deployd. Migrasjoner 014-016 kjørt manuelt i Supabase. GEMINI_API_KEY lagt i Vercel.
+- **Generisk side-scrape-fallback:** `/bransjer/forsvaret` ga 422 fordi `scrapeProductByUrl` krever JSON-LD Product. La til `scrapePageByUrl` som fanger title/description/H1/H2/intro-paragrafer for custom-sider. `buildDraftInputFromUrl` faller automatisk tilbake hvis Product mangler.
+- **Multicase unquoted-meta-fix:** Multicase serverer `<meta property=og:image content=https://...>` UTEN anførselstegn. Regex utvidet til å håndtere både quoted og unquoted attributter, og to attributt-rekkefølger.
+- **Bucket public:** `social_assets` var privat → AI-bilder ga HTTP 400 ved `/object/public/...` URL. Bruker kjørte `UPDATE storage.buckets SET public = true WHERE id = 'social_assets'`.
+
+### Innholdsmotor stil-system (16-17. mai)
+- **`_profesjonell/` + `_skreddersydd/` ref-mapper:** Brukeren dro inn 29 godkjente FT-poster. Jagerfly-bildet kategorisert som `_profesjonell/`, skum-blokk som `_skreddersydd/`. Plus archetype-mapper (statement/definisjon/milepael/sitat/kontrast/sertifikat).
+- **Stil-overstyringer som overlay på archetype-prompter** via `styleModifier(style, archetype)`. Brand-aware mood-bytte (mørk bg, faded sketch-element).
+- **Smartere approved-refs-rotasjon:** Bug fra forrige session — cachet det shuffled-resultatet etter første call. Fix: cache HELE pool fra disk, Fisher-Yates partial shuffle på HVER call.
+- **Tekst-override-UI:** Egen «🎨 Bilde-tekst overstyring»-collapsible-blokk per draft. Editerbare felter: hovedheadline, rødt nøkkelord, subtagline, body, kontrast-labels. «Regenerér bilde med endringer»-knapp sender overrides til API, persistere i `source_data._image_overrides`.
+
+### Caption-LLM komponerer ALL image-tekst (17. mai)
+Største quality-win. Tidligere bad image-prompten Nano Banana om å «compose a XX sentence yourself» → typo-fylt nonsens på norsk («Skredersydd løsliuners», «Konsecknent eliminareing»).
+
+Fix: caption-LLM (`gemini-2.5-flash`, fluent norsk) komponerer nå alle image-tekster og passer dem VERBATIM til image-modellen:
+- `image_headline` (5-8 ord)
+- `image_headline_red_word` (1 ord som rendres FT-rødt)
+- `image_subtagline` (3-6 ord italic)
+- `image_body` (≤8 ord støttesetning)
+- `image_kontrast_left_label` / `image_kontrast_right_label` (for kontrast)
+
+Alle prompts oppdatert: ingen mer «compose a XX yourself». Hver tekst rendres kun hvis caller leverer string, ellers skippes helt. Eksplisitt «NO OTHER TEXT» i hver archetype-prompt.
+
+### Server-side fixer for Nano Banana-svakheter (17-18. mai)
+- **UPPERCASE server-side:** `heroTextShort.toUpperCase()` før vi sender. Gemini ignorerer «ALL UPPERCASE»-instruks ofte (rendrer Title Case). Fix: send teksten allerede uppercased.
+- **Aspect ratio via SDK:** Endret fra prompt-tekst-hint til `config.imageConfig.aspectRatio` (hard constraint). Mapper 4:5 → 3:4 siden SDK ikke støtter 4:5. Eliminerte 2048×512-banner-bug.
+- **Red-word imperative:** «may use red» → «MANDATORY, CRITICAL, REQUIRED — render exactly».
+- **Red 70px underline default-on:** Var «optional», nå «REQUIRED — every FT heading has it».
+- **`shortenForImage` foretrekker setningsgrenser:** Tidligere kuttet midt-i-setning på ord-grense. Nå prøver først .!?-grense, fallback til ord-grense.
+- **Smart `extractEyebrow` for definisjon:** Norske endings-deteksjon (sjon/ing/het/dom/...→substantiv, sk/ig/lig/...→adjektiv, erer/...→verb).
+- **`styleModifier` skipper definisjon-archetype:** Cream-bg overstyres ikke av style.
+
+### Server-side wordmark composite (17. mai)
+Brand-victory. Nano Banana 2 misstaver `FOSEN TOOLS` konsekvent («SUSEN TOOLS», «FOSEN T0OLS») uansett hvor mange instruksjoner vi gir.
+
+Fix: `compositeFosenToolsWordmark()` i ny `composite-wordmark.ts`. AI-prompten ber om at bunn-15% av canvas er TOM, deretter overlay-er vi ekte FOSEN TOOLS PNG via sharp.js. Variant velges fra archetype-bg-type (`cream→ink`, ellers `white`). Hvit rounded frame rundt.
+
+Per-process Buffer-cache for wordmark-PNG. Per-archetype-variant.
+
+### Gemini context-caching (17. mai)
+Ny `gemini-cache.ts` med `getOrCreateImageBrandCache()`. Cacher 6 brand-asset-bilder (~9000 tokens) på Gemini-server med 1-time TTL. Per-process singleton ref + in-flight promise mot race condition + auto re-create ved utløp.
+
+`generateImage` utvidet med `cachedContent?: string` som via `config.cachedContent` referer cached ID. Sparer ~$0.001/call + raskere response. Cache HIT verifisert via `response.usageMetadata.cachedContentTokenCount > 0`.
+
+### FT visual language match (18. mai)
+Brukeren ba om matching mot fosen-tools.no-utseendet. Lest `FosenTools.scss` og lært:
+- **Hovedfont:** Korolev (fallback Arial), weight 700, condensed
+- **H1/ftseo-heading:** UPPERCASE, 32px, letter-spacing 0.08em, signature **rød 70px underline** via `::after`
+- **Body:** 17px line-height 1.7 color #222
+- **Bg:** #F5F7FA cool blue-gray (vs vår krem)
+
+Endringer:
+- `FT_DESIGN.typographyOnDark/OnCream` spec'er nå Korolev-style (Heebo Bold / Manrope ExtraBold som substitute siden Nano Banana ikke har Korolev), UPPERCASE m/ tracking, rød 70px underline som REQUIRED
+- Atmosphere-element i `styleModifier(profesjonell)` byttet fra **military jet** → **verktøyvogn med åpne skuffer som viser HDFI-foam med tools** (FT product-DNA). Eksplisitt: IKKE military/aviation imagery med mindre brief refererer det.
+
+### Cost-tracking + reell usage (17-18. mai)
+- `extractUsage()` fra Gemini response.usageMetadata
+- `CaptionGenResult` + `ImageGenResult` utvidet med `usage?: UsageStats`
+- `generateDraft` kalkulerer reell kost basert på (promptTokens, cachedTokens, outputTokens) × 2026-priser
+- Console-log per image-gen: `[image-gen] tokens: prompt=X cached=Y → cache HIT/MISS ✓`
+
+### Daglig-leder-memo + Shadowoaths-spec (18. mai)
+- **`~/Desktop/Innholdsmotor-Imagen4-vurdering.html`** — print-vennlig business-memo for daglig leder. FT-rødt topp-bånd, Korolev-typografi, røde 70px underlines, anbefaling-blokk i FT-ink-bg. Tre beslutningsvalg: (1) faseinndelt prøveperiode anbefalt, (2) hopp rett til Imagen 4 (~2000 kr setup + 75 kr/mnd), (3) pause utviklingen.
+- **`~/Desktop/Shadowoaths-Innleggsbygger-SPEC.md`** — ~30kB markdown-spec til Shadowoaths-Claude-sesjon. Stateless arkitektur (ingen Supabase), `BrandConfig`-pattern, full kode for 6 kjerne-filer + 14 lærdommer fra FT-prosjektet. Dekker både klær + Pact-app som to brands.
+
+### Prisplakat share-token for UniFi US Cast Pro (18. mai)
+Brit installerte en NEC-skjerm med UniFi US Cast Pro under Packout-displayet i butikken. Spilleren krever direkte URL uten innlogging.
+
+Nytt:
+- **Migration 017:** `share_token` UUID-kolonne på `pricetag_playlists` med unique index. `gen_random_uuid()` default. Backfill eksisterende rader.
+- **Public read-endpoint** `/api/prisplakat/share/[token]/route.ts` bruker service-role internt. UUID-regex-validering. Cache-Control 60s edge-side.
+- **Public play-route** `/prisplakat/share/[token]/play/page.tsx` UTENFOR `(dashboard)`-gruppe (ingen sidebar/header). Kiosk-styling: `cursor: none`, `overflow: hidden`. Auto-reload hvert 5. min så playlist-endringer plukkes opp uten manuell intervention.
+- **Middleware whitelist:** `/prisplakat/share/*` slipper unna login-redirect.
+- **Editor:** «📺 Skjerm-URL»-knapp kopierer URL til clipboard. Per-rad kopi-knapp i «Mine prisplakater»-listen. Hver playlist har sin egen URL — Brit kan ha «Skjerm 1 — Salg», «Skjerm 2 — Husqvarna» osv.
+
+### Kiosk-mode: skip auto-fullscreen (18. mai)
+Første test på UniFi-skjermen viste «KLIKK FOR FULLSKJERM»-overlay i evighet — spilleren kan ikke klikke. Fix:
+- Ny `kioskMode` prop på `Slideshow`-komponenten
+- Skipper auto-fullscreen-prompt-overlay (UniFi-spilleren er allerede i kiosk-fullskjerm via OS)
+- Skjuler controls-bar (play/pause, idx-indicator, fullscreen-knapp)
+- Threades via public share-route: `<Slideshow ... kioskMode={true} />`
+
+### YouTube-video som slide-type (18. mai)
+Erik spurte i samtale med Brit om video-støtte. Implementert kun YouTube først (raskest, ingen storage-kost).
+
+Nytt:
+- `template: "youtube"` på `CustomSlide` med felter: `youtube_url`, `youtube_id`, `youtube_max_seconds`, `youtube_muted`, `youtube_start`
+- `extractYouTubeId()` helper håndterer watch?v=, youtu.be, /embed/, /shorts/, og ren ID
+- `YouTubeSlide`-renderer i `custom-slide-renderer.tsx` — iframe med `autoplay=1&mute=1&controls=0&playsinline=1&rel=0&modestbranding=1&enablejsapi=1` og object-cover via inset/transform-trick
+- Iframen rendres KUN når slide er aktiv (sparer båndbredde + lyd-spill)
+- Auto-advance via YouTube IFrame API `postMessage` 'onStateChange' med info=0 (ENDED) → `advance()`. Fallback: 5 min max (overstyrbar)
+- Slide-editor: viser YouTube-URL-input + start/max-tid/lyd-toggle kun når template=youtube. Live ✓ video-ID-bekreftelse.
+
+### Commits gjennom økten (16-18. mai)
+Sekvensiell push-strategi — hver feature pushed alene for å verifisere på Vercel før neste. ~16 commits, ~17 deploys.
+
+Hovedcommits (siste først):
+- `a5df270` YouTube-video som slide-type
+- `2180915` kioskMode skipper auto-fullscreen-overlay
+- `e788656` public share-token for kiosk-skjermer (UniFi US Cast Pro)
+- `a2a5e87` bilde-tekst-override + regenerér med endringer
+- `2cf47e1` UPPERCASE server-side + sterkere red_word + red-underline default
+- `7e893a6` match fosen-tools.no nettside-stil (Korolev) + verktøyvogn-mood
+- `028ddd8` eliminer ALL AI-komponert tekst i bilder
+- `f25056d` definisjon-bg-override + smart eyebrow + kortere body
+- `fae8401` caption-LLM komponerer image_body verbatim + cream-bg-fix
+- `2d1a52d` approvedRefsFor returnerte SAMME refs hver call (bug fix)
+- `1f506ea` reell usage-tracking + cache-hit-logging
+- `7fa3394` caption-LLM komponerer image_headline (FT-tone)
+- `d351ee4` Gemini context-caching for FT brand-assets
+- `86ebfa8` server-side wordmark-overlay (eliminer typos)
+- `bf983ff` extractHeroText returnerer full tekst
+- `0a23735` drop og:image + send strukturert side-data, ikke URL
+
+### Kjente begrensninger / TODO
+- **Nano Banana 2 norsk-typo-rate** ~30% på lange ord. Override-UI dekker dette manuelt. Imagen 4 ville eliminert problemet — venter på daglig-leder-beslutning.
+- **«FOSEN TOOLS»-duplikat** noen ganger fortsatt synlig (Gemini rendrer wordmark selv tross «WORDMARK SPACE»-instruks). Sjelden — kan løses ved å forstørre composite-overlay-en så den dekker AI-rendret wordmark.
+- **YouTube-annonser** kan vises i embed-modus (YouTube-policy — Premium hjelper ikke). Brukeren må velge videoer som ikke har pre-roll, eller akseptere det.
+
+---
+
+## Klar for neste sesjon (tirsdag 19. mai 2026)
+
+### Pre-sesjon-sjekkliste
+
+**1. Bekreft Innholdsmotor i daglig drift**
+- Trigge én eller to generations (sertifikat + statement) for å verifisere alt fortsatt funker
+- Sjekk Vercel logs: `[image-gen] cache HIT ✓` skal vises (brand-cache fungerer)
+- Cost-tracking i drafts.generation_cost — sjekk at den er ~0.04 USD (~45 øre)
+
+**2. Verifiser UniFi-skjerm + Packout-display**
+- Bekreft at slideshow kjører automatisk uten «KLIKK FOR FULLSKJERM»-overlay
+- Test om YouTube-video-slide faktisk spiller av når brukeren har lagt til en
+- Sjekk at auto-reload (5 min) fanger opp playlist-endringer mens skjermen står på
+
+**3. Daglig-leder-beslutning om Imagen 4**
+- Memo levert mandag 18. mai (~/Desktop/Innholdsmotor-Imagen4-vurdering.html)
+- Hvis JA til Imagen 4: 1-2 dager Vertex AI-oppsett + fine-tuning på 29 ref-poster
+- Hvis NEI / venter: fortsett polish av Nano Banana 2-flyten via manuell override
+
+**4. Shadowoaths-spec hand-off**
+- ~/Desktop/Shadowoaths-Innleggsbygger-SPEC.md klar
+- Brukeren skal gi den til separat Claude-sesjon for klær- og Pact-app-bygging
+
+### Datostyrte sjekker fremover
+
+- **19. mai (tirsdag):** Pmax brand-andel re-sjekk (mål under 50%, var 64.8% sist)
+- **22. mai (torsdag):** Engagement-sjekk på siste FT-poster — Lufttransport AS-leveranse-post fra 16. mai vs +144%-mønsteret
+- **27. mai (cirka):** Video-hero re-sjekk (om SEO har hentet seg inn etter 6. mai-redirect-storm)
+- **5. juni:** Bransjer-kampanje pause re-evaluering (pauset 5. mai, vurder reaktivering)
+
+### Pending fra tidligere sesjoner (overført)
+
+- **GSC re-indeksering Dag 3-4** — 26 URLer aldri gjort (carry-over fra 7-8. mai). Topp-prioritet: pelicase (594 vis), wera (530), pb-swiss-tools (349)
+- **Facom-fallet** (pos 2.0 → 16.7) — sjekk om indeksert + om Facom H1-fix fra 5. mai har hjulpet
+- **SEO-fall på `/leatherman`** — sjekk om inline JSON-LD-konvertering 29. april forbedret rangeringen
+- **Wildcard-redirect-svar** fra Multicase (avventer)
+- **Selv-aktivering av produsent-sider** i Multicase admin
+- **301-redirect-modul pris-bekreftelse** (Erik godkjente «om det betaler seg selv»)
+- **5 megameny CSS-klasser** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger)
+- **Manglende ikoner:** `verktøy-elbil.png`, `verneutstyr1.png`
+- **Levende ft-catgrid utrulling** — script publisert på 2 sider, gjenstår ~37 hovedkategori-sider
+
+---
+
+### Prompt-mal for tirsdag-økten
 
 ```
-Hei! Vi fortsetter der vi slapp 16. mai.
+Hei! Vi fortsetter der vi slapp mandag 18. mai.
 
-Hovedoppgaver (velg prioritet):
+Sjekk Pre-sesjon-sjekklisten i CLAUDE.md først:
+1. Bekreft Innholdsmotor + cache fungerer
+2. Verifiser UniFi-skjermen + YouTube-video
+3. Sjekk om daglig leder har svart på Imagen-4-vurderingen
+4. GSC re-indeksering Dag 3-4 (26 URLer fra mai-planen)
 
-1. **Innholdsmotor deploy:** Push branch `claude/determined-heyrovsky-e245f8` → merge til main. Kjør migrasjoner 014-016 i Supabase. Legg GEMINI_API_KEY i Vercel. Test ende-til-ende.
+Datostyrte sjekkpunkter:
+- Pmax brand-andel re-sjekk (mål under 50%, var 64.8% sist)
+- Engagement-sjekk Lufttransport AS-post (16. mai vs +144%-mønsteret)
 
-2. **GSC re-indeksering Dag 3-4:** 26 URLer gjenstår fra mai-planen (docs/seo/gsc-reindex-list-2026-05-05.md). Topp-prioritet: pelicase, wera, pb-swiss-tools, stahlwille.
-
-3. **SEO-helsesjekk:** Kjør `node scripts/seo-health-check.mjs` for oppdatert status. Video-hero re-sjekk planlagt ~27. mai.
-
-4. **Pmax brand-andel:** Trigge sync, sjekk brand_share_pct i /ga4/google-ads/analyse. Mål: under 50%.
-
-Branch-status: `claude/determined-heyrovsky-e245f8` er 1 commit ahead (popular-pages panel). Trenger push + PR/merge.
-
-Migrasjoner 014-016 er IKKE kjørt — Innholdsmotor-API-er vil gi 500 uten disse.
-GEMINI_API_KEY er IKKE i Vercel — draft-generering feiler uten.
-
-gh CLI er IKKE installert — PR via GitHub UI: https://github.com/FosenToolsGit/Fosen-Tools-Analytics/pull/new/claude/determined-heyrovsky-e245f8
+Si fra hva du vil prioritere i dag.
 ```
