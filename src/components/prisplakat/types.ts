@@ -208,6 +208,11 @@ export interface PricetagPlaylist {
   format: PricetagFormat;
   products: PricetagProduct[];
   settings: PricetagSettings;
+  /**
+   * Public share-token (UUID). Tillater eksterne skjermavspillere
+   * (UniFi US Cast Pro, kiosk-PC osv) å hente slideshow uten innlogging.
+   */
+  share_token?: string;
   created_at: string;
   updated_at: string;
 }

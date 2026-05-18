@@ -10,7 +10,7 @@ import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer"
 import { Slideshow } from "./slideshow";
 import { SlideEditor } from "./slide-editor";
 
-type ListItem = { id: string; title: string; format: PricetagFormat; updated_at: string; products: PricetagProduct[] };
+type ListItem = { id: string; title: string; format: PricetagFormat; updated_at: string; products: PricetagProduct[]; share_token?: string };
 type BrochureListItem = { id: string; title: string; page_count: number; updated_at: string };
 
 const STORAGE_KEY = "ft-prisplakat-state-v1";
@@ -18,6 +18,8 @@ const STORAGE_KEY = "ft-prisplakat-state-v1";
 export function PrisplakatEditor() {
   const [playlists, setPlaylists] = useState<ListItem[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   const [title, setTitle] = useState("Ny prisplakat");
   const [format, setFormat] = useState<PricetagFormat>("a4_single");
   const [products, setProducts] = useState<PricetagProduct[]>([]);
@@ -141,6 +143,7 @@ export function PrisplakatEditor() {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Save failed");
       setCurrentId(d.playlist.id);
+      if (d.playlist.share_token) setShareToken(d.playlist.share_token);
       setSaveStatus("saved");
       loadList();
       setTimeout(() => setSaveStatus("idle"), 2000);
@@ -157,6 +160,7 @@ export function PrisplakatEditor() {
       if (!r.ok) return;
       const pl = d.playlist as PricetagPlaylist;
       setCurrentId(pl.id);
+      setShareToken(pl.share_token ?? null);
       setTitle(pl.title);
       setFormat(pl.format);
       setProducts(pl.products);
@@ -167,11 +171,30 @@ export function PrisplakatEditor() {
 
   const newPlaylist = () => {
     setCurrentId(null);
+    setShareToken(null);
     setTitle("Ny prisplakat");
     setFormat("a4_single");
     setProducts([]);
     setSettings(DEFAULT_SETTINGS);
     setShowPlaylistList(false);
+  };
+
+  const copyShareUrl = async () => {
+    if (!shareToken) return;
+    const url = `${window.location.origin}/prisplakat/share/${shareToken}/play`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      // fallback for ikke-secure context
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000); }
+      finally { document.body.removeChild(ta); }
+    }
   };
 
   const deletePlaylist = async (id: string) => {
@@ -332,6 +355,24 @@ export function PrisplakatEditor() {
               padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 700,
             }}>▶ Spill av</a>
           )}
+          {shareToken && format.startsWith("slideshow") && (
+            <button
+              onClick={copyShareUrl}
+              title="Kopier offentlig skjerm-URL — bruk på UniFi US Cast Pro eller andre kiosk-spillere uten innlogging"
+              style={{
+                background: shareCopied ? "#16a34a" : "var(--chrome-bg-3)",
+                color: "#fff",
+                border: shareCopied ? "1px solid #16a34a" : "1px solid var(--chrome-border)",
+                padding: "6px 14px",
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {shareCopied ? "✓ URL kopiert" : "📺 Skjerm-URL"}
+            </button>
+          )}
           {format.startsWith("a4_") && (
             <button onClick={exportPdf} disabled={products.length === 0} style={{
               background: "var(--ft-red)", color: "#fff", border: "none",
@@ -366,6 +407,23 @@ export function PrisplakatEditor() {
                     <div style={{ fontSize: 12, fontWeight: 600 }}>{pl.title}</div>
                     <div style={{ fontSize: 10, color: "var(--chrome-muted)" }}>{FORMAT_LABELS[pl.format]} · {pl.products?.length || 0} produkter</div>
                   </div>
+                  {pl.share_token && pl.format.startsWith("slideshow") && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const url = `${window.location.origin}/prisplakat/share/${pl.share_token}/play`;
+                        try {
+                          await navigator.clipboard.writeText(url);
+                          const btn = e.currentTarget;
+                          const orig = btn.textContent;
+                          btn.textContent = "✓";
+                          setTimeout(() => { btn.textContent = orig; }, 1500);
+                        } catch { /* ignore */ }
+                      }}
+                      title="Kopier offentlig skjerm-URL (UniFi/kiosk-spillere)"
+                      style={{ background: "transparent", color: "var(--chrome-muted)", border: "1px solid var(--chrome-border)", cursor: "pointer", fontSize: 11, padding: "3px 6px", borderRadius: 3 }}
+                    >📺</button>
+                  )}
                   <button onClick={() => deletePlaylist(pl.id)} style={{ background: "transparent", color: "var(--chrome-muted)", border: "none", cursor: "pointer", fontSize: 14 }}>×</button>
                 </div>
               ))}

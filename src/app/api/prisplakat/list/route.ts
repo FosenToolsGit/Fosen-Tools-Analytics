@@ -8,7 +8,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("pricetag_playlists")
-    .select("id, title, format, products, settings, created_at, updated_at")
+    .select("id, title, format, products, settings, share_token, created_at, updated_at")
     .order("updated_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

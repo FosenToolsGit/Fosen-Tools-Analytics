@@ -32,8 +32,18 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = request.nextUrl.pathname.startsWith("/login");
   const isApiRoute = request.nextUrl.pathname.startsWith("/api");
 
+  // Public share-ruter — UniFi-skjermer og lignende kan ikke logge inn.
+  // Token-basert tilgang (uuid i URL) er eneste gate.
+  const isPublicShare =
+    request.nextUrl.pathname.startsWith("/prisplakat/share/");
+
   // Allow API routes through (they handle their own auth)
   if (isApiRoute) {
+    return supabaseResponse;
+  }
+
+  // Allow public share-ruter (skjermavspillere)
+  if (isPublicShare) {
     return supabaseResponse;
   }
 
