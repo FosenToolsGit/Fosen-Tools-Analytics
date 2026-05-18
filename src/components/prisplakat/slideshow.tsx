@@ -401,15 +401,58 @@ export function Slideshow({
     });
   }, [slides.length, onIdxChange]);
 
-  // Auto-advance
+  // Auto-advance — for YouTube-slides bruker vi enten youtube_max_seconds
+  // eller fallback 5 min (overstyrt av 'ended'-event under). For andre slides
+  // bruker vi vanlig durationMs.
+  const currentSlide = slides[idx];
+  const isYouTubeSlide = currentSlide?.custom?.template === "youtube";
+  const slideDurationMs = isYouTubeSlide
+    ? (currentSlide?.custom?.youtube_max_seconds ?? 300) * 1000
+    : durationMs;
+
   useEffect(() => {
     if (effectivePaused || slides.length === 0) return;
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
-    advanceTimer.current = setTimeout(advance, durationMs);
+    advanceTimer.current = setTimeout(advance, slideDurationMs);
     return () => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
     };
-  }, [idx, effectivePaused, advance, durationMs, slides.length]);
+  }, [idx, effectivePaused, advance, slideDurationMs, slides.length]);
+
+  // YouTube 'ended'-listener: postMessage fra iframe API. Når aktiv YT-slide
+  // sender ENDED (playerState=0), advance umiddelbart.
+  useEffect(() => {
+    if (!isYouTubeSlide) return;
+    const onMsg = (e: MessageEvent) => {
+      if (typeof e.data !== "string") return;
+      try {
+        const data = JSON.parse(e.data);
+        // YouTube IFrame API events
+        if (data.event === "onStateChange" && data.info === 0) {
+          // ENDED (playerState 0)
+          advance();
+        }
+      } catch { /* ikke en YT-melding */ }
+    };
+    window.addEventListener("message", onMsg);
+
+    // Request listener-mode på iframen så vi får state-events.
+    // Vi sender til alle iframes innenfor siden (vanligvis 1 YT om gangen).
+    const t = setTimeout(() => {
+      const iframes = document.querySelectorAll("iframe");
+      iframes.forEach((f) => {
+        f.contentWindow?.postMessage(
+          JSON.stringify({ event: "listening", id: "ytplayer" }),
+          "*"
+        );
+      });
+    }, 500);
+
+    return () => {
+      window.removeEventListener("message", onMsg);
+      clearTimeout(t);
+    };
+  }, [isYouTubeSlide, idx, advance]);
 
   // Fullscreen helper — bruk documentElement som primær target, fallback til container
   const enterFullscreen = useCallback(async () => {

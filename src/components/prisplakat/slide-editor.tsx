@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import type { CustomSlide, LogoKey, PricetagProduct, SlidePlacement, SlideTemplate } from "./types";
-import { SLIDE_TEMPLATE_LABELS, LOGO_LABELS, makeNewSlide, defaultCustomSlides, newSlideId } from "./types";
+import { SLIDE_TEMPLATE_LABELS, LOGO_LABELS, makeNewSlide, defaultCustomSlides, newSlideId, extractYouTubeId } from "./types";
 
 // Felles UI-konstanter
 const FIELD_BG = "var(--chrome-bg)";
@@ -418,6 +418,75 @@ function SlideRow({ slide, idx, total, products, expanded, onToggle, onChange, o
                   );
                 })}
                 {products.length === 0 && <div style={{ fontSize: 10, color: "var(--chrome-muted)" }}>Legg til produkter først</div>}
+              </div>
+            </>
+          )}
+
+          {/* ─── YouTube-spesifikt ─── */}
+          {slide.template === "youtube" && (
+            <>
+              <div style={sectionLabel}>📺 YouTube-video</div>
+              <div>
+                <label style={labelStyle}>YouTube-URL eller video-ID</label>
+                <input
+                  type="text"
+                  value={slide.youtube_url ?? ""}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    const id = extractYouTubeId(url);
+                    onChange({ youtube_url: url, youtube_id: id ?? undefined });
+                  }}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  style={fieldStyle}
+                />
+                {slide.youtube_url && !slide.youtube_id && (
+                  <div style={{ color: "#fbbf24", fontSize: 10, marginTop: 4 }}>
+                    Klarte ikke å finne video-ID. Sjekk at URL er en gyldig YouTube-link.
+                  </div>
+                )}
+                {slide.youtube_id && (
+                  <div style={{ color: "#16a34a", fontSize: 10, marginTop: 4 }}>
+                    ✓ Video-ID: {slide.youtube_id}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 6 }}>
+                <div>
+                  <label style={labelStyle}>Start (sek)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={slide.youtube_start ?? 0}
+                    onChange={(e) => onChange({ youtube_start: parseInt(e.target.value, 10) || 0 })}
+                    style={fieldStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Max-tid (sek)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={slide.youtube_max_seconds ?? ""}
+                    onChange={(e) => onChange({ youtube_max_seconds: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                    placeholder="auto"
+                    style={fieldStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Lyd</label>
+                  <select
+                    value={slide.youtube_muted === false ? "0" : "1"}
+                    onChange={(e) => onChange({ youtube_muted: e.target.value === "1" })}
+                    style={fieldStyle}
+                  >
+                    <option value="1">Lyd av (autoplay-vennlig)</option>
+                    <option value="0">Lyd på (krever interaksjon)</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--chrome-muted)", marginTop: 6, lineHeight: 1.4 }}>
+                Max-tid tom = la videoen avgjøre (auto-advance når den er ferdig). Sett tall hvis du vil tvinge neste slide etter X sekunder.
+                Lyd er som standard AV — kreves av nettlesere for autoplay. Setter du lyd PÅ vil videoen ikke starte på TV-spillere.
               </div>
             </>
           )}

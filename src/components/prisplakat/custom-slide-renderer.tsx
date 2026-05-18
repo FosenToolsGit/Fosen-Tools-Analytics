@@ -79,6 +79,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   if (slide.template === "brand_spotlight") {
     return <BrandSpotlightSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
   }
+  if (slide.template === "youtube") {
+    return <YouTubeSlide slide={slide} active={active} />;
+  }
 
   // ─── Standard fri-form layout (intro / credentials / certified / outro / blank) ──
   return (
@@ -507,4 +510,101 @@ function ComboProductTile({ product, eff, img, accent, settings }: {
       </div>
     </div>
   );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// YOUTUBE-SLIDE
+// Embedder YouTube via iframe med enablejsapi=1 så vi kan lytte på 'ended'.
+// Når active=false, fjernes iframen helt (sparer båndbredde + stopper lyd).
+// Slideshow-container reagerer på 'youtube-ended'-postMessage og går
+// til neste slide.
+// ────────────────────────────────────────────────────────────────────────
+
+function YouTubeSlide({
+  slide,
+  active,
+}: {
+  slide: CustomSlide;
+  active: boolean;
+}) {
+  const videoId = slide.youtube_id || (slide.youtube_url ? extractYouTubeIdInline(slide.youtube_url) : null);
+
+  if (!videoId) {
+    return (
+      <div style={{
+        position: "absolute", inset: 0, background: "#000",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "#666", fontFamily: HEAD, fontSize: "2cqh",
+      }}>
+        YouTube-video mangler ID — lim inn URL i editor
+      </div>
+    );
+  }
+
+  if (!active) {
+    // Ikke render iframen før slide-en er aktiv — sparer båndbredde + lyd
+    return <div style={{ position: "absolute", inset: 0, background: "#000" }} />;
+  }
+
+  const muted = slide.youtube_muted ?? true;
+  const start = slide.youtube_start ?? 0;
+
+  // YouTube iframe-params:
+  // - autoplay=1: start automatisk
+  // - mute=1: kreves for autoplay i Chrome/Edge/Safari
+  // - controls=0: skjul controls
+  // - playsinline=1: ikke gå inn i native iOS-fullscreen
+  // - rel=0: ikke vis relaterte videoer etterpå (kun samme kanal)
+  // - modestbranding=1: minimal YouTube-branding
+  // - enablejsapi=1: la oss lytte til 'ended' via postMessage
+  // - iv_load_policy=3: ingen annotation-overlay
+  const params = new URLSearchParams({
+    autoplay: "1",
+    mute: muted ? "1" : "0",
+    controls: "0",
+    playsinline: "1",
+    rel: "0",
+    modestbranding: "1",
+    enablejsapi: "1",
+    iv_load_policy: "3",
+    start: String(start),
+    origin: typeof window !== "undefined" ? window.location.origin : "",
+  });
+
+  return (
+    <div style={{ position: "absolute", inset: 0, background: "#000", overflow: "hidden" }}>
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}?${params.toString()}`}
+        style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          // Skaler så videoen alltid dekker hele canvas (object-fit: cover)
+          width: "max(100%, 177.78vh)",   // 16:9 i landscape
+          height: "max(100%, 56.25vw)",
+          border: 0,
+        }}
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+        title="YouTube video"
+      />
+    </div>
+  );
+}
+
+// Inline ekstraherer (unngår å importere fra types siden custom-slide-renderer
+// allerede importerer CustomSlide derfra — sirkulær risiko ved import av helpers)
+function extractYouTubeIdInline(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /[?&]v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url.trim())) return url.trim();
+  return null;
 }

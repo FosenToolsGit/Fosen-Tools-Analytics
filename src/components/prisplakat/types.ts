@@ -89,7 +89,8 @@ export type SlideTemplate =
   | "brand_spotlight"  // Merke-logo + tagline + accent
   | "multi_product"    // 2/4 produkter på én slide
   | "combo"            // 2 produkter med kombi-pris
-  | "blank";           // Fri layout
+  | "blank"            // Fri layout
+  | "youtube";         // YouTube-video (autoplay + muted)
 
 /** Hvilken logo som vises i topp/bunn av en custom slide */
 export type LogoKey =
@@ -172,6 +173,18 @@ export interface CustomSlide {
   combo_b_idx?: number;
   combo_price?: number;
   combo_badge?: string;
+
+  // ─── For youtube ───────────────────────────
+  /** Original YouTube-URL (lim inn — vi ekstraherer ID-en automatisk) */
+  youtube_url?: string;
+  /** Ekstrahert video-ID (11 tegn). Hvis satt rendres iframen direkte. */
+  youtube_id?: string;
+  /** Max sekunder før vi tvinger neste slide (default: la videoen avgjøre — auto-advance på 'ended') */
+  youtube_max_seconds?: number;
+  /** Mute video (default true — kreves for autoplay i alle browsere) */
+  youtube_muted?: boolean;
+  /** Start-tid i sekunder (default 0) */
+  youtube_start?: number;
 }
 
 export interface PricetagSettings {
@@ -335,7 +348,41 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
       return { ...base, label: "Kombi-pris", combo_badge: "KOMBI-PRIS", combo_a_idx: 0, combo_b_idx: 1 };
     case "blank":
       return { ...base, label: "Tom slide", eyebrow: "", title: "" };
+    case "youtube":
+      return {
+        ...base,
+        label: "Ny YouTube-video",
+        bg_color: "#000000",
+        youtube_url: "",
+        youtube_muted: true,
+        youtube_start: 0,
+      };
   }
+}
+
+/**
+ * Trekk ut YouTube video-ID fra ulike URL-formater:
+ *   https://www.youtube.com/watch?v=ABCDEFGHIJK
+ *   https://youtu.be/ABCDEFGHIJK
+ *   https://www.youtube.com/embed/ABCDEFGHIJK
+ *   https://www.youtube.com/shorts/ABCDEFGHIJK
+ * Returnerer null hvis ingen 11-tegns-ID kan ekstraheres.
+ */
+export function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /[?&]v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  // Hvis brukeren limte inn ren ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url.trim())) return url.trim();
+  return null;
 }
 
 export const DEFAULT_SETTINGS: PricetagSettings = {
@@ -368,6 +415,7 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
   multi_product: "Multi-produkt (2 / 4-up)",
   combo: "Kombi-tilbud (2 produkter)",
   blank: "Tom — fri redigering",
+  youtube: "📺 YouTube-video",
 };
 
 export const LOGO_LABELS: Record<NonNullable<LogoKey>, string> = {
