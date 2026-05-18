@@ -111,6 +111,7 @@ export default function PrisplakatSharePlayPage() {
         settings={settings}
         landscape={landscape}
         autoplay={true}
+        kioskMode={true}
       />
     </div>
   );

@@ -338,7 +338,7 @@ function ProductSlideContent({
 // ─── Container ────────────────────────────────────────────────────────
 
 export function Slideshow({
-  products, settings, landscape, autoplay, embedded,
+  products, settings, landscape, autoplay, embedded, kioskMode,
   pinIdx, pausedOverride, onIdxChange,
 }: {
   products: PricetagProduct[];
@@ -346,6 +346,10 @@ export function Slideshow({
   landscape: boolean;
   autoplay?: boolean;
   embedded?: boolean;
+  /** Kiosk-spiller (UniFi US Cast Pro, Chromecast, etc) er allerede i
+   * fullskjerm via OS — hopp over "KLIKK FOR FULLSKJERM"-overlayen
+   * og start avspilling direkte. Skjuler også control-overlay. */
+  kioskMode?: boolean;
   /** Pinner preview til denne idx — auto-advance slås av. Brukes fra editor for å fokusere på redigert slide. */
   pinIdx?: number | null;
   /** Eksternt pause-toggle — overrider internt state. */
@@ -502,8 +506,8 @@ export function Slideshow({
         {showClock && <ClockOverlay />}
       </div>
 
-      {/* Controls overlay (vises kun når ikke i fullscreen, og ikke embedded) */}
-      {!isFullscreen && !embedded && (
+      {/* Controls overlay (vises kun når ikke i fullscreen, ikke embedded, ikke kiosk) */}
+      {!isFullscreen && !embedded && !kioskMode && (
         <div style={{
           position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
           display: "flex", gap: 12, background: "rgba(0,0,0,0.75)", padding: "10px 18px",
@@ -538,8 +542,9 @@ export function Slideshow({
         }}>❚❚ Pause — trykk space</div>
       )}
 
-      {/* Auto-fullscreen prompt ved autoplay — Fullscreen API krever user-gesture */}
-      {autoplay && !isFullscreen && !embedded && (
+      {/* Auto-fullscreen prompt ved autoplay — Fullscreen API krever user-gesture.
+          Skjules i kioskMode siden TV-spilleren allerede er i fullskjerm via OS. */}
+      {autoplay && !isFullscreen && !embedded && !kioskMode && (
         <button
           onClick={enterFullscreen}
           style={{
