@@ -51,3 +51,8 @@ fosen-tools-analytics-*.json
 
 # Generert sitemap (publiseres separat)
 /sitemap.xml
+
+# R / RStudio (junk-historikk-filer)
+.Rhistory
+.RData
+.Ruserdata
