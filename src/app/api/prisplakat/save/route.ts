@@ -36,14 +36,21 @@ export async function POST(req: NextRequest) {
   };
 
   if (id) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { user_id: _uid, ...updatePayload } = payload;
     const { data, error } = await supabase
       .from("pricetag_playlists")
-      .update(payload)
+      .update(updatePayload)
       .eq("id", id)
       .eq("user_id", user.id)
       .select()
       .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      if (error.code === "PGRST116") {
+        return NextResponse.json({ error: "Playlist not found or not owned by you" }, { status: 404 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json({ playlist: data });
   } else {
     const { data, error } = await supabase

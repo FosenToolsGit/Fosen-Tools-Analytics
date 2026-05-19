@@ -129,6 +129,7 @@ const navItems: NavEntry[] = [
       { label: "Alle innlegg", href: "/posts", icon: FileText },
       { label: "Bygger: Sosiale medier", href: "/innleggsbygger/sosiale", icon: PenTool },
       { label: "Bygger: Nyhetsbrev", href: "/innleggsbygger/nyhetsbrev", icon: Mail },
+      { label: "Nyhetsbrev-bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Sparkles, localOnly: true },
       { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
     ],
   },
