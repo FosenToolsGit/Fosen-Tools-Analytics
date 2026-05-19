@@ -42,12 +42,11 @@ export async function POST(req: NextRequest) {
       .from("pricetag_playlists")
       .update(updatePayload)
       .eq("id", id)
-      .eq("user_id", user.id)
       .select()
       .single();
     if (error) {
       if (error.code === "PGRST116") {
-        return NextResponse.json({ error: "Playlist not found or not owned by you" }, { status: 404 });
+        return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

@@ -1,22 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse, type NextRequest } from "next/server";
-
-/**
- * Public read-only endpoint for share-token.
- *
- * Bruker service-role internt for å slå opp playlist via share_token.
- * Tokenet (UUID, ~122-bit entropy) er den eneste tilgangs-kontrollen.
- * Hvis tokenet lekker kan brukeren regenerere det fra editor-en.
- *
- * INGEN auth-sjekk — UniFi US Cast Pro og lignende skjermavspillere kan
- * ikke logge inn, så denne ruten må være offentlig på URL-en.
- */
+import { scrapeProductByUrl } from "@/lib/services/scrape-product";
 
 interface RouteContext {
   params: Promise<{ token: string }>;
 }
 
-// UUID-validation: regex-sjekk så vi ikke gjør database-query på rar input
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -40,18 +29,33 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
   if (!data) {
     return NextResponse.json(
       { error: "Slideshow ikke funnet (sjekk URL/token)" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
-  // Cache i 60 sekunder edge-side så samme skjerm-player ikke spør DB ved
-  // hver refresh — slideshow-data endrer seg sjelden.
+  // Enrich products server-side so the public play page doesn't need to call
+  // the auth-required /api/brosjyre/scrape-product endpoint.
+  const products = Array.isArray(data.products) ? data.products : [];
+  const enriched = await Promise.all(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    products.map(async (p: any) => {
+      if (p.name && p.price_now) return p;
+      if (!p.source_url) return p;
+      try {
+        const scraped = await scrapeProductByUrl(p.source_url);
+        return { ...scraped, ...p };
+      } catch {
+        return p;
+      }
+    }),
+  );
+
   return NextResponse.json(
-    { playlist: data },
+    { playlist: { ...data, products: enriched } },
     {
       headers: {
         "Cache-Control": "public, max-age=60, s-maxage=60",
       },
-    }
+    },
   );
 }

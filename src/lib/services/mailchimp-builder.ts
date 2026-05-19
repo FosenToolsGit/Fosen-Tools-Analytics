@@ -2,19 +2,27 @@
  * MailchimpBuilderService — programmatisk bygging av FTNett-nyhetsbrev.
  *
  * Workflow:
- *  1. replicateCampaign(masterId) → ny campaign-ID med samme HTML-template
+ *  1. replicateCampaign(masterId) → ny campaign-ID (kopierer liste + settings)
  *  2. updateSettings(id, {...}) → ny subject/preview/title
- *  3. uploadImage(buffer, name) → URL til Mailchimp Content Studio
- *  4. buildNewsletterHtml(template, input) → ferdig HTML
- *  5. putContent(id, html, plainText) → erstatt HTML i campaign
+ *  3. buildNewsletterHtml(input) → ferdig HTML bygd fra scratch
+ *  4. putContent(id, html, plainText) → erstatt HTML i campaign
  *
- * Master-template: kampanje `b700e0c598` (5. mai 2026 - Custom-vogn nyhetsbrev).
+ * HTML-en genereres 100% programmatisk med Mailchimp-kompatibel struktur.
+ * Matcher master-template layout (mce*-klasser, MSO conditionals, VML buttons).
  */
 
-// Master-template: Milwaukee momentnøkler-nyhetsbrev (sendt 13. mai 2026).
-// Den har den optimale strukturen ferdig: 3+2 produkt-grid, full-bredde midt-bilde,
-// brand-logo over produktene (b300), Roboto-fonter, FT-rød (#f12634) CTA-knapper.
 const MASTER_CAMPAIGN_ID = "6d6f8b6bdb";
+
+const FT_RED = "#f12634";
+const FT_INK = "#000000";
+const FT_WHITE = "#ffffff";
+const OUTER_BG = "#e8e8e8";
+const CONTENT_BG = "#ffffff";
+const TEXT_COLOR = "rgb(34, 34, 34)";
+const FONT_STACK = "'Helvetica Neue', Helvetica, Arial, Verdana, sans-serif";
+const ROBOTO_STACK = "'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+const MAX_WIDTH = 660;
+const FT_LOGO_URL = "https://sawa-dev-2-storage-bucket.storage.googleapis.com/profiles/pes9r6q4skfkw2mp-1f9d1.png";
 
 export interface NewsletterInput {
   themeSlug: string;
@@ -142,147 +150,34 @@ export class MailchimpBuilderService {
   }
 
   /**
-   * Bygg ferdig HTML fra master-template + input.
-   * Replicater b700e0c598-master og gjør strukturerte erstatninger.
+   * Bygg ferdig nyhetsbrev-HTML som matcher Mailchimp master-template struktur.
+   * Genererer komplett mce*-kompatibel HTML med MSO conditionals og VML buttons.
    */
-  buildNewsletterHtml(masterHtml: string, input: NewsletterInput): string {
-    let html = masterHtml;
+  buildNewsletterHtml(input: NewsletterInput): string {
+    const utm = (url: string, content?: string) => withUtm(url, input.themeSlug, content);
+    const products = input.products.slice(0, 5);
 
-    // 1) Bytt ALLE utm_campaign-strenger til ny themeSlug
-    html = html.replace(
-      /utm_campaign=[a-zA-Z0-9_\-]+/g,
-      `utm_campaign=${encodeURIComponent(input.themeSlug)}`
-    );
+    const rootSections: string[] = [];
 
-    // 2) Hovedtittel + undertittel (b5)
-    // Master: <h1>...font-size: 16px>Milwaukee momentnøkler er her</span></h1>
-    //         <h2 class="mcePastedContent..."><strong>  20% på hele spekteret</strong></h2>
-    html = html.replace(
-      /(<span style="font-size: 16px">)[^<]+(<\/span>)/,
-      `$1${escapeHtml(input.headingMain)}$2`
-    );
-    // Bytt undertittel (alt mellom <strong> og </strong> i h2-blokken etter hovedtittel)
-    html = html.replace(
-      /<strong>(\s*)20% på hele spekteret<\/strong>/,
-      `<strong>$1${escapeHtml(input.headingSub)}</strong>`
-    );
+    // Section 1: Header (black bg) — logo + top badge
+    rootSections.push(renderHeaderSection(
+      utm("https://fosen-tools.no/", "header-logo"),
+      input.topBadge
+    ));
 
-    // 3) Ingress (b6) — første lange tekstblokk
-    const ingressPattern = /(<span style="font-size: 14px">)([^<]{30,500})(<\/span>)/;
-    const m = html.match(ingressPattern);
-    if (m) {
-      html = html.replace(m[0], `${m[1]}${escapeHtml(input.ingress)}${m[3]}`);
-    }
+    // Section 2: Content (white bg) — heading, ingress, brand logo, product grid,
+    //   button, divider, midt image, midt title, midt body, midt CTA,
+    //   divider, footer image, social buttons, descriptive text
+    rootSections.push(renderContentSection(
+      input,
+      products,
+      utm
+    ));
 
-    // 4) Topp badge (b4) — master: "MILWAUKEE TILBUD"
-    if (input.topBadge) {
-      html = html.replace(/>MILWAUKEE TILBUD</, `>${escapeHtml(input.topBadge)}<`);
-    }
+    // Section 3: Footer (black bg) — social icons, company info, mailchimp links
+    rootSections.push(renderFooterSection());
 
-    // 4b) Brand-logo (b300) — bytte src + a-tag href hvis manufacturer er ikke Milwaukee
-    if (input.brandLogoUrl && input.brandLogoLink) {
-      html = replaceBrandLogoBlock(
-        html,
-        input.brandLogoUrl,
-        withUtm(input.brandLogoLink, input.themeSlug),
-        input.brandLogoLink
-      );
-    }
-
-    // 5) Midtseksjon
-    html = html.replace(/HDFI — [^<]+/g, escapeHtml(input.midtTitle));
-    html = html.replace(
-      /Hver Custom-verktøyvogn[^<]+«Fosen Tools-standarden»\./g,
-      escapeHtml(input.midtBody)
-    );
-    html = html.replace(/LES MER OM HDFI/g, escapeHtml(input.midtCtaText));
-    html = html.replace(
-      /href="https:\/\/fosen-tools\.no\/hdfi[^"]*"/g,
-      `href="${withUtm(input.midtCtaUrl, input.themeSlug)}"`
-    );
-
-    // 6) Bytt produkter — master har 5: 125584/125591/125586 (rad 1) + 125590/125585 (rad 2)
-    const masterProductSlugs = [
-      "/milwaukee/125584",
-      "/milwaukee/125591",
-      "/milwaukee/125586",
-      "/milwaukee/125590",
-      "/milwaukee/125585",
-    ];
-    const masterImages = extractMasterImageMap(masterHtml);
-
-    for (let i = 0; i < Math.min(5, input.products.length); i++) {
-      const p = input.products[i];
-      const oldSlug = masterProductSlugs[i];
-      const productPath = extractPath(p.url);
-      html = html.replace(new RegExp(escapeRegex(oldSlug), "g"), productPath);
-
-      const masterImg = masterImages[oldSlug];
-      if (masterImg && p.imageUrl) {
-        html = html.replace(new RegExp(escapeRegex(masterImg), "g"), p.imageUrl);
-      }
-    }
-
-    // 7) Produkt-tekster (Milwaukee-master har 5 produkt-tekster)
-    const masterProductTexts = [
-      "MOMENTNØKKEL 1/2&quot; DR. KLIKK 40–200 NM<br>Milwaukee 4932500851<br>3 736,- eks. mva. (før 4 670,-)",
-      "MOMENTNØKKEL 3/8&quot; DR. KLIKK 25–140 NM<br>Milwaukee 4932500824<br>3 288,- eks. mva. (før 4 110,-)",
-      "MOMENTNØKKEL 1/4&quot; DR. KLIKK 5–25 NM<br>Milwaukee 4932500823<br>3 136,- eks. mva. (før 3 920,-)",
-      "MOMENTNØKKEL 3/8&quot; DR. KLIKK 10–50 NM<br>Milwaukee 4932500850<br>3 288,- eks. mva. (før 4 110,-)",
-      "MOMENTNØKKEL 1/2&quot; DR. KLIKK 60–340 NM<br>Milwaukee 4932500825<br>3 960,- eks. mva. (før 4 950,-)<br>(bestillingsvare)",
-    ];
-    for (let i = 0; i < Math.min(5, input.products.length); i++) {
-      html = replaceProductHeading(
-        html,
-        masterProductTexts[i],
-        buildProductHeadingText(input.products[i])
-      );
-    }
-
-    // 7b) Hvis < 5 produkter, fjern overskytende produkt-blokker
-    if (input.products.length < 5) {
-      html = trimProductGrid(html, input.products.length);
-    }
-
-    // 8) Midtseksjon-bilde (b81 + b127)
-    const midtMasterUrl = masterImages["__midt__"];
-    if (midtMasterUrl && input.midtImageUrl) {
-      html = html.replace(
-        new RegExp(escapeRegex(midtMasterUrl), "g"),
-        input.midtImageUrl
-      );
-    }
-
-    // 9) Footer-bilde
-    const footerMasterUrl = masterImages["__footer__"];
-    if (footerMasterUrl && input.footerImageUrl) {
-      html = html.replace(
-        new RegExp(escapeRegex(footerMasterUrl), "g"),
-        input.footerImageUrl
-      );
-    }
-
-    // 10) Sosiale lenker
-    if (input.socialInstagramPostUrl) {
-      html = html.replace(
-        /https:\/\/www\.instagram\.com\/p\/[^"\/]+\/[^"]*/g,
-        input.socialInstagramPostUrl
-      );
-    }
-    if (input.socialLinkedinPostUrl) {
-      html = html.replace(
-        /https:\/\/www\.linkedin\.com\/feed\/update\/[^"]+/g,
-        input.socialLinkedinPostUrl
-      );
-    }
-
-    // 11) STRUKTURELLE FIX-ER:
-    // (Milwaukee-master har allerede full-bredde midt-bilde og brand-logo over produkter,
-    //  så vi trenger kun bilde-sentrering og produkt-høyde-justering.)
-    html = addMarginAutoToAllImages(html);
-    html = alignProductHeights(html);
-
-    return html;
+    return wrapInDocument(rootSections.join("\n"), input.previewText, input.subjectLine);
   }
 
   buildPlainText(input: NewsletterInput): string {
@@ -308,10 +203,6 @@ export class MailchimpBuilderService {
     return lines.join("\n");
   }
 
-  /**
-   * Henter brand-logo-URL fra fosen-tools.no/{manufacturer} (ProducerLogoImage).
-   * Returnerer Azure Blob-URL (offentlig, permanent), uten å laste opp til Mailchimp.
-   */
   async fetchBrandLogoUrl(manufacturer: string): Promise<string | null> {
     try {
       const url = `https://fosen-tools.no/${manufacturer}`;
@@ -321,14 +212,12 @@ export class MailchimpBuilderService {
       });
       if (!res.ok) return null;
       const html = await res.text();
-      // 1. ProducerLogoImage
       const producer = html.match(/<img class="ProducerLogoImage"[^>]+src="([^"]+)"/);
       if (producer) {
         let u = producer[1];
         if (u.startsWith("/")) u = `https://fosen-tools.no${u}`;
         return u;
       }
-      // 2. Generic blob-mønster med merke i URL
       const generic = html.match(
         new RegExp(
           `(https://mc10256fosentools\\.blob[^"'\\s]+${manufacturer}[^"'\\s]*\\.(?:png|jpg|svg))`,
@@ -345,8 +234,6 @@ export class MailchimpBuilderService {
   async createNewsletter(input: NewsletterInput): Promise<CreatedDraft> {
     const { id: campaignId } = await this.replicateCampaign(MASTER_CAMPAIGN_ID);
 
-    // Auto-fetch brand-logo fra manufacturer-URL hvis ikke gitt eksplisitt.
-    // Pluck manufacturer fra første produkt-URL (mest pålitelige kilde).
     if (!input.brandLogoUrl && input.products.length > 0) {
       const firstProductUrl = input.products[0].url;
       try {
@@ -375,12 +262,7 @@ export class MailchimpBuilderService {
       reply_to: "post@fosen-tools.no",
     });
 
-    const masterContent = await this.mcRequest<{ html: string }>(
-      "GET",
-      `/campaigns/${MASTER_CAMPAIGN_ID}/content`
-    );
-
-    const newHtml = this.buildNewsletterHtml(masterContent.html, input);
+    const newHtml = this.buildNewsletterHtml(input);
     const plainText = this.buildPlainText(input);
 
     await this.putContent(campaignId, newHtml, plainText);
@@ -390,289 +272,569 @@ export class MailchimpBuilderService {
   }
 }
 
-// ============ Helpers ============
+// ============ Utilities ============
+
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function pad(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function extractPath(url: string): string {
-  try {
-    const u = new URL(url);
-    return u.pathname;
-  } catch {
-    return url;
-  }
-}
-
-function withUtm(url: string, themeSlug: string): string {
+function withUtm(url: string, themeSlug: string, content?: string): string {
   if (!url) return url;
   if (url.includes("utm_source=")) return url;
   const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}utm_source=FTNett&utm_medium=email&utm_campaign=${encodeURIComponent(themeSlug)}`;
+  let utm = `${sep}utm_source=FTNett&utm_medium=email&utm_campaign=${encodeURIComponent(themeSlug)}`;
+  if (content) utm += `&utm_content=${encodeURIComponent(content)}`;
+  return `${url}${utm}`;
 }
 
-function buildProductHeadingText(p: NewsletterProduct): string {
-  const safe = (s: string) => s.replace(/"/g, "&quot;");
-  return `${safe(p.name)}<br/>${safe(p.brandSku)}<br/>${safe(p.priceText)}`;
+function slugFromUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const segments = u.pathname.split("/").filter(Boolean);
+    if (segments.length >= 2) return `${segments[0]}-${segments[1]}`;
+    return segments[0] ?? "produkt";
+  } catch {
+    return "produkt";
+  }
 }
 
-function replaceProductHeading(html: string, oldText: string, newText: string): string {
-  if (html.includes(oldText)) return html.replace(oldText, newText);
-  const oldWithQuot = oldText.replace(/"/g, "&quot;");
-  if (html.includes(oldWithQuot)) return html.replace(oldWithQuot, newText);
-  return html;
+// ============ Structural Helpers ============
+
+/**
+ * Wrap a section in the Mailchimp mceWrapper pattern with MSO conditional table.
+ */
+function wrapSection(blockId: string, bgColor: string, innerBgColor: string, content: string): string {
+  return `<tbody data-block-id="${blockId}" class="mceWrapper"><tr><td style="background-color:${OUTER_BG}" valign="top" align="center" class="mceSection${blockId}"><!--[if (gte mso 9)|(IE)]><table align="center" border="0" cellspacing="0" cellpadding="0" width="${MAX_WIDTH}" style="width:${MAX_WIDTH}px;"><tr><td><![endif]--><table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:${MAX_WIDTH}px" role="presentation"><tbody><tr><td style="background-color:${innerBgColor}" valign="top" class="mceWrapperInner">${content}</td></tr></tbody></table><!--[if (gte mso 9)|(IE)]></td></tr></table><![endif]--></td></tr></tbody>`;
 }
 
 /**
- * Plukk ut bilde-URLer fra master-HTML basert på nærmeste anchor.
+ * Image with MSO fallback (non-mso uses table, mso uses direct img in span).
  */
-function extractMasterImageMap(html: string): Record<string, string> {
-  const map: Record<string, string> = {};
-  const imgRegex = /<img[^>]+src="(https:\/\/mcusercontent\.com\/[^"]+)"/g;
-  const found: Array<{ pos: number; src: string }> = [];
-  let match: RegExpExecArray | null;
-  while ((match = imgRegex.exec(html))) {
-    found.push({ pos: match.index, src: match[1] });
-  }
-
-  for (const f of found) {
-    const before = html.slice(Math.max(0, f.pos - 3000), f.pos);
-    const anchors = [
-      ...before.matchAll(
-        /href="https:\/\/fosen-tools\.no(\/[a-zA-Z0-9\/_\-?=&.%]+)"/g
-      ),
-    ];
-    if (anchors.length === 0) continue;
-    const lastAnchor = anchors[anchors.length - 1][1];
-    const cleanPath = lastAnchor.split("?")[0];
-
-    if (
-      cleanPath.match(
-        /^\/(fosen-tools-custom|milwaukee|rennsteig|fosen-tools|wera|knipex|stahlwille|snap-on|facom|ledlenser|pelicase|hellberg|husqvarna|bahco|leatherman|halder)\/\d+/
-      )
-    ) {
-      if (!map[cleanPath]) map[cleanPath] = f.src;
-    } else if (cleanPath === "/hdfi" || cleanPath.includes("/produkter/")) {
-      if (!map["__midt__"]) map["__midt__"] = f.src;
-    } else if (cleanPath === "/") {
-      if (!map["__footer__"]) map["__footer__"] = f.src;
-    }
-  }
-
-  return map;
-}
-
-/**
- * Master har 2 midt-bilder side om side (50/50). Reduserer til 1 i full bredde
- * — samme tilnærming som ble brukt manuelt i Wera-momentnøkkel-draften.
- */
-function collapseMidtImageToFullWidth(html: string): string {
-  const col128Marker =
-    '<td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" id="mceColumnId-128"';
-  const pos = html.indexOf(col128Marker);
-  if (pos === -1) return html;
-
-  let depth = 1;
-  let i = pos + col128Marker.length;
-  let endPos = -1;
-  while (i < html.length) {
-    const openMatch = html.indexOf("<td", i);
-    const closeMatch = html.indexOf("</td>", i);
-    if (closeMatch === -1) break;
-    if (openMatch !== -1 && openMatch < closeMatch) {
-      depth++;
-      i = openMatch + 3;
-    } else {
-      depth--;
-      i = closeMatch + 5;
-      if (depth === 0) {
-        endPos = i;
-        break;
-      }
-    }
-  }
-  if (endPos === -1) return html;
-
-  let result = html.slice(0, pos) + html.slice(endPos);
-
-  // Endre kolonne 95 fra 50% → 100%
-  const oldCol95 =
-    '<td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" id="mceColumnId-95" data-block-id="95" colspan="6" width="50%">';
-  const newCol95 =
-    '<td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" id="mceColumnId-95" data-block-id="95" colspan="12" width="100%">';
-  result = result.replace(oldCol95, newCol95);
-
-  // Doble midt-bildet 282 → 564
-  const b81Start = result.indexOf('id="b81"');
-  if (b81Start !== -1) {
-    const b81End = result.indexOf("</td>", b81Start);
-    if (b81End !== -1) {
-      const before = result.slice(0, b81Start);
-      const inside = result.slice(b81Start, b81End);
-      const after = result.slice(b81End);
-      const updated = inside
-        .replace(/width="282"/g, 'width="564"')
-        .replace(/max-width:282px;width:282px/g, "max-width:564px;width:564px");
-      result = before + updated + after;
-    }
-  }
-
-  return result;
-}
-
-function addMarginAutoToAllImages(html: string): string {
-  return html.replace(
-    /style="display:block;max-width:/g,
-    'style="display:block;margin:0 auto;max-width:'
-  );
-}
-
-/**
- * Bytt brand-logo i b300 (Milwaukee-master har Milwaukee-logo + link til /milwaukee).
- * Når vi bygger et nyhetsbrev for et annet merke, må vi bytte både src og href.
- */
-function replaceBrandLogoBlock(
-  html: string,
-  newLogoUrl: string,
-  newLogoHref: string,
-  brandPath: string
+function renderImage(
+  id: string,
+  src: string,
+  href: string | null,
+  width: string | number,
+  alt: string,
+  cssClass: string,
+  widthStyle?: string,
+  heightStyle?: string
 ): string {
-  // Bytt img-src i b300-blokken
-  let result = html.replace(
-    /(<td[^>]+id="b300"[^>]*>[\s\S]*?<img alt=")Milwaukee(" src=")[^"]+(")/,
-    `$1${escapeHtml(brandPath.split("/").filter(Boolean).pop() ?? "brand")}$2${newLogoUrl}$3`
-  );
-  // Bytt href på samme a-tag (link til /milwaukee)
-  result = result.replace(
-    /(<a href=")https:\/\/fosen-tools\.no\/milwaukee\?utm_source=FTNett[^"]*(" target="_blank" style="display:block"><img alt=")/,
-    `$1${newLogoHref}$2`
-  );
-  // Bytt MSO-fallback href hvis den finnes
-  result = result.replace(
-    /<a href="https:\/\/fosen-tools\.no\/milwaukee"><span class="mceImageBorder/g,
-    `<a href="${newLogoHref}"><span class="mceImageBorder`
-  );
-  return result;
+  const w = typeof width === "number" ? width : width;
+  const wStr = String(w);
+  const imgStyle = `display:block;${widthStyle ? `max-width:${widthStyle};` : "max-width:100%;"}height:${heightStyle ?? "auto"};border-radius:0`;
+  const msoMaxW = widthStyle ?? `${wStr}px`;
+
+  const imgTag = `<img alt="${esc(alt)}" src="${esc(src)}" width="${wStr}" height="auto" style="${imgStyle}" class="imageDropZone ${cssClass}">`;
+
+  const nonMsoInner = href
+    ? `<a href="${esc(href)}" style="display:block" target="_blank"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;margin:0;vertical-align:top;max-width:100%;width:100%;height:auto" role="presentation"><tbody><tr><td style="border:0;border-radius:0;margin:0" valign="top">${imgTag}</td></tr></tbody></table></a>`
+    : `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;margin:0;vertical-align:top;max-width:100%;width:100%;height:auto" role="presentation"><tbody><tr><td style="border:0;border-radius:0;margin:0" valign="top">${imgTag}</td></tr></tbody></table>`;
+
+  const msoImg = `<img role="presentation" class="imageDropZone ${cssClass}" src="${esc(src)}" alt="${esc(alt)}" width="${wStr}" height="auto" style="display:block;max-width:${msoMaxW};width:${msoMaxW};height:auto"/>`;
+  const msoInner = href
+    ? `<a href="${esc(href)}"><span class="mceImageBorder" style="border:0;border-width:2px;vertical-align:top;margin:0">${msoImg}</span></a>`
+    : `<span class="mceImageBorder" style="border:0;border-width:2px;vertical-align:top;margin:0">${msoImg}</span>`;
+
+  return `<div><!--[if !mso]><!--></div>${nonMsoInner}<div><!--<![endif]--></div><div>\n<!--[if mso]>\n${msoInner}\n<![endif]-->\n</div>`;
 }
 
 /**
- * Fjern overskytende produkt-blokker hvis bruker har færre enn 5 produkter.
- * Master-template har 3 produkter i rad 1 (b9/b12/b15) og 2 i rad 2 (b209/b212).
- * Hvis count <= 3: fjern hele rad 2 (mceKeepColumns-rad med b209+b212).
- * Hvis count == 4: fjern bare b212.
+ * CTA button with VML fallback for Outlook.
  */
-function trimProductGrid(html: string, count: number): string {
-  if (count >= 5) return html;
-
-  // Hvis count < 5, fjern b212 (femte produkt-kolonne)
-  if (count <= 4) {
-    html = removeColumnByMarker(html, 'id="mceColumnId-212"');
-  }
-  // Hvis count < 4, fjern også b209 (fjerde produkt-kolonne, etterlater tom rad 2)
-  if (count <= 3) {
-    html = removeColumnByMarker(html, 'id="mceColumnId-209"');
-  }
-  // Hvis count < 3, fjern b15 (tredje produkt i rad 1)
-  if (count <= 2) {
-    html = removeColumnByMarker(html, 'id="mceColumnId-15"');
-  }
-  // Hvis count < 2, fjern b12 (andre produkt)
-  if (count <= 1) {
-    html = removeColumnByMarker(html, 'id="mceColumnId-12"');
-  }
-  return html;
-}
-
-/**
- * Fjern en hel <td> (kolonne) basert på en id-marker via stack-balansert match.
- */
-function removeColumnByMarker(html: string, marker: string): string {
-  const idx = html.indexOf(marker);
-  if (idx === -1) return html;
-  // Finn start av <td som inneholder marker
-  const tdStart = html.lastIndexOf("<td", idx);
-  if (tdStart === -1) return html;
-
-  // Stack-balansert match av </td>
-  let depth = 1;
-  let i = idx;
-  while (i < html.length) {
-    const openMatch = html.indexOf("<td", i + 3);
-    const closeMatch = html.indexOf("</td>", i);
-    if (closeMatch === -1) break;
-    if (openMatch !== -1 && openMatch < closeMatch) {
-      depth++;
-      i = openMatch + 3;
-    } else {
-      depth--;
-      i = closeMatch + 5;
-      if (depth === 0) return html.slice(0, tdStart) + html.slice(i);
-    }
-  }
-  return html;
-}
-
-/**
- * Setter inn en sentered klikkbar brand-logo over produkt-raden.
- * Logoen linker til /{merke} med UTM. Plassering: rett før første produkt-kolonne.
- */
-function injectBrandLogoAboveProducts(
-  html: string,
-  logoUrl: string,
-  logoLink: string,
-  themeSlug: string
+function renderButton(
+  id: string,
+  text: string,
+  href: string,
+  maxWidth: number = 282,
+  align: string = "center"
 ): string {
-  // Marker: første <tr> som inneholder mceColumnId-9 (produkt 1)
-  const marker = 'id="mceColumnId-9"';
-  const pos = html.indexOf(marker);
-  if (pos === -1) return html;
+  const btnStyle = `background-color:${FT_RED};border-radius:0;border:1px none #222222;color:${FT_WHITE};display:block;font-family:${FONT_STACK};font-size:11px;font-weight:normal;font-style:normal;padding:16px 28px;text-decoration:none;text-align:center;direction:ltr;letter-spacing:3px`;
 
-  // Søk bakover til nærmeste <tr>
-  const trStart = html.lastIndexOf("<tr", pos);
-  if (trStart === -1) return html;
-
-  const utm =
-    logoLink && !logoLink.includes("utm_source=")
-      ? `${logoLink}${logoLink.includes("?") ? "&" : "?"}utm_source=FTNett&utm_medium=email&utm_campaign=${encodeURIComponent(themeSlug)}&utm_content=brand-logo`
-      : logoLink;
-
-  const logoBlock = `<tr><td style="padding:8px 24px 16px;text-align:center;" valign="middle"><a href="${utm}" target="_blank" style="display:inline-block;"><img alt="Brand-logo" src="${logoUrl}" style="display:block;margin:0 auto;max-width:200px;height:auto;border:0;" width="200" /></a></td></tr>`;
-
-  return html.slice(0, trStart) + logoBlock + html.slice(trStart);
+  return `<div><!--[if !mso]><!--></div><table align="${align}" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:${maxWidth}px" role="presentation" data-block-id="${id}" class="mceButtonContainer"><tbody><tr class="mceStandardButton"><td style="background-color:${FT_RED};border-radius:0;text-align:center" valign="top" class="mceButton"><a href="${esc(href)}" target="_blank" class="mceButtonLink" style="${btnStyle}" rel="noreferrer">${esc(text)}</a></td></tr></tbody></table><div><!--<![endif]--></div><table align="${align}" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:${maxWidth}px" role="presentation" data-block-id="${id}" class="mceButtonContainer"><tbody><tr>\n<!--[if mso]>\n<td align="${align}">\n<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml"\nxmlns:w="urn:schemas-microsoft-com:office:word"\nhref="${esc(href)}"\nstyle="v-text-anchor:middle; width:${maxWidth}px; height:44px;"\narcsize="0%"\nstrokecolor="${FT_RED}"\nstrokeweight="1px"\nfillcolor="${FT_RED}">\n<v:stroke dashstyle="solid"/>\n<w:anchorlock />\n<center style="\ncolor: ${FT_WHITE};\ndisplay: block;\nfont-family: ${FONT_STACK};\nfont-size: 11;\nfont-style: normal;\nfont-weight: normal;\nletter-spacing: 3px;\ntext-decoration: none;\ntext-align: center;\ndirection: ltr;"\n>\n${esc(text)}\n</center>\n</v:roundrect>\n</td>\n<![endif]-->\n</tr></tbody></table>`;
 }
 
 /**
- * Tvinger samme høyde på produkt-tekst-blokker så «Gå til produkt»-CTA-er
- * står linet opp uavhengig av hvor langt produkt-navnet er.
- *
- * Strategi: inject en <style>-blokk i <head> som gir min-height på `.mceText`-
- * h4-blokker innenfor produkt-kolonner. Verdien (~108px) er ca. 3 linjer + pris
- * i Mailchimp-default-typografi.
+ * Divider line (1px solid #222222).
  */
-function alignProductHeights(html: string): string {
-  const styleBlock = `<style type="text/css">
-/* Produkt-tekst-justering så CTA-knapper er linet opp */
-.mceColumn .mceTextBlockContainer h4:first-of-type { min-height: 108px; }
-@media only screen and (max-width: 600px) {
-  .mceColumn .mceTextBlockContainer h4:first-of-type { min-height: 0; }
+function renderDivider(id: string): string {
+  return `<td style="background-color:transparent;padding-top:12px;padding-bottom:12px;padding-right:38px;padding-left:38px;border:0;border-radius:0" valign="top" class="mceDividerBlockContainer" id="${id}"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:transparent;width:100%" role="presentation" class="mceDividerContainer"><tbody><tr><td style="min-width:100%;border-top-width:1px;border-top-style:solid;border-top-color:#222222;line-height:0;font-size:0" valign="top" class="mceDividerBlock"> </td></tr></tbody></table></td>`;
 }
-</style>`;
 
-  // Sett inn etter <head> hvis mulig, ellers etter eksisterende <style>-blokk
-  if (html.includes("</head>")) {
-    return html.replace("</head>", `${styleBlock}\n</head>`);
+/**
+ * Text block wrapped in gutter + mceText pattern.
+ */
+function renderTextBlock(
+  gutterId: string,
+  blockId: string,
+  divId: string,
+  padding: string,
+  bgColor: string,
+  html: string
+): string {
+  return `<td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="${gutterId}"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="${blockId}"><table width="100%" style="border:0;background-color:${bgColor};border-radius:0;border-collapse:separate"><tbody><tr><td style="${padding}" class="mceTextBlockContainer"><div data-block-id="${blockId.replace("b", "")}" class="mceText" id="${divId}" style="width:100%">${html}</div></td></tr></tbody></table></td></tr></tbody></table></td>`;
+}
+
+// ============ Document Wrapper ============
+
+function wrapInDocument(body: string, previewText: string, subjectLine: string): string {
+  // Generate zero-width-space filler for preview text padding
+  const zwsFiller = Array(240).fill("͏ ‌").join(" ");
+  const shyFiller = Array(240).fill("­").join(" ");
+
+  return `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head>
+<!--[if gte mso 15]>
+<xml>
+<o:OfficeDocumentSettings>
+<o:AllowPNG/>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings>
+</xml>
+<![endif]-->
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(subjectLine)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<!--[if !mso]><!--><link rel="stylesheet" type="text/css" id="newGoogleFontsStatic" href="https://fonts.googleapis.com/css?family=Roboto:400,400i,700,700i,900,900i"><!--<![endif]-->${renderCssBlock()}
+</head>
+<body>
+<!---->
+<!--[if !gte mso 9]><!----><span class="mcnPreviewText" style="display:none; font-size:0px; line-height:0px; max-height:0px; max-width:0px; opacity:0; overflow:hidden; visibility:hidden; mso-hide:all;">${esc(previewText)}</span><!--<![endif]-->
+<!---->
+<div style="display: none; max-height: 0px; overflow: hidden;">${zwsFiller}${shyFiller}</div><!--MCE_TRACKING_PIXEL-->
+<center>
+<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable" role="presentation" style="background-color: rgb(255, 255, 255);">
+<tbody><tr>
+<td class="bodyCell" align="center" valign="top">
+<table id="root" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">${body}</table>
+</td></tr></tbody></table>
+</center>
+</body></html>`;
+}
+
+function renderCssBlock(): string {
+  return `<style type="text/css">img{-ms-interpolation-mode:bicubic;}
+table, td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+.mceStandardButton, .mceStandardButton td, .mceStandardButton td a{mso-hide:all!important;}
+p, a, li, td, blockquote{mso-line-height-rule:exactly;}
+p, a, li, td, body, table, blockquote{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;}
+.mcnPreviewText{display:none!important;}
+.bodyCell{margin:0 auto;padding:0;width:100%;}
+.ExternalClass, .ExternalClass p, .ExternalClass td, .ExternalClass div, .ExternalClass span, .ExternalClass font{line-height:100%;}
+.ReadMsgBody, .ExternalClass{width:100%;}
+a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important;}
+body{height:100%;margin:0;padding:0;width:100%;background:#ffffff;}
+p{margin:0;padding:0;}
+table{border-collapse:collapse;}
+td, p, a{word-break:break-word;}
+h1, h2, h3, h4, h5, h6{display:block;margin:0;padding:0;}
+img, a img{border:0;height:auto;outline:none;text-decoration:none;}
+a[href^="tel"], a[href^="sms"]{color:inherit;cursor:default;text-decoration:none;}
+.mceColumn .mceButtonLink,
+            .mceColumn-1 .mceButtonLink,
+            .mceColumn-2 .mceButtonLink,
+            .mceColumn-3 .mceButtonLink,
+            .mceColumn-4 .mceButtonLink{min-width:30px;}
+div[contenteditable="true"]{outline:0;}
+.mceImageBorder{display:inline-block;}
+.mceImageBorder img{border:0!important;}
+body, #bodyTable{background-color:rgb(255, 255, 255);}
+.mceText, .mcnTextContent, .mceLabel{font-family:${FONT_STACK};}
+.mceText, .mcnTextContent, .mceLabel{color:${TEXT_COLOR};}
+.mceText h1, .mceText h2, .mceText h4, .mceText p, .mceText label, .mceText input{margin-bottom:0;}
+.mceSpacing-24 .mceInput + .mceErrorMessage{margin-top:-12px;}
+.mceSpacing-12 .mceInput + .mceErrorMessage{margin-top:-6px;}
+.mceInput{background-color:transparent;border:2px solid rgb(208, 208, 208);width:60%;color:rgb(77, 77, 77);display:block;}
+.mceInput[type="radio"], .mceInput[type="checkbox"]{float:left;margin-right:12px;display:inline;width:auto!important;}
+.mceLabel > .mceInput{margin-bottom:0;margin-top:2px;}
+.mceLabel{display:block;}
+.mceText p, .mcnTextContent p{color:${TEXT_COLOR};font-family:${FONT_STACK};font-size:16px;font-weight:normal;line-height:1.5;mso-line-height-alt:150%;text-align:center;letter-spacing:0;direction:ltr;margin:0;}
+.mceText h1, .mcnTextContent h1{color:${TEXT_COLOR};font-family:${FONT_STACK};font-size:64px;font-weight:bold;line-height:1.25;mso-line-height-alt:125%;text-align:center;letter-spacing:0;direction:ltr;}
+.mceText h2, .mcnTextContent h2{color:${TEXT_COLOR};font-family:${FONT_STACK};font-size:14px;font-weight:normal;line-height:1.25;mso-line-height-alt:125%;text-align:center;letter-spacing:5px;direction:ltr;}
+.mceText h4, .mcnTextContent h4{color:${TEXT_COLOR};font-family:${FONT_STACK};font-size:12px;font-weight:normal;line-height:1.5;mso-line-height-alt:150%;text-align:left;letter-spacing:0;direction:ltr;}
+.mceText a, .mcnTextContent a{color:${TEXT_COLOR};font-style:normal;font-weight:normal;text-decoration:none;direction:ltr;}
+.mceText h1 a, .mceText h2 a, .mceText h3 a, .mceText h4 a, .mceText h5 a, .mceText h6 a, .mcnTextContent h1 a, .mcnTextContent h2 a, .mcnTextContent h3 a, .mcnTextContent h4 a, .mcnTextContent h5 a, .mcnTextContent h6 a{color:inherit;font-weight:inherit;}
+p.mcePastedContent, h1.mcePastedContent, h2.mcePastedContent, h3.mcePastedContent, h4.mcePastedContent{text-align:left;}
+.mceSection58 .mceText a, .mceSection58 .mcnTextContent a{color:rgb(255, 255, 255);font-weight:normal;text-decoration:none;}
+#d54 p, #d54 h1, #d54 h2, #d54 h3, #d54 h4, #d54 ul{text-align:center;}
+@media only screen and (max-width: 480px) {
+body, table, td, p, a, li, blockquote{-webkit-text-size-adjust:none!important;}
+body{width:100%!important;min-width:100%!important;}
+body.mobile-native{-webkit-user-select:none;user-select:none;transition:transform 0.2s ease-in;transform-origin:top center;}
+colgroup{display:none;}
+.mceLogo img, .mceImage img, .mceSocialFollowIcon img{height:auto!important;}
+.mceWidthContainer{max-width:${MAX_WIDTH}px!important;}
+.mceColumn, .mceColumn-2{display:block!important;width:100%!important;}
+.mceColumn-forceSpan{display:table-cell!important;width:auto!important;}
+.mceColumn-forceSpan .mceButton a{min-width:0!important;}
+.mceReverseStack{display:table;width:100%;}
+.mceColumn-1{display:table-footer-group;width:100%!important;}
+.mceColumn-3{display:table-header-group;width:100%!important;}
+.mceColumn-4{display:table-caption;width:100%!important;}
+.mceKeepColumns .mceButtonLink{min-width:0;}
+.mceBlockContainer, .mceSpacing-24{padding-right:16px!important;padding-left:16px!important;}
+.mceBlockContainerE2E{padding-right:0;padding-left:0;}
+.mceImage, .mceLogo{width:100%!important;height:auto!important;}
+.mceText img{max-width:100%!important;}
+.mceFooterSection .mceText, .mceFooterSection .mceText p{font-size:16px!important;line-height:140%!important;}
+.mceText p{margin:0;font-size:16px!important;line-height:1.5!important;mso-line-height-alt:150%;}
+.mceText h1{font-size:64px!important;line-height:1.25!important;mso-line-height-alt:125%;}
+.mceText h2{font-size:14px!important;line-height:1.25!important;mso-line-height-alt:125%;}
+.mceText h4{font-size:12px!important;line-height:1.5!important;mso-line-height-alt:150%;}
+.bodyCell{padding-left:4px!important;padding-right:4px!important;}
+.mceButtonContainer, #b40 .mceButtonContainer, #b72 .mceButtonContainer, #b73 .mceButtonContainer, #b93 .mceButtonContainer, #b124 .mceButtonContainer{width:100%!important;max-width:100%!important;}
+.mceButtonLink{padding:18px 28px!important;font-size:16px!important;}
+.mceDividerContainer{width:100%!important;}
+#b1{padding:30px 24px 10px!important;}
+#b1 table, #b7 table, #b10 table, #b13 table, #b65 table, #b81 table, #b127 table{margin-left:auto!important;margin-right:auto!important;float:none!important;}
+#b4 .mceTextBlockContainer{padding:12px 28px 20px 30px!important;}
+#gutterContainerId-4, #gutterContainerId-5, #gutterContainerId-6, #gutterContainerId-8, #gutterContainerId-11, #gutterContainerId-14, #b54 .mceTextBlockContainer, #gutterContainerId-74, #gutterContainerId-91, #gutterContainerId-92, #gutterContainerId-113{padding:0!important;}
+#b5 .mceTextBlockContainer, #b6 .mceTextBlockContainer{padding:0 30px!important;}
+#b7, #b10, #b13{padding:0 6px!important;}
+#b8 .mceTextBlockContainer{padding:12px 0!important;}
+#b11 .mceTextBlockContainer, #b14 .mceTextBlockContainer{padding:12px 8px!important;}
+#gutterContainerId-17{padding:0 14px!important;}
+#b17{padding:20px 0 12px!important;}
+#b40 table, #b72 table, #b73 table, #b93 table, #b124 table{float:none!important;margin:0 auto!important;}
+#b40{padding:10px 30px!important;}
+#b40 .mceButtonLink, #b72 .mceButtonLink, #b73 .mceButtonLink, #b93 .mceButtonLink, #b124 .mceButtonLink{padding-top:18px!important;padding-bottom:18px!important;font-size:11px!important;}
+#gutterContainerId-54{padding:10px!important;}
+#b65{padding:12px 16px!important;}
+#b72, #b73, #b93, #b124{padding:12px 24px!important;}
+#b74 .mceTextBlockContainer{padding:12px 50px!important;}
+#b81, #b127{padding:12px 24px 0!important;}
+#b89 .mceDividerBlock, #b100 .mceDividerBlock{border-top-width:1px!important;}
+#b89, #b100{padding:12px 20px!important;}
+#b91 .mceTextBlockContainer{padding:0 20px!important;}
+#b92 .mceTextBlockContainer, #b113 .mceTextBlockContainer{padding:0 24px 12px!important;}
+}
+@media only screen and (max-width: 640px) {
+.mceClusterLayout td{padding:4px!important;}
+}</style>`;
+}
+
+// ============ Section Renderers ============
+
+/**
+ * Header section: black bg with FT logo + top badge text.
+ */
+function renderHeaderSection(logoHref: string, topBadge?: string): string {
+  // Logo image block
+  const logoImg = renderImage(
+    "b1",
+    FT_LOGO_URL,
+    logoHref,
+    183.6,
+    "",
+    "mceLogo",
+    "30%"
+  );
+
+  // Top badge text block
+  const badgeText = topBadge
+    ? `<h2 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:#ffffff;"><span style="font-size: 12px">${esc(topBadge)}</span></span></h2>`
+    : `<h2 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:#ffffff;"><span style="font-size: 12px">NYHETSBREV</span></span></h2>`;
+
+  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="2"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" data-block-id="-17" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:30px;padding-bottom:10px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b1">${logoImg}</td></tr><tr>${renderTextBlock(
+    "gutterContainerId-4",
+    "b4",
+    "d4",
+    "padding-left:30px;padding-right:28px;padding-top:12px;padding-bottom:20px",
+    "transparent",
+    badgeText
+  )}</tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
+
+  return wrapSection("3", OUTER_BG, FT_INK, innerContent);
+}
+
+/**
+ * Content section: white bg with all newsletter content.
+ */
+function renderContentSection(
+  input: NewsletterInput,
+  products: NewsletterProduct[],
+  utm: (url: string, content?: string) => string
+): string {
+  const rows: string[] = [];
+
+  // --- Heading (h1 + h2 subtitle) ---
+  rows.push(`<tr>${renderTextBlock(
+    "gutterContainerId-5",
+    "b5",
+    "d5",
+    "padding-left:30px;padding-right:30px;padding-top:0;padding-bottom:0",
+    CONTENT_BG,
+    `<h1 style="line-height: 1; mso-line-height-alt: 100%;"><span style="font-size: 16px">${esc(input.headingMain)}</span></h1><h2 class="mcePastedContent last-child" style="line-height: 1; mso-line-height-alt: 100%; text-align: center;"><strong>${esc(input.headingSub)}</strong></h2>`
+  )}</tr>`);
+
+  // --- Ingress + brand logo ---
+  {
+    let ingressInner = `<p style="line-height: 1; mso-line-height-alt: 100%; text-align: center;" class="${input.brandLogoUrl ? "" : "last-child"}"><span style="font-size: 14px">${esc(input.ingress)}</span></p>`;
+
+    // Brand logo as inline image after ingress text
+    let brandLogoRow = "";
+    if (input.brandLogoUrl) {
+      const brandHref = input.brandLogoLink ? utm(input.brandLogoLink, "brand-logo") : null;
+      const brandImgTag = brandHref
+        ? `<a href="${esc(brandHref)}" target="_blank" style="display:block"><img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="auto" style="display:block;margin:0 auto;max-width:180px;width:180px;height:auto;border:0" class="mceImage"></a>`
+        : `<img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="auto" style="display:block;margin:0 auto;max-width:180px;width:180px;height:auto;border:0" class="mceImage">`;
+      brandLogoRow = `<tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:12px;padding-bottom:0;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b300"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;margin:0;vertical-align:top;max-width:100%;width:100%;height:auto" role="presentation"><tbody><tr><td style="border:0;border-radius:0;margin:0" valign="top" align="center">${brandImgTag}</td></tr></tbody></table></td></tr></tbody></table></td></tr>`;
+    }
+
+    rows.push(`<tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="gutterContainerId-6"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="b6"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:60px;padding-right:60px;padding-top:12px;padding-bottom:25px" class="mceTextBlockContainer"><div data-block-id="6" class="mceText" id="d6" style="width:100%">${ingressInner}</div></td></tr>${brandLogoRow}</tbody></table></td></tr></tbody></table></td></tr>`);
   }
-  if (html.includes("<style ")) {
-    return html.replace(/<\/style>/, `</style>\n${styleBlock}`);
+
+  // --- Product grid ---
+  if (products.length > 0) {
+    rows.push(`<tr><td style="padding-top:0;padding-bottom:0;padding-right:32px;padding-left:32px" valign="top" class="mceGutterContainer" id="gutterContainerId-17"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:24px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b17">${renderProductGrid(products, input.themeSlug)}</td></tr></tbody></table></td></tr>`);
   }
-  return styleBlock + html;
+
+  // --- "SE ALLE PRODUKTENE VÅRE" button ---
+  rows.push(`<tr><td style="background-color:transparent;padding-top:10px;padding-bottom:20px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b40">${renderButton("40", "SE ALLE PRODUKTENE VÅRE", utm("https://fosen-tools.no/produkter", "alle-produkter"))}</td></tr>`);
+
+  // --- Divider ---
+  rows.push(`<tr>${renderDivider("b100")}</tr>`);
+
+  // --- Midt image ---
+  if (input.midtImageUrl) {
+    rows.push(renderMidtImageBlock(input.midtImageUrl, utm(input.midtCtaUrl, "midt-bilde")));
+  }
+
+  // --- Midt title ---
+  rows.push(`<tr>${renderTextBlock(
+    "gutterContainerId-91",
+    "b91",
+    "d91",
+    "padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px",
+    "transparent",
+    `<h1 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="font-size: 17px">${esc(input.midtTitle)}</span></h1>`
+  )}</tr>`);
+
+  // --- Midt body ---
+  rows.push(`<tr>${renderTextBlock(
+    "gutterContainerId-92",
+    "b92",
+    "d92",
+    "padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px",
+    "transparent",
+    `<p class="last-child"><span style="font-size: 14px">${esc(input.midtBody)}</span></p>`
+  )}</tr>`);
+
+  // --- Midt CTA button ---
+  rows.push(`<tr><td style="background-color:transparent;padding-top:12px;padding-bottom:12px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b93">${renderButton("93", esc(input.midtCtaText), utm(input.midtCtaUrl, "midt-cta"))}</td></tr>`);
+
+  // --- Social section: divider + footer image + 3 buttons + description ---
+  rows.push(renderSocialArea(input, utm));
+
+  // Assemble the content section inner HTML
+  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="41"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" data-block-id="-19" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody>${rows.join("\n")}</tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
+
+  return wrapSection("42", OUTER_BG, CONTENT_BG, innerContent);
+}
+
+/**
+ * Midt-section image wrapped in deeply nested layout blocks matching the master template.
+ */
+function renderMidtImageBlock(imageUrl: string, href: string): string {
+  const imgHtml = renderImage("b81", imageUrl, href, 564, "", "mceImage");
+
+  return `<tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-97"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:8px;padding-bottom:8px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b97"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="97" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:12px;padding-bottom:0;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b81">${imgHtml}</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr>`;
+}
+
+/**
+ * 12-column colgroup used in grid layouts.
+ */
+function renderColgroup(): string {
+  return Array(12).fill('<col span="1" width="8.333333333333332%">').join("");
+}
+
+/**
+ * Product grid: 12-column system. Row 1 = up to 3 products (colspan 4 each),
+ * Row 2 = up to 2 products (colspan 6 each).
+ */
+function renderProductGrid(products: NewsletterProduct[], themeSlug: string): string {
+  const row1 = products.slice(0, 3);
+  const row2 = products.slice(3, 5);
+
+  // Block IDs for product images/text
+  const imgIds1 = ["b7", "b10", "b13"];
+  const txtIds1 = ["b8", "b11", "b14"];
+  const gutterIds1 = ["gutterContainerId-8", "gutterContainerId-11", "gutterContainerId-14"];
+  const imgIds2 = ["b207", "b210"];
+  const txtIds2 = ["b208", "b211"];
+
+  // Build row 1 columns
+  const row1Cols = row1.map((p, i) => {
+    const productUtm = withUtm(p.url, themeSlug, slugFromUrl(p.url));
+    return renderProductColumn(
+      p,
+      productUtm,
+      4,
+      "33.33333333333333%",
+      imgIds1[i],
+      txtIds1[i],
+      gutterIds1[i],
+      i === 0 ? "padding-left:0;padding-right:0;padding-top:12px;padding-bottom:12px" : "padding-left:8px;padding-right:8px;padding-top:12px;padding-bottom:12px"
+    );
+  }).join("");
+
+  // Build row 2 columns
+  const row2Cols = row2.map((p, i) => {
+    const productUtm = withUtm(p.url, themeSlug, slugFromUrl(p.url));
+    return renderProductColumn(
+      p,
+      productUtm,
+      6,
+      "50%",
+      imgIds2[i],
+      txtIds2[i],
+      i === 0 ? "gutterContainerId-8" : "gutterContainerId-11",
+      "padding-left:8px;padding-right:8px;padding-top:12px;padding-bottom:12px"
+    );
+  }).join("");
+
+  const row1Html = row1Cols ? `<tr class="mceKeepColumns">${row1Cols}</tr>` : "";
+  const row2Html = row2Cols ? `<tr class="mceKeepColumns">${row2Cols}</tr>` : "";
+
+  return `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="17" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="16"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody>${row1Html}${row2Html}</tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
+}
+
+/**
+ * Single product column: image + text (name, sku, price, "Gå til produkt" link).
+ */
+function renderProductColumn(
+  product: NewsletterProduct,
+  href: string,
+  colspan: number,
+  widthPct: string,
+  imgBlockId: string,
+  txtBlockId: string,
+  gutterContainerId: string,
+  textPadding: string
+): string {
+  // Image width based on column size
+  const imgWidth = colspan === 4 ? 186.67 : 282;
+
+  const imgHtml = renderImage(
+    imgBlockId,
+    product.imageUrl,
+    href,
+    imgWidth,
+    "",
+    "mceImage"
+  );
+
+  // Product text: name (uppercase), sku, price, "Gå til produkt" underlined
+  const nameUpper = product.name.toUpperCase();
+  const ctaText = product.ctaText ?? "Gå til produkt";
+  const productTextHtml = `<h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center;"><a href="${esc(href)}" target="_blank">${esc(nameUpper)}<br>${esc(product.brandSku)}<br>${esc(product.priceText)}</a></h4><h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center;" class="last-child"><a href="${esc(href)}" target="_blank"><strong><span style="text-decoration:underline;">${esc(ctaText)}</span></strong></a></h4>`;
+
+  return `<td style="padding-top:0;padding-bottom:0" valign="top" colspan="${colspan}" width="${widthPct}"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:0;padding-bottom:0;padding-right:6px;padding-left:6px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="${imgBlockId}">${imgHtml}</td></tr><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="${gutterContainerId}"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="${txtBlockId}"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="${textPadding}" class="mceTextBlockContainer"><div data-block-id="${txtBlockId.replace("b", "")}" class="mceText" id="d${txtBlockId.replace("b", "")}" style="width:100%">${productTextHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td>`;
+}
+
+/**
+ * Social area: divider, footer image, 3 social CTA buttons, descriptive text.
+ */
+function renderSocialArea(
+  input: NewsletterInput,
+  utm: (url: string, content?: string) => string
+): string {
+  const parts: string[] = [];
+
+  // Divider
+  parts.push(`<tr>${renderDivider("b89")}</tr>`);
+
+  // Footer image (linked to latest social post, typically Instagram)
+  if (input.footerImageUrl) {
+    const footerImgHref = input.socialInstagramPostUrl || input.socialFacebookPostUrl || utm("https://fosen-tools.no/", "footer-bilde");
+    const footerImgHtml = renderImage("b65", input.footerImageUrl, footerImgHref, 590, "", "mceImage");
+
+    parts.push(`<tr><td style="background-color:transparent;padding-top:12px;padding-bottom:12px;padding-right:16px;padding-left:16px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b65">${footerImgHtml}</td></tr>`);
+  }
+
+  // 3-column social CTA buttons (Instagram / Facebook / LinkedIn)
+  const hasSocial = input.socialInstagramPostUrl || input.socialFacebookPostUrl || input.socialLinkedinPostUrl;
+  if (hasSocial) {
+    const igBtn = input.socialInstagramPostUrl
+      ? renderSocialButton("b72", "INSTAGRAM", input.socialInstagramPostUrl, "right", "padding-right:30px;padding-left:0")
+      : renderSocialButton("b72", "INSTAGRAM", "https://instagram.com/fosentools", "right", "padding-right:30px;padding-left:0");
+
+    const fbBtn = input.socialFacebookPostUrl
+      ? renderSocialButton("b73", "FACEBOOK", input.socialFacebookPostUrl, "center", "padding-right:0;padding-left:0")
+      : renderSocialButton("b73", "FACEBOOK", "https://www.facebook.com/fosentools", "center", "padding-right:0;padding-left:0");
+
+    const liBtn = input.socialLinkedinPostUrl
+      ? renderSocialButton("b124", "LINKEDIN", input.socialLinkedinPostUrl, "left", "padding-right:0;padding-left:30px")
+      : renderSocialButton("b124", "LINKEDIN", "https://www.linkedin.com/company/fosen-tools/", "left", "padding-right:0;padding-left:30px");
+
+    // Wrapped in nested layout tables matching master structure
+    parts.push(`<tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-118"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:12px;padding-bottom:12px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b118"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="118" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="123"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody><tr>${igBtn}${fbBtn}${liBtn}</tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr>`);
+  }
+
+  // Descriptive text about FT
+  parts.push(`<tr>${renderTextBlock(
+    "gutterContainerId-74",
+    "b74",
+    "d74",
+    "padding-left:50px;padding-right:50px;padding-top:12px;padding-bottom:12px",
+    "transparent",
+    `<p style="line-height: 1; mso-line-height-alt: 100%; text-align: center;"><span style="font-size: 14px">Vi utvikler og leverer komplette verktøyløsninger tilpasset kundens faktiske behov. Her er noen eksempler på ferdige prosjekter vi har levert den siste tiden.</span></p><p style="text-align: center;" class="last-child"><br></p>`
+  )}</tr>`);
+
+  return parts.join("\n");
+}
+
+/**
+ * Single social CTA button (INSTAGRAM / FACEBOOK / LINKEDIN) in a 4-column cell.
+ */
+function renderSocialButton(
+  id: string,
+  label: string,
+  href: string,
+  align: string,
+  extraPadding: string
+): string {
+  const btnStyle = `background-color:${FT_RED};border-radius:0;border:1px none #222222;color:${FT_WHITE};display:block;font-family:${FONT_STACK};font-size:11px;font-weight:normal;font-style:normal;padding:16px 28px;text-decoration:none;text-align:center;direction:ltr;letter-spacing:3px`;
+
+  return `<td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="4" width="33.33333333333333%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:12px;padding-bottom:12px;${extraPadding};border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="${align}" id="${id}"><div><!--[if !mso]><!--></div><table align="${align}" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:150px" role="presentation" data-block-id="${id.replace("b", "")}" class="mceButtonContainer"><tbody><tr class="mceStandardButton"><td style="background-color:${FT_RED};border-radius:0;text-align:center" valign="top" class="mceButton"><a href="${esc(href)}" target="_blank" class="mceButtonLink" style="${btnStyle}" rel="noreferrer">${esc(label)}</a></td></tr></tbody></table><div><!--<![endif]--></div><table align="${align}" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:150px" role="presentation" data-block-id="${id.replace("b", "")}" class="mceButtonContainer"><tbody><tr>\n<!--[if mso]>\n<td align="${align}">\n<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml"\nxmlns:w="urn:schemas-microsoft-com:office:word"\nhref="${esc(href)}"\nstyle="v-text-anchor:middle; width:150px; height:44px;"\narcsize="0%"\nstrokecolor="${FT_RED}"\nstrokeweight="1px"\nfillcolor="${FT_RED}">\n<v:stroke dashstyle="solid"/>\n<w:anchorlock />\n<center style="\ncolor: ${FT_WHITE};\ndisplay: block;\nfont-family: ${FONT_STACK};\nfont-size: 11;\nfont-style: normal;\nfont-weight: normal;\nletter-spacing: 3px;\ntext-decoration: none;\ntext-align: center;\ndirection: ltr;"\n>\n${esc(label)}\n</center>\n</v:roundrect>\n</td>\n<![endif]-->\n</tr></tbody></table></td></tr></tbody></table></td>`;
+}
+
+/**
+ * Footer section: black bg with social follow icons, company info, Mailchimp links.
+ */
+function renderFooterSection(): string {
+  // Social follow icons from CDN
+  const socialIcons = [
+    { href: "https://facebook.com/fosentools", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/facebook-icon-color-40.png", alt: "Facebook icon" },
+    { href: "https://instagram.com/fosentools", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/instagram-icon-color-40.png", alt: "Instagram icon" },
+    { href: "https://fosen-tools.no/", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/website-icon-color-40.png", alt: "Website icon" },
+    { href: "https://www.linkedin.com/company/fosen-tools/", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/linkedin-icon-color-40.png", alt: "LinkedIn icon" },
+  ];
+
+  const iconCells = socialIcons.map(icon => {
+    return `<!--[if mso]><td align="center" valign="top"><![endif]--><table align="left" border="0" cellpadding="0" cellspacing="0" style="display:inline;float:left" role="presentation"><tbody><tr><td style="padding-top:3px;padding-bottom:3px;padding-left:30px;padding-right:30px" valign="top" class="mceSocialFollowIcon" align="center" width="24"><a href="${esc(icon.href)}" target="_blank" rel="noreferrer"><img class="mceSocialFollowImage" width="24" height="24" alt="${esc(icon.alt)}" src="${esc(icon.src)}"></a></td></tr></tbody></table><!--[if mso]></td><![endif]-->`;
+  }).join("");
+
+  const socialFollowBlock = `<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" class="mceSocialFollowBlock"><tbody><tr><td valign="middle" align="center"><!--[if mso]><table align="left" border="0" cellspacing="0" cellpadding="0"><tr><![endif]-->${iconCells}<!--[if mso]></tr></table><![endif]--></td></tr></tbody></table>`;
+
+  // Company info text
+  const companyInfoHtml = `<p style="line-height: 0; mso-line-height-alt: 0%;"><br></p><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 20px"><span style="font-family: ${ROBOTO_STACK}">Fosen Tools</span></span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">Industrigata 1</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">N-7130 Brekstad, NORWAY</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">Telefon: </span></span><a href="tel:+4772515120"><span style="font-size: 11px">+47 72 51 51 20</span></a></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">E-post: </span></span><a href="mailto:post@fosen-tools.no" target="_blank"><span style="font-size: 11px">post@fosen-tools.no</span></a></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">NO 991976191 MVA</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">NCAGE: N6114</span></span></p>`;
+
+  // Mailchimp footer links
+  const footerLinksHtml = `<p style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px"><br>    </span></span><a href="*|ARCHIVE|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Vis e-posten i nettleser</span></span></a><span style="font-size: 11px"><br>    </span><a href="*|UPDATE_PROFILE|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Oppdater dine preferanser</span></span></a><span style="font-size: 11px">•    </span><a href="*|UNSUB|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Meld deg av</span></span></a></p>`;
+
+  // Build inner content — social icons + company info + footer links
+  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="57"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:${FT_INK};padding-top:17px;padding-bottom:0;padding-right:10px;padding-left:10px;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b52"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="52"><tbody><tr class="mceRow"><td style="background-color:${FT_INK};background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" class="mceSocialFollowBlockContainer">${socialFollowBlock}</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-101"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="background-color:${FT_INK};padding-top:12px;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b101"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="101" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="108"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="center" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="gutterContainerId-113"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="b113"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px" class="mceTextBlockContainer"><div data-block-id="113" class="mceText" id="d113" style="width:100%">${companyInfoHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><tr><td style="background-color:${FT_INK};padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b56"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="56" class="mceFooterSection"><tbody><tr class="mceRow"><td style="background-color:${FT_INK};background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="12" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px" valign="top" class="mceGutterContainer" id="gutterContainerId-54"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" align="center" id="b54"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:0;padding-right:0;padding-top:0;padding-bottom:0" class="mceTextBlockContainer"><div data-block-id="54" class="mceText" id="d54" style="display:inline-block;width:100%">${footerLinksHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
+
+  return wrapSection("58", OUTER_BG, FT_INK, innerContent);
 }

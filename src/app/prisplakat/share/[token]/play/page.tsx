@@ -53,29 +53,6 @@ export default function PrisplakatSharePlayPage() {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Failed to load");
         const pl = d.playlist as PricetagPlaylist;
-
-        // Scrape manglende produkt-data (samme mønster som inn-logget play)
-        const needScrape = pl.products.filter(
-          (p) => !p.name || !p.price_now
-        );
-        if (needScrape.length > 0) {
-          const enriched = await Promise.all(
-            pl.products.map(async (p) => {
-              if (p.name && p.price_now) return p;
-              try {
-                const r2 = await fetch(
-                  `/api/brosjyre/scrape-product?url=${encodeURIComponent(p.source_url)}`
-                );
-                const d2 = await r2.json();
-                if (r2.ok) return { ...d2.product, ...p };
-              } catch {
-                /* ignore */
-              }
-              return p;
-            })
-          );
-          pl.products = enriched;
-        }
         if (!cancelled) setPlaylist(pl);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Feil");
