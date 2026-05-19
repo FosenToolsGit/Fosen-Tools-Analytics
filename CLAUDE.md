@@ -4,7 +4,7 @@
 
 Internt analytics-dashboard for Fosen Tools AS som samler markedsdata fra GA4, Meta (Facebook), Google Ads (direkte API), Mailchimp og Google Search Console på ett sted. Inkluderer anomali-varsling, søkeords-intelligens med auto-apply negative keywords, cross-platform attribusjon og ukentlige rapporter.
 
-**Status:** Kjører kun lokalt (`npm run dev`) inntil videre — **Vercel-deploy er på pause** etter sikkerhetshendelse hos Vercel (21. april 2026). Prosjektet er slettet fra Vercel og `.vercel/`-mappen er fjernet lokalt. Kan reaktiveres senere med ny `vercel link`.
+**Status:** Kjører på **Vercel** (reaktivert 8. mai 2026 etter 3 ukers pause) + lokalt (`npm run dev`). Auto-deploy fra `main`. Daglig sync-cron kl 07:00 norsk tid.
 **Repo:** https://github.com/FosenToolsGit/Fosen-Tools-Analytics (public)
 
 ---
@@ -151,6 +151,12 @@ Fast publiseringskalender som styrer hvordan vi planlegger innhold:
 - `010_brochure_assets.sql` — privat Storage-bucket `brochure_assets` for opplastede bilder i brosjyre-editoren. RLS path-basert (`{user_id}/...`)
 - `011_utm_links.sql` — `utm_links`-tabell for sentralt UTM-register (`/innleggsbygger/utm`). RLS: alle innlogga kan lese/lage, kun eier kan endre/slette. Auto `updated_at`-trigger.
 - `011_utm_links_seed.sql` — valgfri seed med 8 linker generert i samtalen 3. mai (kjør etter `011_utm_links.sql`)
+- `012_pricetag_playlists.sql` — `pricetag_playlists`-tabell for prisplakat-editor. RLS owner-only + auto `updated_at`-trigger
+- `014_social_content_engine.sql` — `social_corpus` + `social_drafts` + `social_feedback` for Innholdsmotor
+- `015_social_assets_storage.sql` — Storage-bucket `social_assets` for AI-genererte bilder
+- `016_social_corpus_seed.sql` — ~30 seed-entries for FT-korpus (voice, archetypes, regler)
+- `017_share_token.sql` — `share_token` UUID-kolonne på `pricetag_playlists` for kiosk-URL-er
+- `019_pricetag_team_access.sql` — Åpner SELECT + UPDATE RLS på `pricetag_playlists` til alle authenticated (team-bred tilgang)
 
 ### Storage
 - **Bucket `weekly-reports`** (privat) — lagrer genererte Excel-rapporter
@@ -193,6 +199,7 @@ Fast publiseringskalender som styrer hvordan vi planlegger innhold:
 ### Innleggsbygger (nye sider 20. april)
 - `/innleggsbygger/sosiale` — Analyserer Meta-captions, identifiserer mønstre med lift% (spørsmål, emoji, CTA, lengde). Foreslår nye captions per tema + Native-prompts for Nano Banana 2 + organiske filming-ideer (reel/carousel/story/photo) med shot-lister
 - `/innleggsbygger/nyhetsbrev` — Analyserer Mailchimp emne-linjer med lift% på åpningsrate. Foreslår nyhetsbrev-temaer basert på mest-klikkede lenker (hva abonnentene faktisk vil ha), med 4 emne-varianter + preheader + innholdsskisse per tema
+- `/innleggsbygger/nyhetsbrev-bygger` — **Full nyhetsbrev-bygger med Mailchimp API-integrasjon (ny 19. mai 2026).** 4-stegs wizard: (1) Velg tema/produkter/stil, (2) AI-genererer innhold via `mailchimp-content-generator.ts`, (3) Rediger + forhåndsvis ekte Mailchimp-HTML, (4) Opprett kampanje i Mailchimp via API (replicate + putContent + updateSettings). Genererer Mailchimp-kompatibel HTML med mce*-klasser, VML-knapper for Outlook, MSO conditional images, 12-kolonne produktgrid, sosiale follow-ikoner fra Mailchimp CDN, og komplett firma-footer (org.nr, NCAGE N6114, adresse). Service: `src/lib/services/mailchimp-builder.ts` (HTML-bygger) + `src/lib/services/mailchimp-content-generator.ts` (innholds-generering)
 - `/innleggsbygger/utm` — Sentralt register over alle UTM-linker (lagret i `utm_links`-tabellen). Hurtigmaler for FB/IG/LinkedIn/Mailchimp/Google Ads, skjema med live-forhåndsvisning, kopi-knapp per link, gruppering per `utm_campaign`, og krysskobling med `traffic_sources` for å vise sesjoner + konverteringer per kanal siste 30d. Forhindrer duplikate/inkonsistente kampanje-tags på tvers av poster.
 
 ### Brosjyre-editor (ny 27. april)
@@ -340,6 +347,8 @@ Note: Mandagsmøte-siden (`/mandagsmote`) henter data via SWR fra eksisterende `
 | `anomaly-detection` | `anomaly-detection.ts` | 5 sjekker: plattform-spikes, kostnad-spikes, ROAS-fall, konverterings-stopp, nye konkurrent-brands |
 | `tag-rules-engine` | `tag-rules-engine.ts` | Automatisk tagging etter regler |
 | `post-builder` | `post-builder.ts` | Caption-scoring, mønster-deteksjon (spørsmål, CTA, emoji, lengde, hashtags, tall), Native-prompt-generering, organiske idé-maler, Mailchimp subject-line-mønstre. Ren mønster-basert — ingen LLM-kall |
+| `mailchimp-builder` | `mailchimp-builder.ts` | Nyhetsbrev HTML-bygger + Mailchimp API-integrasjon. `buildNewsletterHtml(input)` genererer ekte Mailchimp-kompatibel HTML med mce*-klasser, VML-knapper (Outlook), MSO conditional images, 12-kolonne produktgrid, sosiale follow-ikoner. `createNewsletter(input)` replikerer master-kampanje, injiserer HTML + oppdaterer settings. ~841 linjer |
+| `mailchimp-content-generator` | `mailchimp-content-generator.ts` | Genererer `GeneratedContent` fra tema-input (produkter, stil, sesong). Bygger heading, ingress, produktbeskrivelser, midt-seksjon, sosial CTA. ~710 linjer |
 
 ---
 
@@ -1188,6 +1197,7 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 12. mai | **Native AI-app brand-bygging + prisplakat-utvidelse + Etiketter-system + brosjyre-fixes.** Detaljert sesjons-sammendrag nedenfor. Hovedpunkter: **Native AI-innholds-app** (app.native.no) konfigurert med full FT-merkevare — Skrivestil-tekst (2332/2500 tegn) med Eriks doktrine («riktig verktøy for hverdagen», ikke antall), 5 plattform-spesifikke regler (LinkedIn, FB, IG, TikTok, Bluesky), 13 toppinnlegg fra Meta-engagement-data (Husqvarna Automower, Alier Trondheim, Andøya Space, Kampfly+FOD, Norwegian Aero, Fosen VGS Flyfag, Forsvaret 20 år, Widerøe, Fribo Bygg, Norsk Transformator, Ordførerkjedet), 11 avviste innholdsposter med konkrete eksempler (tom skuff-mantra, fake spokesmodel, AI-HDFI, blå/rød fargemix, antall-som-feature, plastplate-vs-HDFI-terminologi); **prisplakat utvidet** med data-drevne redigerbare special slides + 10 nye justeringer (klokke, lager-pill, pris-reveal, QR på produkt-slide, brand-spotlight, multi-produkt, combo, custom-slide-rekkefølge, pause-knapp + slide-navigasjon-strip i preview, fokuser-på-redigert-slide); **Etiketter-system** bygd for Brother QL-580N (`/etikett`, 62×29mm DK-11209, navn + SKU + QR med auto-UTM, jsPDF-eksport, importér fra brosjyre/prisplakat); **brosjyre-fixes** (FT-hvit-SVG CSS-klasse-kollisjon fjernet, midtstill-verktøy i Egenskaper-panel, **auto-save-bug** som overskrev server med cached localStorage, Husqvarna-logo lagt på forsiden via Supabase PATCH, åpningstider 07:00-15:00 fikset i resterende preset). **9 Vercel-deploys** gjennom dagen. **Husqvarna-brosjyren stemmer nå på Vercel.** |
 | 13. mai | **Pmax brand-andel-diagnose + Innholdsmotor MVP bygd.** Pmax: verifisert via Google Ads API at alle 4 negative keywords (`fosen tools`/`fosentools` × EXACT+PHRASE) er ENABLED på Pmax + delt liste «Konkurrent-brands» (28 keywords) er applied. Brand-andel synker jevnt: 69.2% (20. apr) → 64.8% (13. mai) — absolutt brand-klikk -28%. **Kritisk quirk oppdaget:** `google_ads_search_terms` med `source=pmax_insight` er **rullende 90-dagers aggregat** per snapshot. **Innholdsmotor:** AI-drevet content engine på `/innholdsmotor` som erstatter Native. Bruker `gemini-2.5-flash` for caption + `gemini-2.5-flash-image` (Nano Banana 2) for bilde. 7 FT-spesifikke archetypes (foto/definisjon/statement/kontrast/milepael/sitat/sertifikat) med eksplisitte forbud mot AI-HDFI/AI-mennesker. DB-backet korpus + live feedback-loop. Migrations 014-016 + ~30 seed-entries. Modell-sammenligning: Nano Banana >> Imagen 4.0 for FT-stilen. $900 Gemini-kreditt over 3 mnd, estimert ~$10-30/mnd faktisk forbruk. |
 | 16. mai | **SEO-helsesjekk + Innholdsmotor UI-bygging.** `scripts/seo-health-check.mjs` (GSC API-basert) + `scripts/video-vs-image-seo.mjs` (video-hero -1.9 pos vs image-hero +1.6 — venter 2 uker). Innholdsmotor Ny-tab fått **PopularPagesPanel** — fetcher topp 12 sider fra GA4+Mailchimp, checkboxes for multi-select, batch-generér via `/api/social/crawl-batch`. Photoshop generative fill prompts for Facom HDFI-bilder. Sosiale medier-captions for Lufttransport AS Facom JET verktøyskap-leveranse (FB/IG/LinkedIn med UTM). |
+| 19. mai | **Nyhetsbrev-bygger + prisplakat-fixer.** Full nyhetsbrev-bygger (`/innleggsbygger/nyhetsbrev-bygger`) med 4-stegs wizard + Mailchimp API-integrasjon. `mailchimp-builder.ts` fullstendig omskrevet (~841 linjer) til ekte Mailchimp-HTML (mce*-klasser, VML-knapper, MSO conditional images, 12-kol produktgrid, CDN sosial-ikoner, firma-footer med org.nr + NCAGE). Prisplakat share-API beriker produkter server-side (eliminerer 401 på kiosk-skjermer). Team-wide RLS for prisplakat (migrasjon 019). |
 | 16.-18. mai | **Mega-økt — Innholdsmotor produksjonsklar + prisplakat-share-token + YouTube-slides.** 16 commits + 17 deploys. Detaljert sammendrag nedenfor. Hovedpunkter: **Innholdsmotor deployd** (branch merged via direct fast-forward push siden gh CLI ikke installert); fallback-scrape for ikke-produkt-URLer (`/bransjer/forsvaret`); Multicase unquoted-meta-regex-fix; iterative prompt-polish for FT-stil → **server-side wordmark composite** med sharp (eliminert «SUSEN TOOLS»-typos); **brand-asset context-caching** (Gemini SDK, 1h TTL); **SDK aspectRatio som hard constraint** (var bare prompt-hint før, ga 16:5-banner i stedet for 1:1); **caption-LLM komponerer ALL image-tekst** (`image_headline`/`image_body`/`image_subtagline`/`kontrast_labels` — eliminer typo-fylt AI-komposisjon); UPPERCASE server-side; FT Korolev-typografi-spec lest fra `FosenTools.scss`; **verktøyvogn+HDFI-mood** erstattet jagerfly i `_profesjonell`-stil; **manuell tekst-override-UI** for image-regenerering; **Imagen-4-vurderings-memo** lagret som HTML på Desktop til daglig leder. **Shadowoaths-spec** (~30kB markdown) lagret på Desktop for separat Claude-sesjon (klær + Pact-app). **Prisplakat for UniFi US Cast Pro**: migration 017 share_token UUID, public `/prisplakat/share/[token]/play`-route utenfor (dashboard), service-role-API, middleware whitelist, kioskMode-prop skipper auto-fullscreen-overlay og controls-bar, auto-reload hvert 5. min. Editor: **📺 Skjerm-URL**-kopi-knapp per playlist. **YouTube-video som slide-type**: extractYouTubeId helper, iframe med autoplay+muted+playsinline, postMessage 'onStateChange' end-event → auto-advance, kun aktiv slide rendrer iframen (sparer båndbredde). Brit kan nå ha én URL per skjerm i butikken, redigere playlist → endring vises automatisk. |
 
 ---
@@ -2296,64 +2306,81 @@ Hovedcommits (siste først):
 
 ---
 
-## Klar for neste sesjon (tirsdag 19. mai 2026)
+## Siste sesjons-sammendrag (19. mai 2026)
 
-### Pre-sesjon-sjekkliste
+Tema: Fullstendig omskriving av `mailchimp-builder.ts` til ekte Mailchimp-HTML + fix av to prisplakat produksjonsfeil.
 
-**1. Bekreft Innholdsmotor i daglig drift**
-- Trigge én eller to generations (sertifikat + statement) for å verifisere alt fortsatt funker
-- Sjekk Vercel logs: `[image-gen] cache HIT ✓` skal vises (brand-cache fungerer)
-- Cost-tracking i drafts.generation_cost — sjekk at den er ~0.04 USD (~45 øre)
+### Nyhetsbrev-bygger: Mailchimp-kompatibel HTML
 
-**2. Verifiser UniFi-skjerm + Packout-display**
-- Bekreft at slideshow kjører automatisk uten «KLIKK FOR FULLSKJERM»-overlay
-- Test om YouTube-video-slide faktisk spiller av når brukeren har lagt til en
-- Sjekk at auto-reload (5 min) fanger opp playlist-endringer mens skjermen står på
+**Bakgrunn:** Forrige versjon av `buildNewsletterHtml()` genererte enkel tabell-basert HTML som matchet React-preview-komponenten, IKKE ekte Mailchimp-nyhetsbrev. Bruker ba om å matche den faktiske Mailchimp master-malen fra kampanje `6d6f8b6bdb` (Milwaukee momentnøkler-nyhetsbrevet).
 
-**3. Daglig-leder-beslutning om Imagen 4**
-- Memo levert mandag 18. mai (~/Desktop/Innholdsmotor-Imagen4-vurdering.html)
-- Hvis JA til Imagen 4: 1-2 dager Vertex AI-oppsett + fine-tuning på 29 ref-poster
-- Hvis NEI / venter: fortsett polish av Nano Banana 2-flyten via manuell override
+**Omskrevet `src/lib/services/mailchimp-builder.ts` (~841 linjer):**
+- **mce*-klasser:** mceWrapper, mceColumn, mceRow, mceText, mceButton, mcnPreviewText — matcher Mailchimp's class-system eksakt
+- **VML-knapper:** `v:roundrect` med `w:anchorlock` for Microsoft Outlook-kompatibilitet
+- **MSO conditional comments:** `<!--[if (gte mso 9)|(IE)]>` for 660px-tabeller, `<!--[if !mso]><!-->` for non-MSO bilde-rendering
+- **12-kolonne grid:** `<colgroup>` med 12 cols à 8.333%. Rad 1 = 3 produkter (`colspan="4"` = 33.33%), Rad 2 = 2 produkter (`colspan="6"` = 50%)
+- **Sosiale follow-ikoner:** Fra Mailchimp CDN (`cdn-images.mailchimp.com/icons/social-block-v3/`)
+- **Merge tags:** `*|UNSUB|*`, `*|UPDATE_PROFILE|*`, `*|ARCHIVE|*`
+- **Firma-footer:** Adresse, telefon, e-post, org.nr NO 991976191 MVA, NCAGE N6114
+- **Responsive CSS:** `@media only screen and (max-width: 480px)` med block IDs (b1, b4, b5, b7, b10, b13, b207, b210, etc.)
 
-**4. Shadowoaths-spec hand-off**
-- ~/Desktop/Shadowoaths-Innleggsbygger-SPEC.md klar
-- Brukeren skal gi den til separat Claude-sesjon for klær- og Pact-app-bygging
+**Nye helper-funksjoner:**
+- `wrapSection(blockId, bgColor, innerBgColor, content)` — mceWrapper tbody-mønster med MSO conditional 660px tabell
+- `renderImage(id, src, href, width, alt, cssClass)` — dual MSO/non-MSO bilde-rendering
+- `renderButton(id, text, href)` — CTA-knapp med VML v:roundrect fallback
+- `renderProductGrid(products, themeSlug)` — 12-kol system, auto-fordeler 3+2 produkter
+- `renderSocialArea(input, utm)` — 3 sosiale CTA-knapper (Instagram/Facebook/LinkedIn) med VML
+- `renderFooterSection()` — Svart bakgrunn med CDN-ikoner + selskapsinformasjon + Mailchimp-lenker
+
+**Uendrede metoder:** `replicateCampaign`, `updateSettings`, `uploadImage`, `getContent`, `putContent`, `fetchBrandLogoUrl`, `createNewsletter`, `buildPlainText`
+
+### Prisplakat-fixer (2 produksjonsfeil fra Vercel-logs)
+
+**1. Share-side scrape 401 (kiosk-skjermer):**
+- **Problem:** `/prisplakat/share/[token]/play` (public, ingen auth) kalte `/api/brosjyre/scrape-product` (krever auth) for å berike produktdata → 401 på UniFi-skjermen
+- **Fix:** Flyttet produkt-berikelse til share-API-et (`/api/prisplakat/share/[token]/route.ts`). Kaller `scrapeProductByUrl()` server-side med service-role, returnerer ferdig berikede produkter. Klient-side scrape-kode fjernet fra `share/[token]/play/page.tsx`
+
+**2. Prisplakat save 406 (team-tilgang):**
+- **Problem:** Save-ruten fjernet `.eq("user_id", user.id)` men RLS-policy blokkerte fortsatt non-owner UPDATE → Supabase returnerte 406
+- **Fix:** Migrasjon 019 (`docs/migrations/019_pricetag_team_access.sql`) åpner SELECT + UPDATE til alle authenticated. **Allerede applied i Supabase** (begge policies eksisterer). Kode-endringen i `save/route.ts` var fra forrige sesjon.
+
+### Commits
+- `fc163b7` — feat(nyhetsbrev): Mailchimp-kompatibel HTML-bygger + fix prisplakat team-tilgang (pushet til main, Vercel auto-deploy)
+
+### Filer endret
+- `src/lib/services/mailchimp-builder.ts` — fullstendig omskrevet (~841 linjer)
+- `src/app/(dashboard)/innleggsbygger/nyhetsbrev-bygger/page.tsx` — wizard UI (fra forrige sesjon)
+- `src/app/api/prisplakat/save/route.ts` — fjernet user_id-filter (fra forrige sesjon)
+- `src/app/api/prisplakat/share/[token]/route.ts` — server-side produkt-berikelse
+- `src/app/prisplakat/share/[token]/play/page.tsx` — fjernet klient-side scrape
+- `docs/migrations/019_pricetag_team_access.sql` — team-wide RLS
+
+---
+
+## Klar for neste sesjon
+
+### Verifiser nyhetsbrev-bygger
+- Test `/innleggsbygger/nyhetsbrev-bygger` på Vercel — full 4-stegs wizard-flyt
+- Generer et test-nyhetsbrev, forhåndsvis HTML-en, bekreft at den matcher Mailchimp-stilen
+- Test Mailchimp API-integrasjonen (opprett kampanje-utkast i Mailchimp)
+
+### Verifiser prisplakat-fixer
+- Test at prisplakat save fungerer for Brit/Torstein (non-owner) på Vercel
+- Test at kiosk-URL (`/prisplakat/share/[token]/play`) viser produktdata uten 401
 
 ### Datostyrte sjekker fremover
 
-- **19. mai (tirsdag):** Pmax brand-andel re-sjekk (mål under 50%, var 64.8% sist)
-- **22. mai (torsdag):** Engagement-sjekk på siste FT-poster — Lufttransport AS-leveranse-post fra 16. mai vs +144%-mønsteret
+- **22. mai (torsdag):** Engagement-sjekk på siste FT-poster vs +144%-mønsteret
 - **27. mai (cirka):** Video-hero re-sjekk (om SEO har hentet seg inn etter 6. mai-redirect-storm)
 - **5. juni:** Bransjer-kampanje pause re-evaluering (pauset 5. mai, vurder reaktivering)
 
 ### Pending fra tidligere sesjoner (overført)
 
-- **GSC re-indeksering Dag 3-4** — 26 URLer aldri gjort (carry-over fra 7-8. mai). Topp-prioritet: pelicase (594 vis), wera (530), pb-swiss-tools (349)
-- **Facom-fallet** (pos 2.0 → 16.7) — sjekk om indeksert + om Facom H1-fix fra 5. mai har hjulpet
-- **SEO-fall på `/leatherman`** — sjekk om inline JSON-LD-konvertering 29. april forbedret rangeringen
+- **Pmax brand-andel re-sjekk** (mål under 50%, var 64.8% sist 13. mai)
+- **GSC re-indeksering Dag 3-4** — 26 URLer aldri gjort (carry-over fra 7-8. mai)
+- **Facom-fallet** (pos 2.0 → 16.7) — sjekk om indeksert
+- **SEO-fall på `/leatherman`** — sjekk om forbedret
 - **Wildcard-redirect-svar** fra Multicase (avventer)
-- **Selv-aktivering av produsent-sider** i Multicase admin
-- **301-redirect-modul pris-bekreftelse** (Erik godkjente «om det betaler seg selv»)
 - **5 megameny CSS-klasser** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger)
-- **Manglende ikoner:** `verktøy-elbil.png`, `verneutstyr1.png`
 - **Levende ft-catgrid utrulling** — script publisert på 2 sider, gjenstår ~37 hovedkategori-sider
-
----
-
-### Prompt-mal for tirsdag-økten
-
-```
-Hei! Vi fortsetter der vi slapp mandag 18. mai.
-
-Sjekk Pre-sesjon-sjekklisten i CLAUDE.md først:
-1. Bekreft Innholdsmotor + cache fungerer
-2. Verifiser UniFi-skjermen + YouTube-video
-3. Sjekk om daglig leder har svart på Imagen-4-vurderingen
-4. GSC re-indeksering Dag 3-4 (26 URLer fra mai-planen)
-
-Datostyrte sjekkpunkter:
-- Pmax brand-andel re-sjekk (mål under 50%, var 64.8% sist)
-- Engagement-sjekk Lufttransport AS-post (16. mai vs +144%-mønsteret)
-
-Si fra hva du vil prioritere i dag.
-```
+- **Daglig-leder-beslutning om Imagen 4** (memo levert 18. mai)
