@@ -123,6 +123,7 @@ const navItems: NavEntry[] = [
   { kind: "section", label: "Innhold" },
   { label: "Alle innlegg", href: "/posts", icon: FileText },
   { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
+  { label: "Innleggsbygger", href: "/innleggsbygger/poster", icon: Sparkles },
   { label: "Nyhetsbrev-bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Mail, localOnly: true },
   { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
   { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
