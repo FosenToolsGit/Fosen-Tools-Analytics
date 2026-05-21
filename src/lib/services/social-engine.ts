@@ -12,6 +12,10 @@ import {
   wordmarkVariantForBg,
 } from "./composite-wordmark";
 import { compositeText, type CompositeTextLayout } from "./composite-text";
+import {
+  renderProduktVariantPng,
+  closeProduktVariantBrowser,
+} from "./produkt-variant-render";
 import { getOrCreateImageBrandCache } from "./gemini-cache";
 import {
   scrapeProductByUrl,
@@ -1054,7 +1058,67 @@ export async function generateDraft(
   //    så hvert nettsted får optimal aspect-ratio i feed.
   const aiImages: GenerateDraftResult["ai_images"] = [];
   let lastImageUsage: import("./gemini").UsageStats | undefined;
-  if (input.archetype !== "foto" && !input.skip_image && input.user_id) {
+
+  // 4a. produkt_variant — DETERMINISTISK HTML→PNG-render (ingen AI).
+  //     HDFI-fargevisning er strukturert produkt-grid; vi vil ha konsistens,
+  //     ikke AI-variasjon. Hele bildet bygges som HTML/CSS og rendres via
+  //     Playwright. Norske bokstaver garantert riktige, ingen Gemini-lottery.
+  if (
+    input.archetype === "produkt_variant" &&
+    !input.skip_image &&
+    input.user_id
+  ) {
+    // Pixel-dimensjoner per aspect (2x device-scale gir skarp output)
+    const aspectDims: Record<string, { w: number; h: number }> = {
+      "1:1": { w: 1080, h: 1080 },
+      "4:5": { w: 1080, h: 1350 },
+      "16:9": { w: 1200, h: 675 },
+    };
+    const pvHeadline =
+      captions.image_headline?.trim() || "Seks farger. Én standard.";
+    const pvRedWord = captions.image_headline_red_word?.trim() || "Seks";
+    const pvBody =
+      captions.image_body?.trim() ||
+      "Rød. Svart. Hvit. Blå. Gul. Lyse grå.";
+
+    try {
+      for (const { platform, aspectRatio } of PLATFORM_ASPECT_RATIOS) {
+        const dim = aspectDims[aspectRatio] ?? aspectDims["1:1"];
+        try {
+          const png = await renderProduktVariantPng({
+            headline: pvHeadline,
+            redWord: pvRedWord,
+            body: pvBody,
+            width: dim.w,
+            height: dim.h,
+          });
+          const saved = await saveBase64ImageToStorage(
+            supabase,
+            png.base64,
+            png.mimeType,
+            input.user_id,
+            `produkt_variant-${platform}`
+          );
+          aiImages.push({
+            storage_path: saved.storage_path,
+            public_url: saved.public_url,
+            archetype: input.archetype,
+            prompt: "(deterministisk HTML-render — ingen AI)",
+            platform,
+            aspect_ratio: aspectRatio,
+          });
+        } catch (e) {
+          console.error(`produkt_variant HTML-render feilet (${platform}):`, e);
+        }
+      }
+    } finally {
+      await closeProduktVariantBrowser().catch(() => undefined);
+    }
+  } else if (
+    input.archetype !== "foto" &&
+    !input.skip_image &&
+    input.user_id
+  ) {
     // Hero-tekst: foretrekk LLM-komponert image_headline (fluent norsk + FT-tone)
     // over mekanisk brief/title-trunkering. Faller tilbake til extractHeroText
     // hvis caption-modellen ikke leverte image_headline.
@@ -1201,14 +1265,18 @@ export async function generateDraft(
         captionUsage.outputTokens * 0.3) /
       1_000_000
     : 0.0002;
-  // Cost per generation × antall bilder vi faktisk genererte
+  // Cost per generation × antall bilder vi faktisk genererte.
+  // produkt_variant rendres deterministisk via HTML (Playwright) — null AI-kost.
   const imageCostPerCall = imageUsage
     ? ((imageUsage.promptTokens - imageUsage.cachedTokens) * 0.3 +
         imageUsage.cachedTokens * 0.075 +
         imageUsage.outputTokens * 30) /
       1_000_000
     : 0.04;
-  const imageCost = aiImages.length * imageCostPerCall;
+  const imageCost =
+    input.archetype === "produkt_variant"
+      ? 0
+      : aiImages.length * imageCostPerCall;
 
   return {
     captions,

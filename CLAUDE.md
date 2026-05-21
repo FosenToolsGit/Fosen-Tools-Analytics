@@ -2429,17 +2429,26 @@ Tema: kvalitetskontroll av Wera deep-scrape, oppgradering av Innholdsmotor, og e
 
 **Auto-retry + fallback:** `withRetryAndFallback()` i `gemini.ts` — 3 forsøk med eksponentiell backoff på 503/429, fallback til `gemini-2.5-flash-lite`. Wrapper både `generateCaptionsJson` og `generateImage`.
 
-### 3. HDFI-fargevisning — utforsket grundig, IKKE løst
+### 3. HDFI-fargevisning — LØST med deterministisk HTML→PNG-render
 
-Mål: lage et innlegg som viser HDFI sine 6 standardfarger. Problemet er at AI (Nano Banana 2) misstaver norske bokstaver i swatch-labels («Rød»→«Rod», «Blå»→«Bla»).
+Mål: lage et innlegg som viser HDFI sine 6 standardfarger. Problemet var at AI (Nano Banana 2) misstaver norske bokstaver i swatch-labels («Rød»→«Rod», «Blå»→«Bla»), og at automatisk label-plassering aldri traff konsekvent.
 
-**Prøvd (alle hadde edge-cases):**
-- **Alt B — server-side rendre alt:** AI lager kun backdrop, `composite-text.ts` rendrer swatches som SVG-shapes. Funket teknisk, men SVG-tool-silhuettene så stiliserte/dårlige ut.
-- **Alt A — Gemini Vision swatch-detect:** AI lager swatches, Vision returnerer koordinater, composite-text legger labels presist. Vision var for upresis på Y-aksen (detekterte kjerne-fargen, ikke full visuell footprint).
-- **Pixel-analyse:** luminance-toleranse, mean, variance, non-bg-count, per-kolonne-scan — alle inkonsistente på tvers av aspecter.
-- **Inside-label med mørk strip:** labels plassert i swatch nedre tredjedel — FB+IG ok, LI feilet på Vision X-bredde.
+**Først prøvd (alle hadde edge-cases — forkastet):**
+- Server-side SVG-swatch-rendring komposittert på AI-backdrop — tool-silhuetter så dårlige ut
+- Gemini Vision swatch-detect — upresis på Y-aksen
+- Pixel-analyse (luminance/variance/per-kolonne-scan) — inkonsistent
+- Inside-label med mørk strip — FB+IG ok, LI feilet
 
-**Konklusjon:** automatisk label-plassering på AI-genererte swatches er ikke pålitelig nok. **Reverterte** `produkt_variant` til at AI rendrer ALT selv (swatches + headline + labels + body), server-side legger kun på FT-wordmark. AI-prompten har en skjerpet norsk-bokstav-seksjon (character-by-character spec). Norsk-typo-risiko aksepteres fremfor label-mismatch.
+**LØSNINGEN — `src/lib/services/produkt-variant-render.ts`:**
+HELE bildet bygges som HTML/CSS og rendres via Playwright headless Chromium → PNG. Ingen AI involvert i `produkt_variant`-archetypen.
+- `buildProduktVariantHtml()` — FT-ink-bakgrunn m/ radial glow, blueprint-decor i hjørner, headline m/ red-word, 6 HDFI-swatches (CSS-plate + SVG tool-cutout med rim + svart foam + krom-metall-hint), labels, body, FOSEN TOOLS-wordmark
+- `renderProduktVariantPng()` — Playwright `setContent` + `screenshot`, 2x device-scale
+- Embedded Manrope-font (woff2 base64) → norske bokstaver 100% korrekte
+- Tool-ikoner: Material Design «build» (skiftenøkkel) + skrutrekker, veksler
+- **Responsiv layout:** 2×3 grid for 1:1/4:5, 6×1 grid for landscape 16:9
+- 100% deterministisk — samme input gir alltid samme output, ingen Gemini-lottery
+
+Integrert i `generateDraft()`: `produkt_variant` får en egen HTML-render-gren (steg 4a) som hopper helt over AI image-gen. `generation_cost` for produkt_variant er 0 (HTML-render er gratis). AI beholdes for andre archetyper (foto/statement/definisjon) der organisk bilde-variasjon gir verdi.
 
 ### 4. Nye/endrede filer denne sesjonen
 
@@ -2461,6 +2470,7 @@ Publiseringsklare captions (FB/IG/LinkedIn) for HDFI 6-farger-tema lå klare i s
 
 ### Neste steg
 1. **Kjøre Wera patch:** `node --env-file=.env.local scripts/patch-wera-cache.mjs` når deep-scrape er ferdig, så «Re-klassifiser cache»
-2. **Innholdsmotor HDFI-test:** generér `produkt_variant` i 1:1 flere ganger, vurder om AI-rendret norsk tekst er godt nok
-3. Hvis tekst er stabil: gjenaktiver IG 4:5 + LI 16:9 i `PLATFORM_ASPECT_RATIOS`
+2. **Innholdsmotor HDFI-test:** generér `produkt_variant` i Innholdsmotor — bildet rendres nå deterministisk via HTML (ikke AI). Verifiser at swatches + norske labels ser bra ut.
+3. **Gjenaktiver IG 4:5 + LI 16:9** i `PLATFORM_ASPECT_RATIOS` (midlertidig låst til 1:1 — HTML-render håndterer alle 3 aspecter fint, så dette kan gjøres når som helst)
 4. Kjøre migrasjon 020 + 021 i Supabase hvis ikke alt gjort
+5. **Vercel-merknad:** `produkt_variant` HTML-render bruker Playwright server-side. Fungerer lokalt. På Vercel kan headless Chromium kreve `@sparticuz/chromium` eller liknende — verifiser før produksjons-deploy.
