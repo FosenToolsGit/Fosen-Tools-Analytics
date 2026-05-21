@@ -9,7 +9,7 @@ import { useState } from "react";
  * (manuelt eller via URL-import), generér pixel-perfekt post for FB/IG/LinkedIn.
  */
 
-type Layout = "single" | "grid" | "manufacturer";
+type Layout = "single" | "grid" | "manufacturer" | "feature";
 type Aspect = "fb" | "ig" | "li";
 
 interface ProductRow {
@@ -38,6 +38,7 @@ const LAYOUTS: { value: Layout; label: string; desc: string }[] = [
   { value: "single", label: "Enkelt-produkt", desc: "Ett produkt på tilbud — stort" },
   { value: "grid", label: "Kampanje-grid", desc: "3-6 produkter i rutenett" },
   { value: "manufacturer", label: "Produsent-kampanje", desc: "«Mest kjøpt fra {Merke}»" },
+  { value: "feature", label: "Tjeneste / feature", desc: "HDFI, CADLAB — fordeler + CTA" },
 ];
 
 const ASPECTS: { value: Aspect; label: string }[] = [
@@ -56,10 +57,17 @@ export default function PosterBuilderPage() {
   const [manufacturer, setManufacturer] = useState("");
   const [manufacturerLogoUrl, setManufacturerLogoUrl] = useState("");
   const [rows, setRows] = useState<ProductRow[]>([emptyRow()]);
+  // feature-mal-state
+  const [redWord, setRedWord] = useState("");
+  const [intro, setIntro] = useState("");
+  const [benefits, setBenefits] = useState<string[]>(["", "", ""]);
+  const [featureUrl, setFeatureUrl] = useState("");
+  const [featureImporting, setFeatureImporting] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isFeature = layout === "feature";
   const maxProducts = layout === "single" ? 1 : 6;
   const visibleRows = rows.slice(0, maxProducts);
 
@@ -99,28 +107,68 @@ export default function PosterBuilderPage() {
     }
   }
 
+  /** Import fra tjeneste-side (HDFI, CADLAB osv.) — auto-fyll headline + intro + fordeler. */
+  async function importFeatureFromUrl() {
+    const url = featureUrl.trim();
+    if (!url) return;
+    setFeatureImporting(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/innleggsbygger/scrape-side?url=${encodeURIComponent(url)}`
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Scraping feilet");
+      if (data.headline) setHeadline(data.headline);
+      if (data.intro) setIntro(data.intro);
+      if (Array.isArray(data.benefits) && data.benefits.length > 0) {
+        setBenefits(data.benefits.slice(0, 5));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Scraping feilet");
+    } finally {
+      setFeatureImporting(false);
+    }
+  }
+
   async function generate() {
     setGenerating(true);
     setError(null);
     setPreview(null);
     try {
-      const products = visibleRows
-        .filter((r) => r.name.trim() && r.priceNow.trim())
-        .map((r) => ({
-          name: r.name.trim(),
-          priceNow: Number(r.priceNow),
-          priceBefore: r.priceBefore ? Number(r.priceBefore) : null,
-          imageUrl: r.imageUrl.trim() || null,
-          manufacturer: r.manufacturer.trim() || null,
-          manufacturerLogoUrl: r.manufacturerLogoUrl.trim() || null,
-        }));
-      if (products.length === 0) {
-        throw new Error("Fyll inn minst ett produkt med navn og pris");
-      }
-      const res = await fetch("/api/innleggsbygger/render-mal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      let payload: Record<string, unknown>;
+      if (isFeature) {
+        const cleanBenefits = benefits.map((b) => b.trim()).filter(Boolean);
+        if (!headline.trim()) throw new Error("Fyll inn headline");
+        if (cleanBenefits.length === 0)
+          throw new Error("Fyll inn minst ett fordel-punkt");
+        payload = {
+          template: "feature",
+          aspect,
+          background,
+          eyebrow: eyebrow.trim() || null,
+          headline: headline.trim(),
+          redWord: redWord.trim() || null,
+          intro: intro.trim() || null,
+          benefits: cleanBenefits,
+          cta: cta.trim() || null,
+        };
+      } else {
+        const products = visibleRows
+          .filter((r) => r.name.trim() && r.priceNow.trim())
+          .map((r) => ({
+            name: r.name.trim(),
+            priceNow: Number(r.priceNow),
+            priceBefore: r.priceBefore ? Number(r.priceBefore) : null,
+            imageUrl: r.imageUrl.trim() || null,
+            manufacturer: r.manufacturer.trim() || null,
+            manufacturerLogoUrl: r.manufacturerLogoUrl.trim() || null,
+          }));
+        if (products.length === 0) {
+          throw new Error("Fyll inn minst ett produkt med navn og pris");
+        }
+        payload = {
+          template: "offer",
           layout,
           aspect,
           background,
@@ -130,7 +178,12 @@ export default function PosterBuilderPage() {
           manufacturerLogoUrl: manufacturerLogoUrl.trim() || null,
           cta: cta.trim() || null,
           products,
-        }),
+        };
+      }
+      const res = await fetch("/api/innleggsbygger/render-mal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Render feilet");
@@ -272,7 +325,88 @@ export default function PosterBuilderPage() {
             </div>
           )}
 
-          {/* Produkt-rader */}
+          {/* ── FEATURE-MAL: tjeneste-felter ── */}
+          {isFeature && (
+            <>
+              <div>
+                <label className={labelCls}>Hent fra tjeneste-side (HDFI, CADLAB osv.)</label>
+                <div className="flex gap-2">
+                  <input
+                    value={featureUrl}
+                    onChange={(e) => setFeatureUrl(e.target.value)}
+                    placeholder="https://fosen-tools.no/hdfi"
+                    className={inputCls}
+                  />
+                  <button
+                    onClick={importFeatureFromUrl}
+                    disabled={featureImporting || !featureUrl.trim()}
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded text-white text-sm whitespace-nowrap"
+                  >
+                    {featureImporting ? "Henter…" : "Hent"}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Rødt nøkkelord (ett ord fra headline)</label>
+                <input
+                  value={redWord}
+                  onChange={(e) => setRedWord(e.target.value)}
+                  placeholder="HDFI"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Intro (valgfri setning under headline)</label>
+                <textarea
+                  value={intro}
+                  onChange={(e) => setIntro(e.target.value)}
+                  rows={2}
+                  placeholder="Skreddersydde skuminnlegg for visuell verktøykontroll."
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Fordeler ({benefits.length}/5)</label>
+                <div className="space-y-2">
+                  {benefits.map((b, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input
+                        value={b}
+                        onChange={(e) =>
+                          setBenefits((p) =>
+                            p.map((x, idx) => (idx === i ? e.target.value : x))
+                          )
+                        }
+                        placeholder={`Fordel ${i + 1}`}
+                        className={inputCls}
+                      />
+                      {benefits.length > 1 && (
+                        <button
+                          onClick={() =>
+                            setBenefits((p) => p.filter((_, idx) => idx !== i))
+                          }
+                          className="px-3 text-red-400 hover:text-red-300 text-sm"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {benefits.length < 5 && (
+                  <button
+                    onClick={() => setBenefits((p) => [...p, ""])}
+                    className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+                  >
+                    + Legg til fordel
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ── PRODUKT-TILBUD: produkt-rader ── */}
+          {!isFeature && (
           <div>
             <label className={labelCls}>
               Produkter ({visibleRows.length}/{maxProducts})
@@ -354,6 +488,7 @@ export default function PosterBuilderPage() {
               </button>
             )}
           </div>
+          )}
 
           {/* Generer */}
           <button
