@@ -1198,6 +1198,8 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 13. mai | **Pmax brand-andel-diagnose + Innholdsmotor MVP bygd.** Pmax: verifisert via Google Ads API at alle 4 negative keywords (`fosen tools`/`fosentools` × EXACT+PHRASE) er ENABLED på Pmax + delt liste «Konkurrent-brands» (28 keywords) er applied. Brand-andel synker jevnt: 69.2% (20. apr) → 64.8% (13. mai) — absolutt brand-klikk -28%. **Kritisk quirk oppdaget:** `google_ads_search_terms` med `source=pmax_insight` er **rullende 90-dagers aggregat** per snapshot. **Innholdsmotor:** AI-drevet content engine på `/innholdsmotor` som erstatter Native. Bruker `gemini-2.5-flash` for caption + `gemini-2.5-flash-image` (Nano Banana 2) for bilde. 7 FT-spesifikke archetypes (foto/definisjon/statement/kontrast/milepael/sitat/sertifikat) med eksplisitte forbud mot AI-HDFI/AI-mennesker. DB-backet korpus + live feedback-loop. Migrations 014-016 + ~30 seed-entries. Modell-sammenligning: Nano Banana >> Imagen 4.0 for FT-stilen. $900 Gemini-kreditt over 3 mnd, estimert ~$10-30/mnd faktisk forbruk. |
 | 16. mai | **SEO-helsesjekk + Innholdsmotor UI-bygging.** `scripts/seo-health-check.mjs` (GSC API-basert) + `scripts/video-vs-image-seo.mjs` (video-hero -1.9 pos vs image-hero +1.6 — venter 2 uker). Innholdsmotor Ny-tab fått **PopularPagesPanel** — fetcher topp 12 sider fra GA4+Mailchimp, checkboxes for multi-select, batch-generér via `/api/social/crawl-batch`. Photoshop generative fill prompts for Facom HDFI-bilder. Sosiale medier-captions for Lufttransport AS Facom JET verktøyskap-leveranse (FB/IG/LinkedIn med UTM). |
 | 19. mai | **Nyhetsbrev-bygger + prisplakat-fixer.** Full nyhetsbrev-bygger (`/innleggsbygger/nyhetsbrev-bygger`) med 4-stegs wizard + Mailchimp API-integrasjon. `mailchimp-builder.ts` fullstendig omskrevet (~841 linjer) til ekte Mailchimp-HTML (mce*-klasser, VML-knapper, MSO conditional images, 12-kol produktgrid, CDN sosial-ikoner, firma-footer med org.nr + NCAGE). Prisplakat share-API beriker produkter server-side (eliminerer 401 på kiosk-skjermer). Team-wide RLS for prisplakat (migrasjon 019). |
+| 20.-21. mai | **Produkt-import-system bygget fra grunnen.** Ny side `/innleggsbygger/produkt-import` med Wera-prislisten-parser, Multicase 1330-gruppers hierarki som cascading dropdowns, per-produkt produktgrupper, klassifiseringsmotor (~80 regler + Wera serie-suffiks-lookup), navn-kompaktor med 3D-dimensjon-splitting (`0.5X3 80MM`), UNC-path bildenavn (`\\tsclient\Multicase\`), SB-filter (blisterpakninger), Wera-bilde-ZIP-upload (JSZip klient-side), **Playwright deep-scrape** med Supabase-cache (`wera_product_cache`-tabellen, migrasjon 020-021), **SEO-HTML-generator** (3000+ tegn HTML i Multicase Produktinformasjon-felt — bekreftet at Multicase rendrer HTML), per-rad Wera-knapp, «Bruk cached»-knapp, «Re-klassifiser cache», «Gjenoppta fra XLSX». Quality-score-sortering med visuelle indikatorer (⚠️ + border-farge). Ny side `/innleggsbygger/produkt-bulk-edit` for å redigere eksisterende Multicase-eksporter med bulk-actions. Mailchimp-bygger forbedret: **iframe live-preview** (single source of truth via `/api/mailchimp/newsletter/preview-html`), grå body-bakgrunn (ikke hvit), 9 SEO-anbefalinger implementert (FNAME-merge-tag, kundehistorie, `utm_term`, preheader-validering, alt-tekst på produktbilder, «Vis i nettleser»-lenke, tirsdag-11:00-auto-scheduling, kompakte sekundære sosiale CTAs, fixed-size produsentlogo, midtstilte bilder). 17 nye filer + 8 migrasjons-oppdateringer. Storeshop-tilbud email-svar (HTML-redigeringsbehov fra Multicase). |
+| 21. mai (kveld) | **Innholdsmotor-oppgradering + HDFI-fargevisning-eksperiment.** Wera deep-scrape kvalitetskontroll (3611 produkter — HTML solid, men `feature_bullets` + `application_notes` tomme; bygde `patch-wera-cache.mjs` for å hente bullets fra `.product-features` + scrollsnaptable-specs). Innholdsmotor: multi-aspect bilde-gen (FB 1:1, IG 4:5, LI 16:9 — `PLATFORM_ASPECT_RATIOS`), ny `produkt_variant`-archetype (corpus + kode + UI), korpus-utvidelse (HDFI 6 standardfarger, CADLAB-prosess, FT-company-kontekst, visual_rules klargjort om blå-farge), auto-retry + Flash-Lite-fallback ved Gemini 503. **HDFI-fargevisning — utforsket grundig men ikke løst:** prøvde server-side swatch-rendering (SVG), Gemini Vision swatch-detect, pixel-analyse (luminance/variance/per-kolonne-scan), inside-label med mørk strip — alle hadde edge-cases. Konkludert: automatisk label-plassering på AI-genererte swatches er ikke pålitelig. Reverterte til AI-rendrer-alt for `produkt_variant`. Beholdt: `composite-text.ts` (server-side tekst-overlay m/ Manrope-font for statement/milepael), multi-aspect, retry-fallback. **Status:** produkt-import deep-scrape kjører fortsatt; Innholdsmotor-arbeid uncommitted-til-nå. |
 | 16.-18. mai | **Mega-økt — Innholdsmotor produksjonsklar + prisplakat-share-token + YouTube-slides.** 16 commits + 17 deploys. Detaljert sammendrag nedenfor. Hovedpunkter: **Innholdsmotor deployd** (branch merged via direct fast-forward push siden gh CLI ikke installert); fallback-scrape for ikke-produkt-URLer (`/bransjer/forsvaret`); Multicase unquoted-meta-regex-fix; iterative prompt-polish for FT-stil → **server-side wordmark composite** med sharp (eliminert «SUSEN TOOLS»-typos); **brand-asset context-caching** (Gemini SDK, 1h TTL); **SDK aspectRatio som hard constraint** (var bare prompt-hint før, ga 16:5-banner i stedet for 1:1); **caption-LLM komponerer ALL image-tekst** (`image_headline`/`image_body`/`image_subtagline`/`kontrast_labels` — eliminer typo-fylt AI-komposisjon); UPPERCASE server-side; FT Korolev-typografi-spec lest fra `FosenTools.scss`; **verktøyvogn+HDFI-mood** erstattet jagerfly i `_profesjonell`-stil; **manuell tekst-override-UI** for image-regenerering; **Imagen-4-vurderings-memo** lagret som HTML på Desktop til daglig leder. **Shadowoaths-spec** (~30kB markdown) lagret på Desktop for separat Claude-sesjon (klær + Pact-app). **Prisplakat for UniFi US Cast Pro**: migration 017 share_token UUID, public `/prisplakat/share/[token]/play`-route utenfor (dashboard), service-role-API, middleware whitelist, kioskMode-prop skipper auto-fullscreen-overlay og controls-bar, auto-reload hvert 5. min. Editor: **📺 Skjerm-URL**-kopi-knapp per playlist. **YouTube-video som slide-type**: extractYouTubeId helper, iframe med autoplay+muted+playsinline, postMessage 'onStateChange' end-event → auto-advance, kun aktiv slide rendrer iframen (sparer båndbredde). Brit kan nå ha én URL per skjerm i butikken, redigere playlist → endring vises automatisk. |
 
 ---
@@ -2384,3 +2386,81 @@ Tema: Fullstendig omskriving av `mailchimp-builder.ts` til ekte Mailchimp-HTML +
 - **5 megameny CSS-klasser** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger)
 - **Levende ft-catgrid utrulling** — script publisert på 2 sider, gjenstår ~37 hovedkategori-sider
 - **Daglig-leder-beslutning om Imagen 4** (memo levert 18. mai)
+
+---
+
+## Siste sesjons-sammendrag (21. mai 2026 — Innholdsmotor + Wera-kvalitetskontroll)
+
+Tema: kvalitetskontroll av Wera deep-scrape, oppgradering av Innholdsmotor, og et grundig (men uløst) forsøk på automatisk HDFI-fargevisning.
+
+### 1. Wera deep-scrape — kvalitetskontroll
+
+`wera_product_cache` har **3611 produkter** (~97% av prislisten på ~3711).
+
+**Sterkt:** 100% navn, 100% bilde-URL, 100% `produktinformasjon_html` (median 2209 tegn, rik SEO), 100% `description_sections`, 97.3% G1/G2/G3-klassifisering.
+
+**Hull funnet:**
+- `feature_bullets` 0% — DOM-parsing letet etter `<ul>`, men Wera bruker `.product-features .feature-icon`-grid
+- `application_notes` 0% — hardkodet `null` i `wera-deep-scrape.ts:261`
+- `raw_data` lagret bare `{title}` — mistet `specs` + `allText`
+- ⚠️ **Alle 3611 bilder pekte til SAMME generiske hero-URL** (`csm_Application-image-Kraftform-Kompakt-007.jpg`) — men dette er IKKE et problem siden bruker laster ned bilder selv og legger i Multicase-mappen som `{kode}.jpg` (UNC-path)
+
+**Bygget patch-løsning** (ikke kjørt enda):
+- `scripts/patch-wera-cache.mjs` — standalone Playwright-script som henter `feature_bullets` fra `.product-features .feature-icon-text` + scrollsnaptable-specs (finner riktig kolonne via produktkode i row-0)
+- Oppdatert `wera-deep-scrape.ts` med ny bullets + scrollsnaptable-parsing
+- Oppdatert `wera-seo-html.ts` til å bruke `scraped.specs` i spec-tabellen
+- Oppdatert `wera-reclassify-cache/route.ts` til å lese `raw_data.specs`
+- Verifisert på 31 produkter: 23/30 fikk bullets, 24/30 fikk specs (resten mangler genuinely på Wera-siden)
+- **Kjøres senere:** `node --env-file=.env.local scripts/patch-wera-cache.mjs` (~35 min for alle 3611), så «Re-klassifiser cache»-knapp
+- Dokumentert i `docs/wera-patch-mode.md`
+
+### 2. Innholdsmotor-oppgradering
+
+**Multi-aspect bilde-gen:** `PLATFORM_ASPECT_RATIOS` — Facebook 1:1, Instagram 4:5, LinkedIn 16:9. `generateDraft()` looper over plattformene. **MIDLERTIDIG redusert til kun 1:1** mens vi itererer på tekst-rendering (gjenaktiver IG/LI senere).
+
+**Ny `produkt_variant`-archetype:** for HDFI-farger/koffert-størrelser/modeller. Lagt til i corpus (archetype + topic_template), `Archetype`-type-union, og UI-dropdown.
+
+**Korpus-utvidelse** (via `scripts/upgrade-social-corpus.mjs`):
+- `product/hdfi` — 6 standardfarger med hex, ESD/brannhemmende, fargekoding for 5S-zoning
+- `product/cadlab` — 4-trinns kundeprosess + ledetid
+- `company/fosen-tools-as` — 6 navngitte kunder, helikopterlandingsplass, geografi
+- `visual_rules/forbud` — klargjort: blå er forbudt som GRAFISK aksent, men OK som PRODUKT-fakta (blå HDFI-plate)
+- Ny `rejected_pattern/fargevisning-mangler-farger`
+
+**Auto-retry + fallback:** `withRetryAndFallback()` i `gemini.ts` — 3 forsøk med eksponentiell backoff på 503/429, fallback til `gemini-2.5-flash-lite`. Wrapper både `generateCaptionsJson` og `generateImage`.
+
+### 3. HDFI-fargevisning — utforsket grundig, IKKE løst
+
+Mål: lage et innlegg som viser HDFI sine 6 standardfarger. Problemet er at AI (Nano Banana 2) misstaver norske bokstaver i swatch-labels («Rød»→«Rod», «Blå»→«Bla»).
+
+**Prøvd (alle hadde edge-cases):**
+- **Alt B — server-side rendre alt:** AI lager kun backdrop, `composite-text.ts` rendrer swatches som SVG-shapes. Funket teknisk, men SVG-tool-silhuettene så stiliserte/dårlige ut.
+- **Alt A — Gemini Vision swatch-detect:** AI lager swatches, Vision returnerer koordinater, composite-text legger labels presist. Vision var for upresis på Y-aksen (detekterte kjerne-fargen, ikke full visuell footprint).
+- **Pixel-analyse:** luminance-toleranse, mean, variance, non-bg-count, per-kolonne-scan — alle inkonsistente på tvers av aspecter.
+- **Inside-label med mørk strip:** labels plassert i swatch nedre tredjedel — FB+IG ok, LI feilet på Vision X-bredde.
+
+**Konklusjon:** automatisk label-plassering på AI-genererte swatches er ikke pålitelig nok. **Reverterte** `produkt_variant` til at AI rendrer ALT selv (swatches + headline + labels + body), server-side legger kun på FT-wordmark. AI-prompten har en skjerpet norsk-bokstav-seksjon (character-by-character spec). Norsk-typo-risiko aksepteres fremfor label-mismatch.
+
+### 4. Nye/endrede filer denne sesjonen
+
+**Nye:**
+- `src/lib/services/composite-text.ts` — server-side tekst-overlay (SVG + Manrope-font, brukes for statement/milepael; produkt_variant-delen er nå ubrukt men beholdt)
+- `public/social/fonts/manrope-latin-{400,700,800}-normal.woff2` — Manrope for composite-text
+- `docs/wera-patch-mode.md`, `docs/innholdsmotor-upgrades-2026-05-21.md`
+- ~20 `scripts/*.mjs` — Wera-kvalitetskontroll, patch, og HDFI-test-eksperimenter (test-scripts beholdt for referanse)
+
+**Endret:**
+- `src/lib/services/gemini.ts` — `withRetryAndFallback`, `detectSwatchPositions` (ubrukt nå), retry-wrapping
+- `src/lib/services/social-engine.ts` — multi-aspect, `produkt_variant`-archetype, `compositeText`-integrasjon for statement/milepael
+- `src/lib/services/wera-deep-scrape.ts` + `wera-seo-html.ts` — bullets + scrollsnaptable-fixes
+- `src/app/(dashboard)/innholdsmotor/page.tsx` — `produkt_variant` i dropdown, per-plattform bilde-visning
+
+### 5. Captions klare for HDFI-fargevisning-innlegg
+
+Publiseringsklare captions (FB/IG/LinkedIn) for HDFI 6-farger-tema lå klare i samtalen — tema «Seks farger. Én standard.», +144%-mønster (skreddersydd/HDFI/CNC-maskinert/CADLAB), UTM-kampanje `hdfi-farger-2026-05-21`. (Ikke lagret som fil — finnes i samtale-historikk.)
+
+### Neste steg
+1. **Kjøre Wera patch:** `node --env-file=.env.local scripts/patch-wera-cache.mjs` når deep-scrape er ferdig, så «Re-klassifiser cache»
+2. **Innholdsmotor HDFI-test:** generér `produkt_variant` i 1:1 flere ganger, vurder om AI-rendret norsk tekst er godt nok
+3. Hvis tekst er stabil: gjenaktiver IG 4:5 + LI 16:9 i `PLATFORM_ASPECT_RATIOS`
+4. Kjøre migrasjon 020 + 021 i Supabase hvis ikke alt gjort

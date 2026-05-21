@@ -22,7 +22,83 @@ const TEXT_COLOR = "rgb(34, 34, 34)";
 const FONT_STACK = "'Helvetica Neue', Helvetica, Arial, Verdana, sans-serif";
 const ROBOTO_STACK = "'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 const MAX_WIDTH = 660;
-const FT_LOGO_URL = "https://sawa-dev-2-storage-bucket.storage.googleapis.com/profiles/pes9r6q4skfkw2mp-1f9d1.png";
+const FT_LOGO_URL = "https://fosen-tools.no/userfiles/image/Logo/Fosen-Tools_white.svg";
+const FT_SITE = "https://fosen-tools.no";
+const FT_LOGO_BASE = `${FT_SITE}/userfiles/image/Logo`;
+
+/**
+ * Complete brand list from fosen-tools.no logo ticker.
+ * Used for: (1) header ticker strip in newsletter, (2) brand logo lookup by slug.
+ */
+const ALL_BRANDS: Array<{ name: string; slug: string; file: string }> = [
+  // Globalt kjente merker
+  { name: "Bosch", slug: "bosch-tilbehør", file: "Bosch.svg" },
+  { name: "Stanley", slug: "stanley-pmi", file: "Stanley.svg" },
+  { name: "Milwaukee", slug: "milwaukee", file: "Milwaukee.svg" },
+  { name: "Husqvarna", slug: "husqvarna", file: "Husqvarna.svg" },
+  { name: "Knipex", slug: "knipex", file: "Knipex.svg" },
+  { name: "Wera", slug: "wera", file: "Wera.svg" },
+  { name: "Bahco", slug: "bahco", file: "Bahco.svg" },
+  { name: "Facom", slug: "facom", file: "Facom.svg" },
+  { name: "Fluke", slug: "fluke", file: "Fluke.svg" },
+  { name: "Leatherman", slug: "leatherman", file: "Leatherman.svg" },
+  { name: "Hultafors", slug: "hultafors", file: "Hultafors.svg" },
+  { name: "Snickers Workwear", slug: "snickers", file: "Snickers-Workwear.svg" },
+  { name: "PB Swiss Tools", slug: "pb-swiss-tools", file: "PB-Swiss-Tools.svg" },
+  { name: "Gedore", slug: "gedore", file: "Gedore.svg" },
+  { name: "KC Tools", slug: "kc-tools", file: "KC-Tools.svg" },
+  { name: "Red Rooster", slug: "red-rooster", file: "Red-Rooster.svg" },
+  // Europeiske premiummerker
+  { name: "Gühring", slug: "gühring", file: "Guehring.svg" },
+  { name: "Stahlwille", slug: "stahlwille", file: "Stahlwille.svg" },
+  { name: "Völkel", slug: "völkel", file: "Voelkel.svg" },
+  { name: "Brockhaus Heuer", slug: "brockhaus-heuer", file: "Brockhaus-Heuer.svg" },
+  { name: "Rennsteig", slug: "rennsteig", file: "Rennsteig.svg" },
+  { name: "Apex Tools", slug: "apex-tools", file: "Apex-Tools.svg" },
+  { name: "Vogel Germany", slug: "vogel-germany", file: "Vogel-Germany.svg" },
+  { name: "Mitutoyo", slug: "mitutoyo", file: "Mitutoyo.svg" },
+  { name: "Meclube", slug: "meclube", file: "Meclube.svg" },
+  { name: "Opticase", slug: "opticase", file: "Opticase.svg" },
+  { name: "Zarges", slug: "zarges", file: "Zarges.svg" },
+  { name: "Handi", slug: "handi", file: "Handi.svg" },
+  // Nordiske og profesjonelle
+  { name: "Brusletto", slug: "brusletto", file: "Brusletto.svg" },
+  { name: "Viking Arm", slug: "viking-arm", file: "Viking-Arm.svg" },
+  { name: "Karlstad Redskap", slug: "karlstad-redskap", file: "Karlstad-Redskap.svg" },
+  { name: "Fosen Tools Custom", slug: "fosen-tools-custom", file: "Fosen-Tools-Custom.svg" },
+  // Mindre og spesialiserte
+  { name: "Scell-it", slug: "scell-it", file: "Scell-it.svg" },
+  { name: "Solid Gear", slug: "solid-gear", file: "Solid-Gear.svg" },
+  { name: "The Bone", slug: "the-bone", file: "The-Bone.svg" },
+  { name: "Ullman", slug: "ullman-devices", file: "Ullman.svg" },
+  { name: "ScrewGrab", slug: "produsent/screw-grab", file: "ScrewGrab.svg" },
+  { name: "OSCA", slug: "osca", file: "OSCA.svg" },
+  { name: "AOK", slug: "aok-by-kc-tools", file: "AOK.svg" },
+  { name: "Boehm", slug: "boehm", file: "Boehm.svg" },
+  { name: "Irega", slug: "irega", file: "Irega.svg" },
+  { name: "Sumake", slug: "sumake", file: "Sumake.svg" },
+  { name: "Emhart", slug: "emhart-teknologies", file: "Emhart.svg" },
+  { name: "Lista", slug: "lista-ag", file: "Lista.svg" },
+  { name: "Gigant", slug: "gigant", file: "Gigant.svg" },
+  { name: "Led Lenser", slug: "ledlenser", file: "Led-Lenser.svg" },
+  { name: "Hellberg", slug: "hellberg", file: "Hellberg.svg" },
+  { name: "Morakniv", slug: "mora-of-sweden", file: "Morakniv.svg" },
+  { name: "Bondhus", slug: "bondhus", file: "Bondhus.svg" },
+  { name: "Snap-on", slug: "snapon", file: "Snap-on.svg" },
+  { name: "Pelicase", slug: "pelicase", file: "Pelicase.svg" },
+];
+
+/** Top 12 brands shown in the email header ticker strip. */
+const TICKER_BRANDS = ALL_BRANDS.slice(0, 12);
+
+/** Lookup brand logo URL by slug. Returns ticker URL or null. */
+function brandLogoUrlFromTicker(slug: string): string | null {
+  const s = slug.toLowerCase();
+  const brand = ALL_BRANDS.find(
+    (b) => b.slug === s || b.slug.endsWith(`/${s}`) || b.name.toLowerCase() === s
+  );
+  return brand ? `${FT_LOGO_BASE}/${brand.file}` : null;
+}
 
 export interface NewsletterInput {
   themeSlug: string;
@@ -31,6 +107,7 @@ export interface NewsletterInput {
   title?: string;
   headingMain: string;
   headingSub: string;
+  /** Ingress-tekst. Bruk «*|FNAME|*» for personalisering — Mailchimp bytter ved utsendelse. */
   ingress: string;
   products: NewsletterProduct[];
   midtTitle: string;
@@ -45,6 +122,10 @@ export interface NewsletterInput {
   socialInstagramPostUrl: string;
   socialFacebookPostUrl: string;
   socialLinkedinPostUrl: string;
+  /** Kundehistorie-tekst under fredags-bilde nederst — speiler «levert til X»-mønster fra sosiale medier. */
+  customerStoryText?: string;
+  /** A/B-variant for emnelinje. Brukes som utm_term så vi kan måle hvilken konverterte best. */
+  utmTerm?: string;
 }
 
 export interface NewsletterProduct {
@@ -150,14 +231,28 @@ export class MailchimpBuilderService {
   }
 
   /**
+   * Planlegg utsendelse av en kampanje. `scheduleTime` er ISO-streng (UTC).
+   * Mailchimp krever at sendetidspunkt er minst 15 min frem i tid.
+   */
+  async scheduleCampaign(campaignId: string, scheduleTime: string): Promise<void> {
+    await this.mcRequest("POST", `/campaigns/${campaignId}/actions/schedule`, {
+      schedule_time: scheduleTime,
+    });
+  }
+
+  /**
    * Bygg ferdig nyhetsbrev-HTML som matcher Mailchimp master-template struktur.
    * Genererer komplett mce*-kompatibel HTML med MSO conditionals og VML buttons.
    */
   buildNewsletterHtml(input: NewsletterInput): string {
-    const utm = (url: string, content?: string) => withUtm(url, input.themeSlug, content);
+    const utm = (url: string, content?: string) => withUtm(url, input.themeSlug, content, input.utmTerm);
     const products = input.products.slice(0, 5);
 
     const rootSections: string[] = [];
+
+    // Section 0: «Vis i nettleser»-lenke — for mottakere med bildeblokkering eller
+    //   ødelagt e-post-rendering. Liten grå tekst over header.
+    rootSections.push(renderBrowserViewSection());
 
     // Section 1: Header (black bg) — logo + top badge
     rootSections.push(renderHeaderSection(
@@ -204,6 +299,9 @@ export class MailchimpBuilderService {
   }
 
   async fetchBrandLogoUrl(manufacturer: string): Promise<string | null> {
+    const tickerUrl = brandLogoUrlFromTicker(manufacturer);
+    if (tickerUrl) return tickerUrl;
+
     try {
       const url = `https://fosen-tools.no/${manufacturer}`;
       const res = await fetch(url, {
@@ -286,12 +384,13 @@ function pad(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 
-function withUtm(url: string, themeSlug: string, content?: string): string {
+function withUtm(url: string, themeSlug: string, content?: string, term?: string): string {
   if (!url) return url;
   if (url.includes("utm_source=")) return url;
   const sep = url.includes("?") ? "&" : "?";
   let utm = `${sep}utm_source=FTNett&utm_medium=email&utm_campaign=${encodeURIComponent(themeSlug)}`;
   if (content) utm += `&utm_content=${encodeURIComponent(content)}`;
+  if (term) utm += `&utm_term=${encodeURIComponent(term)}`;
   return `${url}${utm}`;
 }
 
@@ -330,7 +429,7 @@ function renderImage(
 ): string {
   const w = typeof width === "number" ? width : width;
   const wStr = String(w);
-  const imgStyle = `display:block;${widthStyle ? `max-width:${widthStyle};` : "max-width:100%;"}height:${heightStyle ?? "auto"};border-radius:0`;
+  const imgStyle = `display:block;margin:0 auto;${widthStyle ? `max-width:${widthStyle};` : "max-width:100%;"}height:${heightStyle ?? "auto"};border-radius:0`;
   const msoMaxW = widthStyle ?? `${wStr}px`;
 
   const imgTag = `<img alt="${esc(alt)}" src="${esc(src)}" width="${wStr}" height="auto" style="${imgStyle}" class="imageDropZone ${cssClass}">`;
@@ -413,7 +512,7 @@ function wrapInDocument(body: string, previewText: string, subjectLine: string):
 <!---->
 <div style="display: none; max-height: 0px; overflow: hidden;">${zwsFiller}${shyFiller}</div><!--MCE_TRACKING_PIXEL-->
 <center>
-<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable" role="presentation" style="background-color: rgb(255, 255, 255);">
+<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable" role="presentation" style="background-color: ${OUTER_BG};">
 <tbody><tr>
 <td class="bodyCell" align="center" valign="top">
 <table id="root" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">${body}</table>
@@ -433,7 +532,7 @@ p, a, li, td, body, table, blockquote{-ms-text-size-adjust:100%;-webkit-text-siz
 .ExternalClass, .ExternalClass p, .ExternalClass td, .ExternalClass div, .ExternalClass span, .ExternalClass font{line-height:100%;}
 .ReadMsgBody, .ExternalClass{width:100%;}
 a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important;}
-body{height:100%;margin:0;padding:0;width:100%;background:#ffffff;}
+body{height:100%;margin:0;padding:0;width:100%;background:${OUTER_BG};}
 p{margin:0;padding:0;}
 table{border-collapse:collapse;}
 td, p, a{word-break:break-word;}
@@ -448,7 +547,7 @@ a[href^="tel"], a[href^="sms"]{color:inherit;cursor:default;text-decoration:none
 div[contenteditable="true"]{outline:0;}
 .mceImageBorder{display:inline-block;}
 .mceImageBorder img{border:0!important;}
-body, #bodyTable{background-color:rgb(255, 255, 255);}
+body, #bodyTable{background-color:${OUTER_BG};}
 .mceText, .mcnTextContent, .mceLabel{font-family:${FONT_STACK};}
 .mceText, .mcnTextContent, .mceLabel{color:${TEXT_COLOR};}
 .mceText h1, .mceText h2, .mceText h4, .mceText p, .mceText label, .mceText input{margin-bottom:0;}
@@ -526,35 +625,51 @@ colgroup{display:none;}
 // ============ Section Renderers ============
 
 /**
- * Header section: black bg with FT logo + top badge text.
+ * Pre-header «Vis i nettleser»-lenke — liten tekst på grå outer-bakgrunn over selve nyhetsbrevet.
+ * Hjelper mottakere med bildeblokkering eller dårlig rendering å åpne arkivversjonen i nettleser.
+ */
+function renderBrowserViewSection(): string {
+  const linkStyle = "color:#666666;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;text-decoration:underline";
+  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:12px;padding-bottom:8px;padding-left:24px;padding-right:24px;text-align:center" valign="top" align="center"><a href="*|ARCHIVE|*" target="_blank" style="${linkStyle}">Vis i nettleser</a></td></tr></tbody></table>`;
+  return wrapSection("browser-view", OUTER_BG, OUTER_BG, innerContent);
+}
+
+/**
+ * Header section: black bg with FT logo + top badge + brand logo ticker strip.
  */
 function renderHeaderSection(logoHref: string, topBadge?: string): string {
-  // Logo image block
-  const logoImg = renderImage(
-    "b1",
-    FT_LOGO_URL,
-    logoHref,
-    183.6,
-    "",
-    "mceLogo",
-    "30%"
-  );
+  const logoWidth = 264;
+  const logoHeight = 24;
+  const logoImgTag = `<a href="${esc(logoHref)}" target="_blank" style="display:inline-block;text-decoration:none"><img src="${esc(FT_LOGO_URL)}" alt="Fosen Tools" width="${logoWidth}" height="${logoHeight}" style="display:block;margin:0 auto;width:${logoWidth}px;height:${logoHeight}px;max-width:100%;border:0" class="mceLogo" /></a>`;
 
-  // Top badge text block
-  const badgeText = topBadge
-    ? `<h2 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:#ffffff;"><span style="font-size: 12px">${esc(topBadge)}</span></span></h2>`
-    : `<h2 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:#ffffff;"><span style="font-size: 12px">NYHETSBREV</span></span></h2>`;
+  const badgeLabel = topBadge || "NYHETSBREV";
+  const badgeText = `<h2 style="line-height: 1; mso-line-height-alt: 100%; text-align: center;" class="last-child"><span style="color:#ffffff;"><span style="font-size: 12px">${esc(badgeLabel)}</span></span></h2>`;
 
-  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="2"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" data-block-id="-17" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:30px;padding-bottom:10px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b1">${logoImg}</td></tr><tr>${renderTextBlock(
+  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="2"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" data-block-id="-17" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:30px;padding-bottom:6px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b1"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;margin:0;vertical-align:top;max-width:100%;width:100%;height:auto" role="presentation"><tbody><tr><td style="border:0;border-radius:0;margin:0" valign="top" align="center">${logoImgTag}</td></tr></tbody></table></td></tr><tr>${renderTextBlock(
     "gutterContainerId-4",
     "b4",
     "d4",
-    "padding-left:30px;padding-right:28px;padding-top:12px;padding-bottom:20px",
+    "padding-left:30px;padding-right:28px;padding-top:8px;padding-bottom:20px",
     "transparent",
     badgeText
   )}</tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
 
   return wrapSection("3", OUTER_BG, FT_INK, innerContent);
+}
+
+/**
+ * Brand logo ticker row: horizontal strip of partner brand logos on dark bg.
+ * Uses a single-row table with inline images. SVGs from fosen-tools.no/userfiles/image/Logo/.
+ * Email clients that don't support SVG will show alt-text.
+ */
+function renderBrandTickerRow(): string {
+  const logoCells = TICKER_BRANDS.map((b) => {
+    const logoSrc = `${FT_SITE}/userfiles/image/Logo/${b.file}`;
+    const href = `${FT_SITE}/${b.slug}`;
+    return `<!--[if mso]><td align="center" valign="middle" style="padding:0 4px"><![endif]--><table align="left" border="0" cellpadding="0" cellspacing="0" style="display:inline-block" role="presentation"><tbody><tr><td style="padding:2px 6px" valign="middle" align="center"><a href="${esc(href)}" target="_blank" rel="noreferrer" style="display:block;text-decoration:none"><img src="${esc(logoSrc)}" alt="${esc(b.name)}" width="44" height="22" style="display:block;max-width:44px;height:auto;max-height:22px;object-fit:contain;filter:brightness(0) invert(1);-webkit-filter:brightness(0) invert(1)" /></a></td></tr></tbody></table><!--[if mso]></td><![endif]-->`;
+  }).join("");
+
+  return `<tr><td style="background-color:${FT_INK};padding-top:8px;padding-bottom:14px;padding-left:16px;padding-right:16px;border-top:1px solid #333333;border-bottom:0;border-left:0;border-right:0;border-radius:0" valign="top" align="center" id="b_ticker"><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 auto"><tbody><tr><td valign="middle" align="center" style="font-size:0;line-height:0"><!--[if mso]><table align="center" border="0" cellspacing="0" cellpadding="0"><tr><![endif]-->${logoCells}<!--[if mso]></tr></table><![endif]--></td></tr></tbody></table></td></tr>`;
 }
 
 /**
@@ -579,15 +694,24 @@ function renderContentSection(
 
   // --- Ingress + brand logo ---
   {
-    let ingressInner = `<p style="line-height: 1; mso-line-height-alt: 100%; text-align: center;" class="${input.brandLogoUrl ? "" : "last-child"}"><span style="font-size: 14px">${esc(input.ingress)}</span></p>`;
+    // #1 Personalisering: prepend «Hei *|FNAME|*,» hvis ingressen ikke alt har merge-tag.
+    // Mailchimp bytter *|FNAME|* med abonnentens fornavn (fallback til generisk hilsen
+    // dersom fornavn mangler — krever at default-verdi er satt i Mailchimp).
+    const ingressText = input.ingress.includes("*|FNAME|*") || input.ingress.includes("*|MERGE")
+      ? input.ingress
+      : `Hei *|FNAME|*,\n\n${input.ingress}`;
+    // *|FNAME|* skal ikke esc-es — esc() bevarer * og | så det er trygt.
+    const ingressHtml = esc(ingressText).replace(/\n+/g, "<br><br>");
+    let ingressInner = `<p style="line-height: 1.5; mso-line-height-alt: 150%; text-align: center;" class="${input.brandLogoUrl ? "" : "last-child"}"><span style="font-size: 14px">${ingressHtml}</span></p>`;
 
     // Brand logo as inline image after ingress text
     let brandLogoRow = "";
     if (input.brandLogoUrl) {
       const brandHref = input.brandLogoLink ? utm(input.brandLogoLink, "brand-logo") : null;
+      const brandImgStyle = "display:block;margin:0 auto;width:180px;max-width:180px;height:70px;max-height:70px;object-fit:contain;border:0";
       const brandImgTag = brandHref
-        ? `<a href="${esc(brandHref)}" target="_blank" style="display:block"><img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="auto" style="display:block;margin:0 auto;max-width:180px;width:180px;height:auto;border:0" class="mceImage"></a>`
-        : `<img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="auto" style="display:block;margin:0 auto;max-width:180px;width:180px;height:auto;border:0" class="mceImage">`;
+        ? `<a href="${esc(brandHref)}" target="_blank" style="display:block;text-align:center"><img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="70" style="${brandImgStyle}" class="mceImage"></a>`
+        : `<img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="70" style="${brandImgStyle}" class="mceImage">`;
       brandLogoRow = `<tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:12px;padding-bottom:0;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b300"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;margin:0;vertical-align:top;max-width:100%;width:100%;height:auto" role="presentation"><tbody><tr><td style="border:0;border-radius:0;margin:0" valign="top" align="center">${brandImgTag}</td></tr></tbody></table></td></tr></tbody></table></td></tr>`;
     }
 
@@ -722,22 +846,25 @@ function renderProductColumn(
   gutterContainerId: string,
   textPadding: string
 ): string {
-  // Image width based on column size
-  const imgWidth = colspan === 4 ? 186.67 : 282;
+  // Fast bilde-boks-størrelse per kolonne — alle produktbilder rendres på
+  // identisk plass uavhengig av aspect ratio. `object-fit:contain` bevarer
+  // proporsjonene; hvit bg gir konsistent ramme.
+  const imgWidth = colspan === 4 ? 186 : 282;
+  const imgBoxHeight = colspan === 4 ? 160 : 220;
 
-  const imgHtml = renderImage(
-    imgBlockId,
-    product.imageUrl,
-    href,
-    imgWidth,
-    "",
-    "mceImage"
-  );
+  const productImgStyle = `display:block;margin:0 auto;width:100%;max-width:${imgWidth}px;height:${imgBoxHeight}px;object-fit:contain;background:#ffffff;border:0`;
+  // #8 Alt-tekst: bruker produktnavn så Outlook + skjermlesere har fallback når bilde ikke laster
+  const imgInner = `<img src="${esc(product.imageUrl)}" alt="${esc(product.name)}" width="${imgWidth}" height="${imgBoxHeight}" style="${productImgStyle}" class="imageDropZone mceImage" />`;
+  const imgHtml = href
+    ? `<a href="${esc(href)}" target="_blank" style="display:block">${imgInner}</a>`
+    : imgInner;
 
   // Product text: name (uppercase), sku, price, "Gå til produkt" underlined
+  // Min-høyder sikrer at SKU, pris og CTA starter på samme linje på tvers av
+  // alle tre kort uansett om navnet er 1, 2 eller 3 linjer.
   const nameUpper = product.name.toUpperCase();
   const ctaText = product.ctaText ?? "Gå til produkt";
-  const productTextHtml = `<h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center;"><a href="${esc(href)}" target="_blank">${esc(nameUpper)}<br>${esc(product.brandSku)}<br>${esc(product.priceText)}</a></h4><h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center;" class="last-child"><a href="${esc(href)}" target="_blank"><strong><span style="text-decoration:underline;">${esc(ctaText)}</span></strong></a></h4>`;
+  const productTextHtml = `<h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 54px;"><a href="${esc(href)}" target="_blank">${esc(nameUpper)}</a></h4><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 16px; margin: 4px 0 0 0;"><a href="${esc(href)}" target="_blank" style="color:#666"><span style="font-size:11px">${esc(product.brandSku)}</span></a></p><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 36px; margin: 4px 0 0 0;"><a href="${esc(href)}" target="_blank"><strong><span style="font-size:13px">${esc(product.priceText)}</span></strong></a></p><h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; margin-top: 8px;" class="last-child"><a href="${esc(href)}" target="_blank"><strong><span style="text-decoration:underline;">${esc(ctaText)}</span></strong></a></h4>`;
 
   return `<td style="padding-top:0;padding-bottom:0" valign="top" colspan="${colspan}" width="${widthPct}"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:0;padding-bottom:0;padding-right:6px;padding-left:6px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="${imgBlockId}">${imgHtml}</td></tr><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="${gutterContainerId}"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="${txtBlockId}"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="${textPadding}" class="mceTextBlockContainer"><div data-block-id="${txtBlockId.replace("b", "")}" class="mceText" id="d${txtBlockId.replace("b", "")}" style="width:100%">${productTextHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td>`;
 }
@@ -756,39 +883,45 @@ function renderSocialArea(
 
   // Footer image (linked to latest social post, typically Instagram)
   if (input.footerImageUrl) {
-    const footerImgHref = input.socialInstagramPostUrl || input.socialFacebookPostUrl || utm("https://fosen-tools.no/", "footer-bilde");
+    const rawFooterHref = input.socialInstagramPostUrl || input.socialFacebookPostUrl || "https://fosen-tools.no/";
+    const footerImgHref = utm(rawFooterHref, "footer-bilde");
     const footerImgHtml = renderImage("b65", input.footerImageUrl, footerImgHref, 590, "", "mceImage");
 
     parts.push(`<tr><td style="background-color:transparent;padding-top:12px;padding-bottom:12px;padding-right:16px;padding-left:16px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b65">${footerImgHtml}</td></tr>`);
   }
 
-  // 3-column social CTA buttons (Instagram / Facebook / LinkedIn)
+  // #2 Sosiale CTA: kompakte tekst-lenker i stedet for store røde knapper, så midt-CTA
+  //   og produktgrid forblir de visuelt dominerende handlingene.
   const hasSocial = input.socialInstagramPostUrl || input.socialFacebookPostUrl || input.socialLinkedinPostUrl;
   if (hasSocial) {
-    const igBtn = input.socialInstagramPostUrl
-      ? renderSocialButton("b72", "INSTAGRAM", input.socialInstagramPostUrl, "right", "padding-right:30px;padding-left:0")
-      : renderSocialButton("b72", "INSTAGRAM", "https://instagram.com/fosentools", "right", "padding-right:30px;padding-left:0");
+    const igUrl = utm(input.socialInstagramPostUrl || "https://instagram.com/fosentools", "social-instagram");
+    const fbUrl = utm(input.socialFacebookPostUrl || "https://www.facebook.com/fosentools", "social-facebook");
+    const liUrl = utm(input.socialLinkedinPostUrl || "https://www.linkedin.com/company/fosen-tools/", "social-linkedin");
 
-    const fbBtn = input.socialFacebookPostUrl
-      ? renderSocialButton("b73", "FACEBOOK", input.socialFacebookPostUrl, "center", "padding-right:0;padding-left:0")
-      : renderSocialButton("b73", "FACEBOOK", "https://www.facebook.com/fosentools", "center", "padding-right:0;padding-left:0");
+    const linkStyle = `color:${FT_RED};font-family:${FONT_STACK};font-size:12px;font-weight:bold;letter-spacing:2px;text-decoration:none;padding:0 14px`;
+    const socialLinksHtml = `<p style="line-height:1.5;mso-line-height-alt:150%;text-align:center;margin:0" class="last-child"><a href="${esc(igUrl)}" target="_blank" style="${linkStyle}"><span style="color:${FT_RED}">INSTAGRAM</span></a><span style="color:#cccccc">·</span><a href="${esc(fbUrl)}" target="_blank" style="${linkStyle}"><span style="color:${FT_RED}">FACEBOOK</span></a><span style="color:#cccccc">·</span><a href="${esc(liUrl)}" target="_blank" style="${linkStyle}"><span style="color:${FT_RED}">LINKEDIN</span></a></p>`;
 
-    const liBtn = input.socialLinkedinPostUrl
-      ? renderSocialButton("b124", "LINKEDIN", input.socialLinkedinPostUrl, "left", "padding-right:0;padding-left:30px")
-      : renderSocialButton("b124", "LINKEDIN", "https://www.linkedin.com/company/fosen-tools/", "left", "padding-right:0;padding-left:30px");
-
-    // Wrapped in nested layout tables matching master structure
-    parts.push(`<tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-118"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:12px;padding-bottom:12px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b118"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="118" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="123"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody><tr>${igBtn}${fbBtn}${liBtn}</tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr>`);
+    parts.push(`<tr>${renderTextBlock(
+      "gutterContainerId-118",
+      "b118",
+      "d118",
+      "padding-left:24px;padding-right:24px;padding-top:8px;padding-bottom:16px",
+      "transparent",
+      socialLinksHtml
+    )}</tr>`);
   }
-
-  // Descriptive text about FT
+  // #3 Kundehistorie / «Levert til X» — speiler +144%-mønsteret fra sosiale medier.
+  // Bruker input.customerStoryText hvis satt, ellers default generisk tekst.
+  const storyHtml = (input.customerStoryText && input.customerStoryText.trim())
+    ? esc(input.customerStoryText).replace(/\n+/g, "<br><br>")
+    : "Vi utvikler og leverer komplette verktøyløsninger tilpasset kundens faktiske behov. Her er noen eksempler på ferdige prosjekter vi har levert den siste tiden.";
   parts.push(`<tr>${renderTextBlock(
     "gutterContainerId-74",
     "b74",
     "d74",
     "padding-left:50px;padding-right:50px;padding-top:12px;padding-bottom:12px",
     "transparent",
-    `<p style="line-height: 1; mso-line-height-alt: 100%; text-align: center;"><span style="font-size: 14px">Vi utvikler og leverer komplette verktøyløsninger tilpasset kundens faktiske behov. Her er noen eksempler på ferdige prosjekter vi har levert den siste tiden.</span></p><p style="text-align: center;" class="last-child"><br></p>`
+    `<p style="line-height: 1.5; mso-line-height-alt: 150%; text-align: center;"><span style="font-size: 14px">${storyHtml}</span></p><p style="text-align: center;" class="last-child"><br></p>`
   )}</tr>`);
 
   return parts.join("\n");
@@ -828,7 +961,7 @@ function renderFooterSection(): string {
   const socialFollowBlock = `<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" class="mceSocialFollowBlock"><tbody><tr><td valign="middle" align="center"><!--[if mso]><table align="left" border="0" cellspacing="0" cellpadding="0"><tr><![endif]-->${iconCells}<!--[if mso]></tr></table><![endif]--></td></tr></tbody></table>`;
 
   // Company info text
-  const companyInfoHtml = `<p style="line-height: 0; mso-line-height-alt: 0%;"><br></p><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 20px"><span style="font-family: ${ROBOTO_STACK}">Fosen Tools</span></span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">Industrigata 1</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">N-7130 Brekstad, NORWAY</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">Telefon: </span></span><a href="tel:+4772515120"><span style="font-size: 11px">+47 72 51 51 20</span></a></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">E-post: </span></span><a href="mailto:post@fosen-tools.no" target="_blank"><span style="font-size: 11px">post@fosen-tools.no</span></a></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">NO 991976191 MVA</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">NCAGE: N6114</span></span></p>`;
+  const companyInfoHtml = `<p style="line-height: 0; mso-line-height-alt: 0%;"><br></p><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 20px"><span style="font-family: ${ROBOTO_STACK}">Fosen Tools</span></span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">Industrigata 1</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">N-7130 Brekstad, NORWAY</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">Telefon: </span></span><a href="tel:+4772515120" style="color:#ffffff;text-decoration:none"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">+47 72 51 51 20</span></span></a></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">E-post: </span></span><a href="mailto:post@fosen-tools.no" target="_blank" style="color:#ffffff;text-decoration:none"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">post@fosen-tools.no</span></span></a></p><p style="line-height: 1; mso-line-height-alt: 100%;"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">NO 991976191 MVA</span></span></p><p style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px">NCAGE: N6114</span></span></p>`;
 
   // Mailchimp footer links
   const footerLinksHtml = `<p style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px"><br>    </span></span><a href="*|ARCHIVE|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Vis e-posten i nettleser</span></span></a><span style="font-size: 11px"><br>    </span><a href="*|UPDATE_PROFILE|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Oppdater dine preferanser</span></span></a><span style="font-size: 11px">•    </span><a href="*|UNSUB|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Meld deg av</span></span></a></p>`;

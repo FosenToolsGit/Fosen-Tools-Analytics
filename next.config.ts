@@ -1,11 +1,10 @@
 import type { NextConfig } from "next";
-import path from "node:path";
 
 const nextConfig: NextConfig = {
   turbopack: {
-    // Pinne workspace root til denne worktreens rot (ikke hovedrepoet)
-    // — unngår at Turbopack velger feil package-lock.json som root.
-    root: path.resolve("./"),
+    // Hovedrepoets rot — inneholder både worktree-koden (under .claude/worktrees/)
+    // OG node_modules som worktreen symlinker til.
+    root: "/Users/adrianhpettersen/Downloads/Fosen Tools Apper/Fosen Tools Analytics",
   },
 };
 

@@ -1,0 +1,2409 @@
+{
+  "Arbeidsklær": {
+    "Arbeidsklær": [
+      "Hylsterlommer",
+      "Lue",
+      "Sokker",
+      "T-skjorte",
+      "Tilbehør"
+    ],
+    "Belte": [
+      "Belte"
+    ],
+    "Boxershorts": [
+      "Boxershorts"
+    ],
+    "Bukse": [
+      "Bukse"
+    ],
+    "Caps": [
+      "Caps"
+    ],
+    "Dame": [
+      "Dame"
+    ],
+    "Førstehjelp": [
+      "Førstehjelp"
+    ],
+    "Genser": [
+      "Genser"
+    ],
+    "Hodeplagg": [
+      "Hodeplagg"
+    ],
+    "Hodevern": [
+      "Hjelm",
+      "Tilbehør - hjelm",
+      "Visir"
+    ],
+    "Hylsterlommer": [
+      "Hylsterlommer"
+    ],
+    "Hørselvern": [
+      "Aktiv",
+      "Blåtann",
+      "Hørselvern",
+      "Tilbehør - hørselvern",
+      "Ørepropp"
+    ],
+    "Jakke": [
+      "Jakke"
+    ],
+    "Kjeledress": [
+      "Kjeledress"
+    ],
+    "Klestrykk": [
+      "Klestrykk"
+    ],
+    "Lue": [
+      "Lue"
+    ],
+    "Shorts": [
+      "Shorts"
+    ],
+    "Skjorte": [
+      "Skjorte"
+    ],
+    "Sko": [
+      "Brodder",
+      "Sko",
+      "Såle",
+      "Tilbehør - sko"
+    ],
+    "Sokker": [
+      "Sokker"
+    ],
+    "T-skjorte": [
+      "T-skjorte"
+    ],
+    "Vernesko": [
+      "Vernesko"
+    ],
+    "Vest": [
+      "Vest"
+    ],
+    "Visir": [
+      "Visir"
+    ],
+    "Åndedrettsvern": [
+      "Ansiktsmaske",
+      "Filter",
+      "Halvmaske",
+      "Helmaske",
+      "Støvmaske"
+    ],
+    "Øyevern": [
+      "Vernebriller"
+    ]
+  },
+  "Aviation": {
+    "Accessories": [
+      "AW139",
+      "AW169",
+      "AW189",
+      "Accessories",
+      "Aircraft wheel chock",
+      "Bell 412",
+      "F-18",
+      "F-22",
+      "F16",
+      "F35",
+      "H135",
+      "H145",
+      "H175",
+      "S-70",
+      "S92",
+      "UH-60M",
+      "UH-60R"
+    ],
+    "Aviation": [
+      "Aviation"
+    ],
+    "Custom Tool cabinets": [
+      "AW139",
+      "AW169",
+      "AW189",
+      "Bell 412",
+      "Custom Tool cabinets",
+      "F-18",
+      "F-22",
+      "F16",
+      "F35",
+      "H135",
+      "H145",
+      "H175",
+      "S-70",
+      "S92",
+      "UH-60M",
+      "UH-60R"
+    ],
+    "Custom Tool kits": [
+      "AW139",
+      "AW169",
+      "AW189",
+      "Bell 412",
+      "Custom Tool kits",
+      "F-18",
+      "F-22",
+      "F16",
+      "F35",
+      "H135",
+      "H145",
+      "H175",
+      "Portable aviation rotorwing",
+      "S-70",
+      "S92",
+      "UH-60M",
+      "UH-60R"
+    ],
+    "Deployment": [
+      "AW139",
+      "AW169",
+      "AW189",
+      "Bell 412",
+      "Container",
+      "Deployment",
+      "F-18",
+      "F-22",
+      "F16",
+      "F35",
+      "H135",
+      "H145",
+      "H175",
+      "S-70",
+      "S92",
+      "UH-60M",
+      "UH-60R"
+    ],
+    "Line Maintenance Docking": [
+      "AW139",
+      "AW169",
+      "AW189",
+      "Bell 412",
+      "F-18",
+      "F-22",
+      "F16",
+      "F35",
+      "H135",
+      "H145",
+      "H175",
+      "Line Maintenance Docking",
+      "S-70",
+      "S92",
+      "UH-60M",
+      "UH-60R"
+    ]
+  },
+  "Batterier": {
+    "AGM – Standby & sikkerhet": [
+      "Powerfit 100",
+      "Powerfit 100L",
+      "Powerfit 300"
+    ],
+    "Batteri": [
+      "Batteri"
+    ],
+    "GEL-batterier": [
+      "Sonnenschein A400",
+      "Sonnenschein A500",
+      "Sonnenschein Light Traction"
+    ]
+  },
+  "Batterigenerator": {
+    "Batterigenerator": [
+      "Batterigenerator"
+    ]
+  },
+  "Batteriverktøy": {
+    "Arbeidslys": [
+      "Arbeidslys",
+      "Områdebelysning"
+    ],
+    "Arbeidsradio": [
+      "Arbeidsradio"
+    ],
+    "Avløpsrenser": [
+      "Avløpsrenser"
+    ],
+    "Bajonettsag": [
+      "Bajonettsag"
+    ],
+    "Batteri og lader": [
+      "Batteri",
+      "Batteri og lader",
+      "Lader"
+    ],
+    "Betongsliper": [
+      "Betongsliper"
+    ],
+    "Blindmuttertang": [
+      "Blindmuttertang"
+    ],
+    "Bor-/ skrumaskin": [
+      "Bor-/ skrumaskin",
+      "Gipsskruemaskin",
+      "Slagbormaskin",
+      "Slagskrutrekker",
+      "Tilbehør - Bor-/ skrumaskin",
+      "Vinkelbormaskin",
+      "Vinkelskrutrekker"
+    ],
+    "Bordsag": [
+      "Bordsag"
+    ],
+    "Borhammer": [
+      "Borhammer",
+      "Tilbehør - borhammer"
+    ],
+    "Båndsag": [
+      "Båndsag"
+    ],
+    "Båndsliper": [
+      "Båndsliper"
+    ],
+    "Diverse": [
+      "Diverse"
+    ],
+    "Ekspansjonsverktøy": [
+      "Ekspansjonsverktøy"
+    ],
+    "Fettpresse": [
+      "Fettpresse"
+    ],
+    "Fugepistol": [
+      "Fugepistol",
+      "Tilbehør - fugepistol"
+    ],
+    "Hageutstyr": [
+      "Beskjæringssag",
+      "Gressklipper",
+      "Gresstrimmer",
+      "Hekksaks",
+      "Løvblåser",
+      "Motorsag"
+    ],
+    "Inspeksjon": [
+      "Kamera"
+    ],
+    "Kamera": [
+      "Kamera"
+    ],
+    "Kapp- og gjærsag": [
+      "Bord",
+      "Kapp- og gjærsag"
+    ],
+    "Loddeutstyr": [
+      "Loddebolt"
+    ],
+    "Luft": [
+      "Luftpumpe"
+    ],
+    "Lyd": [
+      "Arbeidsradio"
+    ],
+    "Momentnøkler": [
+      "Momentnøkler"
+    ],
+    "Multiverktøy": [
+      "Multiverktøy"
+    ],
+    "Muttertrekker": [
+      "Muttertrekker",
+      "Tilbehør - muttertrekker"
+    ],
+    "Målebånd": [
+      "Multimeter"
+    ],
+    "Måleverktøy": [
+      "Avstandsmåler",
+      "Kamera",
+      "Laser",
+      "Multimeter"
+    ],
+    "Naglepistol": [
+      "Naglepistol"
+    ],
+    "Overfres": [
+      "Overfres"
+    ],
+    "Plansliper": [
+      "Plansliper"
+    ],
+    "Platesaks": [
+      "Platesaks"
+    ],
+    "Poleringsmaskin": [
+      "Poleringsmaskin"
+    ],
+    "Poptang": [
+      "Batteri",
+      "Popnaglepistol",
+      "Poptang"
+    ],
+    "Pressverktøy": [
+      "Pressverktøy",
+      "Pressverktøy for rør",
+      "Tilbehør - pressverktøy"
+    ],
+    "Pumper": [
+      "Hydraulisk pumpe",
+      "Luftpumper",
+      "Vannpumpe"
+    ],
+    "Rettsliper": [
+      "Rettsliper"
+    ],
+    "Rørkutter": [
+      "Kobber"
+    ],
+    "Sag": [
+      "Bajonettsag"
+    ],
+    "Sett": [
+      "Sett"
+    ],
+    "Sirkelsag": [
+      "Dykksag",
+      "Sirkelsag",
+      "Sirkelsag for metall",
+      "Tilbehør - sirkelsag"
+    ],
+    "Skaffevare": [
+      "Skaffevare"
+    ],
+    "Skraller": [
+      "Skralle",
+      "Skraller"
+    ],
+    "Slipemaskin": [
+      "Båndsliper",
+      "Deltasliper",
+      "Eksentersliper",
+      "Høvel",
+      "Rettsliper",
+      "Tilbehør - slipemaskin",
+      "Vinkel"
+    ],
+    "Spesialverktøy": [
+      "Spesialverktøy"
+    ],
+    "Spikerpistol": [
+      "Dykkertpistol",
+      "Krampepistol",
+      "Spikerpistol",
+      "Stiftepistol"
+    ],
+    "Stikksag": [
+      "Stikksag"
+    ],
+    "Støvsuger": [
+      "Støvsuger"
+    ],
+    "Tilbehør - batteriverktøy": [
+      "Tilbehør - batteriverktøy"
+    ],
+    "Varmluftpistol": [
+      "Varmluftpistol"
+    ],
+    "Vinkelsliper": [
+      "Tilbehør - vinkelsliper",
+      "Vinkelsliper"
+    ],
+    "Vinterkampanje": [
+      "Bor-/skrutrekker"
+    ]
+  },
+  "Bransjer": {
+    "Skole": [
+      "Mobilhotell"
+    ]
+  },
+  "Brekkjern og maskinspett": {
+    "Brekkjern": [
+      "Brekkjern"
+    ],
+    "Brytespak": [
+      "Brytespak"
+    ],
+    "Dekkspake": [
+      "Dekkspake"
+    ],
+    "Maskinspett": [
+      "Maskinspett"
+    ],
+    "Spikerjern": [
+      "Spikerjern"
+    ]
+  },
+  "Containere": {
+    "Byggmakker": [
+      "Byggmakker"
+    ],
+    "Container - Forbruk": [
+      "Container - Forbruk"
+    ],
+    "Container på hjul": [
+      "Container på hjul"
+    ],
+    "Lager og materiell": [
+      "Lager og materiell"
+    ],
+    "Lagercontainer": [
+      "Lagercontainer"
+    ],
+    "Mobile moduler": [
+      "Bolig",
+      "Entreprenør",
+      "HMS",
+      "Helikopter",
+      "Lager",
+      "Sanitær",
+      "Spise",
+      "Verksted"
+    ],
+    "Moduler": [
+      "Moduler"
+    ],
+    "Shipping": [
+      "Shipping"
+    ],
+    "Tilbehør": [
+      "Tilbehør"
+    ]
+  },
+  "Diverse": {
+    "Diverse": [
+      "Diverse"
+    ]
+  },
+  "Dor og meisel": {
+    "Drivdor": [
+      "Drivdor",
+      "Sett"
+    ],
+    "Huggjern": [
+      "Huggjern",
+      "Sett"
+    ],
+    "Kjørner": [
+      "Kjørner"
+    ],
+    "Meisel": [
+      "Meisel"
+    ],
+    "Sett": [
+      "Sett"
+    ],
+    "Stanser": [
+      "Stanser"
+    ],
+    "Tilbehør - dor og meisel": [
+      "Tilbehør - dor og meisel"
+    ]
+  },
+  "Elektroverktøy": {
+    "Anlegg": [
+      "Asfaltsag",
+      "Steinsag"
+    ],
+    "Batteri": [
+      "Armeringskutter",
+      "Bajonettsag",
+      "Blandemaskin",
+      "Borhammer",
+      "Båndsag",
+      "Combokit",
+      "Fettpresse",
+      "Hageredskap",
+      "Hekksaks",
+      "Hus og hage",
+      "Jernbindere",
+      "Kamera",
+      "Kapp- og gjærsag",
+      "Lyd",
+      "Løvblåser",
+      "Multiverktøy",
+      "Muttertrekker",
+      "Nagle/spikermaskin",
+      "Overfres",
+      "Polermaskiner",
+      "Senksag",
+      "Sirkelsag",
+      "Skralle",
+      "Skru",
+      "Skru/bormaskin",
+      "Skruautomat",
+      "Slipemaskin",
+      "Stikksag",
+      "Støvsuger",
+      "Tilbehør",
+      "Vinkelsliper"
+    ],
+    "Elektrisk": [
+      "Borhammer",
+      "Lys",
+      "Polermaskiner",
+      "Sag",
+      "Slipemaskin",
+      "Tilbehør",
+      "Vinkelsliper"
+    ],
+    "Skaffevare": [
+      "Skaffevare"
+    ]
+  },
+  "Fallsikring": {
+    "Ankerpunkt": [
+      "Ankerpunkt",
+      "Arborist",
+      "Permanente systemer",
+      "Portable systemer",
+      "Tilbehør"
+    ],
+    "Arborist": [
+      "Arborist"
+    ],
+    "Fallblokker": [
+      "Fallblokker",
+      "Portable systemer"
+    ],
+    "Fallsikringspakker": [
+      "Fallsikringspakker"
+    ],
+    "Fangliner": [
+      "Fangliner"
+    ],
+    "Kroker": [
+      "Kroker",
+      "Permanente systemer"
+    ],
+    "Oppbevaring": [
+      "Arborist",
+      "Oppbevaring",
+      "Tau og utstyr",
+      "Tilbehør",
+      "Verktøysikring"
+    ],
+    "Permanente systemer": [
+      "Permanente systemer",
+      "Tilbehør"
+    ],
+    "Portable systemer": [
+      "Portable systemer",
+      "Redningsutstyr",
+      "Tilbehør"
+    ],
+    "Redningsutstyr": [
+      "Redningsutstyr",
+      "Seler",
+      "Tau og utstyr",
+      "Tilbehør"
+    ],
+    "Seler": [
+      "Arborist",
+      "Seler",
+      "Tilbehør"
+    ],
+    "Støttestropper": [
+      "Støttestropper"
+    ],
+    "Tau og utstyr": [
+      "Arborist",
+      "Tau og utstyr",
+      "Tilbehør"
+    ],
+    "Tilbehør": [
+      "Tilbehør"
+    ],
+    "Utstyrspakker": [
+      "Utstyrspakker"
+    ],
+    "Verktøysikring": [
+      "Arborist",
+      "Bag",
+      "Belte",
+      "Håndledd",
+      "Sekk",
+      "Tilbehør",
+      "Verktøysikring"
+    ],
+    "Verneutstyr": [
+      "Verneutstyr"
+    ]
+  },
+  "Filer og skraper": {
+    "Avgrader": [
+      "Avgrader"
+    ],
+    "Filer": [
+      "Filer",
+      "Filsett",
+      "Sett"
+    ],
+    "Filer og skraper": [
+      "Møbeltrekking",
+      "Panelklipsverktøy"
+    ],
+    "Panelklipsverktøy": [
+      "Panelklipsverktøy"
+    ],
+    "Pinsett": [
+      "Pinsett"
+    ],
+    "Pirke": [
+      "Pirke",
+      "Pirkesett"
+    ],
+    "Skrape": [
+      "Pakningspirke",
+      "Pakningsskrape",
+      "Sett",
+      "Skrape",
+      "Skrapesett"
+    ],
+    "Stålbørste": [
+      "Stålbørste"
+    ]
+  },
+  "Frakt": {
+    "Frakt": [
+      "Frakt"
+    ]
+  },
+  "Gaveartikler": {
+    "Drammeglass": [
+      "Drammeglass"
+    ],
+    "Drikkeflaske": [
+      "Drikkeflaske"
+    ],
+    "Gavekoffert": [
+      "Gavekoffert"
+    ],
+    "Kniv og multiverktøy": [
+      "Kniv og multiverktøy"
+    ],
+    "Lunchbox": [
+      "lunchbox"
+    ],
+    "Mat": [
+      "Mat"
+    ],
+    "Store anledninger": [
+      "Store anledninger"
+    ],
+    "Termos": [
+      "Termos"
+    ]
+  },
+  "Gavekort": {
+    "Gavekort": [
+      "Gavekort"
+    ]
+  },
+  "Hammer og slag": {
+    "Dor og meisel": [
+      "Meisel"
+    ],
+    "Hammer": [
+      "Stillashammer"
+    ]
+  },
+  "Hammere": {
+    "Gummiklubbe": [
+      "Gummiklubbe"
+    ],
+    "Karosserihammer": [
+      "Karosserihammer"
+    ],
+    "Kobberhammer": [
+      "Kobberhammer"
+    ],
+    "Kombihammer": [
+      "Kombihammer"
+    ],
+    "Kulehammer": [
+      "Kulehammer"
+    ],
+    "Meiselhammer": [
+      "Meiselhammer"
+    ],
+    "Oppretterhammer": [
+      "Oppretterhammer"
+    ],
+    "Pennhammer": [
+      "Pennhammer"
+    ],
+    "Rekylfri": [
+      "Rekylfri"
+    ],
+    "Sett": [
+      "Sett"
+    ],
+    "Slegge": [
+      "Slegge"
+    ],
+    "Smihammer": [
+      "Smihammer"
+    ],
+    "Snekkerhammer": [
+      "Snekkerhammer"
+    ],
+    "Stillashammer": [
+      "Stillashammer"
+    ],
+    "Sveisehakke": [
+      "Sveisehakke"
+    ],
+    "Tilbehør - hammer": [
+      "Tilbehør - hammer"
+    ],
+    "Verkstedhammer": [
+      "Verkstedhammer"
+    ]
+  },
+  "Håndsag og baufil": {
+    "Baufil": [
+      "Baufil",
+      "Baufilblad"
+    ],
+    "Håndsag": [
+      "Håndsag"
+    ]
+  },
+  "Håndverktøy": {
+    "Retur": [
+      "Retur"
+    ],
+    "Slag og spenn": [
+      "Avdrager"
+    ],
+    "Slip - kapp - skjær": [
+      "Kniv"
+    ]
+  },
+  "Innredning": {
+    "Arbeidsbord": [
+      "Arbeidsbord"
+    ],
+    "FT System": [
+      "FT System"
+    ],
+    "Hyller": [
+      "Hyller"
+    ],
+    "Kabeltrommel": [
+      "Kabeltrommel"
+    ],
+    "Matter": [
+      "Matter"
+    ],
+    "Oppheng": [
+      "Oppheng"
+    ],
+    "Papirholder": [
+      "Papirholder"
+    ],
+    "Reoler": [
+      "Pallereoler",
+      "Reoler",
+      "Småvarereoler"
+    ],
+    "Skuffer": [
+      "Skuffer"
+    ],
+    "Skåler": [
+      "Skåler"
+    ],
+    "Slangetrommel": [
+      "Slangetrommel"
+    ],
+    "Stoler": [
+      "Stoler"
+    ],
+    "Stolper": [
+      "Stolper"
+    ],
+    "Tavler": [
+      "Tavler"
+    ],
+    "Tilbehør - innredning": [
+      "Tilbehør - innredning"
+    ],
+    "Veggskinne": [
+      "Veggskinne"
+    ]
+  },
+  "Inspeksjonsverktøy": {
+    "Gripeklo": [
+      "Gripeklo"
+    ],
+    "Inspeksjonskamera": [
+      "Inspeksjonskamera"
+    ],
+    "Inspeksjonsspeil": [
+      "Inspeksjonsspeil"
+    ],
+    "Lupe": [
+      "Lupe"
+    ],
+    "Magnetpenn": [
+      "Magnetpenn"
+    ]
+  },
+  "Kontorrekvisita": {
+    "Diverse": [
+      "Diverse"
+    ]
+  },
+  "Loddeverktøy": {
+    "Loddebolt": [
+      "Loddebolt"
+    ]
+  },
+  "Lysutstyr": {
+    "Arbeidslys": [
+      "Arbeidslys",
+      "Hodelykt",
+      "Håndlampe",
+      "Områdebelysning"
+    ],
+    "Hodelykt": [
+      "Hodelykt",
+      "Tilbehør - lysutstyr"
+    ],
+    "Håndlampe": [
+      "Håndlampe",
+      "Tilbehør - hodelykt",
+      "Tilbehør - håndlampe",
+      "Tilbehør - lysutstyr"
+    ],
+    "Lader": [
+      "Lader"
+    ]
+  },
+  "Løft og last": {
+    "Jekk": [
+      "Jekk"
+    ],
+    "Lastsikring": [
+      "Lastsikring"
+    ],
+    "Løfteutstyr": [
+      "Løfteutstyr"
+    ],
+    "Paller": [
+      "Europalle",
+      "Plastpalle",
+      "Spesialpalle"
+    ],
+    "Traller": [
+      "Traller"
+    ]
+  },
+  "Maskiner": {
+    "Batteri og tilbehør": [
+      "Arbeidslys",
+      "Batteri",
+      "Batterisett",
+      "Lader",
+      "Laser",
+      "Tilbehør"
+    ],
+    "Bor-/ skru- og meisling": [
+      "Bor-/skrutrekker",
+      "Borhammer",
+      "Slagbormaskiner",
+      "Slagskutrekkere",
+      "Vinkelskrutrekkere"
+    ],
+    "Festeoppgaver": [
+      "Blindmuttertang",
+      "Dykkertpistol",
+      "Momentnøkler",
+      "Muttertrekker",
+      "Pop",
+      "Skraller",
+      "Spikerpistol"
+    ],
+    "Motorsag": [
+      "Motorsag"
+    ],
+    "Saging": [
+      "Bajonettsag",
+      "Kapp- og gjærsag",
+      "Sirkelsag",
+      "Stikksag"
+    ],
+    "Støvsuger": [
+      "Støvsuger"
+    ],
+    "Vinkelsliper": [
+      "Rettsliper",
+      "Slipemaskin",
+      "Tilbehør",
+      "Vinkelsliper"
+    ]
+  },
+  "Maskintilbehør": {
+    "Bits": [
+      "1/4\"",
+      "Bitsholder",
+      "Bitsoppbevaring",
+      "Bitssett",
+      "Firkant",
+      "Holder",
+      "Phillips",
+      "Pozidriv",
+      "Rett",
+      "Sekskant",
+      "Sett",
+      "Spline",
+      "TXP",
+      "Torq-Set",
+      "Torx",
+      "Torx m/hull",
+      "Utv. sekskant"
+    ],
+    "Bor": [
+      "Flis- og glassbor",
+      "HSS bor",
+      "Hammerbor SDS+",
+      "Hammerbor SDS-MAX",
+      "Metallbor HSSCO",
+      "Sett",
+      "Spiralbor",
+      "Trebor",
+      "Trinnbor"
+    ],
+    "Børster": [
+      "Børster"
+    ],
+    "Diamantblad": [
+      "Diamantblad"
+    ],
+    "Diamantbor": [
+      "Diamantbor"
+    ],
+    "Drilladapter": [
+      "1/2\"",
+      "1/4\"",
+      "3/8\"",
+      "Sett"
+    ],
+    "Festemateriell": [
+      "Blindmutter",
+      "Bolter",
+      "Popnagler",
+      "Skruer",
+      "Slangeklemmer",
+      "Tape"
+    ],
+    "Forsenker": [
+      "Forsenker",
+      "Sett"
+    ],
+    "Gjengeverktøy": [
+      "Gjengeskralle",
+      "Gjengetapp",
+      "Gjengeverktøy"
+    ],
+    "Gummirondell": [
+      "Gummirondell"
+    ],
+    "Hullsag": [
+      "Bor for hullsag",
+      "Forlengere",
+      "Holder",
+      "Hullsag",
+      "Sett",
+      "Spray",
+      "Tilbehør - hullsag"
+    ],
+    "Kappeskive": [
+      "Kappeskive"
+    ],
+    "Kjernebor": [
+      "Diamantbor"
+    ],
+    "Lamellrondell": [
+      "Lamellrondell"
+    ],
+    "Meisel": [
+      "Meisel"
+    ],
+    "Polering": [
+      "Polering"
+    ],
+    "Roterende filer": [
+      "Roterende fil"
+    ],
+    "Sag": [
+      "båndsagblad"
+    ],
+    "Sagblad": [
+      "Bajonettsagblad",
+      "Hardmetallblad",
+      "Multiverktøy",
+      "Sirkelsagblad",
+      "Stikksagblad",
+      "båndsagblad"
+    ],
+    "Slangeklemmer": [
+      "Skrueklemmer"
+    ],
+    "Slipebånd": [
+      "Slipebånd"
+    ],
+    "Slipekopp diamant": [
+      "Slipekopp diamant"
+    ],
+    "Slipeskive": [
+      "Slipeskive"
+    ],
+    "Slipestein": [
+      "Slipestein"
+    ]
+  },
+  "Momentverktøy": {
+    "Momentforsterker": [
+      "Momentforsterker"
+    ],
+    "Momentnøkler": [
+      "Momentnøkler",
+      "Tilbehør - momentnøkkel"
+    ],
+    "Momentstav": [
+      "Momentstav"
+    ],
+    "Momenttrekkere": [
+      "Momenttrekkere"
+    ]
+  },
+  "Måling og merking": {
+    "Batteriindikator": [
+      "Batteriindikator"
+    ],
+    "Batterisyremåler": [
+      "Batterisyremåler"
+    ],
+    "Batteritester": [
+      "Batteritester"
+    ],
+    "Belysningsprøver": [
+      "Belysningsprøver"
+    ],
+    "Bladføler": [
+      "Bladføler"
+    ],
+    "Gjengelære": [
+      "Gjengelære"
+    ],
+    "Gradskive": [
+      "Gradskive"
+    ],
+    "IR-Termometer": [
+      "IR-Termometer"
+    ],
+    "Indikatorklokke": [
+      "Indikatorklokke"
+    ],
+    "Linjal": [
+      "Linjal"
+    ],
+    "Merking": [
+      "Blyant",
+      "Fettstift",
+      "Kritt",
+      "Passer",
+      "Penn",
+      "Rissenål",
+      "Syl",
+      "Tusj"
+    ],
+    "Meter-/ tommestokk": [
+      "Metrisk/tommer",
+      "Millimeter",
+      "Tommer"
+    ],
+    "Mikrometer": [
+      "Mikrometer"
+    ],
+    "Multimeter": [
+      "Multimeter"
+    ],
+    "Målebånd": [
+      "Millimeter",
+      "Millimeter/tommer",
+      "Måle",
+      "Målebånd"
+    ],
+    "Målehjul": [
+      "Målehjul"
+    ],
+    "Måleur": [
+      "Måleur"
+    ],
+    "Måleverktøy": [
+      "Bil",
+      "Måleverktøy",
+      "Spenning"
+    ],
+    "Refraktometer": [
+      "Refraktometer"
+    ],
+    "Rettholt": [
+      "Rettholt"
+    ],
+    "Skyvelær": [
+      "Skyvelær"
+    ],
+    "Spenningstester": [
+      "Spenningstester"
+    ],
+    "Spesialverktøy": [
+      "Spesialverktøy"
+    ],
+    "Tape": [
+      "Tape"
+    ],
+    "Trekkefjær": [
+      "Trekkefjær"
+    ],
+    "Vater": [
+      "120cm",
+      "15cm",
+      "180cm",
+      "200-366cm",
+      "200cm",
+      "30cm",
+      "40cm",
+      "60cm",
+      "80cm",
+      "Digital vater",
+      "Vater"
+    ],
+    "Vinkel": [
+      "Vinkel"
+    ]
+  },
+  "Nøkler": {
+    "Fastnøkler": [
+      "Fastnøkler",
+      "Metrisk",
+      "Tommer"
+    ],
+    "Hakenøkkel": [
+      "Hakenøkkel"
+    ],
+    "Kombinasjon": [
+      "Kombinasjon",
+      "Metrisk"
+    ],
+    "Kombinasjonsnøkler": [
+      "Kombinasjonsnøkler",
+      "Metrisk",
+      "Sett",
+      "Tommer"
+    ],
+    "Leddnøkkel": [
+      "Leddnøkkel",
+      "Metrisk",
+      "Tommer"
+    ],
+    "Oljefilter": [
+      "Oljefilter"
+    ],
+    "Pipenøkkel": [
+      "Pipenøkkel"
+    ],
+    "Ringnøkler": [
+      "Ringnøkler"
+    ],
+    "Rørnøkler": [
+      "Rørnøkler"
+    ],
+    "Sett": [
+      "Sett"
+    ],
+    "Skiftenøkkel": [
+      "Skiftenøkkel"
+    ],
+    "Skiftenøkler": [
+      "Selvjusterende"
+    ],
+    "Skrallenøkkelsett": [
+      "Skrallenøkkelsett"
+    ],
+    "Skrallenøkler": [
+      "Sett",
+      "Skrallenøkkelsett",
+      "Skrallenøkler"
+    ],
+    "Slagnøkkel": [
+      "Slagnøkkel"
+    ],
+    "Spesial": [
+      "Spesial",
+      "Vaktmesternøkkel"
+    ],
+    "Stjernenøkkel": [
+      "Stjernenøkkel"
+    ]
+  },
+  "Oppbevaring": {
+    "Bag": [
+      "Bag"
+    ],
+    "Bilinnredning": [
+      "Bilinnredning"
+    ],
+    "Innredning": [
+      "Innredning"
+    ],
+    "Kasser": [
+      "HDFI innlegg",
+      "Kasser",
+      "Kasser m/hjul",
+      "Tilbehør",
+      "Tilbehør - kasser",
+      "Tilbehør- kasser"
+    ],
+    "Koffert": [
+      "HDFI innlegg",
+      "Kasser",
+      "Koffert",
+      "Koffert inkl. skuffer",
+      "Koffert m/hjul",
+      "Skrin",
+      "Tilbehør",
+      "Tilbehør- koffert"
+    ],
+    "Skap": [
+      "HDFI innlegg",
+      "Hjul",
+      "Hyller",
+      "Kabinett",
+      "Skap",
+      "Tilbehør- skap",
+      "Verktøyskap"
+    ],
+    "Skap og vogn": [
+      "HDFI innlegg",
+      "Hjul",
+      "Hyller",
+      "Kabinett",
+      "Skap",
+      "Tilbehør",
+      "Tilbehør - skap og vogn",
+      "Verktøyvogn",
+      "Vogn"
+    ],
+    "Tilbehør - oppbevaring": [
+      "Tilbehør - oppbevaring"
+    ],
+    "Tilbehør - vogn": [
+      "Tilbehør - vogn"
+    ],
+    "Vogn": [
+      "HDFI innlegg",
+      "Hjul",
+      "Hyller",
+      "Skuffer",
+      "Tilbehør - vogn",
+      "Verktøyvogn",
+      "Vogn"
+    ]
+  },
+  "Outlet": {
+    "Håndverktøy": [
+      "Måleredskaper"
+    ],
+    "Måleredskaper": [
+      "Multimeter"
+    ],
+    "Outlet": [
+      "Outlet"
+    ]
+  },
+  "Piper og skraller": {
+    "1\"": [
+      "Firkant",
+      "Forlengere",
+      "Håndtak",
+      "Kråkefot",
+      "Overganger",
+      "Sekskant",
+      "Skraller",
+      "Tilbehør - kraftpiper",
+      "Tolvkant",
+      "Universalledd",
+      "unbrako"
+    ],
+    "1-1/2\"": [
+      "Forlengere",
+      "Håndtak",
+      "Kråkefot",
+      "Overganger",
+      "Skraller",
+      "Tolvkant",
+      "Universalledd"
+    ],
+    "1/2\"": [
+      "E-Torx",
+      "Firkant",
+      "Forlengere",
+      "Holder",
+      "Håndtak",
+      "Kråkefot",
+      "Leddpipe",
+      "Overganger",
+      "Ribe",
+      "Sekskant",
+      "Skraller",
+      "Spline",
+      "Tennpluggpipe",
+      "Tilbehør - kraftpiper",
+      "Tolvkant",
+      "Torque adapter",
+      "Torx",
+      "Universalledd",
+      "unbrako"
+    ],
+    "1/4\"": [
+      "E-Torx",
+      "Firkant",
+      "Forlengere",
+      "Holder",
+      "Håndtak",
+      "Kråkefot",
+      "Leddpipe",
+      "Overganger",
+      "Phillips",
+      "Rett",
+      "Sekskant",
+      "Skraller",
+      "Spline",
+      "Tolvkant",
+      "Torque adapter",
+      "Torx",
+      "Universalledd",
+      "unbrako"
+    ],
+    "3/4\"": [
+      "Firkant",
+      "Forlengere",
+      "Holder",
+      "Håndtak",
+      "Kråkefot",
+      "Overganger",
+      "Sekskant",
+      "Skraller",
+      "Tilbehør - kraftpiper",
+      "Tolvkant",
+      "Torx",
+      "Universalledd",
+      "unbrako"
+    ],
+    "3/8\"": [
+      "E-Torx",
+      "Firkant",
+      "Forlengere",
+      "Holder",
+      "Håndtak",
+      "Kråkefot",
+      "Leddpipe",
+      "Overganger",
+      "Sekskant",
+      "Skraller",
+      "Spline",
+      "Tennpluggpipe",
+      "Tolvkant",
+      "Torque adapter",
+      "Torx",
+      "Universalledd",
+      "unbrako"
+    ],
+    "Forlenger": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Forlengere"
+    ],
+    "Håndtak": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Håndtak"
+    ],
+    "Kraftpiper": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Sett",
+      "Tilbehør - kraftpiper"
+    ],
+    "Kråkefot": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\""
+    ],
+    "Leddhåndtak": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Tilbehør - leddhåndtak"
+    ],
+    "Overgang": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Sett"
+    ],
+    "Piper": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "36X27E",
+      "DE / 575 x 380mm",
+      "Sett",
+      "Tilbehør - piper"
+    ],
+    "Sett": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\""
+    ],
+    "Skraller": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Skraller"
+    ],
+    "Tennpluggpipe": [
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Tennpluggpipe"
+    ],
+    "Universalledd": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Sett"
+    ]
+  },
+  "Pipeverktøy": {
+    "Forlenger": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\""
+    ],
+    "Håndtak": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\""
+    ],
+    "Kraftpiper": [
+      "1\"",
+      "1/2\"",
+      "3/4\"",
+      "3/8\"",
+      "Sett"
+    ],
+    "Kråkefot": [
+      "1/2\"",
+      "1/4\"",
+      "3/8\""
+    ],
+    "Leddhåndtak": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Tilbehør - leddhåndtak"
+    ],
+    "Overgang": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Sett"
+    ],
+    "Piper": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "36X27E",
+      "DE / 575 x 380mm",
+      "Forlengere",
+      "HDFI oppbevaring",
+      "Koffert",
+      "Overganger",
+      "Piper",
+      "Pipesett",
+      "Sett",
+      "Skaffevare",
+      "Tilbehør - kraftpiper"
+    ],
+    "Pipesett": [
+      "Pipesett"
+    ],
+    "Skraller": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\"",
+      "Skraller"
+    ],
+    "Tennpluggpipe": [
+      "1/2\"",
+      "3/8\""
+    ],
+    "Universalledd": [
+      "1\"",
+      "1/2\"",
+      "1/4\"",
+      "3/4\"",
+      "3/8\""
+    ]
+  },
+  "Problemløsere": {
+    "Friksjonspasta": [
+      "Friksjonspasta"
+    ],
+    "Gjengelås": [
+      "Gjengelås"
+    ],
+    "Skruehullstanser": [
+      "Skruehullstanse"
+    ],
+    "Skrueuttrekker": [
+      "Skrueuttrekker"
+    ]
+  },
+  "Redskap": {
+    "Kost": [
+      "Kost"
+    ],
+    "Rive": [
+      "Asfaltrive",
+      "Tilbehør - asfaltrive",
+      "Veirive"
+    ],
+    "Spader og skuffer": [
+      "Anleggsspade",
+      "Asfaltskuffe",
+      "Krafse",
+      "Spade"
+    ],
+    "Spett": [
+      "Spett"
+    ]
+  },
+  "Rustfritt": {
+    "Hammer": [
+      "Kulehammer"
+    ],
+    "Nøkkel": [
+      "Kombinasjonsnøkler"
+    ],
+    "Pipeverktøy": [
+      "1/2\""
+    ],
+    "Skap og vogn": [
+      "Vogn"
+    ],
+    "Skru": [
+      "Nøkler"
+    ],
+    "Skum": [
+      "Plastazote"
+    ],
+    "Spett og brekkjern": [
+      "Maskinspett"
+    ],
+    "Tenger": [
+      "Avbitertang",
+      "Kombinasjonstang",
+      "Spisstang"
+    ]
+  },
+  "Råvarer": {
+    "Plast": [
+      "Akryl / Plexi",
+      "Plastlaminat"
+    ],
+    "Råvarer": [
+      "Råvarer"
+    ]
+  },
+  "Skaffevare": {
+    "Skaffevare": [
+      "Skaffevare"
+    ]
+  },
+  "Skjære- og stanseverktøy": {
+    "Kniv": [
+      "Bladkniv",
+      "Foldekniv",
+      "Kabelkniv",
+      "Knivblad",
+      "Multiverktøy",
+      "Skalpell",
+      "Slirekniv",
+      "Tilbehør - kniv",
+      "Tilbehør- kniv"
+    ],
+    "Pakningsverktøy": [
+      "Hullstanser / hullpiper",
+      "Pakningsskjærere",
+      "Pakningsstanser",
+      "Tilbehør"
+    ],
+    "Saks": [
+      "Blikksaks",
+      "Saks"
+    ],
+    "Øks": [
+      "Øks"
+    ]
+  },
+  "Skreddersøm": {
+    "HDFI oppbevaring": [
+      "HDFI oppbevaring"
+    ],
+    "Individuelle verktøysett": [
+      "36X27E",
+      "A",
+      "AVI10X softcase",
+      "AVI20X softcase",
+      "BCF",
+      "DE / 575 x 380mm"
+    ],
+    "Koffert": [
+      "Hullsag",
+      "Koffert",
+      "Lakksprøyte",
+      "Nøkler",
+      "Pipesett",
+      "Spesial",
+      "Tenger og skrutrekkere"
+    ],
+    "Merking": [
+      "CNC fres",
+      "Farge",
+      "Folie",
+      "Laser"
+    ],
+    "Produksjon": [
+      "HDPE / POM",
+      "Produksjon"
+    ],
+    "Skap": [
+      "Auto",
+      "Mega",
+      "Skap",
+      "Spesial"
+    ],
+    "Skraller og skrutrekkere": [
+      "Momentskrutrekkere",
+      "Sett",
+      "Skraller",
+      "Skrutrekker"
+    ],
+    "Skreddersydde verktøysett": [
+      "Høydesikret verktøy",
+      "Mobile sett",
+      "Verktøyvogner"
+    ],
+    "Vegg": [
+      "Auto",
+      "Mega",
+      "Spesial"
+    ],
+    "Vogn": [
+      "Auto",
+      "Mega",
+      "Spesial",
+      "Vogn"
+    ]
+  },
+  "Skrustikker": {
+    "Bakker": [
+      "Bakker"
+    ],
+    "Benkefester": [
+      "Benkefeste",
+      "Benkefeste med dreieplate",
+      "Benkefeste med løft",
+      "Benkefeste nedfellbar",
+      "Benkefeste nedfellbar m/løft",
+      "Benkfeste",
+      "Dreieplate"
+    ],
+    "Gulvstativ": [
+      "Gulvstativ"
+    ],
+    "Presisjon": [
+      "Pozidriv",
+      "Sekskant",
+      "Torx"
+    ],
+    "Skrustikker": [
+      "Bakker",
+      "Benkefeste med dreieplate",
+      "Benkefeste med løft",
+      "Benkefeste nedfellbar",
+      "Benkefeste nedfellbar m/løft",
+      "Benkfeste",
+      "Dreieplate",
+      "Gulvstativ",
+      "Hurtigjustering",
+      "Skrustikke",
+      "Standard",
+      "Utskiftbare bakker"
+    ],
+    "Tvinger": [
+      "Enhåndstvinge",
+      "Tvinger"
+    ]
+  },
+  "Skrutrekkere": {
+    "Bitsskrutrekkere": [
+      "Bitsskrutrekker",
+      "Bitsskrutrekker inkl. bits"
+    ],
+    "Fleksibel": [
+      "Sekskant"
+    ],
+    "Klinger": [
+      "Firkant",
+      "Holder",
+      "Phillips",
+      "Pozidriv",
+      "Rett",
+      "Sekskant",
+      "Torx"
+    ],
+    "L-nøkler": [
+      "Sekskant",
+      "Sett",
+      "Torx"
+    ],
+    "Presisjon": [
+      "Pentalobe",
+      "Phillips",
+      "Pozidriv",
+      "Rett",
+      "Sekskant",
+      "Sett",
+      "Torx"
+    ],
+    "Skruehullstanser": [
+      "Skruehullstanse"
+    ],
+    "Skrueuttrekker": [
+      "Skrueuttrekker"
+    ],
+    "Skrutrekkere": [
+      "Bits",
+      "Bitsholder",
+      "Holder",
+      "Phillips",
+      "Pozi/rett kombi",
+      "Pozidriv",
+      "Rett",
+      "Sekskant",
+      "Sett",
+      "Skrutrekker",
+      "Tester",
+      "Tilbehør",
+      "Torx",
+      "Torx m/hull"
+    ],
+    "T-håndtak": [
+      "Sekskant",
+      "Sett",
+      "Torx"
+    ],
+    "Vinkelskrutrekkere": [
+      "Phillips",
+      "Rett"
+    ]
+  },
+  "Slag og spenn": {
+    "Avdragere": [
+      "Avdrager",
+      "Sett"
+    ],
+    "Rørbøyer": [
+      "Rørbøyer"
+    ]
+  },
+  "Stiger og plattformer": {
+    "Arbeidsplattform": [
+      "Arbeidsplattform"
+    ],
+    "Bukker": [
+      "Bukker"
+    ],
+    "Plattformstige": [
+      "Plattformstiger"
+    ],
+    "Stiger": [
+      "Stiger"
+    ],
+    "Tilbehør - stiger": [
+      "Tilbehør - stiger"
+    ],
+    "Trappestige": [
+      "Trappestiger"
+    ]
+  },
+  "Tenger": {
+    "Arterieklemme": [
+      "Arterieklemme"
+    ],
+    "Avbitertang": [
+      "Avbitertang",
+      "Vde / 1000V"
+    ],
+    "Avisoleringstang": [
+      "Avisoleringstang",
+      "Tilbehør - avisoleringstang"
+    ],
+    "Blindmuttertang": [
+      "Blindmuttertang"
+    ],
+    "Boltekutter": [
+      "Boltekutter",
+      "Tilbehør - boltekutter"
+    ],
+    "Flattang": [
+      "Flattang",
+      "Vde / 1000V"
+    ],
+    "Gripetang": [
+      "Gripetang"
+    ],
+    "Jernbindertang": [
+      "Jernbindertang"
+    ],
+    "Kabelkutter": [
+      "Kabelkutter"
+    ],
+    "Kabelskotang": [
+      "For isolerte kabelsko",
+      "Tilbehør - kabelskotang"
+    ],
+    "Kombinasjonstang": [
+      "Kombinasjonstang",
+      "Vde / 1000V"
+    ],
+    "Krympe": [
+      "Krympe"
+    ],
+    "Krympetang": [
+      "Endehylsetang",
+      "Krympetang",
+      "Vde / 1000V"
+    ],
+    "Oljefiltertang": [
+      "Oljefiltertang"
+    ],
+    "Poptang": [
+      "Oljefiltertang",
+      "Poptang"
+    ],
+    "Rørkutter": [
+      "Rørkutter"
+    ],
+    "Rørtang": [
+      "Rørtang",
+      "Tilbehør - rørtang"
+    ],
+    "Seegeringstang": [
+      "Seegeringstang"
+    ],
+    "Spesialtang": [
+      "Spesialtang"
+    ],
+    "Spisstang": [
+      "Spisstang"
+    ],
+    "Trådtvinnetang": [
+      "Trådtvinnetang"
+    ],
+    "Universaltang": [
+      "Universaltang"
+    ],
+    "Vannpumpetang": [
+      "Vannpumpetang",
+      "Vde / 1000V"
+    ]
+  },
+  "Tilbehør": {
+    "Bor": [
+      "Diamantbor",
+      "HSS bor",
+      "Hammerbor SDS+",
+      "Hammerbor SDS-MAX",
+      "Metallbor HSSCO",
+      "Sett",
+      "Spiralbor",
+      "Trebor"
+    ],
+    "Forsenker": [
+      "Forsenker"
+    ],
+    "Gjengeverktøy": [
+      "Gjengeskralle",
+      "Gjengetapp",
+      "Sett"
+    ],
+    "Hullsag": [
+      "Bor for hullsag",
+      "Forlengere",
+      "Holder",
+      "Hullsag",
+      "Sett",
+      "Spray",
+      "Tilbehør"
+    ],
+    "Kapp": [
+      "Bajonettsagblad",
+      "Baufilblad",
+      "Diamantblad",
+      "Efficut sirkelsagblad",
+      "Hardmetallblad",
+      "Kappeskive",
+      "Stikksagblad"
+    ],
+    "Kjemi": [
+      "Kanner og beholdere",
+      "Merkespray",
+      "Rense og løsemiddel",
+      "Smør og spray"
+    ],
+    "Knivblad": [
+      "Knivblad"
+    ],
+    "Papir": [
+      "Papir"
+    ],
+    "Polering": [
+      "Polerhette",
+      "Polersvamp"
+    ],
+    "Problemløsere": [
+      "Friksjonspasta",
+      "Skruehullstanse",
+      "Skrueuttrekker"
+    ],
+    "Skjær": [
+      "Betongbor",
+      "Diamantbor",
+      "Forsenker",
+      "Gjengeverktøy",
+      "HSS bor",
+      "Hammerbor SDS+",
+      "Hammerbor SDS-MAX",
+      "Hullsag",
+      "Knivblad",
+      "Meisel",
+      "Metallbor HSSCO",
+      "Spiralbor",
+      "Trebor",
+      "Trinnbor"
+    ],
+    "Slip": [
+      "Børster",
+      "Gummirondell",
+      "Lamellrondell",
+      "Polering",
+      "Slipebånd",
+      "Slipekopp diamant",
+      "Slipepapir",
+      "Slipeskive",
+      "Slipestein"
+    ],
+    "Tilbehør - deler": [
+      "Tilbehør - deler"
+    ]
+  },
+  "Trykkluftverktøy": {
+    "Bor": [
+      "Bor",
+      "Bor-/skrutrekker",
+      "Punktsveisdrill"
+    ],
+    "Dekk": [
+      "Dekk"
+    ],
+    "Kapp": [
+      "Kapp"
+    ],
+    "Kjemi": [
+      "Kjemi"
+    ],
+    "Kompressor": [
+      "Kompressor"
+    ],
+    "Lakk": [
+      "Lakk"
+    ],
+    "Lakkeringsutstyr": [
+      "Dyser & munnstykker",
+      "Kompressor",
+      "Lakksprøyte",
+      "Sprøytepistol"
+    ],
+    "Luft og blås": [
+      "Blåsepistoler",
+      "Luftpumper",
+      "Luftpåfyllere"
+    ],
+    "Merk": [
+      "Graveringspenn",
+      "Merk",
+      "Stempel",
+      "Tilbehør"
+    ],
+    "Muttertrekker": [
+      "Muttertrekker"
+    ],
+    "Overflate": [
+      "Overflate"
+    ],
+    "Poptang": [
+      "Poptang"
+    ],
+    "Sag": [
+      "Hjørnekutter",
+      "Kuttemaskin",
+      "Platesag",
+      "Rondellkappemaskin",
+      "Vinkelsliper"
+    ],
+    "Skraller og skrutrekkere": [
+      "Momentskrutrekkere",
+      "Sett",
+      "Skraller",
+      "Skrutrekker"
+    ],
+    "Skru": [
+      "Skru"
+    ],
+    "Slag": [
+      "Meiselhammere",
+      "Muttertrekker"
+    ],
+    "Slipe- og poleringsmaskiner": [
+      "Båndslipemaskin",
+      "Børstesliper",
+      "Poleringsmaskin",
+      "Rettsliper",
+      "Slipemaskin"
+    ],
+    "Tilbehør": [
+      "Tilbehør"
+    ],
+    "Tilkobling": [
+      "Hurtigkobling",
+      "Nippel",
+      "Overganger",
+      "Regulator",
+      "Slanger",
+      "Svivel"
+    ],
+    "Trykkluftshammere": [
+      "Nålebanker"
+    ]
+  },
+  "Tvinger": {
+    "Tvinger": [
+      "Hurtigtvinger",
+      "Skrutvinger"
+    ]
+  },
+  "Utleie": {
+    "Utstyr": [
+      "Container",
+      "Renhold",
+      "Verktøy"
+    ]
+  },
+  "Verksted": {
+    "Aggregat": [
+      "Kraftaggregat"
+    ],
+    "Arbeidsmøbler": [
+      "Arbeidsbord",
+      "Liggebrett",
+      "Stoler"
+    ],
+    "Avdragere": [
+      "Avdrager"
+    ],
+    "Containere": [
+      "Byggmakker",
+      "Container - Forbruk",
+      "Container på hjul",
+      "Containerinntak",
+      "Isolerte moduler",
+      "Lager og materiell",
+      "Lagercontainer",
+      "Moduler",
+      "Shipping",
+      "Tilbehør"
+    ],
+    "Innredning": [
+      "Arbeidsbord",
+      "Oppheng"
+    ],
+    "Kasser": [
+      "Kasser",
+      "Tilbehør"
+    ],
+    "Koffert": [
+      "Koffert",
+      "Koffert m/hjul",
+      "Tilbehør"
+    ],
+    "Lim og fugemasse": [
+      "Fugemasse",
+      "Lim",
+      "MS-polymer / Hybridlim"
+    ],
+    "Løft og last": [
+      "Fallsikringsutstyr",
+      "Jekk",
+      "Kjetting",
+      "Lastsikring",
+      "Løfteutstyr",
+      "Tilbehør",
+      "Traller"
+    ],
+    "Olje og smøreutstyr": [
+      "Absorbenter",
+      "Oljeoppsamler",
+      "Pumper",
+      "Smør og spray",
+      "Tilbehør"
+    ],
+    "Oppbevaring": [
+      "Avfallshåndtering",
+      "Kasser",
+      "Koffert",
+      "Oppheng",
+      "Papirholder",
+      "Skap og vogn",
+      "Softcase",
+      "Tavle",
+      "Verktøybag - sekk",
+      "iPhone"
+    ],
+    "Packout": [
+      "Bag",
+      "Boks",
+      "Kasser",
+      "Koffert",
+      "Lyd",
+      "Lys",
+      "Skrin",
+      "Spesial",
+      "Tilbehør"
+    ],
+    "Rengjøring": [
+      "Konsentrasjonsprøyter",
+      "Rengjøring",
+      "Støvsuger",
+      "Tilbehør"
+    ],
+    "Reoler": [
+      "Pallereoler",
+      "Reoler",
+      "Småvarereoler"
+    ],
+    "Rørbøyer": [
+      "Rørbøyer"
+    ],
+    "Skap og vogn": [
+      "Kabinett",
+      "Rustfritt",
+      "Skap",
+      "Tilbehør",
+      "Verktøykasse",
+      "Verktøyvogn"
+    ],
+    "Starthjelp": [
+      "Starthjelp"
+    ],
+    "Stiger": [
+      "Bukker",
+      "Plattformstiger",
+      "Tilbehør",
+      "Trappestiger"
+    ],
+    "Trommel": [
+      "Kabeltrommel",
+      "Slangetrommel"
+    ],
+    "Verneutstyr": [
+      "Arbeidssko",
+      "Bag",
+      "Belte",
+      "Brannslukkere",
+      "Fallsikring",
+      "Førstehjelp",
+      "Hansker",
+      "Hjelm",
+      "Hodevern",
+      "Hudbeskyttelse",
+      "Håndledd",
+      "Hørselvern",
+      "Høydesikring",
+      "Masker",
+      "Sekk",
+      "Vernebriller",
+      "Vernesko",
+      "Vest"
+    ]
+  },
+  "Verktøysett": {
+    "Koffert": [
+      "Koffert"
+    ],
+    "Oppbevaring": [
+      "Bag",
+      "Kasser"
+    ],
+    "Skuffer": [
+      "DE / 575 x 380mm",
+      "Milwaukee"
+    ],
+    "Vegg": [
+      "Vegg"
+    ],
+    "Verktøykasse": [
+      "Verktøykasse",
+      "_"
+    ],
+    "Verktøykoffert": [
+      "_"
+    ],
+    "Verktøysett": [
+      "Verktøysett"
+    ],
+    "Verktøyskap": [
+      "_"
+    ],
+    "Verktøyvogn": [
+      "_"
+    ],
+    "Vogn": [
+      "Vogn"
+    ]
+  },
+  "Verneutstyr": {
+    "Fallsikring": [
+      "Ankerpunkt",
+      "Bag",
+      "Fallblokker",
+      "Fallsele",
+      "Fallsikringsutstyr",
+      "Fangliner",
+      "Karabinkrok",
+      "Redningsutstyr",
+      "Tau og utstyr"
+    ],
+    "Førstehjelp": [
+      "Førstehjelp"
+    ],
+    "Hansker": [
+      "Arbeidshanske",
+      "Engangshanske",
+      "Monteringshanske",
+      "Spesialhanske",
+      "Sveise- & varmehanske",
+      "Vinterhanske"
+    ],
+    "Hodevern": [
+      "Hjelm",
+      "Tilbehør - hjelm"
+    ],
+    "Hørselvern": [
+      "Hørselvern",
+      "Tilbehør - hørselvern",
+      "Ørepropp"
+    ],
+    "Knepute": [
+      "Knepute"
+    ],
+    "Sikkerhetsvest": [
+      "Vest"
+    ],
+    "Verktøysikring": [
+      "Arborist",
+      "Bag",
+      "Belte",
+      "Håndledd",
+      "Karabinkrok",
+      "Ryggsekk",
+      "Sekk",
+      "Tilbehør",
+      "Verktøysikring"
+    ],
+    "Vernesko": [
+      "Såle",
+      "Vernesko"
+    ],
+    "Verneutstyr": [
+      "Verneutstyr"
+    ],
+    "Visir": [
+      "Visir"
+    ],
+    "Åndedrettsvern": [
+      "Ansiktsmaske",
+      "Filter",
+      "Halvmaske",
+      "Helmaske",
+      "Støvmaske"
+    ],
+    "Øyevern": [
+      "Vernebriller"
+    ]
+  }
+}

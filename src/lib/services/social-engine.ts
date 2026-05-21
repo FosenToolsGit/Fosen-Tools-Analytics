@@ -11,6 +11,7 @@ import {
   compositeFosenToolsWordmark,
   wordmarkVariantForBg,
 } from "./composite-wordmark";
+import { compositeText, type CompositeTextLayout } from "./composite-text";
 import { getOrCreateImageBrandCache } from "./gemini-cache";
 import {
   scrapeProductByUrl,
@@ -35,6 +36,7 @@ export type TopicKind =
   | "leveranse"
   | "prosess"
   | "produktlansering"
+  | "produkt_variant"
   | "bransje_kontekst"
   | "milepael"
   | "edukativ"
@@ -48,7 +50,8 @@ export type Archetype =
   | "kontrast"
   | "milepael"
   | "sitat"
-  | "sertifikat";
+  | "sertifikat"
+  | "produkt_variant";
 
 export interface CorpusEntry {
   kind: string;
@@ -111,10 +114,33 @@ export interface GenerateDraftResult {
     public_url: string;
     archetype: Archetype;
     prompt: string;
+    /** Hvilken plattform dette bildet er optimalisert for. Tom = legacy single-image. */
+    platform?: "facebook" | "instagram" | "linkedin";
+    /** Aspect ratio som ble brukt ved generering (f.eks. "1:1", "4:5", "16:9"). */
+    aspect_ratio?: string;
   }>;
   model_used: string;
   generation_cost_estimate: number;
 }
+
+/**
+ * Per-plattform aspect-ratio for AI-genererte bilder.
+ *
+ *   Facebook  → 1:1   (sikker i alle feed-plasseringer)
+ *   Instagram → 4:5   (portrait, max engagement i feed — SDK mapper til 3:4)
+ *   LinkedIn  → 16:9  (landscape, optimalt for desktop-scroll og link-preview)
+ *
+ * Bestilt av bruker 21. mai 2026 — ett bilde per plattform med riktig aspect.
+ */
+export const PLATFORM_ASPECT_RATIOS: Array<{
+  platform: "facebook" | "instagram" | "linkedin";
+  aspectRatio: "1:1" | "4:5" | "16:9";
+  label: string;
+}> = [
+  // MIDLERTIDIG: kun 1:1 mens vi itererer på tekst-rendering for produkt_variant.
+  // Aktiver IG 4:5 og LI 16:9 igjen når tekst er stabil.
+  { platform: "facebook", aspectRatio: "1:1", label: "Facebook feed (1:1)" },
+];
 
 const SOCIAL_BUCKET = "social_assets";
 
@@ -400,7 +426,17 @@ Do not skip these. They are mandatory brand signature.`,
   // VIKTIG: AI skal IKKE rendre FOSEN TOOLS wordmark — vi composite-r den ekte
   // PNG-en server-side via compositeFosenToolsWordmark(). Nano Banana 2 misstaver
   // den konsekvent («SUSEN TOOLS» etc). Reserve plass i layout, men ikke skriv.
-  wordmarkReservedSpace: `WORDMARK SPACE — leave the bottom 15% of canvas EMPTY (or with only blueprint decoration). DO NOT render any "Fosen Tools" text, logo, wordmark, or signature in the image — we composite the official FT wordmark PNG onto this space server-side afterward. Any AI-rendered FT text would be a typo and must be omitted.`,
+  wordmarkReservedSpace: `WORDMARK SPACE — ABSOLUTE REQUIREMENT: the bottom 15-20% of the canvas MUST be ENTIRELY EMPTY (or contain only the thin corner blueprint decoration). This area is reserved for post-processing.
+
+DO NOT render — under any circumstances — ANY of the following in the bottom area or anywhere else in the image:
+- "FOSEN TOOLS" text
+- "Fosen Tools" text
+- Any signature, logo, brand mark, wordmark
+- The literal text "wordmark", "composite", "logo", or any meta-label
+- Any framed text capsule or pill-shape with text inside
+- ANY duplicate brand mark (a single wordmark would already be wrong — multiple is even worse)
+
+The bottom strip must be VISUALLY BLANK — only the canvas background color (red, ink, or cream as specified) with possibly the blueprint corner decoration. ANY text or logo rendered there will be considered a generation failure and counted as a typo. We add the official FT wordmark PNG ourselves server-side after AI generation completes — your job is to leave the space ABSOLUTELY EMPTY for us.`,
 
   typographyOnDark: `TYPOGRAPHY — Fosen Tools nettside-stil (matcher fosen-tools.no/ftseo-heading):
 - PRIMARY: Korolev Bold 700 (commercial) — substitute with closest visual match like Heebo Bold or Manrope ExtraBold. The font MUST be a condensed/semi-condensed geometric sans-serif with sharp terminals and industrial precision feel.
@@ -409,14 +445,14 @@ Do not skip these. They are mandatory brand signature.`,
 - Line-height: tight (1.1-1.15) for multi-line stacks
 - Multi-line: break on natural phrase boundaries, NEVER hyphenate
 - ONE keyword inside headline MAY be FT-red #ED1C24 for emphasis (sparingly)
-- REQUIRED: thin FT-red #ED1C24 horizontal accent-line (70px wide, 2-3px thick), centered horizontally, sits 16-24px BELOW the headline. This is the FT signature underline from .ftseo-heading::after on fosen-tools.no — every FT heading has it. Do not skip.`,
+- REQUIRED: a thin solid FT-red #ED1C24 horizontal line (short, roughly 1/10 of canvas width, 2-3 pixels thick), centered horizontally, sits 16-24px BELOW the headline. This is a PURELY VISUAL graphic element — a solid red rectangle/line shape. DO NOT render any text labels, dimension markers, or annotations like "70px" near or on it. The line is just a red line, nothing more. (This is the FT signature underline from .ftseo-heading::after on fosen-tools.no — every FT heading has it.)`,
 
   typographyOnCream: `TYPOGRAPHY — Fosen Tools nettside-stil:
 - PRIMARY: Korolev Bold 700 — substitute with Heebo Bold / Manrope ExtraBold (condensed geometric sans-serif).
 - Headlines: ALL UPPERCASE for short labels (under 5 words), letter-spacing 0.08em. For the dictionary-style hero word in definisjon: lowercase or mixed-case is OK if it matches the «Skreddersydd»-ref.
 - Hero-text color: FT-ink #111111 (NOT pure black — slightly softer)
 - Body text: 17px proportional, color #222222, line-height 1.7
-- REQUIRED: thin FT-red #ED1C24 70px horizontal accent-line (2-3px thick), positioned below the hero word's hairline area. Same as ftseo-heading::after — every FT heading has it.`,
+- REQUIRED: a thin solid FT-red #ED1C24 horizontal line (short, roughly 1/10 of canvas width, 2-3 pixels thick), positioned below the hero word's hairline area. PURELY VISUAL — DO NOT render any "70px" or dimension text near it. Same as ftseo-heading::after — every FT heading has it.`,
 
   optionalSubtagline: `OPTIONAL SUBTAGLINE: ONE short italic line above the wordmark frame, small (3-5% canvas height), 60-70% opacity. Example tone: "Bygget for null feilmargin", "Visuell kontroll. Ikke fredagsdugnad.", "5S skal gjøre rot umulig." Include ONLY if you can compose one that genuinely fits the topic — otherwise omit entirely. NEVER include if it would mean inventing new claims.`,
 
@@ -505,6 +541,7 @@ export function buildImagePrompt(
     milepael: "1:1",
     sitat: "4:5",
     sertifikat: "1:1",
+    produkt_variant: "1:1",
   };
 
   // Hero-tekst for caption-bruk (kan være lang)
@@ -567,7 +604,7 @@ export function buildImagePrompt(
   // som faktisk finnes i hero-teksten).
   const redWordInstruction =
     redWord && heroTextShort.toLowerCase().includes(redWord.toLowerCase())
-      ? `MANDATORY RED EMPHASIS — CRITICAL: the EXACT word "${redWord}" inside the headline MUST be rendered in FT-red #ED1C24 (vivid red, not maroon). All OTHER headline words remain pure white #FFFFFF. This red-word treatment is REQUIRED, not optional — it is the FT signature visual hook. Do not skip it. Do not change which word is red. Render exactly: where "${redWord}" appears in the headline, color it FT-red; everything else white.`
+      ? `MANDATORY RED EMPHASIS — CRITICAL: the COMPLETE word "${redWord}" (all ${redWord.length} letters: ${redWord.split("").join("-")}) inside the headline MUST be rendered in FT-red #ED1C24 (vivid red, not maroon). Render the ENTIRE word red — NOT just the first 1-2 letters, NOT a fragment. All OTHER headline words remain pure white #FFFFFF. This red-word treatment is REQUIRED, not optional — it is the FT signature visual hook. Do not skip it. Do not change which word is red. Render exactly: where "${redWord}" appears in the headline, color ALL letters of it FT-red; everything else white.`
       : `(No red-keyword emphasis for this post — all headline text is white.)`;
 
   // Subtagline-instruks (overstyrer FT_DESIGN.optionalSubtagline når satt)
@@ -750,6 +787,80 @@ ${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
         aspectRatio: aspectMap[archetype],
       };
 
+    case "produkt_variant":
+      // AI rendrer ALT selv (swatches + headline + labels + body).
+      // Server-side composite legger kun på FT-wordmark etterpå.
+      // Tekst-instruksjonene er ekstra eksplisitte for å unngå norske-bokstav-feil.
+      return {
+        prompt: `FT-style product-variant poster — HDFI fargevisning. Square 1:1 format.
+
+═══════════════════════════════════════════════════════════════
+NORWEGIAN TEXT RENDERING — CRITICAL, READ TWICE
+═══════════════════════════════════════════════════════════════
+Norwegian uses three special characters: æ ø å. These MUST be rendered EXACTLY when they appear in text. They are NOT optional, NOT decorative, NOT substituted with a/o.
+
+EVERY text element below must be rendered VERBATIM — character by character — exactly as I write it. If a word feels long or unusual, render it correctly anyway. NEVER substitute, NEVER abbreviate, NEVER remove diacritics.
+
+Forbidden mistakes (these are GENERATION FAILURES):
+- "Rod" instead of "Rød" — the ø MUST be visible
+- "Bla" instead of "Blå" — the å MUST be visible
+- "Lyse gra" instead of "Lyse grå" — the å MUST be visible
+- "Sva" instead of "Svart" — render the FULL word
+- "EN" instead of "ÉN" — preserve the acute accent
+- Combined typos like "RodHwit" or "Bla/Hvit" — render EACH word complete
+
+If you cannot render æ ø å correctly, OMIT the text rather than misspell it. Better to leave blank than to typo. But TRY first — these are standard Latin extended characters, you can render them.
+
+═══════════════════════════════════════════════════════════════
+
+LAYOUT (top to bottom on a 1024×1024 canvas):
+
+1. ${FT_DESIGN.bgInk}
+2. ${FT_DESIGN.decorOnDark}
+
+3. TOP THIRD: headline. Render the EXACT character sequence below across 2 lines, MASSIVE bold sans-serif (Manrope Black or Heebo Bold) in pure white #FFFFFF, fills 75% of canvas width. The single word "SEKS" must be rendered in FT-red #ED1C24 — all other words remain white.
+   Line 1: "SEKS FARGER."
+   Line 2: "ÉN STANDARD."
+   (Note: "ÉN" has an acute accent É — render exactly. "FARGER" has no special chars. "STANDARD" ends with a period.)
+
+4. MIDDLE HALF: Render EXACTLY 6 HDFI swatches in a 2×3 grid (NOT 7, NOT 8, no duplicates).
+
+   HDFI ANATOMY (3-layer relief structure — NOT flat painted rectangles):
+   - TOP LAYER: rounded rectangular plastic plate in PRIMARY color (dominant surface area)
+   - ENGRAVED TOOL CUTOUT inside plate (wrench, screwdriver, or pliers — vary between swatches). Actual milled-out depression, NOT a tool drawn on top.
+   - ENGRAVING RIM around cutout: thin 2-4px in SECONDARY color (lower plastic layer exposed by CNC)
+   - INSIDE CUTOUT: BLACK FOAM (always black, regardless of plate color)
+
+   SWATCH COLORS + LABELS — render each label EXACTLY as written below, directly below its swatch, in small white sans-serif, ALL diacritics intact:
+
+   ROW 1:
+   • Swatch 1: RED plate + WHITE rim + BLACK foam.  Label: "Rød/Hvit"  (R-ø-d-/-H-v-i-t — note the ø)
+   • Swatch 2: BLACK plate + WHITE rim + BLACK foam.  Label: "Svart/Hvit"  (full word "Svart", no abbreviation)
+   • Swatch 3: WHITE plate + BLACK rim + BLACK foam.  Label: "Hvit/Svart"
+
+   ROW 2:
+   • Swatch 4: DEEP NAVY BLUE plate + WHITE rim + BLACK foam.  Label: "Blå/Hvit"  (B-l-å-/-H-v-i-t — note the å)
+   • Swatch 5: INDUSTRIAL YELLOW plate + BLACK rim + BLACK foam.  Label: "Gul/Svart"
+   • Swatch 6: LIGHT GREY plate + BLACK rim + BLACK foam.  Label: "Lyse grå/Svart"  (note the å in grå)
+
+   Each label is a single line of small white text centered directly below its swatch. No hex codes on swatches, no extra captions, no descriptions.
+
+5. BOTTOM AREA (just above wordmark reserved space): ${body ? `Render the following short italic line EXACTLY as written, centered, white at 70% opacity: "${body}"` : `leave empty`}
+
+${FT_DESIGN.spellingRule}
+
+${FT_DESIGN.wordmarkReservedSpace}
+
+${FT_DESIGN.typographyOnDark}
+
+${FT_DESIGN.references}
+
+${FT_DESIGN.negatives}
+
+OVERRIDE: Blue/yellow/grey colored swatches ARE ALLOWED — they represent actual product variants, not design accent.${styleModifier(context.style, archetype)}`,
+        aspectRatio: aspectMap[archetype],
+      };
+
     case "foto":
     default:
       // foto = ekte foto, ingen AI-bilde-gen
@@ -759,6 +870,55 @@ ${FT_DESIGN.negatives}${styleModifier(context.style, archetype)}`,
 
 // Mark ftHeroWireframe as referenced for future use (kontrast wireframes etc).
 void ftHeroWireframe;
+
+/**
+ * Bygger CompositeTextLayout for server-side tekst-overlay basert på
+ * archetype + caption-LLM-output. Returnerer null hvis archetype ikke
+ * krever overlay (foto) eller hvis vi ikke har implementert layout enda.
+ */
+function buildTextLayoutFor(
+  archetype: Archetype,
+  captions: GenerateDraftResult["captions"],
+  bodyOverride: string | null
+): CompositeTextLayout | null {
+  const headline = captions.image_headline?.trim() ?? "";
+  const redWord = captions.image_headline_red_word?.trim() ?? null;
+  const body =
+    bodyOverride?.trim() || captions.image_body?.trim() || null;
+  const subtagline = captions.image_subtagline?.trim() || null;
+
+  switch (archetype) {
+    case "produkt_variant":
+      // AI rendrer alt selv (inkludert labels). Vi gjør IKKE composite-text
+      // her — bare wordmark legges på via separat compositeFosenToolsWordmark.
+      return null;
+    case "statement":
+      if (!headline) return null;
+      return {
+        kind: "statement",
+        headline,
+        redWord,
+        subtagline,
+      };
+    case "milepael": {
+      const heroNumber = extractHeroText("milepael", {
+        topic_kind: "milepael",
+        archetype,
+        title: headline,
+        brief: undefined,
+      });
+      if (!heroNumber) return null;
+      return {
+        kind: "milepael",
+        heroNumber,
+        unit: "år",
+        body,
+      };
+    }
+    default:
+      return null; // foto, definisjon, kontrast, sitat, sertifikat — beholder AI-rendered text for nå
+  }
+}
 
 /**
  * Velg hvilken wordmark-variant som passer bakgrunnen til archetype.
@@ -889,7 +1049,9 @@ export async function generateDraft(
 
   const captions = captionResult.json as GenerateDraftResult["captions"];
 
-  // 4. Generér bilde hvis archetype krever det og user_id finnes
+  // 4. Generér bilder hvis archetype krever det og user_id finnes
+  //    Vi genererer ETT bilde per plattform (FB 1:1, IG 4:5, LinkedIn 16:9)
+  //    så hvert nettsted får optimal aspect-ratio i feed.
   const aiImages: GenerateDraftResult["ai_images"] = [];
   let lastImageUsage: import("./gemini").UsageStats | undefined;
   if (input.archetype !== "foto" && !input.skip_image && input.user_id) {
@@ -900,9 +1062,40 @@ export async function generateDraft(
     const heroText = llmHeadline || extractHeroText(input.archetype, input);
     const eyebrow = extractEyebrow(input.archetype, input);
 
-    const { prompt: imgPrompt, aspectRatio } = buildImagePrompt(
-      input.archetype,
-      {
+    // Bygg referanse-bilder ÉN gang (de er felles på tvers av plattformer)
+    const refs: ImageRef[] = [];
+    for (const ref of approvedRefsFor(input.archetype, { style: input.style ?? null })) {
+      refs.push(ref);
+    }
+    const scraped = input.source_data as Partial<ScrapedProduct> | null;
+    if (scraped?.image_url) {
+      const productRef = await fetchImageAsRef(
+        scraped.image_url,
+        "PRODUCT REFERENCE: scraped product photo from fosen-tools.no for visual/content context. You may incorporate the product theme but DO NOT redraw the product photorealistically — the image should be typography-focused per the archetype spec."
+      );
+      if (productRef) refs.push(productRef);
+    }
+
+    let brandCacheName: string | null = null;
+    try {
+      brandCacheName = await getOrCreateImageBrandCache();
+    } catch (cacheErr) {
+      console.warn("Brand-cache utilgjengelig, fortsetter uten:", cacheErr);
+    }
+
+    // Wordmark-bakgrunn er bestemt av archetype (samme for alle plattformer)
+    const bgType: "red" | "ink" | "cream" =
+      input.archetype === "definisjon"
+        ? "cream"
+        : input.archetype === "sertifikat" ||
+            input.archetype === "sitat" ||
+            input.archetype === "produkt_variant"
+          ? "ink"
+          : "red";
+
+    // Loop over plattformer — ÉN bilde per plattform med riktig aspect
+    for (const { platform, aspectRatio: platformAspect } of PLATFORM_ASPECT_RATIOS) {
+      const { prompt: imgPrompt } = buildImagePrompt(input.archetype, {
         title: input.title,
         statement: input.brief,
         captions,
@@ -914,72 +1107,54 @@ export async function generateDraft(
         body: captions.image_body?.trim() || null,
         kontrast_left: captions.image_kontrast_left_label?.trim() || null,
         kontrast_right: captions.image_kontrast_right_label?.trim() || null,
-      }
-    );
+      });
 
-    if (imgPrompt) {
+      if (!imgPrompt) continue;
+
       try {
-        // FT brand-assets ligger i Gemini context-cache (opprettes/oppdateres
-        // ved første call, gjenbrukes i 1 time). Vi sender kun DYNAMISKE refs
-        // inline: stil-refs (kuratert per archetype/style) + evt. produktbilde.
-        const refs: ImageRef[] = [];
-
-        // Style-refs: archetype-mappe + _all/ + valgfri _<style>/
-        for (const ref of approvedRefsFor(input.archetype, { style: input.style ?? null })) {
-          refs.push(ref);
-        }
-
-        const scraped = input.source_data as Partial<ScrapedProduct> | null;
-        if (scraped?.image_url) {
-          const productRef = await fetchImageAsRef(
-            scraped.image_url,
-            "PRODUCT REFERENCE: scraped product photo from fosen-tools.no for visual/content context. You may incorporate the product theme but DO NOT redraw the product photorealistically — the image should be typography-focused per the archetype spec."
-          );
-          if (productRef) refs.push(productRef);
-        }
-
-        // Hent cached brand-assets-navn (auto-opprettes hvis utløpt)
-        let brandCacheName: string | null = null;
-        try {
-          brandCacheName = await getOrCreateImageBrandCache();
-        } catch (cacheErr) {
-          console.warn(
-            "Brand-cache utilgjengelig, fortsetter uten:",
-            cacheErr
-          );
-        }
-
         const imgResult = await generateImage({
           prompt: imgPrompt,
-          aspectRatio,
+          aspectRatio: platformAspect,
           referenceImages: refs,
           cachedContent: brandCacheName,
         });
         lastImageUsage = imgResult.usage;
 
-        // Logg om cache faktisk traff (debugging)
         if (imgResult.usage) {
           const cacheHit = imgResult.usage.cachedTokens > 0;
           console.log(
-            `[image-gen] tokens: prompt=${imgResult.usage.promptTokens} cached=${imgResult.usage.cachedTokens} output=${imgResult.usage.outputTokens} → cache ${cacheHit ? "HIT ✓" : "MISS"}`
+            `[image-gen ${platform} ${platformAspect}] tokens: prompt=${imgResult.usage.promptTokens} cached=${imgResult.usage.cachedTokens} output=${imgResult.usage.outputTokens} → cache ${cacheHit ? "HIT ✓" : "MISS"}`
           );
         }
 
-        // Wordmark-overlay: AI rendrer IKKE wordmark (typo-risk), vi
-        // composite-r ekte PNG på etterpå. Variant matcher bakgrunns-type.
-        const bgType: "red" | "ink" | "cream" =
-          input.archetype === "definisjon"
-            ? "cream"
-            : input.archetype === "sertifikat" || input.archetype === "sitat"
-              ? "ink"
-              : "red";
-
         for (const img of imgResult.images) {
           let processed = { base64: img.base64, mimeType: img.mimeType };
+
+          // Steg 1: server-side tekst-overlay (norske bokstaver, ingen typos)
+          // — for archetyper hvor det fungerer pålitelig (statement, milepael).
+          // produkt_variant lar AI rendre alt selv pga at swatch-layout varierer
+          // for mye for automatic label-placement.
+          const textLayout = buildTextLayoutFor(input.archetype, captions, null);
+          if (textLayout) {
+            try {
+              processed = await compositeText(
+                processed.base64,
+                processed.mimeType,
+                textLayout
+              );
+            } catch (textErr) {
+              console.error(
+                "Text-composite feilet, fortsetter med wordmark uten tekst:",
+                textErr
+              );
+            }
+          }
+
+          // Steg 2: wordmark-overlay
           try {
             processed = await compositeFosenToolsWordmark(
-              img.base64,
-              img.mimeType,
+              processed.base64,
+              processed.mimeType,
               { variant: wordmarkVariantForBg(bgType) }
             );
           } catch (compErr) {
@@ -994,18 +1169,21 @@ export async function generateDraft(
             processed.base64,
             processed.mimeType,
             input.user_id,
-            `${input.topic_kind}-${input.archetype}`
+            `${input.topic_kind}-${input.archetype}-${platform}`
           );
           aiImages.push({
             storage_path: saved.storage_path,
             public_url: saved.public_url,
             archetype: input.archetype,
             prompt: imgPrompt,
+            platform,
+            aspect_ratio: platformAspect,
           });
         }
       } catch (e) {
-        console.error("Image-gen feilet:", e);
-        // Ikke fatal — caption-gen var allerede vellykket
+        console.error(`Image-gen feilet for ${platform}:`, e);
+        // Ikke fatal — caption-gen var allerede vellykket; andre plattformer kan
+        // fortsatt lykkes
       }
     }
   }
@@ -1023,14 +1201,14 @@ export async function generateDraft(
         captionUsage.outputTokens * 0.3) /
       1_000_000
     : 0.0002;
-  const imageCost = imageUsage
+  // Cost per generation × antall bilder vi faktisk genererte
+  const imageCostPerCall = imageUsage
     ? ((imageUsage.promptTokens - imageUsage.cachedTokens) * 0.3 +
         imageUsage.cachedTokens * 0.075 +
         imageUsage.outputTokens * 30) /
       1_000_000
-    : aiImages.length > 0
-      ? 0.04
-      : 0;
+    : 0.04;
+  const imageCost = aiImages.length * imageCostPerCall;
 
   return {
     captions,

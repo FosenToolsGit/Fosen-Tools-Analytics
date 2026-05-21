@@ -79,7 +79,17 @@ export async function POST(request: NextRequest) {
     socialInstagramPostUrl: body.socialInstagramPostUrl ?? "",
     socialFacebookPostUrl: body.socialFacebookPostUrl ?? "https://www.facebook.com/fosentools",
     socialLinkedinPostUrl: body.socialLinkedinPostUrl ?? "",
+    customerStoryText: body.customerStoryText,
+    utmTerm: body.utmTerm,
   };
+
+  // #6 Preheader-validering — 80–110 tegn er optimalt for innboks-forhåndsvisning
+  const preheaderLen = input.previewText.length;
+  const preheaderWarning = preheaderLen < 50
+    ? `Preheader er kort (${preheaderLen} tegn) — anbefalt 80–110 for maks visning i innboks`
+    : preheaderLen > 130
+    ? `Preheader er lang (${preheaderLen} tegn) — vil bli kuttet i de fleste innbokser. Anbefalt 80–110.`
+    : null;
 
   const builder = new MailchimpBuilderService();
   let draft;
@@ -87,6 +97,14 @@ export async function POST(request: NextRequest) {
     draft = await builder.createNewsletter(input);
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Mailchimp-feil" }, { status: 500 });
+  }
+
+  // #13 Send-tidspunkt: kommende tirsdag kl 11:00 norsk tid (publiseringsrytmen vår)
+  try {
+    const sendIso = nextTuesdayElevenIso();
+    await builder.scheduleCampaign(draft.campaignId, sendIso);
+  } catch {
+    // Stille feil — bruker kan sette tidspunkt manuelt i Mailchimp om scheduling feiler
   }
 
   const { data: savedDraft } = await supabase
@@ -122,7 +140,29 @@ export async function POST(request: NextRequest) {
     edit_url: draft.editUrl,
     draft_id: savedDraft?.id ?? null,
     utm_links_added: utmInserted,
+    preheader_warning: preheaderWarning,
+    scheduled_send_iso: nextTuesdayElevenIso(),
   });
+}
+
+/**
+ * Returner ISO-streng for kommende tirsdag kl 11:00 norsk tid.
+ * Hvis det allerede er etter tirsdag 11:00 denne uka, returnerer NESTE tirsdag.
+ */
+function nextTuesdayElevenIso(): string {
+  const now = new Date();
+  // Konverter til norsk tid (Europe/Oslo). Server kan kjøre i UTC, så vi jobber i UTC-offset.
+  // Norsk sommertid: UTC+2. Vinter: UTC+1. Bruker Intl for å finne riktig offset.
+  const nowOslo = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Oslo" }));
+  const dayOfWeek = nowOslo.getDay(); // 0 = søndag, 2 = tirsdag
+  let daysUntilTuesday = (2 - dayOfWeek + 7) % 7;
+  if (daysUntilTuesday === 0 && nowOslo.getHours() >= 11) daysUntilTuesday = 7;
+  const target = new Date(nowOslo);
+  target.setDate(target.getDate() + daysUntilTuesday);
+  target.setHours(11, 0, 0, 0);
+  // Konverter tilbake til UTC ISO basert på offset-differanse
+  const offsetMs = nowOslo.getTime() - now.getTime();
+  return new Date(target.getTime() - offsetMs).toISOString();
 }
 
 function buildUtmRowsFromInput(
@@ -152,14 +192,14 @@ function buildUtmRowsFromInput(
     });
   }
 
-  // Midt-CTA-URL
-  if (input.midtCtaUrl && input.midtCtaUrl.includes("fosen-tools.no")) {
-    const baseUrl = input.midtCtaUrl.split("?")[0];
-    const utmContent = "midt-cta";
+  // Helper: legg til en UTM-rad for en gitt URL hvis den peker til fosen-tools.no
+  const addRow = (rawUrl: string | undefined | null, utmContent: string, labelSuffix: string) => {
+    if (!rawUrl || !rawUrl.includes("fosen-tools.no")) return;
+    const baseUrl = rawUrl.split("?")[0];
     const fullUrl = `${baseUrl}?utm_source=${utmSource}&utm_medium=${utmMedium}&utm_campaign=${encodeURIComponent(utmCampaign)}&utm_content=${utmContent}`;
     rows.push({
       user_id: userId,
-      label: `Nyhetsbrev «${input.headingMain}» — midtseksjon-CTA`,
+      label: `Nyhetsbrev «${input.headingMain}» — ${labelSuffix}`,
       base_url: baseUrl,
       utm_source: utmSource,
       utm_medium: utmMedium,
@@ -168,7 +208,14 @@ function buildUtmRowsFromInput(
       full_url: fullUrl,
       notes: `Auto-lagret fra nyhetsbrev-bygger (${new Date().toISOString().slice(0, 10)})`,
     });
-  }
+  };
+
+  // Alle interne FT-lenker i nyhetsbrevet
+  addRow(input.midtCtaUrl, "midt-cta", "midtseksjon-CTA");
+  addRow(input.midtImageUrl ? input.midtCtaUrl : null, "midt-bilde", "midtseksjon-bilde");
+  addRow(input.brandLogoLink, "brand-logo", "produsentlogo");
+  addRow("https://fosen-tools.no/", "header-logo", "topp-logo");
+  addRow("https://fosen-tools.no/produkter", "alle-produkter", "«Se alle produkter»-knapp");
 
   return rows;
 }

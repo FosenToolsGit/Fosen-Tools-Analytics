@@ -56,6 +56,8 @@ interface GeneratedContent {
   midtBody: string;
   midtCtaText: string;
   midtCtaUrl: string;
+  customerStoryText?: string;
+  utmTerm?: string;
 }
 
 interface SuggestedFooterImage {
@@ -132,6 +134,10 @@ export default function NyhetsbrevByggerPage() {
   /* ── View mode ── */
   const [showPreview, setShowPreview] = useState(true);
 
+  /* ── Live HTML preview (from buildNewsletterHtml via API) ── */
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [previewHtmlLoading, setPreviewHtmlLoading] = useState(false);
+
   /* Sync editContent from preview.content when generated */
   useEffect(() => {
     if (preview) {
@@ -139,6 +145,40 @@ export default function NyhetsbrevByggerPage() {
       setEditProducts([...preview.products]);
     }
   }, [preview]);
+
+  /* Debounced live preview-HTML fetch */
+  useEffect(() => {
+    if (!editContent || !showPreview) return;
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      setPreviewHtmlLoading(true);
+      try {
+        const res = await fetch("/api/mailchimp/newsletter/preview-html", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...editContent,
+            products: editProducts,
+            midtImageUrl,
+            footerImageUrl,
+            socialInstagramPostUrl: socialInstagram,
+            socialLinkedinPostUrl: socialLinkedin,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { html: string };
+        if (!cancelled) setPreviewHtml(data.html);
+      } catch {
+        // silent — keep last good HTML
+      } finally {
+        if (!cancelled) setPreviewHtmlLoading(false);
+      }
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [editContent, editProducts, midtImageUrl, footerImageUrl, socialInstagram, socialLinkedin, showPreview]);
 
   /* Suggestions fetch */
   useEffect(() => {
@@ -609,9 +649,20 @@ export default function NyhetsbrevByggerPage() {
                 <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">E-post</h3>
                 <div className="space-y-3">
                   <EditableField label="Emnelinje" value={editContent.subjectLine} onChange={(v) => updateField("subjectLine", v)} highlight />
-                  <EditableField label="Preheader" value={editContent.previewText} onChange={(v) => updateField("previewText", v)} />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <EditableField label="Preheader" value={editContent.previewText} onChange={(v) => updateField("previewText", v)} />
+                    <div className={`text-xs mt-1 ${
+                      editContent.previewText.length < 50 ? "text-amber-400" :
+                      editContent.previewText.length > 130 ? "text-amber-400" :
+                      editContent.previewText.length >= 80 && editContent.previewText.length <= 110 ? "text-green-500" :
+                      "text-gray-500"
+                    }`}>
+                      {editContent.previewText.length} tegn {editContent.previewText.length < 80 ? "(anbefalt 80–110)" : editContent.previewText.length > 110 ? "(anbefalt 80–110, blir kuttet i innboks)" : "✓ optimal lengde"}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
                     <EditableField label="Tema-slug (UTM)" value={editContent.themeSlug} onChange={(v) => updateField("themeSlug", v)} mono />
+                    <EditableField label="UTM term (A/B)" value={editContent.utmTerm ?? ""} onChange={(v) => updateField("utmTerm", v)} mono />
                     <EditableField label="Topp-badge" value={editContent.topBadge} onChange={(v) => updateField("topBadge", v)} />
                   </div>
                 </div>
@@ -810,6 +861,19 @@ export default function NyhetsbrevByggerPage() {
                 </div>
               </Card>
 
+              {/* Kundehistorie / «Levert til X» — vises under fredags-bildet nederst */}
+              <Card>
+                <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">Kundehistorie (under fredags-bilde)</h3>
+                <p className="text-xs text-gray-500 mb-3">Speiler «Levert til X»-mønsteret fra sosiale medier (+144% lift). La stå tom for default-tekst.</p>
+                <EditableField
+                  label="Tekst"
+                  value={editContent.customerStoryText ?? ""}
+                  onChange={(v) => updateField("customerStoryText", v)}
+                  multiline
+                  rows={4}
+                />
+              </Card>
+
               {/* Midt-bilde */}
               <Card className="border-orange-700/40">
                 <div className="flex items-center justify-between mb-2">
@@ -849,15 +913,33 @@ export default function NyhetsbrevByggerPage() {
               </Card>
             </div>
 
-            {/* ── RIGHT: Visual Preview ── */}
+            {/* ── RIGHT: Live HTML Preview (real Mailchimp output) ── */}
             {showPreview && (
               <div className="sticky top-4 self-start">
-                <NewsletterPreview
-                  content={editContent}
-                  products={editProducts}
-                  midtImageUrl={midtImageUrl}
-                  footerImageUrl={footerImageUrl}
-                />
+                <div className="rounded-lg overflow-hidden border border-gray-700 bg-white shadow-2xl">
+                  <div className="bg-gray-800 px-4 py-2.5 border-b border-gray-700 flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-gray-400 mb-1">Fra: <span className="text-gray-300">Fosen Tools — Nyhetsbrev</span></div>
+                      <div className="text-sm text-white font-medium truncate">{editContent.subjectLine || "Emnelinje..."}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 truncate">{editContent.previewText || "Preheader..."}</div>
+                    </div>
+                    {previewHtmlLoading && (
+                      <Loader2 className="h-4 w-4 text-gray-400 animate-spin flex-shrink-0 ml-2" />
+                    )}
+                  </div>
+                  {previewHtml ? (
+                    <iframe
+                      title="Nyhetsbrev-forhåndsvisning"
+                      srcDoc={previewHtml}
+                      sandbox="allow-same-origin"
+                      style={{ width: "100%", height: "75vh", border: 0, display: "block", background: "#e8e8e8" }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center" style={{ height: "75vh", background: "#e8e8e8" }}>
+                      <Loader2 className="h-6 w-6 text-gray-500 animate-spin" />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -893,187 +975,6 @@ export default function NyhetsbrevByggerPage() {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════ */
-/*  Visual Newsletter Preview                  */
-/* ═══════════════════════════════════════════ */
-
-function NewsletterPreview({
-  content,
-  products,
-  midtImageUrl,
-  footerImageUrl,
-}: {
-  content: GeneratedContent;
-  products: NewsletterProduct[];
-  midtImageUrl: string;
-  footerImageUrl: string;
-}) {
-  return (
-    <div className="rounded-lg overflow-hidden border border-gray-700 bg-white shadow-2xl">
-      {/* Email client chrome */}
-      <div className="bg-gray-800 px-4 py-2.5 border-b border-gray-700">
-        <div className="text-xs text-gray-400 mb-1">Fra: <span className="text-gray-300">Fosen Tools - Nyhetsbrev</span></div>
-        <div className="text-sm text-white font-medium truncate">{content.subjectLine || "Emnelinje..."}</div>
-        <div className="text-xs text-gray-500 mt-0.5 truncate">{content.previewText || "Preheader..."}</div>
-      </div>
-
-      {/* Newsletter body */}
-      <div className="max-h-[75vh] overflow-y-auto">
-        <div style={{ fontFamily: "'Roboto', Arial, sans-serif", maxWidth: 564, margin: "0 auto" }}>
-          {/* Top badge */}
-          {content.topBadge && (
-            <div style={{ background: "#f12634", color: "#fff", textAlign: "center", padding: "8px 16px", fontSize: 11, letterSpacing: "0.1em", fontWeight: 700 }}>
-              {content.topBadge}
-            </div>
-          )}
-
-          {/* FT Logo */}
-          <div style={{ background: "#0f1115", textAlign: "center", padding: "16px" }}>
-            <div style={{ color: "#fff", fontSize: 18, fontWeight: 700, letterSpacing: "0.15em" }}>
-              FOSEN TOOLS
-            </div>
-          </div>
-
-          {/* Heading */}
-          <div style={{ padding: "24px 24px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 16, color: "#222", fontWeight: 500 }}>
-              {content.headingMain || "Hovedtittel"}
-            </div>
-            <div style={{ fontSize: 22, color: "#222", fontWeight: 700, marginTop: 4 }}>
-              {content.headingSub || "Undertittel"}
-            </div>
-          </div>
-
-          {/* Ingress */}
-          <div style={{ padding: "8px 24px 16px", fontSize: 14, color: "#555", lineHeight: 1.6, textAlign: "center" }}>
-            {content.ingress || "Ingress-tekst..."}
-          </div>
-
-          {/* Products grid — 3+2 layout matching Mailchimp colspan 4/6 */}
-          {products.length > 0 && (
-            <div style={{ padding: "0 16px 16px" }}>
-              {/* Row 1: up to 3 at 33.33% each (colspan="4" in 12-col grid) */}
-              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                {products.slice(0, 3).map((p, i) => (
-                  <ProductCard key={i} product={p} widthPct="33.33%" />
-                ))}
-              </div>
-              {/* Row 2: products 4-5 at 50% each (colspan="6" in 12-col grid) */}
-              {products.length > 3 && (
-                <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 8 }}>
-                  {products.slice(3, 5).map((p, i) => (
-                    <ProductCard key={i + 3} product={p} widthPct="50%" />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Midt-bilde */}
-          {midtImageUrl ? (
-            <div style={{ padding: "8px 0" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={midtImageUrl} alt="Midtseksjon" style={{ width: "100%", height: "auto", display: "block" }} />
-            </div>
-          ) : (
-            <div style={{ margin: "8px 24px", padding: "40px 24px", background: "#fff3e0", border: "2px dashed #f59e0b", borderRadius: 8, textAlign: "center" }}>
-              <ImageIcon style={{ width: 32, height: 32, color: "#f59e0b", display: "inline-block" }} />
-              <div style={{ fontSize: 13, color: "#92400e", marginTop: 8 }}>Midtseksjon-bilde mangler</div>
-            </div>
-          )}
-
-          {/* Midt text */}
-          <div style={{ padding: "16px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#222", marginBottom: 8 }}>
-              {content.midtTitle || "Midtseksjon-tittel"}
-            </div>
-            <div style={{ fontSize: 13, color: "#555", lineHeight: 1.6, marginBottom: 12 }}>
-              {content.midtBody || "Midtseksjon-tekst..."}
-            </div>
-            <div
-              style={{
-                display: "inline-block",
-                padding: "10px 24px",
-                background: "#f12634",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-                borderRadius: 4,
-                textDecoration: "none",
-              }}
-            >
-              {content.midtCtaText || "CTA-TEKST"}
-            </div>
-          </div>
-
-          {/* Footer image */}
-          {footerImageUrl && (
-            <div style={{ padding: "8px 0" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={footerImageUrl} alt="Fredagsbilde" style={{ width: "100%", height: "auto", display: "block" }} />
-            </div>
-          )}
-
-          {/* Footer */}
-          <div style={{ background: "#0f1115", padding: "20px 24px", textAlign: "center" }}>
-            <div style={{ color: "#fff", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-              FOSEN TOOLS
-            </div>
-            <div style={{ color: "#999", fontSize: 11 }}>
-              Industrigata 1, 7130 Brekstad · +47 72 51 51 20
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProductCard({ product: p, widthPct }: { product: NewsletterProduct; widthPct?: string }) {
-  return (
-    <div
-      style={{
-        flex: widthPct ? `0 0 calc(${widthPct} - 8px)` : "1 1 0",
-        maxWidth: widthPct ? undefined : 180,
-        textAlign: "center",
-        padding: 8,
-        border: "1px solid #eee",
-        borderRadius: 4,
-        background: "#fff",
-      }}
-    >
-      {p.imageUrl && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={p.imageUrl}
-          alt={p.name}
-          style={{ width: "100%", height: 100, objectFit: "contain", marginBottom: 6 }}
-        />
-      )}
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#222", lineHeight: 1.3, minHeight: 40 }}>
-        {p.name}
-      </div>
-      <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{p.brandSku}</div>
-      <div style={{ fontSize: 11, color: "#f12634", fontWeight: 600, marginTop: 4 }}>{p.priceText}</div>
-      <div
-        style={{
-          display: "inline-block",
-          marginTop: 6,
-          padding: "5px 12px",
-          background: "#f12634",
-          color: "#fff",
-          fontSize: 10,
-          fontWeight: 700,
-          borderRadius: 3,
-        }}
-      >
-        Gå til produkt
-      </div>
     </div>
   );
 }

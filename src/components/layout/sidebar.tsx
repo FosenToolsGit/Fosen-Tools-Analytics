@@ -121,22 +121,15 @@ const navItems: NavEntry[] = [
 
   // ── Innhold ─────────────────────────────────────
   { kind: "section", label: "Innhold" },
-  {
-    label: "Innlegg",
-    href: "/posts",
-    icon: FileText,
-    children: [
-      { label: "Alle innlegg", href: "/posts", icon: FileText },
-      { label: "Bygger: Sosiale medier", href: "/innleggsbygger/sosiale", icon: PenTool },
-      { label: "Bygger: Nyhetsbrev", href: "/innleggsbygger/nyhetsbrev", icon: Mail },
-      { label: "Nyhetsbrev-bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Sparkles, localOnly: true },
-      { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
-    ],
-  },
+  { label: "Alle innlegg", href: "/posts", icon: FileText },
   { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
+  { label: "Nyhetsbrev-bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Mail, localOnly: true },
   { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
   { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
   { label: "Etiketter", href: "/etikett", icon: BookOpen },
+  { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
+  { label: "Produkt-import", href: "/innleggsbygger/produkt-import", icon: FileSpreadsheet },
+  { label: "Bulk-redigér produkter", href: "/innleggsbygger/produkt-bulk-edit", icon: FileSpreadsheet },
 
   // ── Søkeord ─────────────────────────────────────
   { kind: "section", label: "Søkeord" },

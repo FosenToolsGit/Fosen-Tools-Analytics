@@ -64,6 +64,53 @@ function extractUsage(usageMetadata: unknown): UsageStats | undefined {
 }
 
 /**
+ * Retry-helper for Gemini API-kall. Auto-retry på 503 (UNAVAILABLE) og 429
+ * (RESOURCE_EXHAUSTED) med eksponentiell backoff. Faller tilbake til
+ * `fallbackModel` på siste forsøk hvis primær-modell fortsatt feiler.
+ *
+ * Gemini 2.5 Flash har periodisk «high demand» og returnerer 503 — vi vil ikke
+ * la det stoppe hele Innholdsmotor.
+ */
+async function withRetryAndFallback<T>(
+  primaryModel: string,
+  fallbackModel: string,
+  attemptFn: (model: string) => Promise<T>
+): Promise<T> {
+  const maxAttempts = 3;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const model = attempt === maxAttempts ? fallbackModel : primaryModel;
+    try {
+      return await attemptFn(model);
+    } catch (err) {
+      lastErr = err;
+      const isRetryable = isRetryableGeminiError(err);
+      if (!isRetryable || attempt === maxAttempts) {
+        // Siste forsøk feilet OG er ikke retryable → kast
+        if (!isRetryable) throw err;
+      }
+      // Backoff: 1s, 2s, 4s
+      const backoffMs = Math.pow(2, attempt - 1) * 1000;
+      console.warn(
+        `[gemini] ${model} feilet (forsøk ${attempt}/${maxAttempts}): ${(err as Error).message?.slice(0, 100)}. Retry om ${backoffMs}ms${attempt === maxAttempts - 1 ? ` (bytter til fallback ${fallbackModel})` : ""}`
+      );
+      await new Promise((r) => setTimeout(r, backoffMs));
+    }
+  }
+  throw lastErr;
+}
+
+function isRetryableGeminiError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { status?: number; message?: string };
+  if (e.status === 503 || e.status === 429) return true;
+  const msg = e.message ?? "";
+  return (
+    /UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overload|rate limit/i.test(msg)
+  );
+}
+
+/**
  * Generér strukturert JSON-output for captions per plattform.
  * Vi bruker responseSchema for å garantere riktig form.
  */
@@ -71,9 +118,12 @@ export async function generateCaptionsJson(
   input: CaptionGenInput
 ): Promise<CaptionGenResult> {
   const ai = getClient();
-  const model = input.model ?? DEFAULT_TEXT_MODEL;
+  const primaryModel = input.model ?? DEFAULT_TEXT_MODEL;
+  // Fallback til Flash-Lite hvis primær er overbelastet
+  const fallbackModel = "gemini-2.5-flash-lite";
 
-  const response = await ai.models.generateContent({
+  const response = await withRetryAndFallback(primaryModel, fallbackModel, (model) =>
+    ai.models.generateContent({
     model,
     contents: input.userPrompt,
     config: {
@@ -153,7 +203,8 @@ export async function generateCaptionsJson(
       },
       temperature: 0.7,
     },
-  });
+  })
+  );
 
   const raw = response.text ?? "";
   let json: unknown;
@@ -168,7 +219,7 @@ export async function generateCaptionsJson(
   return {
     json,
     raw,
-    model,
+    model: primaryModel,
     usage: extractUsage(response.usageMetadata),
   };
 }
@@ -218,7 +269,10 @@ export async function generateImage(
   input: ImageGenInput
 ): Promise<ImageGenResult> {
   const ai = getClient();
-  const model = input.model ?? DEFAULT_IMAGE_MODEL;
+  const primaryModel = input.model ?? DEFAULT_IMAGE_MODEL;
+  // Image-modellen har ingen åpen «lite»-fallback per nå — retry samme modell.
+  // Hvis vi får 503 etter 3 forsøk lar vi feilen propagere (caller håndterer).
+  const fallbackModel = primaryModel;
   const aspect = input.aspectRatio ?? "1:1";
 
   // Bygg multi-part contents: [referansebilder med labels] + [hovedprompt]
@@ -242,7 +296,8 @@ export async function generateImage(
     text: `${input.prompt}\n\nMANDATORY OUTPUT FORMAT: ${sdkAspect} aspect ratio. The composition must work within this frame.`,
   });
 
-  const response = await ai.models.generateContent({
+  const response = await withRetryAndFallback(primaryModel, fallbackModel, (model) =>
+    ai.models.generateContent({
     model,
     contents: [{ role: "user", parts }],
     config: {
@@ -255,7 +310,8 @@ export async function generateImage(
       // Referer til pre-cached FT brand-assets (sparer ~9000 tokens per call)
       ...(input.cachedContent ? { cachedContent: input.cachedContent } : {}),
     },
-  });
+  })
+  );
 
   const images: Array<{ base64: string; mimeType: string }> = [];
   for (const candidate of response.candidates ?? []) {
@@ -272,5 +328,138 @@ export async function generateImage(
     );
   }
 
-  return { images, model, usage: extractUsage(response.usageMetadata) };
+  return { images, model: primaryModel, usage: extractUsage(response.usageMetadata) };
+}
+
+// =============================================================================
+// VISION-DETECT — finn bounding-bokser i et bilde
+// =============================================================================
+
+export interface DetectedBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Beskrivelse (f.eks. "red plate with wrench", "yellow plate"). */
+  label?: string;
+  /** Hvor AI har naturlig visuell plass for en tekst-label.
+   * (cx, cy) er senter av label-zone; (zw, zh) er størrelse hvis kjent. */
+  label_anchor?: {
+    cx: number;
+    cy: number;
+    zw?: number;
+    zh?: number;
+    /** Hvilken side label-zone er på (f.eks. "below", "right", "inside_bottom"). */
+    position?: "below" | "above" | "left" | "right" | "inside_bottom" | "inside_top";
+  };
+}
+
+/**
+ * Bruk Gemini Vision til å detektere koordinatene av N visuelle objekter
+ * (typisk produkt-swatches) i et bilde. Bildet sendes som inline image og
+ * modellen returnerer JSON med bounding-boxes.
+ *
+ * Gemini returnerer normaliserte koordinater (0-1000 per akse — så vi
+ * konverterer til pixel-koordinater med imageWidth/imageHeight).
+ */
+export async function detectSwatchPositions(
+  imageBase64: string,
+  imageMimeType: string,
+  imageWidth: number,
+  imageHeight: number,
+  expectedCount: number = 6
+): Promise<DetectedBox[]> {
+  const ai = getClient();
+  const visionModel = "gemini-2.5-flash";
+
+  const prompt = `This image contains exactly ${expectedCount} HDFI color sample swatches arranged in a grid. Each swatch is a rounded rectangular plastic plate (red, black, white, blue, yellow, or grey) with a tool-silhouette cutout.
+
+For EACH swatch, return TWO pieces of information:
+1. swatch_box: bounding box of JUST the colored plate (NOT including any text or space below it)
+2. label_anchor: the IDEAL CENTER-POINT (cx, cy) where a small text label naturally belongs, based on the existing visual layout. Look at the image carefully — where is there CLEAR EMPTY SPACE near each swatch that is suitable for a 1-3 word text label? It is usually directly below the swatch, but can be to the side, above, or inside (if the swatch has a dark band at the bottom suitable for white text). Choose the most natural position THAT ACTUALLY HAS EMPTY ROOM — do not anchor to areas already crowded with other shapes or AI-rendered text.
+
+Use normalized coordinates 0-1000 (x=500 means horizontal center, y=500 means vertical center). Return exactly ${expectedCount} swatches in reading order (top-left to bottom-right).
+
+Output format (strict JSON, no markdown):
+{
+  "boxes": [
+    {
+      "x": 0, "y": 0, "w": 0, "h": 0,
+      "label": "red plate",
+      "label_anchor": {"cx": 0, "cy": 0, "zw": 0, "zh": 0, "position": "below"}
+    },
+    ...
+  ]
+}
+
+x/y/w/h are the swatch_box (top-left corner + size). label_anchor.cx/cy is the IDEAL CENTER-POINT for label text. position is one of "below" / "above" / "left" / "right" / "inside_bottom" / "inside_top". zw/zh (optional) is the size of the empty zone if known.`;
+
+  const response = await withRetryAndFallback(
+    visionModel,
+    "gemini-2.5-flash-lite",
+    (model) =>
+      ai.models.generateContent({
+        model,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              { inlineData: { data: imageBase64, mimeType: imageMimeType } },
+            ],
+          },
+        ],
+        config: {
+          responseMimeType: "application/json",
+          temperature: 0.0,
+        },
+      })
+  );
+
+  const raw = response.text ?? "";
+  type RawAnchor = {
+    cx: number;
+    cy: number;
+    zw?: number;
+    zh?: number;
+    position?: NonNullable<DetectedBox["label_anchor"]>["position"];
+  };
+  type RawBox = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    label?: string;
+    label_anchor?: RawAnchor;
+  };
+  let parsed: { boxes?: RawBox[] };
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Vision-detect: ugyldig JSON: ${raw.slice(0, 200)}`);
+  }
+
+  const boxes = parsed.boxes ?? [];
+
+  // Konverter normaliserte 0-1000-koordinater til pixel
+  return boxes.map((b) => ({
+    x: Math.round((b.x / 1000) * imageWidth),
+    y: Math.round((b.y / 1000) * imageHeight),
+    w: Math.round((b.w / 1000) * imageWidth),
+    h: Math.round((b.h / 1000) * imageHeight),
+    label: b.label,
+    label_anchor: b.label_anchor
+      ? {
+          cx: Math.round((b.label_anchor.cx / 1000) * imageWidth),
+          cy: Math.round((b.label_anchor.cy / 1000) * imageHeight),
+          zw: b.label_anchor.zw
+            ? Math.round((b.label_anchor.zw / 1000) * imageWidth)
+            : undefined,
+          zh: b.label_anchor.zh
+            ? Math.round((b.label_anchor.zh / 1000) * imageHeight)
+            : undefined,
+          position: b.label_anchor.position,
+        }
+      : undefined,
+  }));
 }

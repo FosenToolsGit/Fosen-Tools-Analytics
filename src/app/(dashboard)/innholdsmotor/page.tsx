@@ -31,6 +31,7 @@ const TOPIC_KINDS = [
   { value: "leveranse", label: "Leveranse (+144% mønster)" },
   { value: "prosess", label: "Prosess (CADLAB → CNC → ferdig)" },
   { value: "produktlansering", label: "Produktlansering (URL-pull)" },
+  { value: "produkt_variant", label: "Produkt-variant (farger/størrelser/modeller)" },
   { value: "bransje_kontekst", label: "Bransje-kontekst" },
   { value: "milepael", label: "Milepæl (jubileum, tall)" },
   { value: "edukativ", label: "Edukativ (HDFI vs hyllevare)" },
@@ -46,6 +47,7 @@ const ARCHETYPES = [
   { value: "milepael", label: "Milepæl — store tall (20+ år, 100 år, 1 200 timer)" },
   { value: "sitat", label: "Sitat — direkte ord («Vi trenger åtte skuffer.»)" },
   { value: "sertifikat", label: "Sertifikat — trust-anker (Forsvaret, Miljøfyrtårn, ISO)" },
+  { value: "produkt_variant", label: "Produkt-variant — vise flere farger/størrelser/modeller som grid" },
 ] as const;
 
 // Visuell stil — bestemmer hvilken _<style>/-mappe Gemini får refs fra.
@@ -94,7 +96,12 @@ interface DraftRow {
     image_kontrast_right_label?: string;
     internal_notes?: string;
   };
-  ai_images: Array<{ public_url: string; archetype: string }>;
+  ai_images: Array<{
+    public_url: string;
+    archetype: string;
+    platform?: "facebook" | "instagram" | "linkedin";
+    aspect_ratio?: string;
+  }>;
   status: string;
   scheduled_at: string | null;
   posted_at: string | null;
@@ -866,16 +873,45 @@ function DraftCard({ draft, onChange }: { draft: DraftRow; onChange: () => void 
               <img src={p.public_url} alt="" className="w-full h-full object-cover" />
             </div>
           ))}
-          {draft.ai_images.map((p, i) => (
-            <div
-              key={`ai-${i}`}
-              className="flex-shrink-0 w-24 aspect-square bg-gray-900 rounded overflow-hidden border border-amber-700/50"
-              title="AI-generert"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.public_url} alt="" className="w-full h-full object-cover" />
-            </div>
-          ))}
+          {draft.ai_images.map((p, i) => {
+            const platformLabel =
+              p.platform === "facebook"
+                ? "FB"
+                : p.platform === "instagram"
+                  ? "IG"
+                  : p.platform === "linkedin"
+                    ? "LI"
+                    : null;
+            // Container-aspect speiler bilde-aspect så preview matcher final-output
+            const aspectClass =
+              p.aspect_ratio === "16:9"
+                ? "aspect-video w-44"
+                : p.aspect_ratio === "4:5"
+                  ? "aspect-[4/5] w-24"
+                  : "aspect-square w-28";
+            return (
+              <div
+                key={`ai-${i}`}
+                className="flex-shrink-0 flex flex-col items-center gap-1"
+                title={`AI-generert ${p.aspect_ratio ?? ""} ${p.platform ?? ""}`}
+              >
+                <div
+                  className={`${aspectClass} bg-gray-900 rounded overflow-hidden border border-amber-700/50 relative`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.public_url} alt="" className="w-full h-full object-cover" />
+                  {platformLabel && (
+                    <span className="absolute top-1 left-1 px-1.5 py-0.5 text-[10px] font-bold bg-black/70 text-amber-300 rounded">
+                      {platformLabel}
+                    </span>
+                  )}
+                </div>
+                {p.aspect_ratio && (
+                  <span className="text-[10px] text-gray-500">{p.aspect_ratio}</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
