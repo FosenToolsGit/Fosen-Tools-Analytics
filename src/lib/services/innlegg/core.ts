@@ -182,7 +182,9 @@ function assetDataUrl(relPath: string): string | null {
 const wordmarkCache: Record<string, string | null> = {};
 export function wordmarkDataUrl(variant: "white" | "ink"): string | null {
   if (wordmarkCache[variant] !== undefined) return wordmarkCache[variant];
-  const v = assetDataUrl(`public/social/brand-assets/ft-wordmark-${variant}.png`);
+  // Offisiell rød-boks-logo — fungerer på alle bakgrunner, så «white»/«ink»
+  // gir samme logo (variant beholdt for API-kompatibilitet).
+  const v = assetDataUrl("public/social/brand-assets/ft-logo.svg");
   wordmarkCache[variant] = v;
   return v;
 }

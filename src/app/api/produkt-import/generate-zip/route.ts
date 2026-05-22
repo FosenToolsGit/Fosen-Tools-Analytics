@@ -51,6 +51,8 @@ interface ImportProductInput {
   produktgruppe1?: string;
   produktgruppe2?: string;
   produktgruppe3?: string;
+  /** Per-produkt opprinnelsesland (overstyrer defaults.opprinnelsesland) */
+  opprinnelsesland?: string;
 }
 
 interface EmbeddedImage {
@@ -349,7 +351,7 @@ function buildRow(
     "Frakt%": defaults.frakt ?? null,
     "Toll%": defaults.toll ?? null,
     "Produsent": defaults.produsent ?? null,
-    "Opprinnelsesland": defaults.opprinnelsesland ?? null,
+    "Opprinnelsesland": p.opprinnelsesland || defaults.opprinnelsesland || null,
     "Lagernavn": defaults.lagernavn ?? null,
     "Lagerstatus": null,
     "ListePris1": isParent ? null : (p.listePris1 ?? null),

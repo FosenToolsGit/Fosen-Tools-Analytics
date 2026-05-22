@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Download, Loader2, Plus, Trash2, Link as LinkIcon, ClipboardPaste, Layers, ChevronDown, Upload, Search, AlertTriangle } from "lucide-react";
+import { Download, Loader2, Plus, Trash2, Link as LinkIcon, ClipboardPaste, Layers, ChevronDown, Upload, Search, AlertTriangle, PackageX, ListChecks } from "lucide-react";
 import hierarki from "@/lib/data/produktgruppe-hierarki.json";
+import { detectSB, type SBConfidence } from "@/lib/services/sb-detect";
 
 const HIERARKI = hierarki as Record<string, Record<string, string[]>>;
 
@@ -37,6 +38,12 @@ interface SupplierProduct {
   suggestedG1: string | null;
   suggestedG2: string | null;
   suggestedG3: string | null;
+  rawName: string;
+  isSB: boolean;
+  sbConfidence: SBConfidence;
+  sbReason: string;
+  /** Produktet finnes allerede i Multicase (matchet mot «MC sortiment»-arket). */
+  alleredeInne: boolean;
 }
 
 /**
@@ -90,6 +97,12 @@ interface ProductRow {
   produktgruppe1: string;
   produktgruppe2: string;
   produktgruppe3: string;
+  /** Ufiltrert leverandør-navn (før kompaktering) — bevart for SB-deteksjon. */
+  rawName: string;
+  /** Per-produkt opprinnelsesland (overstyrer defaults.opprinnelsesland). */
+  opprinnelsesland: string;
+  /** Operatør har manuelt avvist SB-flagget — produktet regnes ikke som SB. */
+  sbCleared: boolean;
 }
 
 interface VariantGroup {
@@ -167,7 +180,20 @@ function newRow(): ProductRow {
     produktgruppe1: "",
     produktgruppe2: "",
     produktgruppe3: "",
+    rawName: "",
+    opprinnelsesland: "",
+    sbCleared: false,
   };
+}
+
+/** SB-deteksjon for en produktrad — kjøres på rå + redigerte felter. */
+function rowSB(p: ProductRow) {
+  return detectSB({
+    rawName: p.rawName,
+    name: p.name,
+    url: p.sourceUrl,
+    marketing: p.produktinformasjon,
+  });
 }
 
 function newGroup(): VariantGroup {
@@ -212,6 +238,11 @@ export default function ProduktImportPage() {
   const [supplierStatus, setSupplierStatus] = useState<{ kind: "error" | "success" | "info"; msg: string } | null>(null);
   const supplierFileInputRef = useRef<HTMLInputElement>(null);
   const [hideSB, setHideSB] = useState(true);
+  const [hideInne, setHideInne] = useState(true);
+
+  // EK1 produktdata-opplasting (Wera media-eksport)
+  const [ek1Loading, setEk1Loading] = useState(false);
+  const ek1FileInputRef = useRef<HTMLInputElement>(null);
 
   // Last opp tidligere generert XLSX (gjenoppta arbeid)
   const [resumeLoading, setResumeLoading] = useState(false);
@@ -228,6 +259,10 @@ export default function ProduktImportPage() {
   const [deepScrapeProgress, setDeepScrapeProgress] = useState<{ done: number; total: number } | null>(null);
   const [reclassifyLoading, setReclassifyLoading] = useState(false);
   const [sortNeedsWork, setSortNeedsWork] = useState(true);
+  // SB-oppryddingsfase
+  const [sbPanelOpen, setSbPanelOpen] = useState(false);
+  // Produkt som er «hoppet til» fra et panel — markeres kort med ring
+  const [highlightProdId, setHighlightProdId] = useState<string | null>(null);
 
   function updateDefault(field: keyof Defaults, v: string) {
     setDefaults((d) => ({ ...d, [field]: v }));
@@ -259,6 +294,26 @@ export default function ProduktImportPage() {
         g.id === gid ? { ...g, products: g.products.filter((p) => p.id !== pid) } : g
       )
     );
+  }
+
+  /** Scroller til en produktrad i editoren og markerer den kort. */
+  function goToProduct(id: string) {
+    setHighlightProdId(id);
+    requestAnimationFrame(() => {
+      document.getElementById(`ftprod-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    window.setTimeout(() => setHighlightProdId((cur) => (cur === id ? null : cur)), 2600);
+  }
+
+  /** Fjerner flere produkter på tvers av grupper (brukes av SB-oppryddingen). */
+  function removeProducts(ids: Set<string>) {
+    if (ids.size === 0) return;
+    setGroups((gs) => {
+      const next = gs
+        .map((g) => ({ ...g, products: g.products.filter((p) => !ids.has(p.id)) }))
+        .filter((g) => g.products.length > 0);
+      return next.length > 0 ? next : [newGroup()];
+    });
   }
 
   function addGroup() {
@@ -400,6 +455,7 @@ export default function ProduktImportPage() {
           r.produktgruppe2 = str("Produktgruppe 2");
           r.produktgruppe3 = str("Produktgruppe 3");
           r.variantverdi1 = str("Variantverdi1");
+          r.opprinnelsesland = str("Opprinnelsesland");
           return r;
         });
 
@@ -580,6 +636,9 @@ export default function ProduktImportPage() {
             produktgruppe1: p.produktgruppe1 || scraped.suggestedG1 || p.produktgruppe1,
             produktgruppe2: p.produktgruppe2 || scraped.suggestedG2 || p.produktgruppe2,
             produktgruppe3: p.produktgruppe3 || scraped.suggestedG3 || p.produktgruppe3,
+            // Backfill rånavn fra Wera-siden (ender på « SB» for SB-varer) så
+            // SB-oppryddingsfasen fanger produkter importert uten prisliste
+            rawName: p.rawName || scraped.name || p.rawName,
             imageSourceUrl: scraped.imageUrl || p.imageSourceUrl,
             // SEO-HTML overstyrer kun hvis produktinfo er tom (operatør kan ha redigert)
             produktinformasjon: p.produktinformasjon.trim()
@@ -756,11 +815,104 @@ export default function ProduktImportPage() {
       const data = await res.json();
       setSupplierProducts(data.products as SupplierProduct[]);
       setSupplierOpen(true);
-      setSupplierStatus({ kind: "success", msg: `Leste ${data.count} produkter fra ${supplierPreset.toUpperCase()}-prisliste` });
+      const inne = data.alleredeInneCount ?? 0;
+      const mc = data.mcSortimentCount ?? 0;
+      const inneMsg = mc > 0
+        ? ` «MC sortiment»-arket har ${mc} produkter — ${inne} av prislisten er allerede inne (skjult).`
+        : "";
+      setSupplierStatus({
+        kind: "success",
+        msg: `Leste ${data.count} produkter fra ${supplierPreset.toUpperCase()}-prisliste.${inneMsg}`,
+      });
     } catch (err) {
       setSupplierStatus({ kind: "error", msg: `Network-feil: ${err instanceof Error ? err.message : "ukjent"}` });
     } finally {
       setSupplierLoading(false);
+    }
+  }
+
+  /**
+   * Beriker importerte produktrader med Wera EK1-produktdata (media-eksport).
+   * Matches på leverandør-produktnummer ↔ EK1 `product_id`.
+   */
+  async function handleEk1File(file: File) {
+    setEk1Loading(true);
+    setSupplierStatus({ kind: "info", msg: `Leser EK1-produktdata «${file.name}»...` });
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/produkt-import/parse-ek1", {
+        method: "POST",
+        body: fd,
+        credentials: "same-origin",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setSupplierStatus({ kind: "error", msg: `EK1-feil: ${err.error ?? `HTTP ${res.status}`}` });
+        return;
+      }
+      const data = (await res.json()) as {
+        count: number;
+        items: Array<{
+          code: string;
+          ean: string;
+          produktinformasjonHtml: string;
+          opprinnelsesland: string;
+          bildeFilnavn: string;
+          suggestedG1: string | null;
+          suggestedG2: string | null;
+          suggestedG3: string | null;
+        }>;
+      };
+      const norm = (c: string) => {
+        let s = c.trim();
+        if (/^\d+$/.test(s) && s.length < 11) s = s.padStart(11, "0");
+        return s;
+      };
+      const byCode = new Map<string, (typeof data.items)[number]>();
+      for (const it of data.items) byCode.set(norm(it.code), it);
+
+      // Tell treff på gjeldende produktrader
+      let merged = 0;
+      for (const g of groups) {
+        for (const p of g.products) {
+          if (byCode.has(norm(p.leverandorProdNr))) merged++;
+        }
+      }
+
+      setGroups((gs) =>
+        gs.map((g) => ({
+          ...g,
+          products: g.products.map((p) => {
+            const it = byCode.get(norm(p.leverandorProdNr));
+            if (!it) return p;
+            const hasGrupper = Boolean(p.produktgruppe1 || p.produktgruppe2 || p.produktgruppe3);
+            return {
+              ...p,
+              // EK1s rike HTML-beskrivelse er autoritativ — overstyrer marketing-teksten
+              produktinformasjon: it.produktinformasjonHtml || p.produktinformasjon,
+              opprinnelsesland: it.opprinnelsesland || p.opprinnelsesland,
+              bildeFilnavn: it.bildeFilnavn || p.bildeFilnavn,
+              ean: p.ean || it.ean,
+              // Fyll produktgrupper kun hvis de er tomme (ikke overstyr operatør)
+              produktgruppe1: hasGrupper ? p.produktgruppe1 : it.suggestedG1 ?? p.produktgruppe1,
+              produktgruppe2: hasGrupper ? p.produktgruppe2 : it.suggestedG2 ?? p.produktgruppe2,
+              produktgruppe3: hasGrupper ? p.produktgruppe3 : it.suggestedG3 ?? p.produktgruppe3,
+            };
+          }),
+        }))
+      );
+
+      setSupplierStatus({
+        kind: merged > 0 ? "success" : "info",
+        msg: `EK1: ${data.count} produkter i fila — ${merged} matchet og beriket (HTML-beskrivelse, opprinnelsesland, bilde).${
+          merged === 0 ? " Importer produkter fra prislisten først." : ""
+        }`,
+      });
+    } catch (err) {
+      setSupplierStatus({ kind: "error", msg: `Network-feil: ${err instanceof Error ? err.message : "ukjent"}` });
+    } finally {
+      setEk1Loading(false);
     }
   }
 
@@ -787,6 +939,10 @@ export default function ProduktImportPage() {
       r.produktgruppe1 = sp.suggestedG1 ?? "";
       r.produktgruppe2 = sp.suggestedG2 ?? "";
       r.produktgruppe3 = sp.suggestedG3 ?? "";
+      // Bevar rånavnet så SB-oppryddingsfasen kan dobbeltsjekke senere
+      r.rawName = sp.rawName;
+      // Per-produkt opprinnelsesland fra prislisten
+      r.opprinnelsesland = sp.opprinnelsesland;
       return r;
     });
 
@@ -889,6 +1045,7 @@ export default function ProduktImportPage() {
               produktgruppe1: p.produktgruppe1 || undefined,
               produktgruppe2: p.produktgruppe2 || undefined,
               produktgruppe3: p.produktgruppe3 || undefined,
+              opprinnelsesland: p.opprinnelsesland || undefined,
             })),
         })).filter((g) => g.products.length > 0 || g.parent),
       };
@@ -939,6 +1096,27 @@ export default function ProduktImportPage() {
     (sum, g) => sum + g.products.filter((p) => p.name.trim() && productRowQualityScore(p, defaults).score > 0).length,
     0
   );
+
+  /**
+   * SB-oppryddingsfase: kjører detectSB på nytt over alle tillagte produkter.
+   * 🔴 sure = trygt SB (kan masse-fjernes), 🟡 maybe = manuell vurdering.
+   */
+  const sbReview = useMemo(() => {
+    const sure: Array<{ groupId: string; p: ProductRow; reason: string }> = [];
+    const maybe: Array<{ groupId: string; p: ProductRow; reason: string }> = [];
+    for (const g of groups) {
+      for (const p of g.products) {
+        if (!p.name.trim()) continue;
+        if (p.sbCleared) continue; // operatør har avvist SB-flagget manuelt
+        const r = rowSB(p);
+        if (!r.isSB) continue;
+        if (r.confidence === "sure") sure.push({ groupId: g.id, p, reason: r.reason });
+        else maybe.push({ groupId: g.id, p, reason: r.reason });
+      }
+    }
+    return { sure, maybe };
+  }, [groups]);
+  const sbTotal = sbReview.sure.length + sbReview.maybe.length;
 
   /** Returnerer produkter for en gruppe, sortert etter score hvis sortNeedsWork = true */
   function sortedProducts(products: ProductRow[]): Array<{ p: ProductRow; pi: number; quality: ReturnType<typeof productRowQualityScore> }> {
@@ -1135,6 +1313,35 @@ export default function ProduktImportPage() {
           </div>
         </div>
 
+        {/* EK1 produktdata-opplaster */}
+        <div className="mt-3 pt-3 border-t border-purple-800/40 flex items-center justify-between gap-3">
+          <div className="text-xs text-purple-200/80">
+            <strong>EK1 produktdata:</strong> Last opp <code>EK1_product_data_no_*.xlsx</code> fra Wera media-eksport. Beriker importerte produkter med ferdig HTML-beskrivelse, opprinnelsesland og bildenavn — matches på produktnummer. Importer fra prislisten først.
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={ek1FileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleEk1File(f);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => ek1FileInputRef.current?.click()}
+              disabled={ek1Loading}
+              className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded text-sm whitespace-nowrap"
+            >
+              {ek1Loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {ek1Loading ? "Leser..." : "Last opp EK1 produktdata"}
+            </button>
+          </div>
+        </div>
+
         {supplierStatus && (
           <div className={`mt-2 px-3 py-2 rounded text-xs ${
             supplierStatus.kind === "error" ? "bg-red-900/40 border border-red-700/60 text-red-200" :
@@ -1162,6 +1369,8 @@ export default function ProduktImportPage() {
             onClose={() => setSupplierOpen(false)}
             hideSB={hideSB}
             onToggleHideSB={() => setHideSB((v) => !v)}
+            hideAlleredeInne={hideInne}
+            onToggleHideAlleredeInne={() => setHideInne((v) => !v)}
           />
         )}
       </section>
@@ -1180,6 +1389,17 @@ export default function ProduktImportPage() {
           </div>
           <div className="flex gap-2">
             <button
+              onClick={() => setSbPanelOpen((v) => !v)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm text-white ${sbTotal > 0 ? "bg-red-600/80 hover:bg-red-600" : "bg-gray-700 hover:bg-gray-600"}`}
+              title="Gå gjennom produktene på nytt og flagg SB-varer (selvbetjening/blister)"
+            >
+              <PackageX className="h-4 w-4" />
+              Dobbeltsjekk SB
+              {sbTotal > 0 && (
+                <span className="bg-red-900/80 text-red-100 rounded px-1.5 text-[10px] font-bold">{sbTotal}</span>
+              )}
+            </button>
+            <button
               onClick={() => setPasteOpen(!pasteOpen)}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white rounded text-sm"
             >
@@ -1195,6 +1415,82 @@ export default function ProduktImportPage() {
             </button>
           </div>
         </div>
+
+        {sbPanelOpen && (
+          <div className="bg-gray-900/60 border border-gray-700 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-purple-300" />
+                SB-gjennomgang — dobbeltsjekk før eksport
+              </h3>
+              <button onClick={() => setSbPanelOpen(false)} className="text-xs text-gray-400 hover:text-gray-200">Lukk</button>
+            </div>
+            {sbTotal === 0 ? (
+              <p className="text-sm text-green-300">✅ Ingen SB-produkter funnet blant {totalProducts} produkter.</p>
+            ) : (
+              <>
+                <p className="text-xs text-gray-400">
+                  SB = selvbetjening/blister-forpakning for butikk-display. Disse er som regel duplikater av bulk-varianten og bør ikke importeres.
+                </p>
+                {sbReview.sure.length > 0 && (
+                  <div className="border border-red-800/50 rounded overflow-hidden">
+                    <div className="flex items-center justify-between bg-red-950/50 px-3 py-2">
+                      <span className="text-sm font-semibold text-red-300">🔴 Sikre SB-produkter ({sbReview.sure.length})</span>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Fjern alle ${sbReview.sure.length} sikre SB-produkter?`)) {
+                            removeProducts(new Set(sbReview.sure.map((s) => s.p.id)));
+                          }
+                        }}
+                        className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-medium"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Fjern alle sikre SB
+                      </button>
+                    </div>
+                    <ul className="divide-y divide-gray-800 max-h-60 overflow-y-auto">
+                      {sbReview.sure.map(({ p, reason }) => (
+                        <li key={p.id} className="flex items-center gap-3 px-3 py-1.5 text-xs">
+                          <span className="text-white truncate flex-1" title={p.rawName || p.name}>{p.name || p.rawName}</span>
+                          <span className="text-gray-500 truncate w-44">{reason}</span>
+                          <button
+                            onClick={() => goToProduct(p.id)}
+                            className="px-1.5 py-0.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-200 whitespace-nowrap"
+                          >
+                            Gå til
+                          </button>
+                          <button onClick={() => removeProducts(new Set([p.id]))} className="text-red-400 hover:text-red-300 whitespace-nowrap">Fjern</button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {sbReview.maybe.length > 0 && (
+                  <div className="border border-amber-800/50 rounded overflow-hidden">
+                    <div className="bg-amber-950/50 px-3 py-2">
+                      <span className="text-sm font-semibold text-amber-300">🟡 Mulige SB — vurder manuelt ({sbReview.maybe.length})</span>
+                    </div>
+                    <ul className="divide-y divide-gray-800 max-h-60 overflow-y-auto">
+                      {sbReview.maybe.map(({ p, reason }) => (
+                        <li key={p.id} className="flex items-center gap-3 px-3 py-1.5 text-xs">
+                          <span className="text-white truncate flex-1" title={p.rawName || p.name}>{p.name || p.rawName}</span>
+                          <span className="text-amber-500/80 truncate w-44">{reason}</span>
+                          <button
+                            onClick={() => goToProduct(p.id)}
+                            className="px-1.5 py-0.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-200 whitespace-nowrap"
+                          >
+                            Gå til
+                          </button>
+                          <button onClick={() => removeProducts(new Set([p.id]))} className="text-red-400 hover:text-red-300 whitespace-nowrap">Fjern</button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {pasteOpen && (
           <div className="bg-blue-950/30 border border-blue-800/50 rounded p-4">
@@ -1258,7 +1554,11 @@ export default function ProduktImportPage() {
 
             <div className="space-y-3">
               {sortedProducts(group.products).map(({ p, pi, quality }) => (
-                <div key={p.id} className={`bg-gray-900 border rounded p-3 space-y-2 ${quality.score >= 100 ? "border-red-700/60" : quality.score >= 50 ? "border-amber-700/60" : quality.score > 0 ? "border-yellow-700/40" : "border-gray-800"}`}>
+                <div
+                  key={p.id}
+                  id={`ftprod-${p.id}`}
+                  className={`bg-gray-900 border rounded p-3 space-y-2 transition-all ${highlightProdId === p.id ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-gray-900" : ""} ${quality.score >= 100 ? "border-red-700/60" : quality.score >= 50 ? "border-amber-700/60" : quality.score > 0 ? "border-yellow-700/40" : "border-gray-800"}`}
+                >
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 w-8">#{pi + 1}</span>
                     {quality.score > 0 && (
@@ -1269,6 +1569,17 @@ export default function ProduktImportPage() {
                         <AlertTriangle className="h-4 w-4" />
                       </span>
                     )}
+                    {(() => {
+                      const sb = rowSB(p);
+                      return sb.isSB && !p.sbCleared ? (
+                        <span
+                          title={`SB-vare (${sb.confidence === "sure" ? "sikker" : "mulig"}): ${sb.reason}`}
+                          className={`inline-flex items-center gap-0.5 rounded px-1 text-[9px] font-semibold ${sb.confidence === "sure" ? "bg-red-900/70 text-red-300" : "bg-amber-900/70 text-amber-300"}`}
+                        >
+                          <PackageX className="h-3 w-3" />SB
+                        </span>
+                      ) : null;
+                    })()}
                     <div className="flex-1 flex gap-1">
                       <input
                         type="url"
@@ -1310,6 +1621,48 @@ export default function ProduktImportPage() {
                     )}
                   </div>
 
+                  {quality.score > 0 && (
+                    <div className="flex items-start gap-1.5 text-xs text-amber-300 bg-amber-950/40 border border-amber-800/40 rounded px-2 py-1">
+                      <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-px" />
+                      <span><strong>Trenger arbeid:</strong> {quality.issues.join(" · ")}</span>
+                    </div>
+                  )}
+                  {(() => {
+                    const sb = rowSB(p);
+                    if (!sb.isSB) return null;
+                    if (p.sbCleared) {
+                      return (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 px-2 py-1">
+                          <PackageX className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span>SB-flagg fjernet manuelt.</span>
+                          <button
+                            onClick={() => updateProduct(group.id, p.id, { sbCleared: false })}
+                            className="underline hover:text-gray-300"
+                          >
+                            Angre
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className={`flex items-start gap-1.5 text-xs rounded px-2 py-1 ${sb.confidence === "sure" ? "text-red-300 bg-red-950/40 border border-red-800/40" : "text-amber-300 bg-amber-950/40 border border-amber-800/40"}`}>
+                        <PackageX className="h-3.5 w-3.5 flex-shrink-0 mt-px" />
+                        <span className="flex-1">
+                          <strong>{sb.confidence === "sure" ? "Sikker SB-vare:" : "Mulig SB-vare:"}</strong> {sb.reason}
+                        </span>
+                        {sb.confidence === "maybe" && (
+                          <button
+                            onClick={() => updateProduct(group.id, p.id, { sbCleared: true })}
+                            className="px-1.5 py-0.5 rounded bg-amber-800/60 hover:bg-amber-700 text-amber-100 whitespace-nowrap"
+                            title="Marker at dette IKKE er en SB-vare — fjerner SB-flagget"
+                          >
+                            Ikke SB
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <LimitedField
                       label="Navn (Produktbeskrivelse 1)"
@@ -1348,6 +1701,12 @@ export default function ProduktImportPage() {
                     <Field label="Listepris" value={p.listePris1} onChange={(v) => updateProduct(group.id, p.id, { listePris1: v })} />
                     <Field label="Kolli" value={p.kolli} onChange={(v) => updateProduct(group.id, p.id, { kolli: v })} />
                     <Field label="Antall pr. forp." value={p.antallIKjopsforp} onChange={(v) => updateProduct(group.id, p.id, { antallIKjopsforp: v })} />
+                    <Field
+                      label="Opprinnelsesland"
+                      value={p.opprinnelsesland}
+                      onChange={(v) => updateProduct(group.id, p.id, { opprinnelsesland: v })}
+                      placeholder={defaults.opprinnelsesland || "f.eks. CZ"}
+                    />
                   </div>
 
                   {/* Per-produkt produktgrupper — overstyrer defaults */}
@@ -1502,6 +1861,8 @@ function SupplierTable({
   onClose,
   hideSB,
   onToggleHideSB,
+  hideAlleredeInne,
+  onToggleHideAlleredeInne,
 }: {
   products: SupplierProduct[];
   selected: Set<number>;
@@ -1514,13 +1875,16 @@ function SupplierTable({
   onClose: () => void;
   hideSB: boolean;
   onToggleHideSB: () => void;
+  hideAlleredeInne: boolean;
+  onToggleHideAlleredeInne: () => void;
 }) {
-  // SB = Self-service Blister (oppheng-pakning for butikk-display); filtreres bort som default
-  const SB_PATTERN = /\bSB\b/i;
+  // SB = Selbstbedienung / selvbetjening (blister-/opphengsforpakning for butikk).
+  // Flagget settes ved parsing (detectSB på rå navn + URL-slug). Skjules som default.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = products;
-    if (hideSB) list = list.filter((p) => !SB_PATTERN.test(p.name) && !SB_PATTERN.test(p.produktinformasjon));
+    if (hideSB) list = list.filter((p) => !p.isSB);
+    if (hideAlleredeInne) list = list.filter((p) => !p.alleredeInne);
     if (q) {
       list = list.filter((p) =>
         p.name.toLowerCase().includes(q) ||
@@ -1530,11 +1894,9 @@ function SupplierTable({
       );
     }
     return list;
-  }, [products, search, hideSB]);
-  const hiddenSbCount = useMemo(
-    () => products.filter((p) => SB_PATTERN.test(p.name) || SB_PATTERN.test(p.produktinformasjon)).length,
-    [products]
-  );
+  }, [products, search, hideSB, hideAlleredeInne]);
+  const hiddenSbCount = useMemo(() => products.filter((p) => p.isSB).length, [products]);
+  const alleredeInneCount = useMemo(() => products.filter((p) => p.alleredeInne).length, [products]);
 
   const visible = filtered.slice(0, 200);
 
@@ -1554,6 +1916,10 @@ function SupplierTable({
         <label className="flex items-center gap-1 text-xs text-gray-300 cursor-pointer select-none whitespace-nowrap" title="SB = Self-service Blister (oppheng-pakning for butikk)">
           <input type="checkbox" checked={hideSB} onChange={onToggleHideSB} />
           Skjul SB {hiddenSbCount > 0 && <span className="text-gray-500">({hiddenSbCount})</span>}
+        </label>
+        <label className="flex items-center gap-1 text-xs text-gray-300 cursor-pointer select-none whitespace-nowrap" title="Produkter vi allerede har i Multicase (fra «MC sortiment»-arket)">
+          <input type="checkbox" checked={hideAlleredeInne} onChange={onToggleHideAlleredeInne} />
+          Skjul allerede inne {alleredeInneCount > 0 && <span className="text-gray-500">({alleredeInneCount})</span>}
         </label>
         <button onClick={() => onSelectAllFiltered(filtered.map((p) => p.idx))} className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs">
           Velg alle synlige ({filtered.length})
@@ -1593,7 +1959,25 @@ function SupplierTable({
                     <input type="checkbox" checked={isSel} onChange={() => onToggle(p.idx)} onClick={(e) => e.stopPropagation()} />
                   </td>
                   <td className="px-2 py-1 font-mono text-gray-300">{p.leverandorProdNr}</td>
-                  <td className="px-2 py-1 text-white">{p.name}</td>
+                  <td className="px-2 py-1 text-white">
+                    {p.name}
+                    {p.isSB && (
+                      <span
+                        title={p.sbReason}
+                        className={`ml-1.5 inline-flex items-center gap-0.5 rounded px-1 text-[9px] font-semibold align-middle ${p.sbConfidence === "sure" ? "bg-red-900/70 text-red-300" : "bg-amber-900/70 text-amber-300"}`}
+                      >
+                        <PackageX className="h-2.5 w-2.5" />SB
+                      </span>
+                    )}
+                    {p.alleredeInne && (
+                      <span
+                        title="Finnes allerede i Multicase («MC sortiment»)"
+                        className="ml-1.5 inline-flex items-center rounded px-1 text-[9px] font-semibold align-middle bg-sky-900/70 text-sky-300"
+                      >
+                        I MC
+                      </span>
+                    )}
+                  </td>
                   <td className="px-2 py-1 text-gray-500">{p.suggestedG3 ? <span className="text-purple-300">{p.suggestedG1}/{p.suggestedG2}/{p.suggestedG3}</span> : <span className="italic">(ukjent)</span>}</td>
                   <td className="px-2 py-1 text-gray-400">{p.variantverdi}</td>
                   <td className="px-2 py-1 text-right text-gray-300">{p.kostpris != null ? `${p.kostpris.toFixed(2)} ${p.kostvaluta}` : "—"}</td>

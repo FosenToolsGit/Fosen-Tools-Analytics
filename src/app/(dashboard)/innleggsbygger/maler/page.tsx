@@ -3,6 +3,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import VideoBuilder from "./video-builder";
+
 /**
  * Innleggsmaler — 108-layout design-galleri.
  *
@@ -12,6 +14,16 @@ import { useEffect, useMemo, useState } from "react";
  *
  * Hvert skjema er forhåndsutfylt med design-handoffens demo-verdier,
  * så «Generér» fungerer umiddelbart — deretter kan brukeren justere.
+ *
+ * TODO (innleggsbygger):
+ *  1. Multi-bilde-LAYOUTS. Bilde-pool er bygget (last opp flere bilder, bli
+ *     valgbare i alle bilde-felt) — men hver av de 108 layoutene viser fortsatt
+ *     bare ETT bilde. Designe nye layouts som faktisk viser flere bilder:
+ *     kollasje, før/etter, 2-/3-/4-bilde-grid.
+ *  2. Slå sammen /innleggsbygger/maler og /innleggsbygger/poster. `maler` er
+ *     reelt en superset av `poster` (samme tilstedeværelse-maler + produkt-
+ *     maler + A/B/C + 3 format). Vurder å fjerne `poster` eller la den bli
+ *     en «enkel modus» av samme system, så vi slipper å vedlikeholde to.
  */
 
 type Mal =
@@ -26,7 +38,8 @@ type Mal =
   | "stand"
   | "ansatt"
   | "sitat"
-  | "milepael";
+  | "milepael"
+  | "galleri";
 type Variant = "A" | "B" | "C";
 type Aspect = "fb" | "ig" | "li";
 
@@ -341,6 +354,26 @@ const MALER: Record<Mal, MalDef> = {
       },
     ],
   },
+  galleri: {
+    label: "Bildevegg",
+    desc: "Flere bilder i kollasje / grid",
+    fields: [
+      t("eyebrow", "Eyebrow"),
+      t("headline", "Overskrift"),
+      t("accent", "Aksent-ord (rødt)"),
+      t("caption", "Bildetekst", "textarea"),
+      t("url", "CTA / URL"),
+      {
+        kind: "array",
+        key: "images",
+        label: "Bilder (2–6)",
+        cols: [{ key: "photo", label: "Bilde", type: "text" }],
+        empty: () => ({ photo: "" }),
+        min: 2,
+        max: 6,
+      },
+    ],
+  },
 };
 
 const MAL_ORDER: Mal[] = [
@@ -356,6 +389,7 @@ const MAL_ORDER: Mal[] = [
   "ansatt",
   "sitat",
   "milepael",
+  "galleri",
 ];
 
 const VARIANTS: { value: Variant; label: string; desc: string }[] = [
@@ -574,6 +608,18 @@ const DEMO: Record<Mal, FormState> = {
       ],
     },
   },
+  galleri: {
+    scalars: {
+      eyebrow: "FRA DAGEN",
+      headline: "Bilder fra besøket",
+      accent: "besøket",
+      caption: "Et knippe bilder fra dagen.",
+      url: "fosen-tools.no",
+    },
+    arrays: {
+      images: [{ photo: "" }, { photo: "" }, { photo: "" }, { photo: "" }],
+    },
+  },
 };
 
 /** Dyp-klon av en FormState så DEMO ikke muteres. */
@@ -668,6 +714,14 @@ function buildData(mal: Mal, state: FormState): Record<string, unknown> {
 
   if (mal === "milepael") {
     // timeline forblir { year, label }[] — matcher MilepaelData.
+  }
+
+  if (mal === "galleri") {
+    // images: [{ photo }] → string[] (kun ikke-tomme)
+    const imgs = data.images as { photo?: string }[] | undefined;
+    if (imgs) {
+      data.images = imgs.map((r) => (r.photo ?? "").trim()).filter(Boolean);
+    }
   }
 
   return data;
@@ -802,7 +856,98 @@ interface Idea {
   data?: Record<string, unknown>;
 }
 
+/** Ferdig innholdspakke — captions + UTM + alt-tekst per plattform. */
+interface InnholdPakke {
+  campaign: string;
+  facebook: { caption: string; altText: string; utm: string };
+  instagram: { caption: string; hashtags: string; altText: string };
+  linkedin: { caption: string; hashtags: string; altText: string; utm: string };
+}
+
+/** Liten kopier-knapp med kort «✓ Kopiert»-bekreftelse. */
+function CopyButton({ text, label = "Kopier" }: { text: string; label?: string }) {
+  const [done, setDone] = useState(false);
+  if (!text) return null;
+  return (
+    <button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setDone(true);
+          setTimeout(() => setDone(false), 1500);
+        } catch {
+          /* clipboard utilgjengelig */
+        }
+      }}
+      className="text-[11px] px-2 py-0.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-200 whitespace-nowrap"
+    >
+      {done ? "✓ Kopiert" : label}
+    </button>
+  );
+}
+
+/** Caption-kort for én plattform i innholdspakken. */
+function PlatformCard({
+  title,
+  accent,
+  caption,
+  hashtags,
+  altText,
+  utm,
+}: {
+  title: string;
+  accent: string;
+  caption: string;
+  hashtags?: string;
+  altText?: string;
+  utm?: string;
+}) {
+  const rows = Math.min(12, Math.max(3, caption.split("\n").length + 1));
+  return (
+    <div className="border border-gray-700 rounded-lg bg-gray-900/60 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className={`text-sm font-semibold ${accent}`}>{title}</span>
+        <CopyButton text={caption} label="Kopier caption" />
+      </div>
+      <textarea
+        readOnly
+        value={caption}
+        rows={rows}
+        className="w-full px-2 py-1.5 bg-gray-950 border border-gray-800 rounded text-gray-200 text-xs"
+      />
+      {hashtags ? (
+        <div className="mt-2 flex items-start gap-2">
+          <span className="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+            Hashtags{title === "Instagram" ? " (1. kommentar)" : ""}:
+          </span>
+          <span className="text-[11px] text-gray-300 flex-1">{hashtags}</span>
+          <CopyButton text={hashtags} />
+        </div>
+      ) : null}
+      {altText ? (
+        <div className="mt-2 flex items-start gap-2">
+          <span className="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+            Alt-tekst:
+          </span>
+          <span className="text-[11px] text-gray-300 flex-1">{altText}</span>
+          <CopyButton text={altText} />
+        </div>
+      ) : null}
+      {utm ? (
+        <div className="mt-2 flex items-start gap-2">
+          <span className="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+            UTM-lenke:
+          </span>
+          <span className="text-[11px] text-blue-300 flex-1 break-all">{utm}</span>
+          <CopyButton text={utm} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function InnleggsmalerPage() {
+  const [mode, setMode] = useState<"bilde" | "video">("bilde");
   const [mal, setMal] = useState<Mal>("produkt-single");
   const [variant, setVariant] = useState<Variant>("A");
   const [aspect, setAspect] = useState<Aspect>("fb");
@@ -816,12 +961,23 @@ export default function InnleggsmalerPage() {
   const [error, setError] = useState<string | null>(null);
   // idémyldring
   const [ideUrl, setIdeUrl] = useState("");
+  const [ideBrief, setIdeBrief] = useState("");
   const [ideLoading, setIdeLoading] = useState(false);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [sourceImages, setSourceImages] = useState<string[]>([]);
+  // bilde-pool — bilder lastet opp som blir tilgjengelig i alle bilde-velgere
+  const [pool, setPool] = useState<string[]>([]);
+  const [poolBusy, setPoolBusy] = useState(false);
+  // innholdspakke (captions + UTM + alt-tekst)
+  const [destUrl, setDestUrl] = useState("");
+  const [innhold, setInnhold] = useState<InnholdPakke | null>(null);
+  const [innholdLoading, setInnholdLoading] = useState(false);
   // produkt-URL-import
   const [prodUrl, setProdUrl] = useState("");
   const [prodLoading, setProdLoading] = useState(false);
+
+  // Alle bilder tilgjengelig i bilde-velgerne: side-bilder + opplastet pool
+  const pickerImages = useMemo(() => [...sourceImages, ...pool], [sourceImages, pool]);
 
   const def = MALER[mal];
   const state = forms[mal];
@@ -992,17 +1148,19 @@ export default function InnleggsmalerPage() {
    * bruker før du laster ned.
    */
   useEffect(() => {
+    if (mode !== "bilde") return;
     const id = setTimeout(() => {
       void generate();
     }, 650);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mal, variant, aspect, forms]);
+  }, [mode, mal, variant, aspect, forms]);
 
-  /** Idémyldring — scrape side + la Gemini foreslå ferdige post-ideer. */
+  /** Idémyldring — brief og/eller scrape side, la Gemini foreslå post-ideer. */
   async function myldre() {
     const url = ideUrl.trim();
-    if (!url) return;
+    const brief = ideBrief.trim();
+    if (!url && !brief) return;
     setIdeLoading(true);
     setError(null);
     setIdeas([]);
@@ -1010,13 +1168,13 @@ export default function InnleggsmalerPage() {
       const res = await fetch("/api/innleggsbygger/maler-ideer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: url || undefined, brief: brief || undefined }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Idémyldring feilet");
       const got = Array.isArray(json.ideas) ? (json.ideas as Idea[]) : [];
       if (got.length === 0)
-        throw new Error("Ingen ideer kom tilbake — prøv en annen URL");
+        throw new Error("Ingen ideer kom tilbake — prøv en annen brief/URL");
       setIdeas(got.filter((i) => i && MALER[i.mal]));
       setSourceImages(
         Array.isArray(json.source?.images)
@@ -1031,7 +1189,7 @@ export default function InnleggsmalerPage() {
   }
 
   /** Velg en idé — sett arketype + retning og fyll skjemaet. */
-  function applyIdea(idea: Idea) {
+  function applyIdea(idea: Idea, ideaIdx = 0) {
     const m = idea.mal;
     const malDef = MALER[m];
     if (!malDef) return;
@@ -1040,7 +1198,11 @@ export default function InnleggsmalerPage() {
       const base = cloneState(DEMO[m]);
       for (const f of malDef.fields) {
         if (f.kind === "scalar") {
-          if (f.key === "photo") continue; // bilde velges manuelt
+          if (f.key === "photo") {
+            // Auto-tildel et bilde fra pool-en (round-robin per idé)
+            if (pool.length > 0) base.scalars.photo = pool[ideaIdx % pool.length];
+            continue;
+          }
           const v = d[f.key];
           if (typeof v === "string" && v.trim()) base.scalars[f.key] = v;
         } else {
@@ -1063,6 +1225,10 @@ export default function InnleggsmalerPage() {
           }
         }
       }
+      // Bildevegg: fyll bilde-radene fra pool-en hvis den har bilder
+      if (m === "galleri" && pool.length > 0) {
+        base.arrays.images = pool.slice(0, 6).map((u) => ({ photo: u }));
+      }
       return { ...prev, [m]: base };
     });
     setMal(m);
@@ -1074,6 +1240,50 @@ export default function InnleggsmalerPage() {
     }
   }
 
+  /** Last opp flere bilder til bilde-poolen. */
+  async function addToPool(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setPoolBusy(true);
+    try {
+      const urls: string[] = [];
+      for (const f of Array.from(files)) {
+        try {
+          urls.push(await fileToDataUrl(f));
+        } catch {
+          /* hopp over ugyldig bildefil */
+        }
+      }
+      if (urls.length > 0) setPool((prev) => [...prev, ...urls]);
+    } finally {
+      setPoolBusy(false);
+    }
+  }
+
+  /** Generer innholdspakke — captions, UTM-lenker og alt-tekst. */
+  async function genererInnhold() {
+    setInnholdLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/innleggsbygger/maler-innhold", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brief: ideBrief.trim() || undefined,
+          mal,
+          data: buildData(mal, state),
+          destinationUrl: destUrl.trim() || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Innholdsgenerering feilet");
+      setInnhold(json as InnholdPakke);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Innholdsgenerering feilet");
+    } finally {
+      setInnholdLoading(false);
+    }
+  }
+
   const inputCls =
     "w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm";
   const labelCls = "text-xs text-gray-400 block mb-1";
@@ -1081,24 +1291,57 @@ export default function InnleggsmalerPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold text-white mb-1">Innleggsmaler</h1>
-      <p className="text-sm text-gray-400 mb-6">
+      <p className="text-sm text-gray-400 mb-4">
         108 ferdige design-layouts — 12 arketyper × 3 retninger × 3 format.
         Velg en mal, juster feltene (alt er forhåndsutfylt), generér.
       </p>
 
+      {/* Modus — stillbilde eller video */}
+      <div className="flex gap-2 mb-6">
+        {(
+          [
+            { v: "bilde", label: "🖼️ Bilde" },
+            { v: "video", label: "🎬 Video" },
+          ] as const
+        ).map((m) => (
+          <button
+            key={m.v}
+            onClick={() => setMode(m.v)}
+            className={`px-4 py-2 rounded border text-sm font-semibold transition-colors ${
+              mode === m.v
+                ? "border-red-500 bg-red-500/10 text-white"
+                : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-600"
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "video" ? (
+        <VideoBuilder />
+      ) : (
+       <>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6">
         {/* ── Venstre: konfig ── */}
         <div className="space-y-5">
           {/* Idémyldring */}
           <div className="border border-red-500/30 bg-red-500/5 rounded-lg p-4">
             <label className={labelCls}>
-              💡 Idémyldring — lim inn en side, få ferdige post-forslag
+              💡 Idémyldring — beskriv hva innlegget skal handle om, og/eller lim inn en side
             </label>
+            <textarea
+              value={ideBrief}
+              onChange={(e) => setIdeBrief(e.target.value)}
+              rows={2}
+              placeholder="Brief: f.eks. «Vi har levert skreddersydd HDFI-koffert til Lufttransport — vis fram jobben med stolthet»"
+              className={inputCls + " mb-2"}
+            />
             <div className="flex gap-2">
               <input
                 value={ideUrl}
                 onChange={(e) => setIdeUrl(e.target.value)}
-                placeholder="https://fosen-tools.no/hdfi"
+                placeholder="(valgfritt) https://fosen-tools.no/hdfi"
                 className={inputCls}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") myldre();
@@ -1106,7 +1349,7 @@ export default function InnleggsmalerPage() {
               />
               <button
                 onClick={myldre}
-                disabled={ideLoading || !ideUrl.trim()}
+                disabled={ideLoading || (!ideUrl.trim() && !ideBrief.trim())}
                 className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 rounded text-white text-sm font-semibold whitespace-nowrap"
               >
                 {ideLoading ? "Myldrer…" : "Myldre ideer"}
@@ -1122,7 +1365,7 @@ export default function InnleggsmalerPage() {
                 {ideas.map((idea, i) => (
                   <button
                     key={i}
-                    onClick={() => applyIdea(idea)}
+                    onClick={() => applyIdea(idea, i)}
                     className="text-left border border-gray-700 bg-gray-900 hover:border-red-500 rounded p-3 transition-colors"
                   >
                     <span className="inline-block text-[10px] font-semibold uppercase tracking-wide text-red-400 bg-red-500/10 rounded px-1.5 py-0.5 mb-1">
@@ -1159,6 +1402,49 @@ export default function InnleggsmalerPage() {
                 </div>
               </div>
             )}
+
+            {/* Bilde-pool — opplastede bilder tilgjengelig i alle bilde-velgere */}
+            <div className="mt-3 border-t border-red-500/20 pt-3">
+              <label className="text-[11px] text-gray-500 block mb-1">
+                🖼️ Bilde-pool — last opp bilder du vil bruke. De blir valgbare i
+                alle Bilde-felt, og fordeles automatisk når du tar i bruk idéer.
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  addToPool(e.target.files);
+                  e.target.value = "";
+                }}
+                className="text-xs text-gray-400"
+              />
+              {poolBusy && (
+                <span className="text-xs text-gray-400 ml-2">Laster opp …</span>
+              )}
+              {pool.length > 0 && (
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {pool.map((u, i) => (
+                    <div key={i} className="relative">
+                      <img
+                        src={u}
+                        alt=""
+                        className="h-12 w-12 object-cover rounded border border-gray-700"
+                      />
+                      <button
+                        onClick={() =>
+                          setPool((p) => p.filter((_, j) => j !== i))
+                        }
+                        className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-500 text-white rounded-full w-4 h-4 text-[10px] leading-none flex items-center justify-center"
+                        aria-label="Fjern bilde"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Arketype-velger */}
@@ -1300,7 +1586,7 @@ export default function InnleggsmalerPage() {
                       <ImagePicker
                         value={val}
                         onPick={(v) => patchScalar(f.key, v)}
-                        sourceImages={sourceImages}
+                        sourceImages={pickerImages}
                       />
                     ) : f.type === "textarea" ? (
                       <textarea
@@ -1358,7 +1644,7 @@ export default function InnleggsmalerPage() {
                                 onPick={(v) =>
                                   patchArrayCell(f.key, ri, c.key, v)
                                 }
-                                sourceImages={sourceImages}
+                                sourceImages={pickerImages}
                               />
                             ) : (
                               <input
@@ -1451,6 +1737,68 @@ export default function InnleggsmalerPage() {
           )}
         </div>
       </div>
+
+      {/* ── Innholdspakke — captions + UTM + alt-tekst ── */}
+      <div className="mt-6 border border-red-500/30 bg-red-500/5 rounded-lg p-4">
+        <label className={labelCls}>
+          📝 Generer innhold — ferdige captions for Facebook, LinkedIn og
+          Instagram med UTM-lenker og alt-tekst
+        </label>
+        <div className="flex gap-2 mb-1">
+          <input
+            value={destUrl}
+            onChange={(e) => setDestUrl(e.target.value)}
+            placeholder="Lenke-mål for FB/LinkedIn (https://fosen-tools.no/…) — valgfritt"
+            className={inputCls}
+          />
+          <button
+            onClick={genererInnhold}
+            disabled={innholdLoading}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 rounded text-white text-sm font-semibold whitespace-nowrap"
+          >
+            {innholdLoading ? "Genererer…" : "Generer innhold"}
+          </button>
+        </div>
+        <p className="text-[11px] text-gray-500">
+          Bruker briefen + det genererte innlegget. UTM-lenker lages for Facebook
+          og LinkedIn — Instagram får ingen (lenker er ikke klikkbare der).
+        </p>
+        {innhold && (
+          <div className="mt-3 space-y-3">
+            {innhold.campaign && (
+              <div className="text-[11px] text-gray-500">
+                UTM-kampanje:{" "}
+                <span className="text-gray-300 font-mono">
+                  {innhold.campaign}
+                </span>
+              </div>
+            )}
+            <PlatformCard
+              title="Facebook"
+              accent="text-blue-400"
+              caption={innhold.facebook.caption}
+              utm={innhold.facebook.utm}
+            />
+            <PlatformCard
+              title="LinkedIn"
+              accent="text-sky-400"
+              caption={innhold.linkedin.caption}
+              hashtags={innhold.linkedin.hashtags}
+              altText={innhold.linkedin.altText}
+              utm={innhold.linkedin.utm}
+            />
+            <PlatformCard
+              title="Instagram"
+              accent="text-pink-400"
+              caption={innhold.instagram.caption}
+              hashtags={innhold.instagram.hashtags}
+              altText={innhold.instagram.altText}
+            />
+          </div>
+        )}
+      </div>
+       </>
+      )}
     </div>
   );
 }

@@ -28,7 +28,14 @@ interface CachedRow {
   is_vde: boolean | null;
   feature_bullets: string[] | null;
   description_sections: Array<{ heading: string; text: string }> | null;
-  raw_data: { title?: string; specs?: Array<{ label: string; value: string }> } | null;
+  raw_data: {
+    title?: string;
+    specs?: Array<{ label: string; value: string }>;
+    isSB?: boolean;
+    sbConfidence?: string | null;
+    sbReason?: string;
+    packagingNote?: string | null;
+  } | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -117,6 +124,8 @@ export async function POST(request: NextRequest) {
       featureBullets: row.feature_bullets ?? [],
       descriptionSections: row.description_sections ?? [],
       specs: row.raw_data?.specs ?? [],
+      isSB: row.raw_data?.isSB ?? false,
+      packagingNote: row.raw_data?.packagingNote ?? null,
       rawData: row.raw_data ?? {},
     };
     const html = generateSeoHtml({

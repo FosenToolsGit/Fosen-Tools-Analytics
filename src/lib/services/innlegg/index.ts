@@ -11,6 +11,7 @@ import * as P from "./produkt";
 import * as G2 from "./gruppe2";
 import * as G3 from "./gruppe3";
 import * as G4 from "./gruppe4";
+import * as GAL from "./galleri";
 
 export type InnleggMal =
   | "produkt-single"
@@ -24,7 +25,8 @@ export type InnleggMal =
   | "stand"
   | "ansatt"
   | "sitat"
-  | "milepael";
+  | "milepael"
+  | "galleri";
 
 export type InnleggVariant = "A" | "B" | "C";
 export type { AspectKey };
@@ -69,6 +71,11 @@ const REGISTRY: Record<InnleggMal, Record<InnleggVariant, RenderFn>> = {
     A: fn(G4.milepaelA),
     B: fn(G4.milepaelB),
     C: fn(G4.milepaelC),
+  },
+  galleri: {
+    A: fn(GAL.galleriA),
+    B: fn(GAL.galleriB),
+    C: fn(GAL.galleriC),
   },
 };
 
@@ -119,3 +126,4 @@ export type {
 export type { FeatureData, ProsessData, LeveranseData } from "./gruppe2";
 export type { BesokData, StandData, AnsattData } from "./gruppe3";
 export type { SitatData, MilepaelData } from "./gruppe4";
+export type { GalleriData } from "./galleri";

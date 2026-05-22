@@ -182,13 +182,140 @@ export function generateSeoHtml(input: SeoHtmlInput): string {
   parts.push(`<h3>Bruksområder</h3>`);
   parts.push(`<p>${esc(applicationParagraph(input.g1, input.g2, input.g3, input.produsent))}</p>`);
 
-  // Hvorfor [produsent] / Fosen Tools-vinkling
-  parts.push(`<h3>Hvorfor ${esc(input.produsent)}?</h3>`);
-  if (input.produsent.toLowerCase() === "wera") {
-    parts.push(`<p>Wera (Wuppertal, Tyskland) har produsert profesjonelle verktøy for skrueforbindelser siden 1936. Wera-verktøy er anerkjent som premium-kvalitet blant fagfolk i hele Europa. Fosen Tools fører hele Wera-sortimentet på lager med rask levering — typisk 1-3 virkedager til hele Norge.</p>`);
-  } else {
-    parts.push(`<p>${esc(input.produsent)}-verktøy er valgt for sin kvalitet og pålitelighet i daglig profesjonell bruk. Fosen Tools fører ${esc(input.produsent)}-sortimentet på lager med rask levering — typisk 1-3 virkedager til hele Norge.</p>`);
+  return parts.join("\n");
+}
+
+/**
+ * Normaliserer EK1-tekst som kan inneholde lett inline-HTML (`<sup>2</sup>`,
+ * `<br>`) til ren tekst. Konverterer kvadrat-/kubikk-superscript, stripper
+ * resten av taggene. Resultatet skal escapes med `esc()` etterpå.
+ */
+function cleanInline(s: string): string {
+  return s
+    .replace(/<sup>\s*2\s*<\/sup>/gi, "²")
+    .replace(/<sup>\s*3\s*<\/sup>/gi, "³")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Input til den kombinerte produktinfo-generatoren (EK1 + valgfri deep-scrape). */
+export interface ProductInfoInput {
+  produsent: string;
+  /** Produktnavn (Wera-navn fra EK1, f.eks. «338 Rekkeklemme-betjeningsverktøy») */
+  name: string;
+  code: string;
+  ean: string;
+  opprinnelsesland: string;
+  g1: string | null;
+  g2: string | null;
+  g3: string | null;
+  /** EK1 `catalog_text_html` — Weras offisielle HTML-beskrivelse */
+  catalogTextHtml: string;
+  /** EK1 `catalog_text` — ren tekst-fallback hvis HTML mangler */
+  catalogText: string;
+  /** EK1 `content_info` — navn + størrelse */
+  contentInfo: string;
+  /** EK1 `shop_bullet_points1–8` */
+  bullets: string[];
+  /** EK1 `tipp_1–8_text` — bruksområde-forklaringer */
+  tips: string[];
+  /** EK1 `number_of_parts` */
+  numberOfParts: string;
+  /** EK1 produkt-dimensjoner */
+  dims: { width: string; length: string; height: string; unit: string; weight: string; weightUnit: string };
+  /** Cachet deep-scrape-data fra wera.de (null hvis ikke deep-scrapet) */
+  scraped: WeraScrapeResult | null;
+}
+
+/**
+ * Bygger én super-optimalisert SEO-produktinfo-boks ved å SLÅ SAMMEN EK1-data
+ * (offisiell masterdata) med valgfri deep-scrape-data (wera.de). Graceful:
+ * fungerer med kun EK1, blir rikere hvis deep-scrape også finnes.
+ */
+export function generateProductInfoHtml(input: ProductInfoInput): string {
+  const parts: string[] = [];
+  const produsent = input.produsent || "Wera";
+  const sc = input.scraped;
+
+  // H2 + søkeord-rik innledning
+  parts.push(`<h2>${esc(`${produsent} ${input.name}`.trim())}</h2>`);
+  parts.push(
+    `<p>${esc(produsent)} ${esc(input.name)} er et profesjonelt verktøy fra ${esc(produsent)} ` +
+      `— anerkjent for høy kvalitet, presisjon og lang levetid i daglig profesjonell bruk.</p>`
+  );
+
+  // Weras offisielle beskrivelse (catalog_text_html er allerede HTML — ikke escape)
+  if (input.catalogTextHtml.trim()) {
+    parts.push(`<p>${input.catalogTextHtml.trim()}</p>`);
+  } else if (input.catalogText.trim()) {
+    parts.push(`<p>${esc(input.catalogText.trim())}</p>`);
   }
+
+  // Egenskaper — EK1-bullets + deep-scrape feature-bullets, deduplisert
+  const seenBullet = new Set<string>();
+  const bullets: string[] = [];
+  for (const b of [...input.bullets, ...(sc?.featureBullets ?? [])]) {
+    const t = cleanInline(b);
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seenBullet.has(key)) continue;
+    seenBullet.add(key);
+    bullets.push(t);
+  }
+  if (bullets.length > 0) {
+    parts.push(`<h3>Egenskaper</h3>`);
+    parts.push(`<ul>`);
+    for (const b of bullets) parts.push(`<li>${esc(b)}</li>`);
+    parts.push(`</ul>`);
+  }
+
+  // Slik fungerer den — EK1 tipp-tekster + deep-scrape beskrivelses-seksjoner
+  const tips = input.tips.map((t) => cleanInline(t)).filter(Boolean);
+  const sections = pickBestSections(sc?.descriptionSections ?? []);
+  if (tips.length > 0 || sections.length > 0) {
+    parts.push(`<h3>Slik fungerer den</h3>`);
+    for (const t of tips) parts.push(`<p>${esc(t)}</p>`);
+    for (const s of sections) {
+      parts.push(`<h4>${esc(s.heading)}</h4>`);
+      parts.push(`<p>${esc(s.text)}</p>`);
+    }
+  }
+
+  // Tekniske spesifikasjoner — EK1-dimensjoner + deep-scrape-specs (dedup)
+  const specs: Array<[string, string]> = [];
+  const d = input.dims;
+  if (d.width && d.length && d.height) {
+    specs.push(["Mål (B×L×H)", `${d.width} × ${d.length} × ${d.height} ${d.unit || "mm"}`]);
+  }
+  if (d.weight) specs.push(["Vekt", `${d.weight} ${d.weightUnit || "g"}`]);
+  if (input.numberOfParts && input.numberOfParts !== "1") specs.push(["Antall deler", input.numberOfParts]);
+  if (sc?.driveType) specs.push(["Drev / feste", sc.driveType]);
+  if (sc?.profile) specs.push(["Profil", sc.profile]);
+  if (sc?.lengthMm != null) specs.push(["Lengde", `${sc.lengthMm} mm`]);
+  if (sc?.isVde) specs.push(["VDE-isolert", "Ja (1000V, IEC 60900)"]);
+  const seenSpec = new Set(specs.map(([l]) => l.toLowerCase()));
+  for (const { label, value } of sc?.specs ?? []) {
+    if (!label || !value) continue;
+    const k = label.toLowerCase();
+    if (seenSpec.has(k)) continue;
+    if (/^delenummer$|^merk$/i.test(label)) continue;
+    specs.push([label, value]);
+    seenSpec.add(k);
+  }
+  specs.push(["Produsent", produsent]);
+  specs.push([`${produsent}-artikkelnummer`, input.code]);
+  if (input.ean) specs.push(["EAN", input.ean]);
+  if (input.opprinnelsesland) specs.push(["Opprinnelsesland", input.opprinnelsesland]);
+  parts.push(`<h3>Tekniske spesifikasjoner</h3>`);
+  parts.push(`<table><tbody>`);
+  for (const [l, v] of specs) parts.push(`<tr><th>${esc(l)}</th><td>${esc(v)}</td></tr>`);
+  parts.push(`</tbody></table>`);
+
+  // Bruksområder
+  parts.push(`<h3>Bruksområder</h3>`);
+  parts.push(`<p>${esc(applicationParagraph(input.g1, input.g2, input.g3, produsent))}</p>`);
 
   return parts.join("\n");
 }

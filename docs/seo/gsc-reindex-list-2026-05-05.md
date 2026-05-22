@@ -87,68 +87,73 @@ Alle 4 URLer i Tier 1 er nå re-indeksert. Hovedhinder for SEO-fremgang fremover
 
 ---
 
-## Forslag til 4-dagers plan (12 URLer per dag)
+## ✅ FERDIG — hele lista re-indeksert 2026-05-22
 
+**Alle 43 URLene er nå re-indeksert.** Tier 1 + de tidlige Tier 2-sidene ble gjort 2.–6. mai;
+resten av Tier 2 + hele Tier 3 ble ferdigstilt 22. mai (helt til
+`referanser/store-kasser-hdfi/våpenkoffert`).
 
-### Dag 1 (2026-05-05)
+Livetest 22. mai (Playwright med Googlebot-UA) bekreftet at JSON-LD (Brand +
+BreadcrumbList + FAQPage) er live på produsent-sidene. Forsiden er indeksert med
+gyldig FAQ-element; «Ingen videoer indeksert» er forventet (dekorative
+bakgrunns-loop-videoer indekseres ikke av Google — ingen feil).
+
+### Tier 1 + tidlig Tier 2 (2.–6. mai)
 
 - [x] ~~`https://fosen-tools.no/produkter/piper-og-skraller/pipesett`~~ (re-indeksert 2. mai)
 - [x] ~~`https://fosen-tools.no/facom`~~ (re-indeksering sendt 5. mai)
 - [x] ~~`https://fosen-tools.no/produkter/verktøykoffert/pipesett`~~ (re-indeksert tidligere)
 - [x] ~~`https://fosen-tools.no/leatherman`~~ (indeksert 3. mai via interne lenker)
-- [ ] `https://fosen-tools.no/pelicase`
-- [ ] `https://fosen-tools.no/pb-swiss-tools`
-- [ ] `https://fosen-tools.no/husqvarna`
-- [ ] `https://fosen-tools.no/stahlwille`
-- [ ] `https://fosen-tools.no/hellberg`
-- [ ] `https://fosen-tools.no/milwaukee`
-- [ ] `https://fosen-tools.no/wera`
-- [ ] `https://fosen-tools.no/lista-ag`
-
-### Dag 2 (2026-05-06) — 9/12 ferdig (kvote brukt opp)
-
 - [x] ~~`https://fosen-tools.no/gedore`~~
 - [x] ~~`https://fosen-tools.no/mitutoyo`~~
 - [x] ~~`https://fosen-tools.no/kc-tools`~~
 - [x] ~~`https://fosen-tools.no/bahco`~~
 - [x] ~~`https://fosen-tools.no/fosen-tools`~~
-- [ ] `https://fosen-tools.no/fosen-tools-custom` → flyttet til Dag 3
 - [x] ~~`https://fosen-tools.no/ledlenser`~~
 - [x] ~~`https://fosen-tools.no/mora-of-sweden`~~
 - [x] ~~`https://fosen-tools.no/snapon`~~ (erstattet `/snap-on` etter 301-redirect-fix 6. mai)
 - [x] ~~`https://fosen-tools.no/knipex`~~
-- [ ] `https://fosen-tools.no/zarges` → flyttet til Dag 3
-- [ ] `https://fosen-tools.no/fluke` → flyttet til Dag 3
 
-### Dag 3 (2026-05-07) — 15 URLer (3 carry-over fra Dag 2 + 12 originale)
+### Resten av Tier 2 + hele Tier 3 (22. mai)
 
-**Carry-over fra Dag 2 (start her):**
-- [ ] `https://fosen-tools.no/fosen-tools-custom`
-- [ ] `https://fosen-tools.no/zarges`
-- [ ] `https://fosen-tools.no/fluke`
+- [x] ~~`https://fosen-tools.no/pelicase`~~
+- [x] ~~`https://fosen-tools.no/pb-swiss-tools`~~
+- [x] ~~`https://fosen-tools.no/husqvarna`~~
+- [x] ~~`https://fosen-tools.no/stahlwille`~~
+- [x] ~~`https://fosen-tools.no/hellberg`~~
+- [x] ~~`https://fosen-tools.no/milwaukee`~~
+- [x] ~~`https://fosen-tools.no/wera`~~
+- [x] ~~`https://fosen-tools.no/lista-ag`~~
+- [x] ~~`https://fosen-tools.no/fosen-tools-custom`~~
+- [x] ~~`https://fosen-tools.no/zarges`~~
+- [x] ~~`https://fosen-tools.no/fluke`~~
+- [x] ~~`https://fosen-tools.no/rennsteig`~~
+- [x] ~~`https://fosen-tools.no/gigant`~~
+- [x] ~~`https://fosen-tools.no/solid-gear`~~
+- [x] ~~`https://fosen-tools.no/viking-arm`~~
+- [x] ~~`https://fosen-tools.no/bondhus`~~
+- [x] ~~`https://fosen-tools.no/hultafors`~~
+- [x] ~~`https://fosen-tools.no/sumake`~~
+- [x] ~~`https://fosen-tools.no/brockhaus-heuer`~~
+- [x] ~~`https://fosen-tools.no/`~~ (indeksert, gyldig FAQ-element)
+- [x] ~~`https://fosen-tools.no/aviation/custom-tool-kits`~~
+- [x] ~~`https://fosen-tools.no/aviation/accessories`~~
+- [x] ~~`https://fosen-tools.no/aviation/line-maintenance-docking`~~
+- [x] ~~`https://fosen-tools.no/aviation/custom-tool-cabinets`~~
+- [x] ~~`https://fosen-tools.no/referanser/verktoyvogn_med_hjul`~~
+- [x] ~~`https://fosen-tools.no/referanser/lasermerking`~~
+- [x] ~~`https://fosen-tools.no/aviation/aircrafts`~~
+- [x] ~~`https://fosen-tools.no/referanser/softcase-hdfi`~~
+- [x] ~~`https://fosen-tools.no/referanser/store-kasser-hdfi`~~
+- [x] ~~`https://fosen-tools.no/referanser/store-kasser-hdfi/våpenkoffert`~~
 
-**Originale Dag 3:**
-- [ ] `https://fosen-tools.no/rennsteig`
-- [ ] `https://fosen-tools.no/gigant`
-- [ ] `https://fosen-tools.no/solid-gear`
-- [ ] `https://fosen-tools.no/viking-arm`
-- [ ] `https://fosen-tools.no/bondhus`
-- [ ] `https://fosen-tools.no/hultafors`
-- [ ] `https://fosen-tools.no/sumake`
-- [ ] `https://fosen-tools.no/brockhaus-heuer`
-- [ ] `https://fosen-tools.no/`
-- [ ] `https://fosen-tools.no/aviation/custom-tool-kits`
-- [ ] `https://fosen-tools.no/aviation/accessories`
-- [ ] `https://fosen-tools.no/aviation/line-maintenance-docking`
+---
 
-**Merk:** 15 URLer overstiger sannsynligvis daglig kvote (~10-12). Det som ikke rekkes flyttes til Dag 4.
+## Oppfølging (etter 22. mai)
 
-### Dag 4 (2026-05-08)
-
-- [ ] `https://fosen-tools.no/aviation/custom-tool-cabinets`
-- [ ] `https://fosen-tools.no/referanser/verktoyvogn_med_hjul`
-- [ ] `https://fosen-tools.no/referanser/lasermerking`
-- [ ] `https://fosen-tools.no/aviation/aircrafts`
-- [ ] `https://fosen-tools.no/referanser/softcase-hdfi`
-- [ ] `https://fosen-tools.no/referanser/store-kasser-hdfi`
-- [ ] `https://fosen-tools.no/referanser/store-kasser-hdfi/våpenkoffert`
+- **~1–2 uker:** sjekk i GSC at brødsmule + FAQ-rich-results dukker opp i SERP for
+  produsent-sidene. Google crawler på nytt etter re-indeksering.
+- **Fortsatt uløst:** sitemap-fraværet for produsent-sider (henger på Multicase).
+  Re-indeksering tvinger crawl, men sidene mangler fremdeles i sitemap.xml.
+- **0-visnings-sidene** (mora-of-sweden, zarges, fluke m.fl.) — verifiser at de
+  faktisk er «på Google» og ikke «URL is not on Google» pga. sitemap-fraværet.

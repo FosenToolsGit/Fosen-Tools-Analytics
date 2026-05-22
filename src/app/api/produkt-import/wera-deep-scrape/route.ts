@@ -3,6 +3,27 @@ import { NextResponse, type NextRequest } from "next/server";
 import { scrapeWeraProducts, closeBrowser, type WeraScrapeResult } from "@/lib/services/wera-deep-scrape";
 import { classify } from "@/lib/services/produktgruppe-classifier";
 import { generateSeoHtml } from "@/lib/services/wera-seo-html";
+import { detectSB, type SBConfidence } from "@/lib/services/sb-detect";
+
+/**
+ * Henter SB-flagg fra cachet/scraped raw_data. Faller tilbake til navn-basert
+ * deteksjon for gamle cache-rader som ble lagret før SB-feltene fantes.
+ */
+function sbFromRawData(
+  rawData: unknown,
+  name: string | null
+): { isSB: boolean; sbConfidence: SBConfidence; sbReason: string } {
+  const rd = (rawData ?? {}) as Record<string, unknown>;
+  if (typeof rd.isSB === "boolean") {
+    return {
+      isSB: rd.isSB,
+      sbConfidence: (rd.sbConfidence as SBConfidence) ?? null,
+      sbReason: typeof rd.sbReason === "string" ? rd.sbReason : "",
+    };
+  }
+  const d = detectSB({ rawName: name });
+  return { isSB: d.isSB, sbConfidence: d.confidence, sbReason: d.reason };
+}
 
 /**
  * Deep-scrape Wera-produkter via Playwright. Sjekker cache først så hvert
@@ -126,6 +147,7 @@ export async function POST(request: NextRequest) {
           suggestedG2: cachedRow.suggested_g2,
           suggestedG3: cachedRow.suggested_g3,
           produktinformasjonHtml: cachedRow.produktinformasjon_html ?? null,
+          ...sbFromRawData(cachedRow.raw_data, cachedRow.name),
         },
       };
     }
@@ -159,6 +181,9 @@ export async function POST(request: NextRequest) {
           suggestedG2: cls.g2,
           suggestedG3: cls.g3,
           produktinformasjonHtml: html,
+          isSB: scraped.isSB,
+          sbConfidence: (scraped.rawData.sbConfidence as SBConfidence) ?? null,
+          sbReason: typeof scraped.rawData.sbReason === "string" ? scraped.rawData.sbReason : "",
         },
       };
     }

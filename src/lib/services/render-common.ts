@@ -68,7 +68,8 @@ function assetDataUrl(relPath: string): string | null {
 }
 
 export function wordmarkDataUrl(variant: "white" | "ink" = "white"): string | null {
-  return assetDataUrl(`public/social/brand-assets/ft-wordmark-${variant}.png`);
+  void variant; // Rød-boks-logo fungerer på alle bakgrunner — én logo for begge varianter
+  return assetDataUrl("public/social/brand-assets/ft-logo.svg");
 }
 
 export function jubileumLogoDataUrl(years: 25 | 100): string | null {

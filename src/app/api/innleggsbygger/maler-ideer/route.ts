@@ -38,6 +38,8 @@ ARKETYPER (mal-feltet):
 - ansatt    : «møt teamet» — presenter en ansatt.
 - sitat     : stort kundesitat.
 - milepael  : jubileums-tall / statistikk.
+- galleri   : bildevegg/kollasje — flere bilder fra en hendelse, et besøk
+  eller en messe. Foreslå når briefen handler om noe med mange bilder.
 - produkt-single / produkt-grid / produkt-mfr / produkt-variant : produkt-
   maler. Foreslå KUN hvis siden tydelig er en produkt-/merke-side.
 
@@ -59,6 +61,7 @@ ferdig konkret norsk tekst — ikke plassholdere):
   stats:[{label,value}] }
 - sitat: { quote, name, role, company }
 - milepael: { brand, number, unit, headline, subhead, certNo, timeline:[{year,label}] }
+- galleri: { eyebrow, headline, accent, caption, url }   (bruker velger selve bildene)
 - produkt-single: { eyebrow, manufacturer, name, priceBefore, priceNow, discount, sku, url }
 - produkt-grid: { items:[{name,priceBefore,priceNow,discount}] }
 - produkt-mfr: { manufacturer, tagline, items:[{name,priceBefore,priceNow,discount}] }
@@ -96,6 +99,7 @@ const IDEA_SCHEMA: Record<string, unknown> = {
               "ansatt",
               "sitat",
               "milepael",
+              "galleri",
             ],
           },
           variant: { type: "string", enum: ["A", "B", "C"] },
@@ -131,38 +135,54 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { url?: string };
+  let body: { url?: string; brief?: string };
   try {
-    body = (await request.json()) as { url?: string };
+    body = (await request.json()) as { url?: string; brief?: string };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const url = (body.url ?? "").trim();
-  if (!url) {
-    return NextResponse.json({ error: "Mangler url" }, { status: 400 });
+  const brief = (body.brief ?? "").trim();
+  if (!url && !brief) {
+    return NextResponse.json({ error: "Mangler URL eller brief" }, { status: 400 });
   }
 
   try {
-    const page = await scrapePageByUrl(url, { jsImages: true });
+    // Kilde-tekst bygges fra brief og/eller scrapet side — begge er valgfrie,
+    // men minst én må være satt.
+    const tekstDeler: string[] = [];
+    let source: { name: string; url: string; images: string[] } = {
+      name: brief ? "Brief" : "",
+      url: "",
+      images: [],
+    };
 
-    const sideTekst = [
-      `URL: ${page.source_url}`,
-      `Tittel: ${page.name}`,
-      page.description ? `Meta-beskrivelse: ${page.description}` : "",
-      page.sections.length
-        ? `Seksjoner (H2): ${page.sections.join(" · ")}`
-        : "",
-      page.bullets.length
-        ? `Innholdsutdrag:\n${page.bullets.map((b) => `- ${b}`).join("\n")}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    if (url) {
+      const page = await scrapePageByUrl(url, { jsImages: true });
+      tekstDeler.push(
+        [
+          `URL: ${page.source_url}`,
+          `Tittel: ${page.name}`,
+          page.description ? `Meta-beskrivelse: ${page.description}` : "",
+          page.sections.length ? `Seksjoner (H2): ${page.sections.join(" · ")}` : "",
+          page.bullets.length
+            ? `Innholdsutdrag:\n${page.bullets.map((b) => `- ${b}`).join("\n")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      );
+      source = { name: page.name, url: page.source_url, images: page.images };
+    }
+    if (brief) {
+      tekstDeler.push(`BRIEF FRA OPERATØR — dette skal innlegget handle om:\n${brief}`);
+    }
 
+    const sideTekst = tekstDeler.join("\n\n");
     const result = await generateStructuredJson({
       systemInstruction: SYSTEM,
-      userPrompt: `Foreslå 6 post-idéer basert på dette sideinnholdet:\n\n${sideTekst}`,
+      userPrompt: `Foreslå 6 post-idéer basert på dette:\n\n${sideTekst}`,
       responseSchema: IDEA_SCHEMA,
       temperature: 0.85,
     });
@@ -191,7 +211,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ideas,
-      source: { name: page.name, url: page.source_url, images: page.images },
+      source,
       model: result.model,
     });
   } catch (e) {

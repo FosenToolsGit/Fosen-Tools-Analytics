@@ -10,6 +10,7 @@
  */
 
 import { chromium, type Browser, type BrowserContext } from "playwright";
+import { detectSB } from "@/lib/services/sb-detect";
 
 export interface WeraSpecRow {
   label: string;
@@ -32,6 +33,10 @@ export interface WeraScrapeResult {
   descriptionSections: Array<{ heading: string; text: string }>;
   /** Tekniske spesifikasjoner som key→value-rader */
   specs: WeraSpecRow[];
+  /** Flagget som SB-vare (selvbetjening/blister) basert på resolved URL-slug + navn + pakke-spec. */
+  isSB: boolean;
+  /** Pakke-spec funnet på produktsiden (f.eks. «Selbstbedienung»), eller null. */
+  packagingNote: string | null;
   rawData: Record<string, unknown>;
 }
 
@@ -255,6 +260,15 @@ async function scrapeSingle(context: BrowserContext, code: string): Promise<Wera
     const allText = data.allText ?? "";
     const isVde = /\bVDE\b/i.test(allText);
 
+    // SB-deteksjon: resolved URL-slug (etter redirect) + navn + evt. pakke-spec.
+    // page.url() gir den endelige slug-URL-en (.../take-it-easy-sb).
+    const finalUrl = page.url();
+    const packagingSpec = data.specs.find((s) =>
+      /pakke|forpakn|emballasje|verpackung/i.test(s.label)
+    );
+    const packagingNote = packagingSpec ? `${packagingSpec.label}: ${packagingSpec.value}` : null;
+    const sb = detectSB({ rawName: data.name, url: finalUrl, packagingNote });
+
     let driveType: string | null = null;
     // Sjekk profile / connection patterns
     const driveMatchers: Array<{ re: RegExp; label: string }> = [
@@ -298,7 +312,16 @@ async function scrapeSingle(context: BrowserContext, code: string): Promise<Wera
       featureBullets: data.featureBullets,
       descriptionSections: data.sections,
       specs: data.specs,
-      rawData: { title: data.title, specs: data.specs ?? [] },
+      isSB: sb.isSB,
+      packagingNote,
+      rawData: {
+        title: data.title,
+        specs: data.specs ?? [],
+        isSB: sb.isSB,
+        sbConfidence: sb.confidence,
+        sbReason: sb.reason,
+        packagingNote,
+      },
     };
   } catch {
     return null;
