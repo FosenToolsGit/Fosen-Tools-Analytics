@@ -224,6 +224,61 @@ export async function generateCaptionsJson(
   };
 }
 
+export interface JsonGenInput {
+  systemInstruction: string;
+  userPrompt: string;
+  /** JSON-schema som garanterer output-formen (Gemini structured output). */
+  responseSchema: Record<string, unknown>;
+  model?: string;
+  temperature?: number;
+}
+
+/**
+ * Generell strukturert-JSON-generering. Som generateCaptionsJson, men med
+ * fritt valgbart responseSchema. Brukes av idémyldring-funksjonen i
+ * innleggsbyggeren. Samme retry/fallback til Flash-Lite ved 503/429.
+ */
+export async function generateStructuredJson(
+  input: JsonGenInput
+): Promise<CaptionGenResult> {
+  const ai = getClient();
+  const primaryModel = input.model ?? DEFAULT_TEXT_MODEL;
+  const fallbackModel = "gemini-2.5-flash-lite";
+
+  const response = await withRetryAndFallback(
+    primaryModel,
+    fallbackModel,
+    (model) =>
+      ai.models.generateContent({
+        model,
+        contents: input.userPrompt,
+        config: {
+          systemInstruction: input.systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: input.responseSchema,
+          temperature: input.temperature ?? 0.85,
+        },
+      })
+  );
+
+  const raw = response.text ?? "";
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(
+      `Gemini returnerte ikke gyldig JSON: ${String(e)}. Raw: ${raw.slice(0, 500)}`
+    );
+  }
+
+  return {
+    json,
+    raw,
+    model: primaryModel,
+    usage: extractUsage(response.usageMetadata),
+  };
+}
+
 export interface ImageRef {
   /** Base64-encoded image data (uten data:image-prefix) */
   base64: string;

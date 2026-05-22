@@ -10,6 +10,12 @@ import {
   renderFeaturePng,
   closeFeatureBrowser,
 } from "@/lib/services/feature-render";
+import {
+  renderMalPng,
+  type MalInput,
+  type MalType,
+} from "@/lib/services/mal-render";
+import { closeRenderBrowser } from "@/lib/services/render-common";
 
 /**
  * POST /api/innleggsbygger/render-mal
@@ -20,8 +26,11 @@ import {
  * Mal-typer (template):
  *   - "offer"   : produkt-tilbud (layout single/grid/manufacturer)
  *   - "feature" : tjeneste/feature-post (HDFI, CADLAB osv.)
+ *   - "mal"     : tilstedeværelse-maler (prosess, leveranse, besok, stand,
+ *                 ansatt, sitat, milepael, partner) — body.malInput bærer
+ *                 alle felter, body.mal velger malen.
  *
- * Felles: aspect ("fb"|"ig"|"li"), background ("ink"|"red").
+ * Felles: aspect ("fb"|"ig"|"li"), background ("ink"|"red"|"cream").
  * Response: { image_base64, mime, width, height }
  */
 
@@ -34,10 +43,21 @@ const ASPECT_DIMS: Record<string, { w: number; h: number }> = {
   li: { w: 1200, h: 675 },
 };
 
+const MAL_TYPES: MalType[] = [
+  "prosess",
+  "leveranse",
+  "besok",
+  "stand",
+  "ansatt",
+  "sitat",
+  "milepael",
+  "partner",
+];
+
 interface RequestBody {
-  template?: "offer" | "feature";
+  template?: "offer" | "feature" | "mal";
   aspect?: string;
-  background?: "ink" | "red";
+  background?: "ink" | "red" | "cream";
   // offer-felter
   layout?: OfferLayout;
   products?: OfferProduct[];
@@ -51,6 +71,10 @@ interface RequestBody {
   redWord?: string | null;
   intro?: string | null;
   benefits?: string[];
+  imageUrl?: string | null;
+  // mal-felter
+  mal?: MalType;
+  malInput?: Record<string, unknown>;
 }
 
 export async function POST(request: NextRequest) {
@@ -77,7 +101,34 @@ export async function POST(request: NextRequest) {
     let pngBase64: string;
     let mime: string;
 
-    if (template === "feature") {
+    if (template === "mal") {
+      // ── Tilstedeværelse-maler ──
+      const mal = body.mal;
+      if (!mal || !MAL_TYPES.includes(mal)) {
+        return NextResponse.json(
+          { error: `Ugyldig mal: ${mal ?? "(mangler)"}` },
+          { status: 400 }
+        );
+      }
+      const payload = body.malInput ?? {};
+      const malInput = {
+        ...payload,
+        mal,
+        background,
+        width: dim.w,
+        height: dim.h,
+      } as unknown as MalInput;
+
+      // Lett validering per mal — nok til å gi meningsfull feilmelding
+      const err = validateMal(mal, payload);
+      if (err) {
+        return NextResponse.json({ error: err }, { status: 400 });
+      }
+
+      const png = await renderMalPng(malInput);
+      pngBase64 = png.base64;
+      mime = png.mimeType;
+    } else if (template === "feature") {
       // ── Feature/tjeneste-post ──
       const headline = (body.headline ?? "").trim();
       if (!headline) {
@@ -102,7 +153,8 @@ export async function POST(request: NextRequest) {
         intro: body.intro ?? null,
         benefits,
         cta: body.cta ?? null,
-        background,
+        imageUrl: body.imageUrl ?? null,
+        background: background === "cream" ? "ink" : background,
         width: dim.w,
         height: dim.h,
       });
@@ -135,7 +187,7 @@ export async function POST(request: NextRequest) {
         manufacturer: body.manufacturer ?? null,
         manufacturerLogoUrl: body.manufacturerLogoUrl ?? null,
         cta: body.cta ?? null,
-        background,
+        background: background === "cream" ? "ink" : background,
         width: dim.w,
         height: dim.h,
       });
@@ -157,5 +209,42 @@ export async function POST(request: NextRequest) {
     // Lukk delte browsere så vi ikke lekker mellom serverless-invokasjoner
     await closeOfferBrowser().catch(() => undefined);
     await closeFeatureBrowser().catch(() => undefined);
+    await closeRenderBrowser().catch(() => undefined);
+  }
+}
+
+/** Minimal per-mal feltsjekk. Returnerer feilmelding eller null. */
+function validateMal(mal: MalType, p: Record<string, unknown>): string | null {
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const need = (field: string, label: string) =>
+    str(p[field]) ? null : `${label} kreves for ${mal}-mal`;
+
+  switch (mal) {
+    case "prosess": {
+      if (!str(p.headline)) return "Overskrift kreves for prosess-mal";
+      const steps = Array.isArray(p.steps) ? p.steps : [];
+      if (steps.length < 2) return "Minst 2 prosess-steg kreves";
+      return null;
+    }
+    case "leveranse":
+      return need("customer", "Kunde") ?? need("headline", "Overskrift");
+    case "besok":
+      return need("company", "Bedriftsnavn");
+    case "stand":
+      return (
+        need("eventName", "Arrangementnavn") ??
+        need("location", "Sted") ??
+        need("date", "Dato")
+      );
+    case "ansatt":
+      return need("name", "Navn") ?? need("role", "Rolle");
+    case "sitat":
+      return need("quote", "Sitat") ?? need("attributionName", "Navn");
+    case "milepael":
+      return need("number", "Tall");
+    case "partner":
+      return need("partnerName", "Partnernavn");
+    default:
+      return null;
   }
 }

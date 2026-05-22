@@ -1200,7 +1200,57 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 19. mai | **Nyhetsbrev-bygger + prisplakat-fixer.** Full nyhetsbrev-bygger (`/innleggsbygger/nyhetsbrev-bygger`) med 4-stegs wizard + Mailchimp API-integrasjon. `mailchimp-builder.ts` fullstendig omskrevet (~841 linjer) til ekte Mailchimp-HTML (mce*-klasser, VML-knapper, MSO conditional images, 12-kol produktgrid, CDN sosial-ikoner, firma-footer med org.nr + NCAGE). Prisplakat share-API beriker produkter server-side (eliminerer 401 på kiosk-skjermer). Team-wide RLS for prisplakat (migrasjon 019). |
 | 20.-21. mai | **Produkt-import-system bygget fra grunnen.** Ny side `/innleggsbygger/produkt-import` med Wera-prislisten-parser, Multicase 1330-gruppers hierarki som cascading dropdowns, per-produkt produktgrupper, klassifiseringsmotor (~80 regler + Wera serie-suffiks-lookup), navn-kompaktor med 3D-dimensjon-splitting (`0.5X3 80MM`), UNC-path bildenavn (`\\tsclient\Multicase\`), SB-filter (blisterpakninger), Wera-bilde-ZIP-upload (JSZip klient-side), **Playwright deep-scrape** med Supabase-cache (`wera_product_cache`-tabellen, migrasjon 020-021), **SEO-HTML-generator** (3000+ tegn HTML i Multicase Produktinformasjon-felt — bekreftet at Multicase rendrer HTML), per-rad Wera-knapp, «Bruk cached»-knapp, «Re-klassifiser cache», «Gjenoppta fra XLSX». Quality-score-sortering med visuelle indikatorer (⚠️ + border-farge). Ny side `/innleggsbygger/produkt-bulk-edit` for å redigere eksisterende Multicase-eksporter med bulk-actions. Mailchimp-bygger forbedret: **iframe live-preview** (single source of truth via `/api/mailchimp/newsletter/preview-html`), grå body-bakgrunn (ikke hvit), 9 SEO-anbefalinger implementert (FNAME-merge-tag, kundehistorie, `utm_term`, preheader-validering, alt-tekst på produktbilder, «Vis i nettleser»-lenke, tirsdag-11:00-auto-scheduling, kompakte sekundære sosiale CTAs, fixed-size produsentlogo, midtstilte bilder). 17 nye filer + 8 migrasjons-oppdateringer. Storeshop-tilbud email-svar (HTML-redigeringsbehov fra Multicase). |
 | 21. mai (kveld) | **Innholdsmotor-oppgradering + HDFI-fargevisning-eksperiment.** Wera deep-scrape kvalitetskontroll (3611 produkter — HTML solid, men `feature_bullets` + `application_notes` tomme; bygde `patch-wera-cache.mjs` for å hente bullets fra `.product-features` + scrollsnaptable-specs). Innholdsmotor: multi-aspect bilde-gen (FB 1:1, IG 4:5, LI 16:9 — `PLATFORM_ASPECT_RATIOS`), ny `produkt_variant`-archetype (corpus + kode + UI), korpus-utvidelse (HDFI 6 standardfarger, CADLAB-prosess, FT-company-kontekst, visual_rules klargjort om blå-farge), auto-retry + Flash-Lite-fallback ved Gemini 503. **HDFI-fargevisning — utforsket grundig men ikke løst:** prøvde server-side swatch-rendering (SVG), Gemini Vision swatch-detect, pixel-analyse (luminance/variance/per-kolonne-scan), inside-label med mørk strip — alle hadde edge-cases. Konkludert: automatisk label-plassering på AI-genererte swatches er ikke pålitelig. Reverterte til AI-rendrer-alt for `produkt_variant`. Beholdt: `composite-text.ts` (server-side tekst-overlay m/ Manrope-font for statement/milepael), multi-aspect, retry-fallback. **Status:** produkt-import deep-scrape kjører fortsatt; Innholdsmotor-arbeid uncommitted-til-nå. |
+| 21. mai (natt) | **Mal-basert innleggsbygger + Claude Design-handoff portert (108 layouts).** Bygget deterministisk HTML→PNG-malsystem som alternativ til AI-bilder: `render-common.ts` + `mal-render.ts` (8 tilstedeværelse-maler) + `produkt-tilbud/feature/variant-render.ts`, idémyldring (`/api/innleggsbygger/ideer` — Gemini foreslår 6 ferdige post-ideer fra en URL, henter side-bilder), foto-variant for alle maler. Deretter portert **Claude Design-handoffen**: 12 mal-arketyper × 3 retninger (A/B/C) × 3 format = **108 layouts** til `src/lib/services/innlegg/` (`core.ts` porterte primitiver + `produkt/gruppe2/gruppe3/gruppe4.ts` + `index.ts` dispatcher, ~4900 linjer via 4 parallelle subagenter). JetBrains Mono embeddet. Ny rute `/api/innleggsbygger/render-innlegg`, ny side `/innleggsbygger/maler` (schema-drevet UI med A/B/C-velger). Alle 108 render-testet (108/108 OK). CNC-frest→CNC-maskinert-terminologi fikset i demo-defaults. |
 | 16.-18. mai | **Mega-økt — Innholdsmotor produksjonsklar + prisplakat-share-token + YouTube-slides.** 16 commits + 17 deploys. Detaljert sammendrag nedenfor. Hovedpunkter: **Innholdsmotor deployd** (branch merged via direct fast-forward push siden gh CLI ikke installert); fallback-scrape for ikke-produkt-URLer (`/bransjer/forsvaret`); Multicase unquoted-meta-regex-fix; iterative prompt-polish for FT-stil → **server-side wordmark composite** med sharp (eliminert «SUSEN TOOLS»-typos); **brand-asset context-caching** (Gemini SDK, 1h TTL); **SDK aspectRatio som hard constraint** (var bare prompt-hint før, ga 16:5-banner i stedet for 1:1); **caption-LLM komponerer ALL image-tekst** (`image_headline`/`image_body`/`image_subtagline`/`kontrast_labels` — eliminer typo-fylt AI-komposisjon); UPPERCASE server-side; FT Korolev-typografi-spec lest fra `FosenTools.scss`; **verktøyvogn+HDFI-mood** erstattet jagerfly i `_profesjonell`-stil; **manuell tekst-override-UI** for image-regenerering; **Imagen-4-vurderings-memo** lagret som HTML på Desktop til daglig leder. **Shadowoaths-spec** (~30kB markdown) lagret på Desktop for separat Claude-sesjon (klær + Pact-app). **Prisplakat for UniFi US Cast Pro**: migration 017 share_token UUID, public `/prisplakat/share/[token]/play`-route utenfor (dashboard), service-role-API, middleware whitelist, kioskMode-prop skipper auto-fullscreen-overlay og controls-bar, auto-reload hvert 5. min. Editor: **📺 Skjerm-URL**-kopi-knapp per playlist. **YouTube-video som slide-type**: extractYouTubeId helper, iframe med autoplay+muted+playsinline, postMessage 'onStateChange' end-event → auto-advance, kun aktiv slide rendrer iframen (sparer båndbredde). Brit kan nå ha én URL per skjerm i butikken, redigere playlist → endring vises automatisk. |
+
+---
+
+## Siste sesjons-sammendrag (21. mai 2026 natt — mal-basert innleggsbygger + Claude Design-handoff)
+
+Tema: bygge et deterministisk mal-system for sosiale-medier-poster (HTML→PNG, ingen AI-bilder), og deretter porte hele Claude Design-handoffen — 108 ferdig-designede layouts.
+
+### Fase 1 — eget mal-system (`mal-render`-familien)
+- `src/lib/services/render-common.ts` — felles infrastruktur (FT-tokens, Manrope-font embedding, blueprint-decor, wordmark, `renderHtmlToPng` via Playwright).
+- `mal-render.ts` (8 tilstedeværelse-maler: prosess, leveranse, besok, stand, ansatt, sitat, milepael, partner), `feature-render.ts`, `produkt-tilbud-render.ts`, `produkt-variant-render.ts` (HDFI fargevisning).
+- `/innleggsbygger/poster`-side med skjema-drevet UI + `/api/innleggsbygger/render-mal`.
+- **Idémyldring:** `/api/innleggsbygger/ideer` — lim inn en URL (f.eks. fosen-tools.no/hdfi), Gemini (`generateStructuredJson` i gemini.ts) foreslår 6 ferdige post-ideer mappet til malene med alle felt utfylt (backfill garanterer komplett skjema). Henter også side-bilder (`scrapePageByUrl` utvidet med `images`-felt) — klikkbart galleri + opplasting.
+- **Foto-variant:** alle maler har valgfritt `imageUrl` — layouten bytter til foto-variant når satt (`frameMal`).
+
+### Fase 2 — Claude Design-handoff portert (108 layouts)
+Brukeren leverte `Fosen Tools - Kampanje Brosjyre.zip` — en handoff med 12 mal-arketyper × 3 retninger (A/B/C) × 3 format (fb 1:1, ig 4:5, li 16:9) = 108 layouts, levert som kjørende React-prototyp.
+- **`src/lib/services/innlegg/core.ts`** — porterte primitiver fra `innlegg-primitives.jsx`: FT-tokens, BG-recipes, `decorSvg` (6 varianter), `wordmark`/`wordmarkImg`, `burst`, `checkCircle`, `pin`, `photo`, `headlineHtml`, `eyebrow`, `rule`, `frame`, `fontFaceCss` (Manrope + **JetBrains Mono** embeddet).
+- **`produkt.ts` / `gruppe2.ts` / `gruppe3.ts` / `gruppe4.ts`** — 36 eksporterte mal-funksjoner (`produktSingleA/B/C`, ..., `milepaelA/B/C`), hver `(W,H,data)→HTML-streng`, med interne `*LI` landscape-varianter. ~4900 linjer, portert via 4 parallelle subagenter.
+- **`innlegg/index.ts`** — dispatcher: `renderInnlegg(mal, variant, aspect, data)`. 12 arketyper × A/B/C registry.
+- **`/api/innleggsbygger/render-innlegg`** — ny API-rute.
+- **`/innleggsbygger/maler`** — ny schema-drevet UI med arketype-velger, A/B/C-retning, fb/ig/li-format, repeterbare array-editorer (items/bullets/steps/facts/stats/timeline/colors). Sidebar-lenke «Innleggsmaler».
+- Alle 108 render-testet via `scripts/test-innlegg.ts` → 108/108 OK.
+- CNC-frest→CNC-maskinert + freses→maskineres rettet i demo-defaults (brand-terminologi).
+
+### Filer/tilstand
+- Arbeidet ligger i worktree `stoic-ellis-c9130f` (branch `claude/stoic-ellis-c9130f`) — ikke committet/pushet ennå.
+- JetBrains Mono lagt til (`@fontsource/jetbrains-mono` → woff2 i `public/social/fonts/`).
+- ZIP til Claude Design rebygd tidligere: `~/Desktop/fosen-innleggsbygger-claude-design.zip`.
+
+### Neste sesjon — FOKUS: perfeksjonere produkt-import (SB-rydding)
+Brukeren laget en liste på ~150 klinger der mange var **SB-produkter**
+(blisterforpakning / selvbetjening). Ønsket forbedring:
+- **Dobbel godkjenning / grundigere sjekk** av importerte produkter — enten at
+  crawleren under scraping selv avgjør om et produkt er SB eller ikke, eller en
+  **rydde-fase etter at produktene er lagt til** (gjennomgang/flagging).
+- I dag finnes et SB-filter i produkt-import (blisterpakninger) — det må gjøres
+  mer treffsikkert, og det trengs en oppryddings-/verifiserings-steg.
+- Relevante filer: `src/lib/services/scrape-product.ts`, produkt-import-siden
+  `/innleggsbygger/produkt-import`, klassifiseringsmotoren. Se memory
+  `feature_produkt_import_system.md`.
+
+### Innleggsbygger — status (ferdig 21.-22. mai)
+- 108 design-layouts live på `/innleggsbygger/maler` (12 arketyper × A/B/C × fb/ig/li).
+- Idémyldring: `/api/innleggsbygger/maler-ideer` (Gemini foreslår 6 ideer).
+- Bilde-scraping rendrer JS (Multicase lazy-loader bilder klient-side) — henter
+  alle innholdsbilder via Playwright med scroll-trigger.
+- Produkt-URL-import på produkt-malene; bildevelger med opplasting + side-galleri.
+- Wordmark uten ramme/pille (brukerønske 22. mai).
+- Stand-C lar hyper-store ord bløe utenfor kanten — bevisst editorial-stil.
 
 ---
 

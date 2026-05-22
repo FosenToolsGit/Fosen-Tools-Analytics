@@ -70,6 +70,8 @@ export interface FeatureRenderInput {
   cta?: string | null;
   /** Bakgrunn. */
   background?: "ink" | "red";
+  /** Valgfritt bilde — når satt bytter malen til foto-variant. */
+  imageUrl?: string | null;
   width: number;
   height: number;
 }
@@ -162,25 +164,38 @@ export function buildFeatureHtml(input: FeatureRenderInput): string {
   const benefitTextSize = isLandscape ? W * 0.021 : W * 0.03;
   const introSize = isLandscape ? W * 0.02 : W * 0.026;
 
+  const photoUrl = (input.imageUrl ?? "").trim();
+  const hasPhoto = !!photoUrl;
+
   const textCol = `
     ${input.eyebrow ? `<div class="eyebrow">${escapeHtml(input.eyebrow)}</div>` : ""}
     <div class="headline">${headlineHtml(input.headline, input.redWord ?? null)}</div>
     <div class="accent"></div>
-    ${input.intro ? `<div class="intro">${escapeHtml(input.intro)}</div>` : ""}
-    ${!isLandscape && input.cta ? `<div class="cta">${escapeHtml(input.cta)}</div>` : ""}`;
+    ${input.intro ? `<div class="intro">${escapeHtml(input.intro)}</div>` : ""}`;
+  const benefitsCol = `<div class="benefits">${benefitsHtml}</div>`;
+  const ctaHtml = input.cta
+    ? `<div class="cta">${escapeHtml(input.cta)}</div>`
+    : "";
 
-  const benefitsCol = `<div class="benefits">${benefitsHtml}</div>
-    ${isLandscape && input.cta ? `<div class="cta">${escapeHtml(input.cta)}</div>` : ""}`;
-
-  const mainHtml = isLandscape
-    ? `<div class="feature-main feature-cols">
-        <div class="col-text">${textCol}</div>
+  let mainHtml: string;
+  if (hasPhoto) {
+    // Foto-variant: bilde som kolonne (landscape) / toppband (portrett)
+    mainHtml = `<div class="feature-main feature-photo-layout">
+        <div class="feature-photo"><img src="${escapeHtml(photoUrl)}" alt=""/></div>
+        <div class="feature-content">${textCol}${benefitsCol}${ctaHtml}</div>
+      </div>`;
+  } else if (isLandscape) {
+    mainHtml = `<div class="feature-main feature-cols">
+        <div class="col-text">${textCol}${ctaHtml}</div>
         <div class="col-benefits">${benefitsCol}</div>
-      </div>`
-    : `<div class="feature-main feature-stack">
+      </div>`;
+  } else {
+    mainHtml = `<div class="feature-main feature-stack">
         ${textCol}
         ${benefitsCol}
+        ${ctaHtml}
       </div>`;
+  }
 
   return `<!doctype html><html><head><meta charset="utf-8"><style>
   ${fontFaceCss()}
@@ -193,9 +208,17 @@ export function buildFeatureHtml(input: FeatureRenderInput): string {
   .feature-main{flex:1;min-height:0;}
   .feature-stack{display:flex;flex-direction:column;}
   .feature-cols{display:flex;gap:${W * 0.05}px;align-items:center;}
-  .col-text{flex:1;min-width:0;}
+  .col-text{flex:1;min-width:0;display:flex;flex-direction:column;}
   .col-benefits{flex:1;min-width:0;display:flex;flex-direction:column;
     gap:${H * 0.03}px;}
+
+  .feature-photo-layout{display:flex;gap:${W * 0.045}px;
+    flex-direction:${isLandscape ? "row" : "column"};align-items:stretch;}
+  .feature-photo{flex:0 0 ${isLandscape ? "42%" : "44%"};min-height:0;}
+  .feature-photo img{width:100%;height:100%;object-fit:cover;
+    border-radius:${W * 0.018}px;}
+  .feature-content{flex:1;min-width:0;min-height:0;display:flex;
+    flex-direction:column;justify-content:center;}
 
   .eyebrow{font-weight:800;font-size:${W * 0.024}px;letter-spacing:0.22em;
     text-transform:uppercase;color:${input.background === "red" ? "#0F1115" : FT_RED};

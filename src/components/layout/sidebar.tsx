@@ -38,6 +38,7 @@ import {
   FileSearch,
   BookOpen,
   Link2,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { LucideIcon } from "lucide-react";
@@ -124,6 +125,7 @@ const navItems: NavEntry[] = [
   { label: "Alle innlegg", href: "/posts", icon: FileText },
   { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
   { label: "Innleggsbygger", href: "/innleggsbygger/poster", icon: Sparkles },
+  { label: "Innleggsmaler", href: "/innleggsbygger/maler", icon: LayoutGrid },
   { label: "Nyhetsbrev-bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Mail, localOnly: true },
   { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
   { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
