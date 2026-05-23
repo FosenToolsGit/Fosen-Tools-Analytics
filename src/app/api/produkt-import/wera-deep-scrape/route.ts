@@ -33,8 +33,9 @@ function sbFromRawData(
  * Response:     { results: Array<{ code, data, source: 'cache'|'live'|'failed' }> }
  */
 
-// Lengre maxDuration siden scraping kan ta tid for store batcher
-export const maxDuration = 600;
+// Vercel Hobby tillater maks 300s — kjør i mindre batcher om scrapingen
+// trenger mer tid (kø flere kall fra UI-en i stedet for én lang request).
+export const maxDuration = 300;
 
 interface RequestBody {
   codes?: string[];
