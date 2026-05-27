@@ -11,8 +11,14 @@ import {
   useVideoConfig,
 } from "remotion";
 
-import { FT, SANS_FONT, TAGLINE } from "../theme";
-import { Backdrop, Eyebrow, Wordmark, fade } from "../components/shared";
+import { FT, SANS_FONT } from "../theme";
+import {
+  Backdrop,
+  Eyebrow,
+  OutroCta,
+  Wordmark,
+  fade,
+} from "../components/shared";
 import type { SitatClipProps } from "../types";
 
 // ── scene 1 · intro ──────────────────────────────────────────────────
@@ -33,7 +39,7 @@ const IntroScene: React.FC<{ eyebrow: string }> = ({ eyebrow }) => {
       }}
     >
       <div style={{ transform: `scale(${0.8 + pop * 0.2})`, display: "flex" }}>
-        <Wordmark variant="white" width={520} />
+        <Wordmark variant="color" width={560} />
       </div>
       <div style={{ transform: `translateY(${(1 - pop) * 30}px)` }}>
         <Eyebrow text={eyebrow} />
@@ -162,57 +168,6 @@ const QuoteScene: React.FC<SitatClipProps> = (p) => {
   );
 };
 
-// ── scene 3 · CTA ────────────────────────────────────────────────────
-
-const CtaScene: React.FC<{ ctaUrl: string }> = ({ ctaUrl }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const pop = spring({ frame, fps, config: { damping: 15 } });
-  const o = fade(frame, 0, 14, 999, 1000);
-  return (
-    <AbsoluteFill
-      style={{
-        opacity: o,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 86,
-        gap: 34,
-      }}
-    >
-      <div style={{ transform: `scale(${0.82 + pop * 0.18})` }}>
-        <Wordmark variant="white" width={520} />
-      </div>
-      <div
-        style={{
-          padding: "24px 46px",
-          borderRadius: 999,
-          background: FT.red,
-          fontFamily: SANS_FONT,
-          fontWeight: 800,
-          fontSize: 42,
-          color: FT.white,
-          transform: `translateY(${(1 - pop) * 36}px)`,
-        }}
-      >
-        {ctaUrl}
-      </div>
-      <div
-        style={{
-          fontFamily: SANS_FONT,
-          fontStyle: "italic",
-          fontWeight: 500,
-          fontSize: 28,
-          textAlign: "center",
-          color: FT.inkDim,
-          maxWidth: 820,
-        }}
-      >
-        {TAGLINE}
-      </div>
-    </AbsoluteFill>
-  );
-};
-
 // ── komposisjons-rot ─────────────────────────────────────────────────
 
 export const SitatClip: React.FC<SitatClipProps> = (props) => {
@@ -226,7 +181,12 @@ export const SitatClip: React.FC<SitatClipProps> = (props) => {
         <QuoteScene {...props} />
       </Sequence>
       <Sequence from={230} durationInFrames={70}>
-        <CtaScene ctaUrl={props.ctaUrl} />
+        <OutroCta
+          ctaUrl={props.ctaUrl}
+          wordmarkWidth={560}
+          ctaSize={42}
+          taglineSize={28}
+        />
       </Sequence>
     </AbsoluteFill>
   );

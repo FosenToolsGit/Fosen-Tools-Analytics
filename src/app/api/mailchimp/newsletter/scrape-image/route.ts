@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { MailchimpBuilderService } from "@/lib/services/mailchimp-builder";
+import sharp from "sharp";
 
 /**
  * POST /api/mailchimp/newsletter/scrape-image
@@ -83,6 +84,27 @@ export async function POST(request: NextRequest) {
   if (!buffer || buffer.length === 0)
     return NextResponse.json({ error: "Bildet er tomt" }, { status: 502 });
 
+  // Mailchimp file-manager aksepterer KUN jpg/png/gif — ikke webp/avif.
+  // Multicase Azure Blob serverer ofte webp selv om URL-en ender på .jpg
+  // (de optimaliserer formatet, ikke navnet). Konverterer til JPG via
+  // sharp så vi kan laste opp uansett kilde-format.
+  const ct = (detectedContentType || "").toLowerCase();
+  const needsConvert =
+    ct.includes("webp") || ct.includes("avif") ||
+    (!ct.includes("jpeg") && !ct.includes("jpg") &&
+     !ct.includes("png") && !ct.includes("gif"));
+  if (needsConvert) {
+    try {
+      buffer = await sharp(buffer).jpeg({ quality: 88 }).toBuffer();
+      detectedContentType = "image/jpeg";
+    } catch (err) {
+      return NextResponse.json(
+        { error: `Bilde-konvertering feilet: ${err instanceof Error ? err.message : "ukjent"}` },
+        { status: 502 },
+      );
+    }
+  }
+
   try {
     const builder = new MailchimpBuilderService();
     const fileName = body.name?.trim() || sanitizeFileName(imageUrl, detectedContentType);
@@ -91,6 +113,7 @@ export async function POST(request: NextRequest) {
       mailchimp_url: mcUrl,
       original_url: imageUrl,
       size_bytes: buffer.length,
+      converted: needsConvert,
     });
   } catch (err) {
     return NextResponse.json(

@@ -33,6 +33,15 @@ const RULES: Rule[] = [
   //   siden Wera 1427 har «klinge» i navn men er egentlig en syl.
   { pattern: /\bsyl\b|skruehullstans/, g1: "Skrutrekkere", g2: "Skruehullstanser", g3: "Skruehullstanse" },
 
+  // ── PZ/S kombi-profil (Pozidriv/Slot kombinasjon) — Wera 800/1 PZ/S, Kraftform Kompakt PZ/S osv.
+  //   Plasseres HØYT så den vinner over «kompakt», «skrutrekker» og generiske fallbacks.
+  //   Kraftform Kompakt VDE 65 i PZ/S = bitsskrutrekker inkl. bits.
+  { pattern: /(?=.*\bpz\/s\b)(?=.*(?:kraftform|kompakt|vario))/, g1: "Skrutrekkere", g2: "Bitsskrutrekkere", g3: "Bitsskrutrekker inkl. bits" },
+  // PZ/S i bits (Wera 855/1 SB PZ/S #2 osv.)
+  { pattern: /(?=.*\bpz\/s\b)(?=.*\bbits)/, g1: "Skrutrekkere", g2: "Skrutrekkere", g3: "Pozi/rett kombi" },
+  // PZ/S som standalone profil — generisk Pozidriv/Slot-kombi
+  { pattern: /\bpz\/s\b|pozidriv\/slot|pozidriv\s*-\s*slot/, g1: "Skrutrekkere", g2: "Skrutrekkere", g3: "Pozi/rett kombi" },
+
   // ── Klinger (utskiftbare blader) — krever klinge i navn eller første 15 tegn av marketing
   { pattern: /(?=.*\b(?:klinge|adapterklinge)\b)(?=.*\b(?:firkant|piper|socket)\b)/, nameAndMarketingStart: true, g1: "Skrutrekkere", g2: "Klinger", g3: "Firkant" },
   { pattern: /(?=.*\b(?:klinge|adapterklinge)\b)(?=.*\b(?:1\/4|3\/8|1\/2|5\/8|3\/4|1-1\/2)["”]?)/, nameAndMarketingStart: true, g1: "Skrutrekkere", g2: "Klinger", g3: "Firkant" },

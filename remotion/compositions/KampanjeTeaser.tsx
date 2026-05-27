@@ -13,11 +13,12 @@ import {
   useVideoConfig,
 } from "remotion";
 
-import { FT, MONO_FONT, SANS_FONT, TAGLINE } from "../theme";
+import { FT, MONO_FONT, SANS_FONT } from "../theme";
 import {
   Backdrop,
   Burst,
   Eyebrow,
+  OutroCta,
   Wordmark,
   fade,
   formatNOK,
@@ -53,7 +54,7 @@ const IntroScene: React.FC<{
       }}
     >
       <div style={{ transform: `scale(${0.84 + pop * 0.16})`, display: "flex" }}>
-        <Wordmark variant="white" width={520} />
+        <Wordmark variant="color" width={560} />
       </div>
       <Eyebrow text={eyebrow} />
       <div
@@ -112,7 +113,7 @@ const ProductSlide: React.FC<{
       }}
     >
       <div style={{ alignSelf: "flex-start" }}>
-        <Wordmark variant="white" width={260} />
+        <Wordmark variant="color" width={210} />
       </div>
 
       {/* bilde-ramme */}
@@ -244,57 +245,6 @@ const ProductSlide: React.FC<{
   );
 };
 
-// ── outro / CTA ──────────────────────────────────────────────────────
-
-const OutroScene: React.FC<{ ctaUrl: string }> = ({ ctaUrl }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const pop = spring({ frame, fps, config: { damping: 15 } });
-  const o = fade(frame, 0, 14, 999, 1000);
-  return (
-    <AbsoluteFill
-      style={{
-        opacity: o,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 86,
-        gap: 34,
-      }}
-    >
-      <div style={{ transform: `scale(${0.82 + pop * 0.18})` }}>
-        <Wordmark variant="white" width={560} />
-      </div>
-      <div
-        style={{
-          padding: "26px 50px",
-          borderRadius: 999,
-          background: FT.red,
-          fontFamily: SANS_FONT,
-          fontWeight: 800,
-          fontSize: 46,
-          color: FT.white,
-          transform: `translateY(${(1 - pop) * 36}px)`,
-        }}
-      >
-        {ctaUrl}
-      </div>
-      <div
-        style={{
-          fontFamily: SANS_FONT,
-          fontStyle: "italic",
-          fontWeight: 500,
-          fontSize: 30,
-          textAlign: "center",
-          color: FT.inkDim,
-          maxWidth: 860,
-        }}
-      >
-        {TAGLINE}
-      </div>
-    </AbsoluteFill>
-  );
-};
-
 // ── komposisjons-rot ─────────────────────────────────────────────────
 
 export const KampanjeTeaser: React.FC<KampanjeTeaserProps> = (props) => {
@@ -327,7 +277,7 @@ export const KampanjeTeaser: React.FC<KampanjeTeaserProps> = (props) => {
         );
       })}
       <Sequence from={OUTRO_FROM} durationInFrames={60}>
-        <OutroScene ctaUrl={props.ctaUrl} />
+        <OutroCta ctaUrl={props.ctaUrl} wordmarkWidth={640} ctaSize={46} />
       </Sequence>
     </AbsoluteFill>
   );

@@ -338,7 +338,7 @@ function Content() {
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
             Konverteringer — siste 7 dager
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <Card className="flex flex-col gap-2">
               <span className="text-xs text-gray-400 flex items-center gap-1">
                 <ShoppingCart className="w-3 h-3" /> Kjøp
@@ -363,6 +363,34 @@ function Content() {
                 {data.conversions.current.roas.toFixed(2)}x
               </span>
               <DeltaBadge value={Math.round(data.conversions.delta_pct.roas)} />
+            </Card>
+            {/* Kjøps-intent — fanger checkout-lekkasje. Rød border når
+                folk når kassen men ingen fullfører (lekkasje-alarm). */}
+            <Card
+              className={`flex flex-col gap-2 border-2 ${
+                data.conversions.current.intent_value > 0 &&
+                data.conversions.current.purchases === 0
+                  ? "border-red-500/60"
+                  : "border-transparent"
+              }`}
+            >
+              <span className="text-xs text-gray-400">Kjøps-intent</span>
+              <span className="text-3xl font-bold text-white">
+                {nok.format(data.conversions.current.intent_value)}
+              </span>
+              <DeltaBadge
+                value={Math.round(data.conversions.delta_pct.intent_value)}
+              />
+              <span className="text-xs text-gray-500">
+                {data.conversions.current.intent_count.toFixed(0)} begin_checkout
+                {data.conversions.current.intent_value > 0 &&
+                  data.conversions.current.purchases === 0 && (
+                    <span className="text-red-400 font-medium">
+                      {" "}
+                      · lekkasje?
+                    </span>
+                  )}
+              </span>
             </Card>
             <Card className="flex flex-col gap-2">
               <span className="text-xs text-gray-400">Leads (skjema)</span>

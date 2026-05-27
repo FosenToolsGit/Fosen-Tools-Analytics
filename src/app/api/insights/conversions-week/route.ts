@@ -10,6 +10,10 @@ import { NextResponse, type NextRequest } from "next/server";
 interface ConversionWindow {
   purchases: number;
   purchase_value: number;
+  /** begin_checkout — folk som har startet på kassen men ikke fullført.
+   *  Vises ved siden av purchases for å fange opp lekkasje i checkout-flyten. */
+  intent_count: number;
+  intent_value: number;
   leads: number;
   cost: number;
   roas: number;
@@ -21,7 +25,14 @@ export interface ConversionsWeekResponse {
   period: { current: { from: string; to: string }; previous: { from: string; to: string } };
   current: ConversionWindow;
   previous: ConversionWindow;
-  delta_pct: { purchases: number; purchase_value: number; leads: number; cost: number; roas: number };
+  delta_pct: {
+    purchases: number;
+    purchase_value: number;
+    intent_value: number;
+    leads: number;
+    cost: number;
+    roas: number;
+  };
   generated_at: string;
 }
 
@@ -51,6 +62,8 @@ async function aggregateWindow(
   const cost = (camps ?? []).reduce((s, r) => s + (Number(r.cost_nok) || 0), 0);
   let purchases = 0;
   let purchaseValue = 0;
+  let intentCount = 0;
+  let intentValue = 0;
   let leads = 0;
 
   for (const r of convs ?? []) {
@@ -58,7 +71,13 @@ async function aggregateWindow(
     if (name.includes("purchase")) {
       purchases += Number(r.all_conversions) || 0;
       purchaseValue += Number(r.all_conversions_value) || 0;
-    } else if (name.includes("form_submit") || name.includes("kontakt") || name.includes("begin_checkout")) {
+    } else if (name.includes("begin_checkout")) {
+      // begin_checkout = kjøps-intent. Skiller fra leads så vi fanger
+      // checkout-lekkasje (mange begin_checkout, få purchase = noe brister
+      // i kassen eller GA4 purchase-event fyrer ikke).
+      intentCount += Number(r.all_conversions) || 0;
+      intentValue += Number(r.all_conversions_value) || 0;
+    } else if (name.includes("form_submit") || name.includes("kontakt")) {
       leads += Number(r.all_conversions) || 0;
     }
   }
@@ -70,6 +89,8 @@ async function aggregateWindow(
   return {
     purchases: Math.round(purchases * 10) / 10,
     purchase_value: Math.round(purchaseValue),
+    intent_count: Math.round(intentCount * 10) / 10,
+    intent_value: Math.round(intentValue),
     leads: Math.round(leads * 10) / 10,
     cost: Math.round(cost),
     roas,
@@ -102,6 +123,7 @@ export async function GET(request: NextRequest) {
       delta_pct: {
         purchases: deltaPct(current.purchases, previous.purchases),
         purchase_value: deltaPct(current.purchase_value, previous.purchase_value),
+        intent_value: deltaPct(current.intent_value, previous.intent_value),
         leads: deltaPct(current.leads, previous.leads),
         cost: deltaPct(current.cost, previous.cost),
         roas: deltaPct(current.roas, previous.roas),

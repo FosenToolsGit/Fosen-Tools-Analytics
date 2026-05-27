@@ -103,6 +103,13 @@ export async function renderVideo(
       outputLocation: outFile,
       inputProps,
       onProgress: ({ progress }) => onProgress?.(progress),
+      // Instagram-safe output: yuv420p (TV-range) + crf 22.
+      // JPEG-intermediates arver full-range farger og gir `yuvj420p` —
+      // PNG-intermediates gir ren `yuv420p` som IG/TikTok-transcoderne
+      // forventer. (Uten dette avviser IG noen ganger stille opploadet.)
+      imageFormat: "png",
+      pixelFormat: "yuv420p",
+      crf: 22,
     });
     const buffer = readFileSync(outFile);
     return {

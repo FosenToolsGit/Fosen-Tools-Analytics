@@ -13,11 +13,13 @@ import {
   useVideoConfig,
 } from "remotion";
 
-import { FT, MONO_FONT, SANS_FONT, TAGLINE } from "../theme";
+import { FT, MONO_FONT, SANS_FONT } from "../theme";
 import {
   Backdrop,
   Burst,
+  CornerBrackets,
   Eyebrow,
+  OutroCta,
   Wordmark,
   fade,
   formatNOK,
@@ -87,7 +89,7 @@ const IntroScene: React.FC<{ eyebrow: string }> = ({ eyebrow }) => {
           display: "flex",
         }}
       >
-        <Wordmark variant="white" width={620} />
+        <Wordmark variant="color" width={640} />
       </div>
       <div style={{ transform: `translateY(${(1 - pop) * 30}px)` }}>
         <Eyebrow text={eyebrow} />
@@ -105,8 +107,13 @@ const ProductScene: React.FC<ProduktSpotlightProps> = (p) => {
 
   const imgPop = spring({ frame: frame - 6, fps, config: { damping: 14 } });
   const namePop = spring({ frame: frame - 26, fps, config: { damping: 12 } });
+  // Tell NED fra veiledende pris til kampanjepris. Hvis ingen før-pris
+  // er satt, start ~30% over for å beholde «rabatt-følelsen». Aldri OPP
+  // mot nå-prisen — det får folk til å tenke «Oi, dyrt!» før kampanje-
+  // prisen lander.
+  const startPrice = p.priceBefore ?? Math.round(p.priceNow * 1.3);
   const price = Math.round(
-    interpolate(frame, [54, 92], [0, p.priceNow], {
+    interpolate(frame, [54, 92], [startPrice, p.priceNow], {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
     }),
@@ -122,7 +129,7 @@ const ProductScene: React.FC<ProduktSpotlightProps> = (p) => {
       }}
     >
       <div style={{ alignSelf: "flex-start" }}>
-        <Wordmark variant="white" width={300} />
+        <Wordmark variant="color" width={240} />
       </div>
 
       {/* produktbilde-ramme */}
@@ -141,6 +148,7 @@ const ProductScene: React.FC<ProduktSpotlightProps> = (p) => {
           position: "relative",
         }}
       >
+        <CornerBrackets color={FT.red} arm={70} thickness={4} />
         <ProductImage url={p.imageUrl} manufacturer={p.manufacturer} />
         {p.discountPct ? (
           <div
@@ -264,7 +272,9 @@ const ProductScene: React.FC<ProduktSpotlightProps> = (p) => {
 const BulletsScene: React.FC<ProduktSpotlightProps> = (p) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const o = fade(frame, 0, 14, 58, 74);
+  // Bullets-scene utvidet til 130 frames (~4.3s) — fadeout nær slutten
+  // så folk faktisk rekker å lese alle USP-punktene.
+  const o = fade(frame, 0, 14, 115, 130);
   return (
     <AbsoluteFill
       style={{
@@ -337,58 +347,6 @@ const BulletsScene: React.FC<ProduktSpotlightProps> = (p) => {
   );
 };
 
-// ── scene 4 · CTA ────────────────────────────────────────────────────
-
-const CtaScene: React.FC<{ ctaUrl: string }> = ({ ctaUrl }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const pop = spring({ frame, fps, config: { damping: 15 } });
-  const o = fade(frame, 0, 14, 999, 1000);
-  return (
-    <AbsoluteFill
-      style={{
-        opacity: o,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 86,
-        gap: 40,
-      }}
-    >
-      <div style={{ transform: `scale(${0.82 + pop * 0.18})` }}>
-        <Wordmark variant="white" width={560} />
-      </div>
-      <div
-        style={{
-          padding: "26px 50px",
-          borderRadius: 999,
-          background: FT.red,
-          fontFamily: SANS_FONT,
-          fontWeight: 800,
-          fontSize: 46,
-          color: FT.white,
-          transform: `translateY(${(1 - pop) * 40}px)`,
-        }}
-      >
-        {ctaUrl}
-      </div>
-      <div
-        style={{
-          fontFamily: SANS_FONT,
-          fontStyle: "italic",
-          fontWeight: 500,
-          fontSize: 30,
-          lineHeight: 1.32,
-          textAlign: "center",
-          color: FT.inkDim,
-          maxWidth: 860,
-        }}
-      >
-        {TAGLINE}
-      </div>
-    </AbsoluteFill>
-  );
-};
-
 // ── komposisjons-rot ─────────────────────────────────────────────────
 
 export const ProduktSpotlight: React.FC<ProduktSpotlightProps> = (props) => {
@@ -401,11 +359,11 @@ export const ProduktSpotlight: React.FC<ProduktSpotlightProps> = (props) => {
       <Sequence from={70} durationInFrames={175}>
         <ProductScene {...props} />
       </Sequence>
-      <Sequence from={235} durationInFrames={75}>
+      <Sequence from={235} durationInFrames={130}>
         <BulletsScene {...props} />
       </Sequence>
-      <Sequence from={300} durationInFrames={60}>
-        <CtaScene ctaUrl={props.ctaUrl} />
+      <Sequence from={355} durationInFrames={65}>
+        <OutroCta ctaUrl={props.ctaUrl} wordmarkWidth={640} ctaSize={46} />
       </Sequence>
     </AbsoluteFill>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Mail,
   Sparkles,
@@ -72,6 +72,36 @@ interface GenerateResponse {
   suggestedFooterImage: SuggestedFooterImage | null;
 }
 
+/* List-item shape returned by GET /api/mailchimp/newsletter/drafts */
+interface NewsletterDraftListItem {
+  id: string;
+  title: string;
+  status: "draft" | "pushed" | "archived";
+  updated_at: string;
+  created_at: string;
+}
+
+/* Full payload stored in newsletter_wizard_drafts.wizard_state */
+interface WizardStatePayload {
+  themeInput: string;
+  focus: "rabatt" | "kvalitet" | "nyhet" | "sesong" | "annet";
+  discountPct: string;
+  extraContext: string;
+  productCount: number;
+  onlyInStock: boolean;
+  manualProductUrls: string;
+  variant: number;
+  preview: GenerateResponse | null;
+  editContent: GeneratedContent | null;
+  editProducts: NewsletterProduct[];
+  midtImageInput: string;
+  midtImageUrl: string;
+  footerImageInput: string;
+  footerImageUrl: string;
+  socialInstagram: string;
+  socialLinkedin: string;
+}
+
 const THEME_IDEAS = [
   { themeInput: "momentnøkkel", label: "Momentnøkler", reason: "Brukes til hjulskifte og motorvedlikehold" },
   { themeInput: "hjulskift", label: "Hjulskift / vårbil", reason: "Mai/juni er hjulskift-sesong" },
@@ -137,6 +167,22 @@ export default function NyhetsbrevByggerPage() {
   /* ── Live HTML preview (from buildNewsletterHtml via API) ── */
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewHtmlLoading, setPreviewHtmlLoading] = useState(false);
+
+  /* ── Draft-storage (lagring av wizard-state mellom sesjoner) ── */
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<NewsletterDraftListItem[]>([]);
+  const [draftsLoading, setDraftsLoading] = useState(false);
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  /** Sammenlignings-grunnlag for auto-save — hopper over save når state
+   *  ikke har endret seg siden siste server-sync. Forhindrer at vi
+   *  overskriver server-state ved mount (auto-save-bug-mønster fra brosjyre). */
+  const lastSyncedStateRef = useRef<string>("");
+  /** Sett etter første render — første useEffect-run skal IKKE trigge save. */
+  const skipFirstAutoSaveRef = useRef(true);
 
   /* Sync editContent from preview.content when generated */
   useEffect(() => {
@@ -371,6 +417,16 @@ export default function NyhetsbrevByggerPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Feil");
       setCreateResult({ campaign_id: data.campaign_id, edit_url: data.edit_url });
+      // Markér utkastet som pushed så det ikke dukker opp i default-listen
+      // sammen med work-in-progress-utkast (fortsatt synlig under "Vis alle").
+      if (currentDraftId) {
+        await fetch(`/api/mailchimp/newsletter/drafts/${currentDraftId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "pushed" }),
+        }).catch(() => {});
+        void loadDraftsList();
+      }
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Ukjent feil");
     } finally {
@@ -396,6 +452,221 @@ export default function NyhetsbrevByggerPage() {
     setEditingProductIdx(null);
   }
 
+  /* ═══════════════════════════════════════════ */
+  /*  DRAFT-STORAGE                              */
+  /* ═══════════════════════════════════════════ */
+
+  /** Saml hele wizard-tilstanden i ett objekt for lagring. */
+  function buildWizardState(): WizardStatePayload {
+    return {
+      themeInput,
+      focus,
+      discountPct,
+      extraContext,
+      productCount,
+      onlyInStock,
+      manualProductUrls,
+      variant,
+      preview,
+      editContent,
+      editProducts,
+      midtImageInput,
+      midtImageUrl,
+      footerImageInput,
+      footerImageUrl,
+      socialInstagram,
+      socialLinkedin,
+    };
+  }
+
+  /** Avled bruker-vennlig tittel fra tilstanden. */
+  function deriveDraftTitle(s: WizardStatePayload): string {
+    const candidate =
+      s.editContent?.subjectLine?.trim() || s.themeInput.trim() || "";
+    return candidate.slice(0, 100) || "Utkast";
+  }
+
+  /** Hent listen over brukerens utkast. */
+  const loadDraftsList = useCallback(async () => {
+    setDraftsLoading(true);
+    try {
+      const res = await fetch("/api/mailchimp/newsletter/drafts");
+      if (res.ok) {
+        const json = await res.json();
+        setDrafts(Array.isArray(json.drafts) ? json.drafts : []);
+      }
+    } catch {
+      /* stille — listen er ikke kritisk */
+    } finally {
+      setDraftsLoading(false);
+    }
+  }, []);
+
+  /** Last et eksisterende utkast inn i wizard-en. */
+  async function loadDraft(id: string) {
+    try {
+      const res = await fetch(`/api/mailchimp/newsletter/drafts/${id}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      const s = (json.wizard_state ?? {}) as Partial<WizardStatePayload>;
+      // Reset først så vi ikke arver fra forrige utkast
+      resetAll();
+      // Bruk setTimeout 0 så reset-en lander før vi setter ny state
+      // (React batcher state-oppdateringer; uten dette risikerer vi at
+      // sett-kallene blandes med reset-kallene i samme batch)
+      setTimeout(() => {
+        if (typeof s.themeInput === "string") setThemeInput(s.themeInput);
+        if (s.focus) setFocus(s.focus);
+        if (typeof s.discountPct === "string") setDiscountPct(s.discountPct);
+        if (typeof s.extraContext === "string") setExtraContext(s.extraContext);
+        if (typeof s.productCount === "number") setProductCount(s.productCount);
+        if (typeof s.onlyInStock === "boolean") setOnlyInStock(s.onlyInStock);
+        if (typeof s.manualProductUrls === "string")
+          setManualProductUrls(s.manualProductUrls);
+        if (typeof s.variant === "number") setVariant(s.variant);
+        if (s.preview !== undefined) setPreview(s.preview);
+        if (s.editContent !== undefined) setEditContent(s.editContent);
+        if (Array.isArray(s.editProducts)) setEditProducts(s.editProducts);
+        if (typeof s.midtImageInput === "string")
+          setMidtImageInput(s.midtImageInput);
+        if (typeof s.midtImageUrl === "string") setMidtImageUrl(s.midtImageUrl);
+        if (typeof s.footerImageInput === "string")
+          setFooterImageInput(s.footerImageInput);
+        if (typeof s.footerImageUrl === "string")
+          setFooterImageUrl(s.footerImageUrl);
+        if (typeof s.socialInstagram === "string")
+          setSocialInstagram(s.socialInstagram);
+        if (typeof s.socialLinkedin === "string")
+          setSocialLinkedin(s.socialLinkedin);
+
+        setCurrentDraftId(id);
+        // Markér tilstanden som "synket" så auto-save ikke umiddelbart re-saver
+        lastSyncedStateRef.current = JSON.stringify(s);
+        setLastSavedAt(json.updated_at ? new Date(json.updated_at) : null);
+        setSaveStatus("saved");
+        setShowDrafts(false);
+      }, 0);
+    } catch {
+      /* stille */
+    }
+  }
+
+  /** Lagre nåværende state — auto-kalt av useEffect, men også manuelt. */
+  async function saveCurrentDraft() {
+    const state = buildWizardState();
+    const stateStr = JSON.stringify(state);
+    // Hopp over hvis ingenting har endret seg siden siste server-sync
+    if (stateStr === lastSyncedStateRef.current) return;
+    // Hopp over hvis bruker ikke har begynt på noe
+    if (!state.themeInput.trim() && !state.preview && !state.editContent) return;
+
+    setSaveStatus("saving");
+    try {
+      const res = await fetch("/api/mailchimp/newsletter/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: currentDraftId ?? undefined,
+          title: deriveDraftTitle(state),
+          wizard_state: state,
+        }),
+      });
+      if (!res.ok) {
+        setSaveStatus("error");
+        return;
+      }
+      const json = await res.json();
+      if (!currentDraftId && json.id) setCurrentDraftId(json.id);
+      lastSyncedStateRef.current = stateStr;
+      setLastSavedAt(json.updated_at ? new Date(json.updated_at) : new Date());
+      setSaveStatus("saved");
+      // Oppdater liste i bakgrunnen så nyeste utkast vises øverst
+      void loadDraftsList();
+    } catch {
+      setSaveStatus("error");
+    }
+  }
+
+  /** Slett et utkast. Hvis det er det aktive — resett wizard. */
+  async function deleteDraftFn(id: string) {
+    if (!confirm("Slett dette utkastet permanent?")) return;
+    try {
+      await fetch(`/api/mailchimp/newsletter/drafts/${id}`, {
+        method: "DELETE",
+      });
+      if (id === currentDraftId) {
+        resetAll();
+        setCurrentDraftId(null);
+        lastSyncedStateRef.current = "";
+        setLastSavedAt(null);
+        setSaveStatus("idle");
+      }
+      void loadDraftsList();
+    } catch {
+      /* stille */
+    }
+  }
+
+  /** Start på et helt nytt utkast — resett wizard og glem currentDraftId. */
+  function newDraft() {
+    resetAll();
+    setCurrentDraftId(null);
+    lastSyncedStateRef.current = "";
+    setLastSavedAt(null);
+    setSaveStatus("idle");
+    setShowDrafts(false);
+  }
+
+  /** Endre tittel på et utkast (inline rename). */
+  async function renameDraftFn(id: string, newTitle: string) {
+    try {
+      await fetch(`/api/mailchimp/newsletter/drafts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      void loadDraftsList();
+    } catch {
+      /* stille */
+    }
+  }
+
+  /* Last listen ved mount */
+  useEffect(() => {
+    void loadDraftsList();
+  }, [loadDraftsList]);
+
+  /* Auto-save (debounced 4s) — ALLE relevante state-felter i deps */
+  useEffect(() => {
+    if (skipFirstAutoSaveRef.current) {
+      skipFirstAutoSaveRef.current = false;
+      return;
+    }
+    const handle = setTimeout(() => {
+      void saveCurrentDraft();
+    }, 4000);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    themeInput,
+    focus,
+    discountPct,
+    extraContext,
+    productCount,
+    onlyInStock,
+    manualProductUrls,
+    variant,
+    preview,
+    editContent,
+    editProducts,
+    midtImageInput,
+    midtImageUrl,
+    footerImageInput,
+    footerImageUrl,
+    socialInstagram,
+    socialLinkedin,
+  ]);
+
   /* ═══════════════════════════════════ */
   /*  RENDER                             */
   /* ═══════════════════════════════════ */
@@ -410,7 +681,146 @@ export default function NyhetsbrevByggerPage() {
             Skriv inn ett tema — alt annet genereres automatisk. Rediger fritt i forhåndsvisning før du oppretter draft.
           </p>
         </div>
+        <div className="ml-auto flex items-center gap-2">
+          {saveStatus === "saving" && (
+            <span className="flex items-center gap-1.5 text-xs text-gray-400">
+              <Loader2 className="w-3 h-3 animate-spin" /> Lagrer …
+            </span>
+          )}
+          {saveStatus === "saved" && lastSavedAt && (
+            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+              <Check className="w-3 h-3 text-green-400" /> Lagret{" "}
+              {lastSavedAt.toLocaleTimeString("nb-NO", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
+          {saveStatus === "error" && (
+            <span className="flex items-center gap-1.5 text-xs text-red-400">
+              <AlertCircle className="w-3 h-3" /> Lagring feilet
+            </span>
+          )}
+        </div>
       </header>
+
+      {/* ═══ MINE UTKAST ═══ */}
+      <Card className="border-gray-800">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => {
+              setShowDrafts((v) => !v);
+              if (!showDrafts) void loadDraftsList();
+            }}
+            className="flex items-center gap-2 text-sm font-semibold text-white hover:text-orange-300"
+          >
+            {showDrafts ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+            Mine utkast{" "}
+            <span className="text-xs text-gray-500 font-normal">
+              ({drafts.length})
+            </span>
+            {currentDraftId && (
+              <span className="ml-2 text-xs font-normal text-orange-300">
+                · arbeider på{" "}
+                {drafts.find((d) => d.id === currentDraftId)?.title ?? "utkast"}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={newDraft}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded text-xs font-medium"
+          >
+            <Plus className="w-3 h-3" /> Nytt utkast
+          </button>
+        </div>
+        {showDrafts && (
+          <div className="mt-4 space-y-2">
+            {draftsLoading && (
+              <p className="text-xs text-gray-500">Laster …</p>
+            )}
+            {!draftsLoading && drafts.length === 0 && (
+              <p className="text-xs text-gray-500">
+                Du har ingen utkast enda. Begynn å skrive et tema nedenfor —
+                vi lagrer automatisk hvert ~4 sekund.
+              </p>
+            )}
+            {drafts.map((d) => {
+              const isActive = d.id === currentDraftId;
+              const when = new Date(d.updated_at).toLocaleString("nb-NO", {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              return (
+                <div
+                  key={d.id}
+                  className={`flex items-center gap-3 px-3 py-2 rounded border ${
+                    isActive
+                      ? "border-orange-500/50 bg-orange-500/5"
+                      : "border-gray-800 bg-gray-900/40 hover:border-gray-700"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-white truncate">
+                        {d.title}
+                      </span>
+                      {d.status === "pushed" && (
+                        <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 bg-green-900/40 text-green-400 rounded">
+                          Pushet
+                        </span>
+                      )}
+                      {isActive && (
+                        <span className="text-[10px] uppercase tracking-wide text-orange-300">
+                          aktiv
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-gray-500">
+                      Sist endret {when}
+                    </div>
+                  </div>
+                  {!isActive && (
+                    <button
+                      onClick={() => loadDraft(d.id)}
+                      className="text-xs text-orange-300 hover:text-orange-200"
+                    >
+                      Åpne
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      const newName = window.prompt(
+                        "Nytt navn på utkastet:",
+                        d.title,
+                      );
+                      if (newName && newName.trim() && newName !== d.title) {
+                        void renameDraftFn(d.id, newName.trim());
+                      }
+                    }}
+                    className="text-gray-500 hover:text-white"
+                    title="Endre navn"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => deleteDraftFn(d.id)}
+                    className="text-gray-500 hover:text-red-400"
+                    title="Slett"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
 
       {/* ═══ SUCCESS ═══ */}
       {createResult && (

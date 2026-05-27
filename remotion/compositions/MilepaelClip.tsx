@@ -36,7 +36,7 @@ const IntroScene: React.FC = () => {
       }}
     >
       <div style={{ transform: `scale(${0.8 + pop * 0.2})`, display: "flex" }}>
-        <Wordmark variant="white" width={620} />
+        <Wordmark variant="color" width={640} />
       </div>
       {/* Wordmarken er navnet — under den skriver vi taglinen, ikke
           brand-navnet på nytt. */}

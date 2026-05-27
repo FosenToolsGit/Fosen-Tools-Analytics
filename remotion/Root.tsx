@@ -40,7 +40,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="ProduktSpotlight"
         component={ProduktSpotlight}
-        durationInFrames={360}
+        durationInFrames={420}
         fps={FPS}
         width={1080}
         height={1920}

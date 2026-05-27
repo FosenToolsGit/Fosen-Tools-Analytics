@@ -132,6 +132,7 @@ const navItems: NavEntry[] = [
   { label: "Etiketter", href: "/etikett", icon: BookOpen },
   { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
   { label: "Produkt-import", href: "/innleggsbygger/produkt-import", icon: FileSpreadsheet },
+  { label: "Enkelprodukt (AI)", href: "/innleggsbygger/enkelprodukt", icon: FileSpreadsheet, localOnly: true },
   { label: "Bulk-redigér produkter", href: "/innleggsbygger/produkt-bulk-edit", icon: FileSpreadsheet },
 
   // ── Søkeord ─────────────────────────────────────

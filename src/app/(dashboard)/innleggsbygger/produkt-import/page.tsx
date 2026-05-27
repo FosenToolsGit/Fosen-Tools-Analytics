@@ -1881,22 +1881,59 @@ function SupplierTable({
   // SB = Selbstbedienung / selvbetjening (blister-/opphengsforpakning for butikk).
   // Flagget settes ved parsing (detectSB på rå navn + URL-slug). Skjules som default.
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const raw = search.trim().toLowerCase();
     let list = products;
     if (hideSB) list = list.filter((p) => !p.isSB);
     if (hideAlleredeInne) list = list.filter((p) => !p.alleredeInne);
-    if (q) {
-      list = list.filter((p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.leverandorProdNr.toLowerCase().includes(q) ||
-        p.ean.toLowerCase().includes(q) ||
-        p.variantverdi.toLowerCase().includes(q)
-      );
+    if (raw) {
+      // Multi-token-søk: separer på whitespace/komma/semikolon/newline.
+      // - 1 token: vanlig substring-match (eksisterende oppførsel)
+      // - 2+ tokens: OR-match — vis produkter der MINST ETT felt matcher MINST ETT token.
+      //   Bruker dette til å lime inn 10-100+ produktkoder samtidig.
+      const tokens = raw.split(/[\s,;\n]+/).map((t) => t.trim()).filter(Boolean);
+      if (tokens.length > 0) {
+        const matchToken = (p: SupplierProduct, t: string) =>
+          p.name.toLowerCase().includes(t) ||
+          p.leverandorProdNr.toLowerCase().includes(t) ||
+          p.ean.toLowerCase().includes(t) ||
+          p.variantverdi.toLowerCase().includes(t);
+        list = list.filter((p) => tokens.some((t) => matchToken(p, t)));
+      }
     }
     return list;
   }, [products, search, hideSB, hideAlleredeInne]);
   const hiddenSbCount = useMemo(() => products.filter((p) => p.isSB).length, [products]);
   const alleredeInneCount = useMemo(() => products.filter((p) => p.alleredeInne).length, [products]);
+
+  // Antall søketokens (for å vise "X av Y koder funnet"-info ved multi-token-søk)
+  const searchTokens = useMemo(() => {
+    const raw = search.trim().toLowerCase();
+    if (!raw) return [] as string[];
+    return raw.split(/[\s,;\n]+/).map((t) => t.trim()).filter(Boolean);
+  }, [search]);
+  const isMultiTokenSearch = searchTokens.length > 1;
+  // Hvilke tokens fikk treff?
+  const matchedTokens = useMemo(() => {
+    if (!isMultiTokenSearch) return new Set<string>();
+    const m = new Set<string>();
+    for (const p of filtered) {
+      const fields = [
+        p.name.toLowerCase(),
+        p.leverandorProdNr.toLowerCase(),
+        p.ean.toLowerCase(),
+        p.variantverdi.toLowerCase(),
+      ];
+      for (const t of searchTokens) {
+        if (m.has(t)) continue;
+        if (fields.some((f) => f.includes(t))) m.add(t);
+      }
+    }
+    return m;
+  }, [filtered, searchTokens, isMultiTokenSearch]);
+  const missingTokens = useMemo(
+    () => (isMultiTokenSearch ? searchTokens.filter((t) => !matchedTokens.has(t)) : []),
+    [searchTokens, matchedTokens, isMultiTokenSearch],
+  );
 
   const visible = filtered.slice(0, 200);
 
@@ -1909,7 +1946,7 @@ function SupplierTable({
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={`Søk i ${products.length} produkter...`}
+            placeholder={`Søk i ${products.length} produkter — lim inn flere koder/EAN separert av mellomrom eller linjeskift`}
             className="w-full bg-gray-900 border border-gray-700 rounded pl-7 pr-2 py-1 text-sm text-white"
           />
         </div>
@@ -1931,6 +1968,26 @@ function SupplierTable({
           Lukk
         </button>
       </div>
+
+      {/* Multi-token-søk: vis match-status så bruker ser hvilke koder som mangler i prislisten */}
+      {isMultiTokenSearch && (
+        <div className="mb-3 bg-gray-900 border border-gray-800 rounded p-2 text-xs">
+          <div className="flex items-center gap-2 text-gray-300">
+            <span className="font-semibold text-orange-400">
+              {matchedTokens.size} av {searchTokens.length} søketokens fikk treff
+            </span>
+            {filtered.length > 0 && (
+              <span className="text-gray-500">— {filtered.length} unike produkter</span>
+            )}
+          </div>
+          {missingTokens.length > 0 && (
+            <div className="mt-1.5 text-red-300">
+              <span className="text-red-400">Mangler i prislisten:</span>{" "}
+              <span className="font-mono text-[11px]">{missingTokens.join(", ")}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="overflow-x-auto border border-gray-800 rounded max-h-96 overflow-y-auto">
         <table className="w-full text-xs">

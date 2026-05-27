@@ -134,7 +134,7 @@ const IntroScene: React.FC<{ eyebrow: string }> = ({ eyebrow }) => {
       }}
     >
       <div style={{ transform: `scale(${0.8 + pop * 0.2})`, display: "flex" }}>
-        <Wordmark variant="white" width={620} />
+        <Wordmark variant="color" width={640} />
       </div>
       <div style={{ transform: `translateY(${(1 - pop) * 30}px)` }}>
         <Eyebrow text={eyebrow} />
@@ -317,7 +317,7 @@ const AvsluttScene: React.FC<LeveranseReelProps> = (p) => {
           gap: 28,
         }}
       >
-        <Wordmark variant="white" width={300} />
+        <Wordmark variant="color" width={240} />
         <div
           style={{
             padding: "20px 38px",

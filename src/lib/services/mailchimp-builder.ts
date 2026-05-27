@@ -694,12 +694,15 @@ function renderContentSection(
 
   // --- Ingress + brand logo ---
   {
-    // #1 Personalisering: prepend «Hei *|FNAME|*,» hvis ingressen ikke alt har merge-tag.
-    // Mailchimp bytter *|FNAME|* med abonnentens fornavn (fallback til generisk hilsen
-    // dersom fornavn mangler — krever at default-verdi er satt i Mailchimp).
+    // #1 Personalisering: prepend conditional hilsen. Tidligere brukte vi
+    // «Hei *|FNAME|*,» direkte, men når en abonnent mangler fornavn ble
+    // resultatet «Hei ,» (stygg). Bruker nå Mailchimp IF/ELSE-merge-tag:
+    //   *|IF:FNAME|*Hei *|FNAME|*,*|ELSE:|*Hei!*|END:IF|*
+    // → «Hei Adrian,» når fornavn finnes, ellers «Hei!»
+    const greeting = "*|IF:FNAME|*Hei *|FNAME|*,*|ELSE:|*Hei!*|END:IF|*";
     const ingressText = input.ingress.includes("*|FNAME|*") || input.ingress.includes("*|MERGE")
       ? input.ingress
-      : `Hei *|FNAME|*,\n\n${input.ingress}`;
+      : `${greeting}\n\n${input.ingress}`;
     // *|FNAME|* skal ikke esc-es — esc() bevarer * og | så det er trygt.
     const ingressHtml = esc(ingressText).replace(/\n+/g, "<br><br>");
     let ingressInner = `<p style="line-height: 1.5; mso-line-height-alt: 150%; text-align: center;" class="${input.brandLogoUrl ? "" : "last-child"}"><span style="font-size: 14px">${ingressHtml}</span></p>`;

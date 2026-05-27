@@ -51,6 +51,8 @@ export const BG = {
 // Wordmark-PNG-ene ligger i public/ — Remotion serverer public/ som rot,
 // saa en absolutt "/..."-sti fungerer i Studio og ved render.
 export const WORDMARK = {
+  /** Roed boks-versjon (SVG) — primaert for video-komposisjoner. */
+  color: "/social/brand-assets/ft-wordmark-color.svg",
   white: "/social/brand-assets/ft-wordmark-white.png",
   red: "/social/brand-assets/ft-wordmark-red.png",
   ink: "/social/brand-assets/ft-wordmark-ink.png",

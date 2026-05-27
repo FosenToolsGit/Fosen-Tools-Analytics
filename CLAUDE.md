@@ -2524,6 +2524,7 @@ Tema: Fullstendig omskriving av `mailchimp-builder.ts` til ekte Mailchimp-HTML +
 - **5 megameny CSS-klasser** (Arbeidsklær, Batterier, Verktøy for elbil, Verneutstyr, Tvinger)
 - **Levende ft-catgrid utrulling** — script publisert på 2 sider, gjenstår ~37 hovedkategori-sider
 - **Daglig-leder-beslutning om Imagen 4** (memo levert 18. mai)
+- **AI Discoverability — HDFI-eierskap-strategi** (cold-mail-test 24. mai avslørte at FT er B-tier, men HDFI-akronymet er ikke etablert i AI-trening). Full plan: `docs/seo/ai-discoverability-plan-2026-05-24.md`. 4-tiltaks-plan: (1) Wikipedia, (2) Presse, (3) Fagblad-siteringer, (4) Utvid /hdfi-siden. Re-test prompts Q3 (24. august).
 
 ---
 

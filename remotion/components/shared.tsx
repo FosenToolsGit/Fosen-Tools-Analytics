@@ -6,11 +6,13 @@ import {
   AbsoluteFill,
   Img,
   interpolate,
+  spring,
   staticFile,
   useCurrentFrame,
+  useVideoConfig,
 } from "remotion";
 
-import { BG, FT, MONO_FONT, SANS_FONT, WORDMARK } from "../theme";
+import { BG, FT, MONO_FONT, SANS_FONT, TAGLINE, WORDMARK } from "../theme";
 
 // ── helpers ──────────────────────────────────────────────────────────
 
@@ -77,6 +79,29 @@ export const Backdrop: React.FC<{ tone?: "ink" | "red" }> = ({
           }}
         />
       ) : null}
+      {/* FT-rammer — rød topp- og bunnstripe i hver eneste frame.
+          Signatur fra brosjyre-/website-stilen, gir industriell
+          poster-følelse på alle videoer (ikke bare i outro). */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 14,
+          background: isRed ? FT.white : FT.red,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 14,
+          background: isRed ? FT.white : FT.red,
+        }}
+      />
     </AbsoluteFill>
   );
 };
@@ -84,9 +109,9 @@ export const Backdrop: React.FC<{ tone?: "ink" | "red" }> = ({
 // ── wordmark ─────────────────────────────────────────────────────────
 
 export const Wordmark: React.FC<{
-  variant?: "white" | "red" | "ink";
+  variant?: "color" | "white" | "red" | "ink";
   width?: number;
-}> = ({ variant = "white", width = 360 }) => (
+}> = ({ variant = "color", width = 360 }) => (
   <Img
     src={staticFile(WORDMARK[variant])}
     style={{ width, height: "auto", objectFit: "contain" }}
@@ -198,5 +223,148 @@ export const Burst: React.FC<{ text: string; size?: number }> = ({
         {text}
       </div>
     </div>
+  );
+};
+
+// ── corner-brackets (industriell hjørne-ramme) ───────────────────────
+
+/**
+ * Fire L-formede hjørne-merker rundt en boks. Plasser inni en
+ * `position: relative`-forelder. Gir et industrielt/teknisk preg —
+ * passer FT-stilen.
+ */
+export const CornerBrackets: React.FC<{
+  color?: string;
+  arm?: number;
+  thickness?: number;
+}> = ({ color = FT.red, arm = 56, thickness = 4 }) => {
+  const base: React.CSSProperties = {
+    position: "absolute",
+    width: arm,
+    height: arm,
+  };
+  return (
+    <>
+      <div
+        style={{
+          ...base,
+          top: -thickness,
+          left: -thickness,
+          borderTop: `${thickness}px solid ${color}`,
+          borderLeft: `${thickness}px solid ${color}`,
+        }}
+      />
+      <div
+        style={{
+          ...base,
+          top: -thickness,
+          right: -thickness,
+          borderTop: `${thickness}px solid ${color}`,
+          borderRight: `${thickness}px solid ${color}`,
+        }}
+      />
+      <div
+        style={{
+          ...base,
+          bottom: -thickness,
+          left: -thickness,
+          borderBottom: `${thickness}px solid ${color}`,
+          borderLeft: `${thickness}px solid ${color}`,
+        }}
+      />
+      <div
+        style={{
+          ...base,
+          bottom: -thickness,
+          right: -thickness,
+          borderBottom: `${thickness}px solid ${color}`,
+          borderRight: `${thickness}px solid ${color}`,
+        }}
+      />
+    </>
+  );
+};
+
+// ── outro-CTA (delt avslutnings-scene) ───────────────────────────────
+
+/**
+ * Delt avslutnings-scene — wordmark + rød CTA-pille + taglinen i italic.
+ * Brukes som siste Sequence i komposisjonene som ikke trenger noe
+ * spesial-layout (ProduktSpotlight, KampanjeTeaser, SitatClip). Sikrer
+ * at avslutningen ser lik ut på tvers og at tagline-regelen
+ * («wordmarken er navnet — under den taglinen») håndheves ett sted.
+ *
+ * Komponenten bruker `useCurrentFrame` relativt til Sequence-en sin,
+ * så bruk den slik:
+ *
+ *   <Sequence from={N} durationInFrames={60}>
+ *     <OutroCta ctaUrl={props.ctaUrl} />
+ *   </Sequence>
+ */
+export const OutroCta: React.FC<{
+  ctaUrl: string;
+  /** Wordmark-bredde (px). Default 540. */
+  wordmarkWidth?: number;
+  /** Font-size for CTA-pillen (px). Default 44. */
+  ctaSize?: number;
+  /** Font-size for taglinen (px). Default 30. */
+  taglineSize?: number;
+  /** Skjul taglinen hvis komposisjonen ikke trenger den. */
+  hideTagline?: boolean;
+}> = ({
+  ctaUrl,
+  wordmarkWidth = 540,
+  ctaSize = 44,
+  taglineSize = 30,
+  hideTagline = false,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const pop = spring({ frame, fps, config: { damping: 15 } });
+  const o = fade(frame, 0, 14, 999, 1000);
+  return (
+    <AbsoluteFill
+      style={{
+        opacity: o,
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 86,
+        gap: 34,
+      }}
+    >
+      <div style={{ transform: `scale(${0.82 + pop * 0.18})` }}>
+        <Wordmark variant="color" width={wordmarkWidth} />
+      </div>
+      <div
+        style={{
+          padding: `${Math.round(ctaSize * 0.55)}px ${Math.round(ctaSize * 1.1)}px`,
+          borderRadius: 999,
+          background: FT.red,
+          fontFamily: SANS_FONT,
+          fontWeight: 800,
+          fontSize: ctaSize,
+          color: FT.white,
+          transform: `translateY(${(1 - pop) * 36}px)`,
+        }}
+      >
+        {ctaUrl}
+      </div>
+      {!hideTagline ? (
+        <div
+          style={{
+            fontFamily: SANS_FONT,
+            fontStyle: "italic",
+            fontWeight: 500,
+            fontSize: taglineSize,
+            lineHeight: 1.32,
+            textAlign: "center",
+            color: FT.inkDim,
+            maxWidth: 860,
+          }}
+        >
+          {TAGLINE}
+        </div>
+      ) : null}
+    </AbsoluteFill>
   );
 };
