@@ -406,8 +406,12 @@ export function Slideshow({
   // bruker vi vanlig durationMs.
   const currentSlide = slides[idx];
   const isYouTubeSlide = currentSlide?.custom?.template === "youtube";
+  // Per-slide duration override (f.eks. partner-rundell trenger lengre tid)
+  const slideOverrideSec = currentSlide?.custom?.duration_seconds;
   const slideDurationMs = isYouTubeSlide
     ? (currentSlide?.custom?.youtube_max_seconds ?? 300) * 1000
+    : slideOverrideSec
+    ? slideOverrideSec * 1000
     : durationMs;
 
   useEffect(() => {

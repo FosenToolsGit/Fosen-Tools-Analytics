@@ -41,6 +41,21 @@ const sectionLabel: React.CSSProperties = {
   marginBottom: 4,
 };
 
+const miniBtn: React.CSSProperties = {
+  background: "rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.15)",
+  color: "#fff",
+  width: 24,
+  height: 24,
+  borderRadius: 3,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
 interface Props {
   slides: CustomSlide[] | undefined;
   products: PricetagProduct[];
@@ -381,6 +396,173 @@ function SlideRow({ slide, idx, total, products, expanded, onToggle, onChange, o
                   <input type="text" value={slide.brand_name ?? ""} onChange={(e) => onChange({ brand_name: e.target.value })} style={fieldStyle} placeholder="Husqvarna" />
                   <label style={{ ...labelStyle, marginTop: 6 }}>Merke-logo (URL)</label>
                   <input type="text" value={slide.brand_logo_url ?? ""} onChange={(e) => onChange({ brand_logo_url: e.target.value })} style={fieldStyle} placeholder="https://… eller la stå tom for tekst-fallback" />
+                </>
+              )}
+
+              {/* Partner-rundell extras */}
+              {slide.template === "partners_rundell" && (
+                <>
+                  <div style={{ ...sectionLabel, marginTop: 10 }}>Karusell-innstillinger</div>
+                  <label style={labelStyle}>Sekunder per full loop</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={120}
+                    value={slide.rundell_duration ?? 30}
+                    onChange={(e) => onChange({ rundell_duration: Number(e.target.value) || 30 })}
+                    style={fieldStyle}
+                  />
+                  <label style={{ ...labelStyle, marginTop: 6 }}>Hvor lenge skal slide vises (sek)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={300}
+                    value={slide.duration_seconds ?? 14}
+                    onChange={(e) => onChange({ duration_seconds: Number(e.target.value) || 14 })}
+                    style={fieldStyle}
+                    placeholder="Default = settings.seconds_per_slide"
+                  />
+
+                  <div style={{ ...sectionLabel, marginTop: 12 }}>Partnere ({(slide.partners ?? []).length})</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 360, overflowY: "auto" }}>
+                    {(slide.partners ?? []).map((p, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.10)",
+                          borderRadius: 4,
+                          padding: 8,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 4,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <input
+                            type="text"
+                            value={p.name}
+                            onChange={(e) => {
+                              const next = [...(slide.partners ?? [])];
+                              next[i] = { ...next[i], name: e.target.value };
+                              onChange({ partners: next });
+                            }}
+                            style={{ ...fieldStyle, flex: 1, fontWeight: 700 }}
+                            placeholder="Partner-navn"
+                          />
+                          <div style={{ display: "flex", gap: 3, marginLeft: 6 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (i === 0) return;
+                                const next = [...(slide.partners ?? [])];
+                                [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                                onChange({ partners: next });
+                              }}
+                              disabled={i === 0}
+                              style={{ ...miniBtn, opacity: i === 0 ? 0.3 : 1 }}
+                              title="Flytt opp"
+                            >↑</button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const arr = slide.partners ?? [];
+                                if (i === arr.length - 1) return;
+                                const next = [...arr];
+                                [next[i + 1], next[i]] = [next[i], next[i + 1]];
+                                onChange({ partners: next });
+                              }}
+                              disabled={i === (slide.partners ?? []).length - 1}
+                              style={{ ...miniBtn, opacity: i === (slide.partners ?? []).length - 1 ? 0.3 : 1 }}
+                              title="Flytt ned"
+                            >↓</button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = (slide.partners ?? []).filter((_, j) => j !== i);
+                                onChange({ partners: next });
+                              }}
+                              style={{ ...miniBtn, color: "#ED1C24" }}
+                              title="Slett partner"
+                            >×</button>
+                          </div>
+                        </div>
+                        <input
+                          type="text"
+                          value={p.badge ?? ""}
+                          onChange={(e) => {
+                            const next = [...(slide.partners ?? [])];
+                            next[i] = { ...next[i], badge: e.target.value };
+                            onChange({ partners: next });
+                          }}
+                          style={fieldStyle}
+                          placeholder="Badge (f.eks. «Leverandør» eller «Spesiell gjest»)"
+                        />
+                        <input
+                          type="text"
+                          value={p.logo_url ?? ""}
+                          onChange={(e) => {
+                            const next = [...(slide.partners ?? [])];
+                            next[i] = { ...next[i], logo_url: e.target.value };
+                            onChange({ partners: next });
+                          }}
+                          style={{ ...fieldStyle, fontFamily: "monospace", fontSize: 10 }}
+                          placeholder="Logo-URL (la stå tom = vis navn som tekst-kort)"
+                        />
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <label style={{ ...labelStyle, flex: 1, marginTop: 0 }}>
+                            Scale (1.0 = normal)
+                            <input
+                              type="number"
+                              min={0.5}
+                              max={5}
+                              step={0.1}
+                              value={p.scale ?? 1}
+                              onChange={(e) => {
+                                const next = [...(slide.partners ?? [])];
+                                next[i] = { ...next[i], scale: Number(e.target.value) || 1 };
+                                onChange({ partners: next });
+                              }}
+                              style={fieldStyle}
+                            />
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#fff", cursor: "pointer", paddingTop: 16 }}>
+                            <input
+                              type="checkbox"
+                              checked={p.filter_black ?? false}
+                              onChange={(e) => {
+                                const next = [...(slide.partners ?? [])];
+                                next[i] = { ...next[i], filter_black: e.target.checked };
+                                onChange({ partners: next });
+                              }}
+                            />
+                            Svart
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [...(slide.partners ?? []), { name: "Ny partner", badge: "Leverandør" }];
+                      onChange({ partners: next });
+                    }}
+                    style={{
+                      marginTop: 8,
+                      background: "rgba(237,28,36,0.20)",
+                      border: "1px dashed rgba(237,28,36,0.50)",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    + LEGG TIL PARTNER
+                  </button>
                 </>
               )}
             </>

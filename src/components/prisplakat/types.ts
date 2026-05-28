@@ -87,6 +87,7 @@ export type SlideTemplate =
   | "certified"        // Stor tekst + pill-rad
   | "outro"            // Kontakt-info (telefon + adresse + åpningstider)
   | "brand_spotlight"  // Merke-logo + tagline + accent
+  | "partners_rundell" // Horisontalt rullende karusell av flere brand-logoer
   | "multi_product"    // 2/4 produkter på én slide
   | "combo"            // 2 produkter med kombi-pris
   | "blank"            // Fri layout
@@ -161,6 +162,30 @@ export interface CustomSlide {
   // ─── For brand_spotlight ───────────────────
   brand_name?: string;
   brand_logo_url?: string;
+
+  // ─── For partners_rundell ──────────────────
+  /** Liste med leverandører/gjester som scroller horisontalt på slide-en.
+   *  Hvis logo_url mangler, vises navnet som styled tekst-kort i stedet.
+   *  `filter_black: true` rendrer logoen som ren svart silhuett (CSS-invert)
+   *  — nyttig for logoer som leveres i hvit-versjon men trenger å være
+   *  svart mot en hvit bakgrunn. */
+  partners?: Array<{
+    name: string;
+    logo_url?: string;
+    badge?: string;
+    /** Render logo som ren svart silhuett (CSS-invert). */
+    filter_black?: boolean;
+    /** Manuell scale-multiplier for logoer med mye åpen padding (default 1.0). */
+    scale?: number;
+  }>;
+  /** Sekunder for en full loop (default 30). Lavere = raskere scroll. */
+  rundell_duration?: number;
+
+  // ─── Per-slide varighet (overstyrer global seconds_per_slide) ──────
+  /** Antall sekunder denne slide-en vises før auto-advance. Hvis ikke
+   *  satt, brukes settings.seconds_per_slide. Nyttig for slides som har
+   *  egen animasjon (partner-rundell) som trenger lengre visningstid. */
+  duration_seconds?: number;
 
   // ─── For multi_product ─────────────────────
   /** Indices inn i playlist.products[] — viser N produkter i grid */
@@ -342,6 +367,19 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
       return { ...base, label: "Kontakt-info", eyebrow: "VELKOMMEN INN", title: "INDUSTRIGATA 1\nBREKSTAD", phone: "72 51 51 20", url: "fosen-tools.no", hours: "MAN — FRE  07:00 — 15:00" };
     case "brand_spotlight":
       return { ...base, label: "Brand-spotlight", eyebrow: "NYTT FRA", brand_name: "Husqvarna", subtitle: "Diamantblad · Kjernebor · Sagverktøy" };
+    case "partners_rundell":
+      return {
+        ...base,
+        label: "Partner-rundell",
+        eyebrow: "PÅ PLASS DENNE DAGEN",
+        title: "VÅRE PARTNERE",
+        rundell_duration: 30,
+        partners: [
+          { name: "Milwaukee" },
+          { name: "Wera" },
+          { name: "Soudal" },
+        ],
+      };
     case "multi_product":
       return { ...base, label: "Multi-produkt", product_indexes: [], align: "center" };
     case "combo":
@@ -412,6 +450,7 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
   certified: "Sertifikater (med pills)",
   outro: "Kontakt-info (telefon + adresse)",
   brand_spotlight: "Brand-spotlight",
+  partners_rundell: "Partner-rundell (horisontalt rullende)",
   multi_product: "Multi-produkt (2 / 4-up)",
   combo: "Kombi-tilbud (2 produkter)",
   blank: "Tom — fri redigering",

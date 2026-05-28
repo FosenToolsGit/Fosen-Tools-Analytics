@@ -79,6 +79,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   if (slide.template === "brand_spotlight") {
     return <BrandSpotlightSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
   }
+  if (slide.template === "partners_rundell") {
+    return <PartnersRundellSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
+  }
   if (slide.template === "youtube") {
     return <YouTubeSlide slide={slide} active={active} />;
   }
@@ -280,6 +283,149 @@ function BrandSpotlightSlide({ slide, baseStyle, active, landscape }: { slide: C
           }}>{slide.title}</div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Partner-rundell slide ───────────────────────────────────────────────
+// Horisontalt rullende karusell av leverandører/gjester. Logo-kort gli
+// kontinuerlig fra høyre til venstre, looper sømløst via duplisert content.
+
+function PartnersRundellSlide({ slide, baseStyle, active, landscape }: { slide: CustomSlide; baseStyle: React.CSSProperties; active: boolean; landscape: boolean }) {
+  void active;
+  void landscape;
+  const partners = slide.partners && slide.partners.length > 0 ? slide.partners : [];
+  const duration = slide.rundell_duration ?? 30;
+  // Dupliserer settet 2x for å sikre sømløs loop via translateX(-50%)
+  const looped = [...partners, ...partners];
+
+  const accent = slide.accent_color || "#ED1C24";
+
+  return (
+    <div style={{ ...baseStyle, padding: 0, overflow: "hidden" }}>
+      {/* Image-dim */}
+      {slide.bg_image_url && slide.bg_dim && slide.bg_dim > 0 && (
+        <div style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${slide.bg_dim})` }} />
+      )}
+
+      {/* Header — eyebrow + tittel */}
+      <div style={{
+        position: "absolute", top: "8cqh", left: 0, right: 0,
+        display: "flex", flexDirection: "column", alignItems: "center",
+        gap: "1.5cqh", zIndex: 2, padding: "0 6cqh",
+      }}>
+        {slide.eyebrow && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.3em",
+            fontSize: "2.4cqh", textTransform: "uppercase", color: accent,
+          }}>{slide.eyebrow}</div>
+        )}
+        {slide.title && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 900,
+            fontSize: "7cqh", textTransform: "uppercase", lineHeight: 1,
+            whiteSpace: "pre-line", textAlign: "center",
+          }}>{slide.title}</div>
+        )}
+        {slide.divider && (
+          <div style={{ width: "12cqh", height: "0.5cqh", background: accent }} />
+        )}
+      </div>
+
+      {/* Rullende karusell — sentrert vertikalt */}
+      <div style={{
+        position: "absolute", top: "50%", left: 0, right: 0,
+        transform: "translateY(-50%)",
+        display: "flex", alignItems: "center",
+        overflow: "hidden",
+        zIndex: 1,
+      }}>
+        <div
+          style={{
+            display: "flex", gap: "4cqh",
+            alignItems: "center",
+            width: "max-content",
+            whiteSpace: "nowrap",
+            animation: `ftPartnerRundell ${duration}s linear infinite`,
+          }}
+        >
+          {looped.map((p, i) => (
+            <PartnerCard key={i} partner={p} accent={accent} />
+          ))}
+        </div>
+      </div>
+
+      {/* Subtitle nederst */}
+      {slide.subtitle && (
+        <div style={{
+          position: "absolute", bottom: "8cqh", left: 0, right: 0,
+          textAlign: "center", padding: "0 6cqh",
+          fontFamily: HEAD, fontWeight: 600,
+          fontSize: "2.2cqh", letterSpacing: "0.12em",
+          opacity: 0.7, textTransform: "uppercase", zIndex: 2,
+        }}>{slide.subtitle}</div>
+      )}
+
+      {/* Inline keyframes — sømløs loop via translateX(-50%) */}
+      <style>{`@keyframes ftPartnerRundell { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
+    </div>
+  );
+}
+
+function PartnerCard({ partner, accent }: { partner: { name: string; logo_url?: string; badge?: string; filter_black?: boolean; scale?: number }; accent: string }) {
+  const hasLogo = !!partner.logo_url;
+  const scale = partner.scale ?? 1;
+  return (
+    <div style={{
+      display: "inline-flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "1.5cqh",
+      minWidth: "36cqh",
+      padding: "0 3cqh",
+    }}>
+      {/* Logo direkte på slide-bg — ingen card-bakgrunn siden hele slide-en
+          er hvit. Bare logoens egne farger vises. Ingen overflow:hidden så
+          scale-felt kan vokse logoer som har mye åpen padding i SVG-en. */}
+      <div style={{
+        width: "36cqh",
+        height: "26cqh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 0,
+      }}>
+        {hasLogo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={proxyImage(partner.logo_url!) || partner.logo_url!}
+            alt={partner.name}
+            style={{
+              maxWidth: "100%", maxHeight: "100%", objectFit: "contain",
+              transform: `scale(${scale})`,
+              filter: partner.filter_black ? "brightness(0)" : undefined,
+            }}
+          />
+        ) : (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 900,
+            fontSize: "3.6cqh", textTransform: "uppercase",
+            color: "#0F1115", textAlign: "center", lineHeight: 1.05,
+            whiteSpace: "normal", wordBreak: "break-word",
+            border: `2px solid ${accent}`,
+            padding: "1.5cqh 2cqh", borderRadius: "1cqh",
+          }}>{partner.name}</div>
+        )}
+      </div>
+      {/* Optional badge under */}
+      {partner.badge && (
+        <div style={{
+          fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.15em",
+          fontSize: "1.6cqh", textTransform: "uppercase",
+          color: accent,
+          opacity: 0.85,
+        }}>{partner.badge}</div>
+      )}
     </div>
   );
 }

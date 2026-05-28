@@ -9,18 +9,14 @@
  *  - Finpuss tekster i UI om ønskelig
  *  - Trykk "📺 Skjerm-URL" for å kopiere kiosk-URL til UniFi-skjermen
  *
- * Slideshow-strukturen (11 slides à 8 sek = ~88s loop):
- *  1.  Intro       — "25 ÅR · Vi åpner ombygget butikk"
- *  2.  Credentials — Dato + program i 3 trinn
- *  3.  Brand 1     — Milwaukee
- *  4.  Brand 2     — Wera
- *  5.  Brand 3     — Soudal
- *  6.  Brand 4     — Picard / Halder
- *  7.  Brand 5     — Zweibrüder
- *  8.  Brand 6     — Red Bull (spesiell gjest)
- *  9.  Brand 7     — Tesla mobile service (spesiell gjest)
- *  10. Credentials — Highlights (dagstilbud, konkurranser, goodiebag)
- *  11. Outro       — "Meld deg på i kassen" + adresse + kontakt
+ * Slideshow-strukturen (5 slides — 4 raske + 1 lang rundell ≈ 60s loop):
+ *  1. Intro            — "25 ÅR · Vi åpner ombygget butikk"
+ *  2. Program          — Dato + program i 3 trinn
+ *  3. Partners-rundell — Horisontalt rullende karusell av alle leverandører
+ *                        + spesielle gjester (Milwaukee, Wera, Soudal,
+ *                        Picard, Halder, Zweibrüder, Red Bull, Tesla)
+ *  4. Highlights       — Dagstilbud, konkurranser, goodiebag
+ *  5. Outro            — "Meld deg på i kassen" + adresse + kontakt
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -91,75 +87,33 @@ const customSlides = [
     divider: true,
   }),
 
-  // Slides 3-7 — Leverandører
-  baseSlide("brand-milwaukee", "brand_spotlight", 2, {
-    label: "Milwaukee",
-    bg_color: "#D60E0F",
-    text_color: FT_WHITE,
-    accent_color: FT_WHITE,
-    eyebrow: "PÅ PLASS",
-    brand_name: "MILWAUKEE",
-    subtitle: "M12 · M18 · MX FUEL — møt en av verdens største elektroverktøy-produsenter",
-  }),
-  baseSlide("brand-wera", "brand_spotlight", 3, {
-    label: "Wera",
-    bg_color: "#1B1E23",
-    text_color: FT_WHITE,
-    accent_color: "#00A04A",
-    eyebrow: "PÅ PLASS",
-    brand_name: "WERA",
-    subtitle: "Tysk presisjon siden 1936 — Kraftform, Joker, Take-it-easy",
-  }),
-  baseSlide("brand-soudal", "brand_spotlight", 4, {
-    label: "Soudal",
-    bg_color: "#FFCB05",
-    text_color: "#1B1E23",
-    accent_color: "#1B1E23",
-    eyebrow: "PÅ PLASS",
-    brand_name: "SOUDAL",
-    subtitle: "Verdens største uavhengige produsent av lim, fugemasse og PU-skum",
-  }),
-  baseSlide("brand-picard-halder", "brand_spotlight", 5, {
-    label: "Picard / Halder",
-    bg_color: "#0F1115",
+  // Slide 3 — Partner-rundell (én slide med rullende karusell av alle)
+  baseSlide("partners-rundell", "partners_rundell", 2, {
+    label: "Partnere på plass",
+    bg_color: FT_INK,
     text_color: FT_WHITE,
     accent_color: FT_RED,
-    eyebrow: "PÅ PLASS",
-    brand_name: "PICARD\n&\nHALDER",
-    subtitle: "Tyske premium-hammere og spesialverktøy",
-  }),
-  baseSlide("brand-zweibruder", "brand_spotlight", 6, {
-    label: "Zweibrüder (Ledlenser)",
-    bg_color: "#1B1E23",
-    text_color: FT_WHITE,
-    accent_color: "#F4D43A",
-    eyebrow: "PÅ PLASS",
-    brand_name: "ZWEIBRÜDER",
-    subtitle: "Ledlenser-lykter — tysk LED-teknologi for profesjonelle",
-  }),
-
-  // Slides 8-9 — Spesielle gjester
-  baseSlide("guest-redbull", "brand_spotlight", 7, {
-    label: "Red Bull",
-    bg_color: "#001489",
-    text_color: FT_WHITE,
-    accent_color: "#FFC72C",
-    eyebrow: "SPESIELL GJEST",
-    brand_name: "RED BULL",
-    subtitle: "Innom for en boost? Red Bull er på plass hele dagen.",
-  }),
-  baseSlide("guest-tesla", "brand_spotlight", 8, {
-    label: "Tesla Mobile Service",
-    bg_color: "#0F1115",
-    text_color: FT_WHITE,
-    accent_color: "#E31937",
-    eyebrow: "SPESIELL GJEST",
-    brand_name: "TESLA\nMOBILE SERVICE",
-    subtitle: "Mobil service-bil på plass — ta en titt på fremtidens elbil-vedlikehold",
+    eyebrow: "PÅ PLASS DENNE DAGEN",
+    title: "VÅRE PARTNERE\n& SPESIELLE GJESTER",
+    subtitle: "Møt ekspertene · få faglig påfyll · still spørsmål",
+    divider: true,
+    // Matcher seconds_per_slide (14s) så hele karusellen scroller én
+    // full loop akkurat mens slide-en er på skjermen.
+    rundell_duration: 14,
+    partners: [
+      { name: "Milwaukee", badge: "Leverandør" },
+      { name: "Wera", badge: "Leverandør" },
+      { name: "Soudal", badge: "Leverandør" },
+      { name: "Picard", badge: "Leverandør" },
+      { name: "Halder", badge: "Leverandør" },
+      { name: "Zweibrüder\n(Ledlenser)", badge: "Leverandør" },
+      { name: "Red Bull", badge: "Spesiell gjest" },
+      { name: "Tesla\nMobile Service", badge: "Spesiell gjest" },
+    ],
   }),
 
-  // Slide 10 — Highlights
-  baseSlide("highlights", "credentials", 9, {
+  // Slide 4 — Highlights
+  baseSlide("highlights", "credentials", 3, {
     label: "Highlights",
     bg_color: FT_INK,
     text_color: FT_WHITE,
@@ -170,8 +124,8 @@ const customSlides = [
     divider: true,
   }),
 
-  // Slide 11 — Outro / CTA
-  baseSlide("outro", "outro", 10, {
+  // Slide 5 — Outro / CTA
+  baseSlide("outro", "outro", 4, {
     label: "Meld deg på",
     bg_color: FT_RED,
     text_color: FT_WHITE,
@@ -195,7 +149,9 @@ const playlist = {
   format: "slideshow_landscape", // 16:9 for UniFi-skjerm under Packout-displayet
   products: [], // Ingen produkt-slides — alt er custom slides
   settings: {
-    seconds_per_slide: 8,
+    // Hver slide vises 14 sek — rundell-en scroller én full loop akkurat
+    // mens partner-slide-en er på skjermen (rundell_duration = 14s).
+    seconds_per_slide: 14,
     transition: "fade",
     accent_color: FT_RED,
     show_clock: false,
