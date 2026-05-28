@@ -33,6 +33,8 @@ export interface ScrapedRaw {
   listepris: number | null;
   /** Domain-deteksjon for senere logikk */
   domain: string;
+  /** Modellnummer (kort tall-kode som Snickers «6943»). IKKE leverandørproduktnr. */
+  model_code?: string | null;
 }
 
 const UA =
@@ -542,3 +544,403 @@ function parseHtml(html: string, url: string, opts: { scrape_b2b_prices?: boolea
 
 // Suppress unused import warning for helper used optionally
 void extractElementsByClass;
+
+/**
+ * Parser produkt-data fra rå PDF-tekst (pdf-parse output).
+ * PDF-er er ikke HTML — vi må gjette struktur fra layout og linje-mønster.
+ *
+ * Heuristikk:
+ *  - Første rene tall-linje (3-15 sifre) = produktkode (mpn)
+ *  - Tittel = de første 1-3 korte beskrivende linjene FØR første lang
+ *    paragraf-linje (>80 tegn). Slås sammen til én streng.
+ *  - Description_long = alle paragraf-linjer (>40 tegn), de første 5
+ *  - Description_short = første paragraf-linje
+ *  - Bullets = korte linjer (8-90 tegn) etter første paragraf, som ikke er
+ *    nye paragrafer og ikke ren spec («Kode: 123»).
+ */
+/**
+ * Mange leverandør-PDF-er bruker font-subset som mapper ligaturer
+ * («fi», «fl», «ff», «ffi») til private-use-area Unicode-tegn.
+ * Tegnene varierer per font, men vi ser samme mønster i Snickers,
+ * Hultafors og Wera: greske bokstaver brukt som ligatur-proxy.
+ * Fikser dette POST-pdf-parse så all videre logikk får ren norsk tekst.
+ */
+function normalizePdfLigatures(input: string): string {
+  return input
+    // Ligaturer kodet som greske/symbol-tegn (Snickers-mønster)
+    .replace(/Υ/g, "fl")  // «reΥeksbånd» → «refleksbånd»
+    .replace(/υ/g, "fl")
+    .replace(/θ/g, "fi")  // «sertiθsert» → «sertifisert»
+    .replace(/Θ/g, "fi")
+    .replace(/Φ/g, "ff")  // «stΦutet» → «stoffutet»
+    .replace(/φ/g, "ff")
+    .replace(/Ψ/g, "ffi")
+    .replace(/ψ/g, "ffi")
+    .replace(/Δ/g, "fb")
+    // Unicode private-use-area-tegn (felles Adobe-font-subset)
+    .replace(//g, "fi")
+    .replace(//g, "fl")
+    .replace(//g, "ffi")
+    .replace(//g, "ffl")
+    // Ekte Unicode-ligaturer (sjeldne men forekommer)
+    .replace(/ﬀ/g, "ff")
+    .replace(/ﬁ/g, "fi")
+    .replace(/ﬂ/g, "fl")
+    .replace(/ﬃ/g, "ffi")
+    .replace(/ﬄ/g, "ffl");
+}
+
+/**
+ * Datablad-seksjon-headere som dukker opp på leverandør-PDF-er
+ * (Snickers, Hultafors, Wera). Brukes både i re-flow (aldri glu med
+ * forrige linje) og i section-extraction (specs per seksjon).
+ */
+const SECTION_HEADER_RE = /^(Størrelse|Size|Farge|Color|Colour|Materiale|Material|Care|Vask|Pleie|Sertifisering|Certifications?|Spesifikasjoner|Specifications?)\s*$/i;
+
+/** Seksjoner vi IKKE viser i spec-tabellen (variant-spesifikt — basket-rad gir riktig verdi). */
+const SECTION_SKIP_IN_SPECS = /^(Størrelse|Size|Farge|Color|Colour)\s*$/i;
+
+export function scrapeFromPdfText(text: string, filename: string): ScrapedRaw {
+  // Step 0: Normaliser font-substituerte ligaturer FØR vi reflow'er linjer
+  text = normalizePdfLigatures(text);
+  // Step 1: Re-flow tekst. PDF-tekst er ofte hard-wrapped på 50-60 tegn
+  // (layout-grenser). Join linjer som ikke ender med setningsslutt-tegn
+  // og hvor neste linje fortsetter med lowercase eller et small-word.
+  const rawLines = text.split(/\r?\n/).map((l) => l.trim());
+  const reflowed: string[] = [];
+  let buf = "";
+  /** Flag: vi er forbi tittel-territoriet og inne i bullets/beskrivelse.
+   *  Brukes til å SKRU AV «kort linje med stor bokstav slås sammen med
+   *  forrige»-regelen — den regelen er kun nyttig for tittel-fragmenter
+   *  som er splittet over flere linjer i PDF-en. */
+  let pastTitle = false;
+  for (let i = 0; i < rawLines.length; i++) {
+    const l = rawLines[i];
+    if (!l) {
+      if (buf) { reflowed.push(buf); buf = ""; }
+      continue;
+    }
+    // URL-only-linjer (footer-junk: «snickersworkwear.com») skal aldri
+    // limes med forrige — selv om de starter med lowercase 's' osv.
+    const isUrlOnly = /^[\w-]+\.(com|no|se|de|fr|net|org|io)(\/[^\s]*)?$/i.test(l);
+    if (isUrlOnly) {
+      if (buf) reflowed.push(buf);
+      buf = l;
+      continue;
+    }
+    // Rene tall-linjer (produktkoder/EAN) skal aldri slås sammen
+    const isStandalone = /^\d{3,15}$/.test(l);
+    const bufIsStandalone = /^\d{3,15}$/.test(buf);
+    // Section-headers («Materiale», «Care», «Farge»...) skal også stå
+    // alene så vi kan dele PDF-en i seksjoner senere
+    const isSectionHeader = SECTION_HEADER_RE.test(l);
+    const bufIsSectionHeader = SECTION_HEADER_RE.test(buf);
+    if (!buf || bufIsStandalone || isStandalone || isSectionHeader || bufIsSectionHeader) {
+      if (buf) reflowed.push(buf);
+      buf = l;
+      continue;
+    }
+    const endsSentence = /[.!?:;]\s*$/.test(buf);
+    // Continuation: lowercase, digit, komma/parentes, OG enhets-symboler
+    // (ºC, °F, %, mm/cm) som typisk følger et tall på linja over
+    const nextIsContinuation = /^[a-zæøå0-9,)°ºµ%]/.test(l) || /^(og|eller|i|på|av|med|for|til|som|er|har|den|de|men|fra|under|over|mot|uten)\s/i.test(l);
+    // Hvis neste linje starter med samme ord som forrige (badge-repeat),
+    // ikke join — la badge stå alene (parser kan da drope den)
+    const bufFirstWord = buf.split(/\s+/)[0]?.toLowerCase() || "";
+    const nextFirstWord = l.split(/\s+/)[0]?.toLowerCase() || "";
+    const isBadgeRepeat = bufFirstWord && bufFirstWord === nextFirstWord && buf.split(/\s+/).length <= 2;
+    if (isBadgeRepeat) {
+      reflowed.push(buf);
+      buf = l;
+    } else if (!endsSentence && nextIsContinuation) {
+      buf = `${buf} ${l}`;
+    } else if (!pastTitle && !endsSentence && l.length < 50 && /^[A-ZÆØÅ]/.test(l) && buf.length < 80) {
+      // Sannsynlig tittel-fortsettelse (kort linje, ny stor bokstav) —
+      // kun lov FØR vi har sett en hel beskrivelses-setning. Bullets er
+      // ofte korte og kapitaliserte, men skal IKKE limes sammen.
+      buf = `${buf} ${l}`;
+    } else {
+      reflowed.push(buf);
+      buf = l;
+    }
+    // Når vi har sett en lang beskrivelses-setning, er tittel-territoriet
+    // ferdig og short-cap-joining slås av for resten av PDF-en.
+    if (endsSentence && buf.length >= 40) pastTitle = true;
+    if (l.length >= 80) pastTitle = true;
+  }
+  if (buf) reflowed.push(buf);
+
+  const lines = reflowed.filter((l) => l.length > 0);
+
+  // 2) Leverandørproduktnummer (mpn) — VÆR KONSERVATIV. 4-sifrede koder er
+  // ofte bare modellnummer (Snickers «6943»), ikke supplier-SKU. Vi krever:
+  //   - 8+ sifre (typisk Wera «05006529001» = 11 siffer), ELLER
+  //   - Alfanumerisk med bindestrek/punktum/skråstrek (Knipex-style «70 02 160»,
+  //     Stahlwille-style «76211020»)
+  // Korte rene tall-koder (3-7 siffer) lagres som «model_code» og brukes
+  // som fallback hvis brukeren ikke har bedre info, men UI bør si fra.
+  let mpn: string | null = null;
+  let modelCode: string | null = null;
+  for (const l of lines.slice(0, 12)) {
+    if (/^\d{8,15}$/.test(l)) { mpn = l; break; }
+    // Alfanumerisk med separator (Knipex/Stahlwille-mønster)
+    if (/^[A-Z0-9][A-Z0-9\s./-]{5,18}[A-Z0-9]$/.test(l) && /[-./]/.test(l) && /\d/.test(l)) {
+      mpn = l.replace(/\s+/g, "");
+      break;
+    }
+    // Korte tall-koder = modellnummer, ikke mpn
+    if (!modelCode && /^\d{3,7}$/.test(l)) modelCode = l;
+  }
+
+  // 3) EAN (8/12/13/14 digits anywhere)
+  let ean: string | null = null;
+  const eanRe = /\b(\d{8}|\d{12,14})\b/g;
+  for (const l of lines) {
+    const m = l.match(eanRe);
+    if (m) {
+      const candidate = m.find((c) => c.length >= 12) || m[0];
+      if (candidate !== mpn) { ean = candidate; break; }
+    }
+  }
+
+  // 4) Tittel — første linje med ord-tegn som IKKE er ren-tall og som har
+  // 3-15 ord (typisk produkttittel-lengde). Hopp over 1-ords-kategori-tag
+  // hvis neste linje er en lengre setning som åpenbart er tittel.
+  let title = "";
+  let titleLineIdx = -1;
+  let categoryTag: string | null = null;
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    const l = lines[i];
+    if (/^\d{3,15}$/.test(l)) continue;
+    const wordCount = l.split(/\s+/).length;
+    // Kort 1-2-ords-linje før tittel = kategori-badge (Snickers: «High-Vis»)
+    if (!categoryTag && wordCount <= 2 && l.length < 20 && /^[A-ZÆØÅ]/.test(l)) {
+      categoryTag = l;
+      continue;
+    }
+    // Tittel = 3+ ord, 10+ tegn, ikke en hel setning (< 120 tegn)
+    if (wordCount >= 3 && l.length >= 10 && l.length <= 120) {
+      title = l.replace(/[,\s]+$/, "");
+      titleLineIdx = i;
+      break;
+    }
+  }
+  // Drop kategori-badge hvis den allerede står som første ord i tittelen
+  if (categoryTag && title.toLowerCase().startsWith(categoryTag.toLowerCase())) {
+    // Tittelen inneholder kategorien — ikke prefix den på nytt
+  } else if (categoryTag && title) {
+    // Kategori-badge er distinkt info — behold som prefix
+    title = `${categoryTag} ${title}`;
+  }
+  if (!title) {
+    // Fallback: kombiner de første 1-3 ikke-tall-linjene
+    const parts = lines.slice(0, 4).filter((l) => !/^\d{3,15}$/.test(l) && /[a-zA-ZæøåÆØÅ]/.test(l));
+    title = parts.slice(0, 2).join(" ").replace(/[,\s]+$/, "");
+  }
+  if (!title) title = filename.replace(/\.pdf$/i, "").replace(/[-_]+/g, " ");
+
+  // Finn første section-header-linje (Størrelse/Materiale/Care/...) — alt
+  // før det er beskrivelse+bullets, alt etter er strukturerte specs.
+  let sectionStartIdx = -1;
+  for (let i = titleLineIdx + 1; i < lines.length; i++) {
+    if (SECTION_HEADER_RE.test(lines[i])) {
+      sectionStartIdx = i;
+      break;
+    }
+  }
+  const contentEndIdx = sectionStartIdx > 0 ? sectionStartIdx : lines.length;
+
+  // 5) Description — fulle setninger FØR seksjons-blokken.
+  // Bullets — korte feature-linjer (8-90 tegn) FØR seksjons-blokken.
+  const paragraphs: string[] = [];
+  const bulletStartCandidates: string[] = [];
+  let inBulletRegion = false;
+  for (let i = titleLineIdx + 1; i < contentEndIdx; i++) {
+    const l = lines[i];
+    const isParaLike = l.length >= 60 || /[.!?]\s*$/.test(l);
+    if (!inBulletRegion && isParaLike && l.length >= 30) {
+      paragraphs.push(l);
+    } else {
+      if (paragraphs.length > 0 && l.length < 90 && l.length >= 8) {
+        inBulletRegion = true;
+        bulletStartCandidates.push(l);
+      }
+    }
+  }
+  const description_short = paragraphs[0] || "";
+  const description_long = paragraphs.slice(0, 6).join("\n\n");
+
+  // 6) Bullets — fra bullet-region-kandidater, streng filtrering så vi
+  // ikke får inn URL-er, footer-linjer, eller spec-key-collisions.
+  const bullets: string[] = [];
+  for (const l of bulletStartCandidates) {
+    if (/^\d+$/.test(l)) continue;
+    if (/^[A-ZÆØÅ][a-zæøå]+\s*:\s/.test(l)) continue; // "Kode: 123"-spec
+    if (paragraphs.some((p) => p.includes(l))) continue;
+    if (!/^[A-ZÆØÅ0-9]/.test(l)) continue;
+    // Filter URL-er og footer-linjer (drop hele linja, ikke bare URL-en)
+    if (/\b\w+\.(?:com|no|se|de|fr|net|org|io)\b/i.test(l)) continue;
+    if (/©|all rights reserved|copyright|tlf\.?:?\s*\+?\d/i.test(l)) continue;
+    // Filter linjer som ser ut som spec-leak: «Forside 58 %», «Bakside ...»
+    // — disse tilhører tekniske spesifikasjoner-tabellen, ikke punktlista.
+    const SPEC_PREFIXES = /^(Forside|Bakside|Materiale|Sammensetning|Foring|Insats|Vekt|Vask|Pleie|EAN|Art\.?\s*nr|Artikkel)\b/i;
+    if (SPEC_PREFIXES.test(l)) continue;
+    // Filter linjer som tilfeldigvis starter med «Farge {kode}» — det er
+    // variant-info som bør i Beskrivelse 1, ikke bullets
+    if (/^Farge\s+\d{3,4}\b/i.test(l)) continue;
+    bullets.push(l);
+    if (bullets.length >= 8) break;
+  }
+
+  // 7) Specs — to-fase ekstrahering:
+  //    a) Section-basert (Materiale, Care, Certifications) — for klær-PDF
+  //    b) Generisk «Key: value» fra hele teksten — for verktøy-PDF
+  // Sectioner som er variant-spesifikke (Størrelse, Farge) hoppes over.
+  const specs: Array<{ key: string; value: string }> = [];
+
+  if (sectionStartIdx > 0) {
+    /** Engelsk-til-norsk for seksjons-navn — Snickers/Hultafors-PDF-er
+     *  er på engelsk for Care/Certifications, men vi vil ha norsk i spec-tab. */
+    const SECTION_LABEL_NB: Record<string, string> = {
+      "care": "Vask og pleie",
+      "certifications": "Sertifiseringer",
+      "certification": "Sertifiseringer",
+      "material": "Materiale",
+      "size": "Størrelse",
+      "color": "Farge",
+      "colour": "Farge",
+      "specifications": "Spesifikasjoner",
+    };
+    const labelize = (raw: string): string => {
+      const k = raw.toLowerCase().replace(/\s+/g, "").replace("certifications", "certifications");
+      return SECTION_LABEL_NB[k] ?? raw;
+    };
+    let currentSection: string | null = null;
+    let sectionBuf: string[] = [];
+    const flushSection = () => {
+      if (!currentSection || sectionBuf.length === 0) return;
+      if (SECTION_SKIP_IN_SPECS.test(currentSection)) {
+        currentSection = null;
+        sectionBuf = [];
+        return;
+      }
+      const labelNb = labelize(currentSection);
+      // Hvis seksjons-innholdet har «Key: value»-sub-entries (Forside:,
+      // Bakside:, CE-kategori:), bryt dem ut som egne spec-rader. Ellers
+      // emit hele seksjonen som én spec-rad med multi-linje-verdi (separert
+      // med «; » så HTML-rendringen kan vise dem leselig).
+      const subEntries: Array<{ key: string; value: string }> = [];
+      const flat: string[] = [];
+      for (const sl of sectionBuf) {
+        const m = sl.match(/^([A-Za-zÆØÅæøå][A-Za-zÆØÅæøå0-9 ./-]{1,30}):\s*(.+)$/);
+        if (m && m[2].length >= 1 && m[2].length < 250) {
+          subEntries.push({ key: m[1].trim(), value: m[2].trim() });
+        } else {
+          flat.push(sl);
+        }
+      }
+      if (subEntries.length > 0) {
+        // Sub-entries blir egne rader. Flat-linjer som kommer mellom dem
+        // (f.eks. «Klasse 2, Klasse 3» under «EN ISO 20471:») limes på siste.
+        if (flat.length > 0 && subEntries.length > 0) {
+          subEntries[subEntries.length - 1].value += " " + flat.join(" ");
+        }
+        for (const e of subEntries) {
+          specs.push({ key: e.key, value: e.value.slice(0, 250) });
+        }
+      } else if (flat.length > 0) {
+        // Pre-merge «X:»-fortsettelser: hvis en linje slutter på `:`, lim
+        // neste linje på med mellomrom (ikke separator) siden det er en
+        // header → verdi-relasjon, ikke to separate punkter.
+        const merged: string[] = [];
+        for (const f of flat) {
+          if (merged.length > 0 && /:\s*$/.test(merged[merged.length - 1])) {
+            merged[merged.length - 1] = merged[merged.length - 1].replace(/:\s*$/, ":") + " " + f;
+          } else {
+            merged.push(f);
+          }
+        }
+        // Flere korte instruksjons-linjer (Care: «Maskinvask...», «Må ikke
+        // blekes», «Må ikke tørkes...») slås sammen med «; » som separator.
+        const value = merged.join("; ").trim().slice(0, 300);
+        if (value) specs.push({ key: labelNb, value });
+      }
+      currentSection = null;
+      sectionBuf = [];
+    };
+    for (let i = sectionStartIdx; i < lines.length; i++) {
+      const l = lines[i];
+      if (SECTION_HEADER_RE.test(l)) {
+        flushSection();
+        currentSection = l;
+      } else if (currentSection) {
+        // Filter footer/URL-linjer + linjer som BARE er en URL
+        if (/^[\w-]+\.(com|no|se|de|fr|net|org|io)(\/[^\s]*)?$/i.test(l)) continue;
+        // Filter avsluttende URL fra slutten av en flat-linje (eks. «Klasse 2 snickersworkwear.com»)
+        const cleaned = l.replace(/\s+[\w-]+\.(com|no|se|de|fr|net|org|io)(\/[^\s]*)?$/i, "").trim();
+        if (cleaned.length < 2) continue;
+        sectionBuf.push(cleaned);
+      }
+    }
+    flushSection();
+  } else {
+    // Ingen seksjoner detektert (sannsynligvis verktøy-PDF, ikke klær).
+    // Fall tilbake til generisk «Key: value»-extraktor.
+    for (const l of lines) {
+      const m = l.match(/^([A-Za-zÆØÅæøå][A-Za-zÆØÅæøå\s./-]{2,30})[:\t]\s*(.+)$/);
+      if (m && m[2].length < 60) {
+        specs.push({ key: m[1].trim(), value: m[2].trim() });
+        if (specs.length >= 20) break;
+      }
+    }
+  }
+
+  // 8) Produsent — let etter kjente FT-merker i tekst, filnavn, eller domener.
+  // Snickers heter offisielt «Snickers Workwear» og må stå først i lista
+  // så vi treffer full-navnet før kortformen (begge er i teksten).
+  const knownBrands = [
+    "Snickers Workwear", "Snickers",
+    "Wera", "Knipex", "Snap-on", "Stahlwille", "Rennsteig", "Facom", "Lista",
+    "PB Swiss Tools", "Ullman", "Sumake", "Gedore", "Brockhaus Heuer", "Irega",
+    "KC Tools", "OSCA", "Opticase", "Rivit", "Vogel", "Meclube", "The Bone",
+    "Milwaukee", "Hultafors", "Emhart", "Leatherman", "Mora", "Stanley",
+    "Gigant", "Gühring", "Solid Gear", "LED Lenser", "Ledlenser",
+    "Fluke", "Bahco", "Proto", "Red Rooster", "Karlstad Redskap", "Brusletto",
+    "Bondhus", "Husqvarna", "Zarges", "Pelicase", "Hellberg", "Mitutoyo",
+    "Viking Arm",
+  ];
+  let manufacturer: string | null = null;
+  const searchBlob = `${text}\n${filename}`.toLowerCase();
+  for (const brand of knownBrands) {
+    const needle = brand.toLowerCase();
+    if (searchBlob.includes(needle) || searchBlob.includes(needle.replace(/[\s-]/g, ""))) {
+      manufacturer = brand;
+      break;
+    }
+  }
+  // Snickers-PDF-er har alltid «snickersworkwear.com» som footer — bruk det
+  // som backup-signal for å oppgradere «Snickers» til fullt brand-navn.
+  if (manufacturer === "Snickers" && /snickersworkwear/i.test(text)) {
+    manufacturer = "Snickers Workwear";
+  }
+
+  return {
+    source_url: `pdf://${filename}`,
+    title,
+    manufacturer,
+    ean,
+    mpn,
+    description_short,
+    description_long,
+    bullets,
+    specs,
+    images: [],
+    price_now: null,
+    price_before: null,
+    currency: null,
+    kostpris: null,
+    listepris: null,
+    domain: "pdf",
+    model_code: modelCode,
+  };
+}

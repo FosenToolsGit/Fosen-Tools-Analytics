@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
-import { scrapeFromHtml } from "@/lib/services/enkelprodukt-scraper";
+import { scrapeFromHtml, scrapeFromPdfText } from "@/lib/services/enkelprodukt-scraper";
 import { destillProduct } from "@/lib/services/enkelprodukt-destillery";
 import { detectPdfVariants, buildFocusedTextForVariant, type PdfVariant } from "@/lib/services/pdf-variants";
 
@@ -55,31 +55,16 @@ export async function POST(request: NextRequest) {
       text = cachedText;
       filename = (formData.get("filename") as string) || "cached.pdf";
     } else {
-      // Vanlig flyt — parse PDF
-      // pdf-parse v2 bruker PDFParse-klassen + pdfjs-dist under panseret.
-      // Next.js bundler ikke pdf.worker.mjs riktig i dev-server, så vi
-      // deaktiverer worker (kjør parsing på hovedtråden — treig på store
-      // PDF-er men virker for vanlige produktdatablader < 50 sider).
-      type PdfParseV2 = {
-        new (options: { data: Uint8Array }): {
-          getText(): Promise<{ text: string; total: number }>;
-          destroy(): Promise<void>;
-        };
-        setWorker?: (workerSrc?: string) => string;
-      };
-      const mod = (await import("pdf-parse")) as unknown as { PDFParse: PdfParseV2 };
-      // Disable worker — pdf.worker.mjs blir ikke funnet i .next/dev/-pathen.
-      // Tom streng = fake-worker (main thread fallback i pdfjs-dist).
-      try { mod.PDFParse.setWorker?.(""); } catch { /* ignore */ }
+      // pdf-parse v1.1.1 har enkel API uten worker-avhengighet — perfekt for Node.
+      // Default-export-funksjon: pdfParse(buffer) → { text, numpages }
+      type PdfParseV1 = (buf: Buffer) => Promise<{ text: string; numpages: number }>;
+      const mod = (await import("pdf-parse")) as unknown as { default: PdfParseV1 } | PdfParseV1;
+      const pdfParse: PdfParseV1 =
+        typeof mod === "function" ? mod : (mod as { default: PdfParseV1 }).default;
       const buf = Buffer.from(await file.arrayBuffer());
-      const parser = new mod.PDFParse({ data: new Uint8Array(buf) });
-      try {
-        const result = await parser.getText();
-        text = (result.text || "").trim();
-        numPages = result.total ?? 0;
-      } finally {
-        await parser.destroy().catch(() => undefined);
-      }
+      const result = await pdfParse(buf);
+      text = (result.text || "").trim();
+      numPages = result.numpages ?? 0;
       filename = file.name;
     }
 
@@ -96,9 +81,13 @@ export async function POST(request: NextRequest) {
       workingText = buildFocusedTextForVariant(text, selectedVariant);
     }
 
-    // Send teksten gjennom regex-baserte scraper
-    const raw = await scrapeFromHtml(workingText, sourceUrl, { scrape_b2b_prices: scrapeB2BPrices });
-    if (!raw.source_url) raw.source_url = `pdf://${filename}`;
+    // PDF-tekst er ikke HTML — bruk PDF-spesifikk parser som tolker
+    // linje-mønster (kode, tittel, paragrafer, bullets). Hvis brukeren har
+    // limt inn HTML i source_url-feltet, faller vi tilbake til HTML-scrape.
+    const raw = sourceUrl && /<[a-z][\s\S]*>/i.test(workingText)
+      ? await scrapeFromHtml(workingText, sourceUrl, { scrape_b2b_prices: scrapeB2BPrices })
+      : scrapeFromPdfText(workingText, filename);
+    if (!raw.source_url) raw.source_url = sourceUrl || `pdf://${filename}`;
 
     // Hvis variant er valgt og har EAN/kode, override scrape-data
     if (selectedVariant) {

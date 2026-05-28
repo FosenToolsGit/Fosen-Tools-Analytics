@@ -49,6 +49,156 @@ export interface DestilledProduct {
 const MAX_BESKR = 40;
 
 /**
+ * Bygger Beskrivelse 1 etter Wera-konvensjonen:
+ *   (HVA DET ER) (KODE/PROFIL) (DIMENSJON/SPESIFIKASJONER)
+ *
+ * Eksempler:
+ *   Wera 800/1 PZ/S 2 × 100 → «KLINGE PZ/S 2 100MM VDE KRAFTFORM»
+ *   Snickers 6943 KL2 HL    → «BUKSE 6943 KL2 HL» (bruker fyller på farge/STR)
+ *
+ * Auto-fyller det som kan detekteres fra tittel/beskrivelse:
+ *  - Produkttype (BUKSE, SKRUTREKKER, MOMENTNØKKEL, KLINGE, ...)
+ *  - Modellkode (mpn ?? model_code)
+ *  - Spec-forkortelser (KL2, HL, VDE, 1000V, PZ/S, ESD, ...)
+ *  - Dimensjoner (mm i tittel)
+ *
+ * Farge og størrelse må fylles MANUELT i UI fordi de er typisk
+ * variant-spesifikke og ikke ligger i fellesdatabladet.
+ */
+const PRODUCT_TYPES: Array<[RegExp, string]> = [
+  // Klær / verneutstyr — spesifikke typer FØR generiske (rekkefølge avgjør)
+  [/\barbeidsbukse|trouser/i, "BUKSE"],
+  [/\bbukse(?!sele)/i, "BUKSE"],
+  [/\bskalljakke|skalljacka|shell jacket/i, "SKALLJAKKE"],
+  [/\bvinterjakke|winter jacket|winterjacket/i, "VINTERJAKKE"],
+  [/\bfleecejakke|fleecejacka|fleece jacket/i, "FLEECEJAKKE"],
+  [/\bsoftshell.{0,12}jakke|softshell jacket/i, "SOFTSHELL"],
+  [/\bregnjakke|rain jacket/i, "REGNJAKKE"],
+  [/\barbeidsjakke|work jacket/i, "JAKKE"],
+  [/\bjakke|jacket/i, "JAKKE"],
+  [/\bt-skjorte|t-shirt|tee-shirt|piké|piket/i, "T-SKJORTE"],
+  [/\bskjorte|shirt/i, "SKJORTE"],
+  [/\bgenser|sweater|hoodie/i, "GENSER"],
+  [/\bvest\b/i, "VEST"],
+  [/\bregntøy|regndress/i, "REGNTØY"],
+  [/\bvernesko|safety boot|safety shoe/i, "VERNESKO"],
+  [/\bhansker|gloves/i, "HANSKER"],
+  [/\bhjelm|helmet/i, "HJELM"],
+  [/\bvernebriller|safety glasses/i, "BRILLER"],
+  [/\bhørselvern|hearing protect/i, "HØRSELVERN"],
+  // Verktøy — håndholdt
+  [/\bmomentnøkkel|torque wrench/i, "MOMENTNØKKEL"],
+  [/\bskiftenøkkel|adjustable wrench/i, "SKIFTENØKKEL"],
+  [/\bfastnøkkel|combination wrench/i, "FASTNØKKEL"],
+  [/\bpipenøkkel|socket wrench/i, "PIPENØKKEL"],
+  [/\bskralle\b|ratchet/i, "SKRALLE"],
+  [/\bskrutrekker|screwdriver/i, "SKRUTREKKER"],
+  [/\bklinge|blade/i, "KLINGE"],
+  [/\bbits?\b/i, "BITS"],
+  [/\bhammer/i, "HAMMER"],
+  [/\btang|pliers/i, "TANG"],
+  [/\bavbiter|cutter/i, "AVBITER"],
+  [/\bkutter|knife|kniv\b/i, "KNIV"],
+  [/\bsag\b|saw/i, "SAG"],
+  // Eldrevet
+  [/\bdrill|boremaskin/i, "DRILL"],
+  [/\bmuttertrekker|impact wrench/i, "MUTTERTREKKER"],
+  [/\bvinkelsliper|angle grinder/i, "VINKELSLIPER"],
+  [/\bstikksag|jigsaw/i, "STIKKSAG"],
+  // Belysning / måling
+  [/\blommelykt|hodelykt|pannelampe|flashlight|headlamp/i, "LYKT"],
+  [/\bmultimeter/i, "MULTIMETER"],
+  [/\bskyvelære|caliper/i, "SKYVELÆRE"],
+  // Storage
+  [/\bverktøykoffert|tool case/i, "KOFFERT"],
+  [/\bverktøyvogn|tool cart|trolley/i, "VOGN"],
+  [/\bverktøyskap|tool cabinet/i, "SKAP"],
+  [/\bpelicase|protector case/i, "PELICASE"],
+  [/\bsekk|bag\b/i, "SEKK"],
+  // Konsept
+  [/\bsett\b|\bset\b|\bkit\b/i, "SETT"],
+];
+
+const SPEC_ABBREV: Array<[RegExp, string]> = [
+  // Verneklasse
+  [/klasse\s*1\b|class\s*1\b|\bkl\.?\s*1\b/i, "KL1"],
+  [/klasse\s*2\b|class\s*2\b|\bkl\.?\s*2\b/i, "KL2"],
+  [/klasse\s*3\b|class\s*3\b|\bkl\.?\s*3\b/i, "KL3"],
+  // Klær-features
+  [/hylsterlomm/i, "HL"],
+  [/kneputelomm|kneeguard/i, "KP"],
+  [/cordura/i, "CRD"],
+  // Elektrisk
+  [/\bvde\b/i, "VDE"],
+  [/1000\s*v/i, "1000V"],
+  [/\besd\b/i, "ESD"],
+  [/\biec\s*60900/i, "IEC60900"],
+  // Skrutrekker-profiler
+  [/\bpz\/s\b|pozidriv\/slot/i, "PZ/S"],
+  [/\bph\b(?!\d)/i, "PH"],
+  [/\bpz\b(?!\d)/i, "PZ"],
+  [/\btorx\b|\btx\b/i, "TX"],
+  [/\bsekskant\b|hex\b/i, "HEX"],
+  // Tetthet
+  [/\bipx?7\b/i, "IP7"],
+  [/\bipx?8\b/i, "IP8"],
+  [/vanntett|waterproof/i, "VT"],
+  // Kalibrering
+  [/kalibrert|calibrated/i, "KAL"],
+  [/\bdin\s*en\s*iso\s*6789/i, "ISO6789"],
+];
+
+/** Forkort en produkttittel til Wera-stil compact-kode. */
+export function buildBeskrivelse1Compact(
+  rawTitle: string,
+  modelCode: string | null | undefined,
+  mpn: string | null | undefined,
+  context: string,
+): string {
+  const haystack = `${rawTitle} ${context}`.toLowerCase();
+
+  // 1) Produkttype
+  let typeCode = "";
+  for (const [re, code] of PRODUCT_TYPES) {
+    if (re.test(haystack)) { typeCode = code; break; }
+  }
+
+  // 2) Kode-token: foretrekk mpn (leverandørproduktnummer), fallback model_code
+  const codeToken = ((mpn ?? "") || (modelCode ?? "")).trim();
+
+  // 3) Spec-forkortelser (i prioritert rekkefølge, uten duplikater)
+  const specsAdded: string[] = [];
+  for (const [re, code] of SPEC_ABBREV) {
+    if (re.test(haystack) && !specsAdded.includes(code)) specsAdded.push(code);
+    if (specsAdded.length >= 6) break;
+  }
+
+  // 4) Dimensjon (mm-treff i tittel/beskrivelse)
+  const dimMatch = haystack.match(/(\d+(?:[.,]\d+)?)\s*mm\b/);
+  const dimToken = dimMatch ? `${dimMatch[1].replace(",", ".")}MM` : "";
+
+  // 5) Bygg ved å legge tokens i prioritert rekkefølge inntil 40 tegn
+  const tokens: string[] = [];
+  if (typeCode) tokens.push(typeCode);
+  if (codeToken) tokens.push(codeToken.toUpperCase());
+  for (const s of specsAdded) tokens.push(s);
+  if (dimToken && !tokens.includes(dimToken)) tokens.push(dimToken);
+
+  let result = "";
+  for (const t of tokens) {
+    const next = result ? `${result} ${t}` : t;
+    if (next.length > MAX_BESKR) break;
+    result = next;
+  }
+
+  // Fallback: hvis ingenting matchet, bruk gammel UPPERCASE-tittel-logikk
+  if (!result) {
+    return (rawTitle || "").toUpperCase().slice(0, MAX_BESKR);
+  }
+  return result.slice(0, MAX_BESKR);
+}
+
+/**
  * Bygger Beskrivelse 2 etter Wera-import-mønsteret: «{MPN} - {Produsent}»
  * truncert til 40 tegn. Brukes både ved første destillering og når
  * MPN/produsent endres manuelt i UI.
@@ -79,7 +229,13 @@ export async function destillProduct(raw: ScrapedRaw): Promise<DestilledProduct>
   // Regel-basert klassifisering (autoritativ — ingen Gemini-overstyring)
   const cls = classify(raw.title, raw.description_long || raw.description_short);
   const produsent = raw.manufacturer || "";
-  const beskr1 = (raw.title || "").toUpperCase().slice(0, MAX_BESKR);
+  // Beskrivelse 1: Wera-stil compact-kode (TYPE + KODE + SPESIFIKASJONER)
+  const beskr1Context = [
+    raw.description_short,
+    raw.description_long,
+    raw.bullets.join(" "),
+  ].filter(Boolean).join(" ");
+  const beskr1 = buildBeskrivelse1Compact(raw.title || "", raw.model_code, raw.mpn, beskr1Context);
   const beskr2 = buildBeskrivelse2(raw.mpn, produsent);
 
   return {

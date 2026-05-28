@@ -151,6 +151,23 @@ function buildBruksomrader(g1: string | null, g2: string | null, g3: string | nu
   if (/arbeidskl[æa]r/.test(cat)) {
     return `Designet for fagfolk innen håndverk, industri, anlegg og service — kombinerer komfort, funksjonalitet og slitestyrke for daglig bruk i krevende miljø.`;
   }
+  // Klær (synlighetsklær / hi-vis / verneutstyr-spesifikt)
+  if (/synlighet|hi.?vis|verneutstyr/.test(cat)) {
+    return `Brukes innen anlegg, vei-arbeid, jernbane, lager og industri der høy synlighet er påkrevd. Sertifisert etter EN ISO 20471 for arbeidsmiljø med trafikk eller maskinell aktivitet.`;
+  }
+  // Hansker
+  if (/hansk/.test(cat)) {
+    return `Brukes innen verksted, mekanisk arbeid, montering og lager — beskytter mot kutt, slitasje og kjemikalier samtidig som de gir godt grep og fingerfølelse.`;
+  }
+  // Sko / fottøy
+  if (/sko\b|fott[øo]y|vernesko/.test(cat)) {
+    return `Brukes innen bygg, anlegg, industri og service — sertifisert vernefottøy som beskytter mot fallende gjenstander, gjennomtrengning og elektriske risikoer.`;
+  }
+  // Klær-merker som lager arbeidsklær (Snickers, Hultafors, Solid Gear, Helly Hansen)
+  const p = produsent.toLowerCase();
+  if (/snickers|hultafors|solid\s*gear|helly\s*hansen|fristads|blakl[äa]der/.test(p)) {
+    return `Designet for fagfolk innen håndverk, industri, anlegg og service — kombinerer komfort, funksjonalitet og slitestyrke for daglig bruk i krevende miljø.`;
+  }
   // Generisk fallback
   return `${produsent}-verktøy designet for profesjonell bruk innen verksted, industri og service.`;
 }
@@ -180,6 +197,9 @@ function buildWhyBrand(produsent: string): string {
   // Skandinaviske
   if (p === "bahco") return "Bahco er svensk verktøyproduksjon siden 1862 — JP Johansson oppfant den justerbare skiftenøkkelen. Kjent for innovasjon og praktiske løsninger for profesjonelle.";
   if (p === "hultafors") return "Hultafors er svensk håndverkstradisjon siden 1883 — kniver, tommestokker og målebånd produsert i Sverige med fokus på slitestyrke.";
+  if (p.includes("snickers")) return "Snickers Workwear er svensk arbeidsklær siden 1975 — kjent for ergonomisk passform, hylsterlommer og slitestyrke som tåler daglig bruk i håndverk og industri.";
+  if (p.includes("fristads")) return "Fristads er svensk arbeidsklær siden 1925 — bærekraftige plagg sertifisert etter Green-merket, med fokus på funksjonalitet for fagfolk innen industri og service.";
+  if (p.includes("blakl") || p.includes("blåkl")) return "Blåkläder er svensk arbeidsklær siden 1959 — kjent for slitestyrke og klassisk håndverker-design som tåler tøft daglig bruk.";
   if (p === "morakniv") return "Morakniv er svensk knivproduksjon siden 1891 — produsert i Mora med tradisjonelt håndverk og moderne stål-teknologi.";
   if (p.includes("viking arm")) return "Viking Arm er svensk innovasjon — løfteverktøyet som har gjort montering enklere for snekkere, gulvleggere og håndverkere.";
   // Taiwanske

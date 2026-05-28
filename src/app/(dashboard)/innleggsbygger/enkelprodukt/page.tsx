@@ -54,7 +54,17 @@ interface ScrapedRaw {
 
 const ENHETER = ["stk", "sett", "paret", "pakke", "m", "kg", "rull"];
 
-type InputMode = "url" | "html" | "xlsx" | "pdf";
+type InputMode = "url" | "html" | "xlsx" | "pdf" | "basket";
+
+interface HultaforsVariant {
+  stock_code: string;
+  quantity: number;
+  model_code: string;
+  color_code: string;
+  size_code: string;
+  color_label: string | null;
+  size_label: string;
+}
 
 interface XlsxProduct {
   idx: number;
@@ -112,6 +122,31 @@ export default function EnkelproduktPage() {
   const [selectedXlsxIdx, setSelectedXlsxIdx] = useState<number | null>(null);
   const [xlsxSearch, setXlsxSearch] = useState("");
   const [xlsxDone, setXlsxDone] = useState<Set<number>>(new Set());
+
+  // Hultafors basket-modus state
+  const [basketVariants, setBasketVariants] = useState<HultaforsVariant[]>([]);
+  const [basketFilename, setBasketFilename] = useState<string>("");
+  const [selectedBasketIdx, setSelectedBasketIdx] = useState<number | null>(null);
+  const [basketDone, setBasketDone] = useState<Set<number>>(new Set());
+  /** PDF-batch koblet til basket: hver PDF parses og matches mot
+   *  basket-varianter via modellnr (første 4 sifre). */
+  interface BasketPdf {
+    filename: string;
+    model_code: string | null;
+    type_code: string;
+    beskr1_base: string;
+    produsent: string;
+    produktinformasjon: string;
+    gruppenivaa_1: string;
+    gruppenivaa_2: string;
+    gruppenivaa_3: string;
+    enhet: string;
+    title: string;
+    description_short: string;
+  }
+  const [basketPdfs, setBasketPdfs] = useState<BasketPdf[]>([]);
+  const [basketPdfsLoading, setBasketPdfsLoading] = useState(false);
+  const [basketPdfErrors, setBasketPdfErrors] = useState<Array<{ filename: string; error: string }>>([]);
 
   const g2Options = useMemo(
     () => (product?.gruppenivaa_1 ? Object.keys(HIERARKI[product.gruppenivaa_1] || {}) : []),
@@ -365,6 +400,139 @@ export default function EnkelproduktPage() {
     }
   }
 
+  async function handleBasketPdfsUpload(files: FileList) {
+    if (files.length === 0) return;
+    setBasketPdfsLoading(true);
+    setBasketPdfErrors([]);
+    try {
+      const fd = new FormData();
+      Array.from(files).forEach((f) => fd.append("files", f));
+      const res = await fetch("/api/produkt-import/enkelprodukt/parse-pdfs-batch", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "PDF-batch-parsing feilet");
+        return;
+      }
+      // Slå sammen med eksisterende PDF-er (lar bruker dryppe-laste flere)
+      setBasketPdfs((prev) => [...prev, ...(data.pdfs || [])]);
+      if (data.errors && data.errors.length > 0) {
+        setBasketPdfErrors((prev) => [...prev, ...data.errors]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nettverksfeil ved PDF-batch");
+    } finally {
+      setBasketPdfsLoading(false);
+    }
+  }
+
+  /** Finn PDF som matcher en basket-variants modellnr (første 4 sifre). */
+  function findPdfForVariant(v: HultaforsVariant): BasketPdf | null {
+    // Eksakt match først (4-sifrede modellkoder)
+    let pdf = basketPdfs.find((p) => p.model_code === v.model_code) || null;
+    if (pdf) return pdf;
+    // Fallback: PDF's model_code kan være 6-11 siffer (hele leverandørproduktnr)
+    // som starter med samme 4 — prøv prefix
+    pdf = basketPdfs.find((p) => p.model_code?.startsWith(v.model_code)) || null;
+    return pdf;
+  }
+
+  async function handleBasketUpload(file: File) {
+    setScraping(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/produkt-import/enkelprodukt/parse-basket", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Basket-parsing feilet");
+        return;
+      }
+      setBasketVariants(data.variants || []);
+      setBasketFilename(file.name);
+      setSelectedBasketIdx(null);
+      setBasketDone(new Set());
+      setProduct(null);
+      setRaw(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nettverksfeil");
+    } finally {
+      setScraping(false);
+    }
+  }
+
+  /** Klikk på en basket-variant → bygg start-data for én Multicase-rad.
+   *  Hvis en matchende PDF er lastet opp, beriker vi med produkttype,
+   *  spec-tokens, produktgruppe, produktinformasjon m.m. */
+  function selectBasketVariant(idx: number) {
+    const v = basketVariants[idx];
+    if (!v) return;
+    const pdf = findPdfForVariant(v);
+    const produsent = pdf?.produsent || "Snickers Workwear";
+
+    // Størrelse: alltid med STR:-prefiks (matcher Multicase-konvensjonen
+    // i FT-fakturaen — «STR: 54», «STR: M», «STR: XXL», «STR: S/M»)
+    const sizeFragment = v.size_label ? `STR: ${v.size_label}` : "";
+    // Farge: bruk de korte tabel-verdiene direkte (GUL, GUL/SORT, SORT, ...)
+    const colorFragment = v.color_label
+      ? v.color_label.toUpperCase()
+      : `FARGE ${v.color_code}`;
+
+    // Bygg Beskrivelse 1: PDF-base (TYPE + spec-tokens) + farge + størrelse
+    // PDF.beskr1_base er allerede «BUKSE 6943 KL2 HL CRD» — vi appender variant-info
+    let beskr1: string;
+    if (pdf?.beskr1_base) {
+      // Hvis basket-modellkode IKKE er i PDF-base, injiser den
+      const base = pdf.beskr1_base.includes(v.model_code)
+        ? pdf.beskr1_base
+        : pdf.type_code
+          ? `${pdf.type_code} ${v.model_code}${pdf.beskr1_base.replace(pdf.type_code, "")}`
+          : pdf.beskr1_base;
+      beskr1 = [base, colorFragment, sizeFragment].filter(Boolean).join(" ").slice(0, 40);
+    } else {
+      // Ingen matchende PDF — bare variant-info, operatør fyller produkttype
+      beskr1 = [v.model_code, colorFragment, sizeFragment].filter(Boolean).join(" ").slice(0, 40);
+    }
+    const beskr2 = `${v.stock_code} - ${produsent}`.slice(0, 40);
+
+    const destilled: DestilledProduct = {
+      name: beskr1,
+      produsent,
+      enhet: pdf?.enhet || "stk",
+      gruppenivaa_1: pdf?.gruppenivaa_1 || "",
+      gruppenivaa_2: pdf?.gruppenivaa_2 || "",
+      gruppenivaa_3: pdf?.gruppenivaa_3 || "",
+      produktbeskrivelse_1: beskr1,
+      produktbeskrivelse_2: beskr2,
+      produktinformasjon: pdf?.produktinformasjon || "",
+      source_url: pdf ? `basket+pdf://${basketFilename}+${pdf.filename}` : `basket://${basketFilename}`,
+      ean: null,
+      mpn: v.stock_code,
+      price_now: null,
+      price_before: null,
+      currency: "NOK",
+      kostpris: null,
+      listepris: null,
+      opprinnelsesland: "Sverige",
+      ai_notes: pdf
+        ? `Hultafors basket-rad ${idx + 1}/${basketVariants.length}. ` +
+          `Beriket fra PDF «${pdf.filename}» (modell ${v.model_code} matcher). ` +
+          `Farge ${v.color_code}${v.color_label ? ` (${v.color_label})` : ""} · Str ${v.size_label}.`
+        : `Hultafors basket-rad ${idx + 1}/${basketVariants.length}. ` +
+          `Modell ${v.model_code} · Farge ${v.color_code}${v.color_label ? ` (${v.color_label})` : ""} · Str ${v.size_label}. ` +
+          `INGEN matchende PDF — last opp PDF for å berike produkttype/spec/gruppe.`,
+    };
+    setProduct(destilled);
+    setRaw(null);
+    setSelectedBasketIdx(idx);
+  }
+
   function selectXlsxProduct(idx: number) {
     const p = xlsxProducts.find((x) => x.idx === idx);
     if (!p) return;
@@ -508,6 +676,17 @@ export default function EnkelproduktPage() {
               <FileUp className="w-3.5 h-3.5" />
               PDF
             </button>
+            <button
+              onClick={() => setMode("basket")}
+              className={`px-3 py-1.5 text-sm rounded flex items-center gap-1.5 transition ${
+                mode === "basket"
+                  ? "bg-orange-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Hultafors basket
+            </button>
           </div>
 
           {mode === "url" ? (
@@ -554,6 +733,154 @@ export default function EnkelproduktPage() {
                 placeholder="Valgfri kilde-URL (lagres som referanse hvis produktet finnes online)"
                 className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-xs text-white focus:border-orange-500 focus:outline-none"
               />
+            </div>
+          ) : mode === "basket" ? (
+            <div className="space-y-3">
+              <div className="text-xs text-gray-400">
+                Last opp en Hultafors basket-XLSX (eksportert fra B2B-portalen).
+                Hver rad blir en variant — vi dekoder 11-sifret StockCode til
+                modellnr + farge + størrelse. Klikk en variant for å fylle ut
+                feltene. Bruk PDF-modus FØR for å hente felles produkt-info
+                (BUKSE 6943 KL2 HL CRD), så supplerer basket-fila variantene.
+              </div>
+              <label className="block">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleBasketUpload(f);
+                  }}
+                  className="block w-full text-xs text-gray-400
+                    file:mr-3 file:py-2 file:px-4
+                    file:rounded file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-orange-600 file:text-white
+                    hover:file:bg-orange-700
+                    file:cursor-pointer cursor-pointer"
+                />
+              </label>
+              {basketVariants.length > 0 && (
+                <div className="bg-gray-800 border border-gray-700 rounded p-3 text-xs text-gray-300 flex items-center justify-between">
+                  <span>
+                    ✓ <strong>{basketVariants.length}</strong> varianter fra{" "}
+                    <code className="text-orange-300">{basketFilename}</code> —{" "}
+                    <span className="text-green-400">{basketDone.size} ferdig</span>,{" "}
+                    <span className="text-gray-400">{basketVariants.length - basketDone.size} igjen</span>
+                  </span>
+                  <button
+                    onClick={() => {
+                      setBasketVariants([]);
+                      setBasketFilename("");
+                      setBasketDone(new Set());
+                      setSelectedBasketIdx(null);
+                      setProduct(null);
+                    }}
+                    className="text-gray-500 hover:text-red-400"
+                  >
+                    Fjern fil
+                  </button>
+                </div>
+              )}
+
+              {/* PDF-batch — last opp alle PDF-er som dekker basket-modellene */}
+              {basketVariants.length > 0 && (
+                <div className="pt-3 mt-3 border-t border-gray-800 space-y-2">
+                  <div className="text-xs text-gray-300 font-semibold flex items-center gap-1.5">
+                    <FileUp className="w-3.5 h-3.5 text-orange-400" />
+                    Last opp PDF-er (én eller flere — matches automatisk per modellnr)
+                  </div>
+                  <label className="block">
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      multiple
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleBasketPdfsUpload(e.target.files);
+                          // Reset så samme fil kan lastes på nytt
+                          e.target.value = "";
+                        }
+                      }}
+                      className="block w-full text-xs text-gray-400
+                        file:mr-3 file:py-2 file:px-4
+                        file:rounded file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-gray-700 file:text-white
+                        hover:file:bg-gray-600
+                        file:cursor-pointer cursor-pointer"
+                    />
+                  </label>
+                  {basketPdfsLoading && (
+                    <div className="text-xs text-gray-400 flex items-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Parser PDF-er…
+                    </div>
+                  )}
+                  {basketPdfs.length > 0 && (
+                    <div className="bg-gray-800/50 border border-gray-700 rounded p-2 space-y-1 max-h-40 overflow-y-auto">
+                      {basketPdfs.map((p, i) => {
+                        // Tell hvor mange varianter denne PDF-en matcher
+                        const matchCount = basketVariants.filter((v) =>
+                          p.model_code === v.model_code ||
+                          (p.model_code && p.model_code.startsWith(v.model_code)),
+                        ).length;
+                        return (
+                          <div
+                            key={`${p.filename}-${i}`}
+                            className="flex items-center justify-between text-[11px] gap-2"
+                          >
+                            <span className="text-gray-300 truncate flex-1">
+                              <code className="text-orange-300">{p.model_code || "(?)"}</code>{" "}
+                              {p.type_code && <span className="text-gray-400">{p.type_code} —</span>}{" "}
+                              <span className="text-gray-500">{p.filename}</span>
+                            </span>
+                            <span className={matchCount > 0 ? "text-green-400" : "text-yellow-400"}>
+                              {matchCount} match
+                            </span>
+                            <button
+                              onClick={() => setBasketPdfs((prev) => prev.filter((_, j) => j !== i))}
+                              className="text-gray-600 hover:text-red-400"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {basketPdfErrors.length > 0 && (
+                    <div className="bg-red-950/40 border border-red-900 rounded p-2 text-[11px] text-red-300 space-y-0.5">
+                      {basketPdfErrors.map((e, i) => (
+                        <div key={i}>
+                          <code>{e.filename}</code>: {e.error}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {basketPdfs.length > 0 && (() => {
+                    const unmatchedModels = Array.from(
+                      new Set(
+                        basketVariants
+                          .filter((v) => !findPdfForVariant(v))
+                          .map((v) => v.model_code),
+                      ),
+                    );
+                    if (unmatchedModels.length === 0) {
+                      return (
+                        <div className="text-[11px] text-green-400 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Alle modeller i basket har matchende PDF.
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="text-[11px] text-yellow-300">
+                        Mangler PDF for modell: {unmatchedModels.join(", ")}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           ) : mode === "xlsx" ? (
             <div className="space-y-3">
@@ -628,7 +955,7 @@ export default function EnkelproduktPage() {
           )}
 
           {/* Felles innstillinger — kun for URL/HTML/PDF-modus (ikke XLSX) */}
-          {mode !== "xlsx" && (
+          {mode !== "xlsx" && mode !== "basket" && (
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-800">
               <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none">
                 <input
@@ -735,6 +1062,94 @@ export default function EnkelproduktPage() {
                 <Check className="w-3 h-3" />
                 Felter under er fylt for variant {pdfVariants[selectedVariantIdx].code}.
                 Klikk en annen variant for å bytte.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hultafors basket-varianter */}
+        {mode === "basket" && basketVariants.length > 0 && (
+          <div className="bg-gray-900 border border-orange-700/40 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-orange-300 flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                Hultafors-varianter ({basketVariants.length})
+              </h2>
+              <span className="text-xs text-gray-500">{basketFilename}</span>
+            </div>
+            <p className="text-xs text-gray-400 mb-3">
+              Klikk en variant — vi fyller leverandørproduktnr + farge + størrelse.
+              Du må selv legge inn produkttype foran (BUKSE/JAKKE/HANSKER/...) og
+              velge produktgruppe. Bruk PDF-modus FØR for å hente felles produkt-info
+              hvis du har Hultafors-datablad.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+              {basketVariants.map((v, i) => {
+                const isSelected = selectedBasketIdx === i;
+                const isDone = basketDone.has(i);
+                const matchedPdf = findPdfForVariant(v);
+                return (
+                  <button
+                    key={`${v.stock_code}-${i}`}
+                    onClick={() => selectBasketVariant(i)}
+                    disabled={scraping}
+                    className={`text-left p-2.5 rounded border text-xs transition ${
+                      isSelected
+                        ? "border-orange-500 bg-orange-950/40 text-orange-100"
+                        : isDone
+                          ? "border-green-800 bg-green-950/20 text-gray-400"
+                          : "border-gray-700 bg-gray-800 hover:border-orange-600 text-gray-200"
+                    } disabled:opacity-50`}
+                  >
+                    <div className="font-mono text-gray-300 mb-1 flex items-center gap-1">
+                      {isDone && <Check className="w-3 h-3 text-green-500" />}
+                      {v.stock_code}
+                      {matchedPdf && (
+                        <span className="ml-auto text-[9px] text-green-400 bg-green-950/40 px-1 rounded">
+                          PDF
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-orange-300 font-semibold">
+                      {matchedPdf?.type_code ? `${matchedPdf.type_code} ` : ""}
+                      {v.model_code} · Str {v.size_label}
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">
+                      {v.color_label ?? `Farge ${v.color_code} (ukjent)`}
+                    </div>
+                    {v.quantity > 1 && (
+                      <div className="text-[10px] text-gray-500 mt-0.5">
+                        Antall i basket: {v.quantity}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedBasketIdx != null && (
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-xs text-green-400 flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  Felter under er fylt for variant {basketVariants[selectedBasketIdx].stock_code}.
+                </div>
+                <button
+                  onClick={() => {
+                    if (selectedBasketIdx == null) return;
+                    const newDone = new Set(basketDone);
+                    newDone.add(selectedBasketIdx);
+                    setBasketDone(newDone);
+                    // Hopp til neste ikke-ferdige
+                    for (let i = selectedBasketIdx + 1; i < basketVariants.length; i++) {
+                      if (!newDone.has(i)) { selectBasketVariant(i); return; }
+                    }
+                    for (let i = 0; i < selectedBasketIdx; i++) {
+                      if (!newDone.has(i)) { selectBasketVariant(i); return; }
+                    }
+                  }}
+                  className="bg-green-700 hover:bg-green-600 text-white px-3 py-1 rounded text-xs flex items-center gap-1"
+                >
+                  <Check className="w-3 h-3" /> Marker som ferdig + neste
+                </button>
               </div>
             )}
           </div>
