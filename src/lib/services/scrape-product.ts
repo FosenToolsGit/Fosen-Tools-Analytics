@@ -4,7 +4,14 @@
 // og av /api/brosjyre/generate-from-manufacturer (sistnevnte kjører
 // Promise.allSettled over flere URLer).
 
-import { chromium } from "playwright";
+// Lazy-import av Playwright: Chromium-avhengigheten er IKKE tilgjengelig
+// i Vercel serverless, og en top-level-import tvinger ALLE ruter som
+// importerer denne fila (inkl. /api/prisplakat/share/[token]) til å feile
+// med 500 ved module-loading — selv om de aldri kaller scrape-funksjonen.
+// Løsning: dynamic-import inne i `extractImagesViaBrowser` der den
+// faktisk brukes. Andre eksporterte funksjoner (scrapeProductByUrl,
+// scrapePageByUrl) bruker fetch/regex og fungerer uten Playwright.
+type ChromiumModule = typeof import("playwright")["chromium"];
 
 export const SCRAPE_ALLOWED_HOSTS = ["fosen-tools.no", "www.fosen-tools.no"];
 
@@ -374,7 +381,12 @@ async function extractImagesViaBrowser(
   url: string,
   max = 16
 ): Promise<string[]> {
-  let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
+  // Lazy-import Playwright her — tunge avhengigheter må ikke trekkes inn
+  // ved module-load. Vercel kaster ut hele runtimen hvis chromium-binærene
+  // mangler ved import. Når denne funksjonen kalles lokalt fungerer det.
+  const { chromium } = await import("playwright");
+  type ChromiumBrowser = Awaited<ReturnType<ChromiumModule["launch"]>>;
+  let browser: ChromiumBrowser | null = null;
   try {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage({
