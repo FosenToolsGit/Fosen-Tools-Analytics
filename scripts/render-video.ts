@@ -16,6 +16,7 @@ import path from "node:path";
 
 import { renderVideo } from "../src/lib/services/video-render";
 import {
+  SAMPLE_CADLAB,
   SAMPLE_HDFI_BA,
   SAMPLE_KAMPANJE,
   SAMPLE_KUNDE_V2,
@@ -70,6 +71,11 @@ const JOBS: Record<
     type: "team-portrett",
     data: { ...SAMPLE_TEAM },
     out: "team-portrett.mp4",
+  },
+  "cadlab": {
+    type: "cadlab-prosess",
+    data: { ...SAMPLE_CADLAB },
+    out: "cadlab-prosess.mp4",
   },
 };
 

@@ -252,6 +252,7 @@ export type VideoType =
   | "kunde-leveranse-v2"
   | "hdfi-before-after"
   | "team-portrett"
+  | "cadlab-prosess"
   | "jub-t14"
   | "jub-t13"
   | "jub-t12"
@@ -279,6 +280,7 @@ export const COMPOSITION_ID: Record<VideoType, string> = {
   "kunde-leveranse-v2": "KundeLeveranseV2",
   "hdfi-before-after": "HdfiBeforeAfter",
   "team-portrett": "TeamPortrett",
+  "cadlab-prosess": "CADLABProsess",
   "jub-t14": "JubileumT14",
   "jub-t13": "JubileumT13",
   "jub-t12": "JubileumT12",
@@ -415,4 +417,29 @@ export const SAMPLE_TEAM: TeamPortrettProps = {
   quote:
     "Vi selger ikke verktøy fordi vi har mange, vi selger riktig verktøy for hverdagen.",
   photoUrl: null,
+};
+
+// ── cadlab-prosess (3-scene HDFI-fortelling) ─────────────────────────
+
+export type CADLABProsessProps = {
+  format: VideoFormat;
+  /** Produktnavn — vises i scene 3 og outro. */
+  productName: string;
+  /** Kundenavn — valgfritt, vises i scene 3 som "for {customerName}". */
+  customerName?: string;
+  /** CAD-skjerm-bilde til scene 1. Undefined gir blueprint-fallback. */
+  cadImageUrl?: string;
+  /** CNC-bilde til scene 2. Undefined gir kutt-moenster-fallback. */
+  cncImageUrl?: string;
+  /** Ferdig HDFI-bilde til scene 3. Undefined gir paletten-fallback. */
+  finishedImageUrl?: string;
+};
+
+export const SAMPLE_CADLAB: CADLABProsessProps = {
+  format: "reel",
+  productName: "Aviation EOR Kit",
+  customerName: "Norwegian Aero",
+  cadImageUrl: undefined,
+  cncImageUrl: undefined,
+  finishedImageUrl: undefined,
 };

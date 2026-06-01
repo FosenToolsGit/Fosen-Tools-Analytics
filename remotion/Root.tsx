@@ -17,8 +17,10 @@ import { HdfiHero } from "./compositions/HdfiHero";
 import { KundeLeveranseV2 } from "./compositions/KundeLeveranseV2";
 import { HdfiBeforeAfter } from "./compositions/HdfiBeforeAfter";
 import { TeamPortrett } from "./compositions/TeamPortrett";
+import { CADLABProsess } from "./compositions/CADLABProsess";
 import {
   DIMENSIONS,
+  SAMPLE_CADLAB,
   SAMPLE_HDFI,
   SAMPLE_HDFI_BA,
   SAMPLE_KAMPANJE,
@@ -172,6 +174,17 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={SAMPLE_TEAM}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="CADLABProsess"
+        component={CADLABProsess}
+        // 4 scener: 100 + 100 + 100 + 30 = 330 frames @ 30fps = 11s
+        durationInFrames={330}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_CADLAB}
         calculateMetadata={({ props }) => dimsFromFormat(props)}
       />
 
