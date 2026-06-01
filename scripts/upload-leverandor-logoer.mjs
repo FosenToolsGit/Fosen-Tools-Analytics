@@ -57,7 +57,9 @@ const results = [];
 
 for (const file of targets) {
   const baseName = file.replace(/\.svg$/i, "");
-  const slug = SLUG_OVERRIDES[baseName] ?? baseName;
+  // Slug-overrides først, deretter lowercase som default-policy
+  // (Supabase Storage er case-sensitive — alltid bruk lowercase for konsistens)
+  const slug = (SLUG_OVERRIDES[baseName] ?? baseName).toLowerCase();
   const storagePath = `${STORAGE_PREFIX}/${slug}.png`;
 
   try {

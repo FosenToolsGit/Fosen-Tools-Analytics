@@ -1021,7 +1021,12 @@ function renderSupplierCard(
   // Kolonnen er fast 180px så alle kort har lik bredde uansett logo.
   const logoWidth = Math.max(80, Math.min(180, Math.round(s.logoWidth ?? 140)));
   const logoMaxHeight = Math.round(logoWidth * 0.7); // bevarer aspekt-grense
-  const logoCell = `<td width="180" valign="middle" align="center" style="width:180px;padding:14px 12px;background-color:${logoColBg};border-right:1px solid ${borderColor};border-radius:8px 0 0 8px;text-align:center;vertical-align:middle"><img src="${esc(s.logoUrl)}" alt="${esc(s.name)}" width="${logoWidth}" style="display:block;margin:0 auto;max-width:${logoWidth}px;max-height:${logoMaxHeight}px;width:auto;height:auto;border:0" /></td>`;
+  // Hvis logo-URL mangler: vis stor uppercase merkenavn i logo-cellen så vi
+  // ikke får et broken-image-ikon. Brukbart inntil logoen er lastet opp.
+  const logoInner = s.logoUrl
+    ? `<img src="${esc(s.logoUrl)}" alt="${esc(s.name)}" width="${logoWidth}" style="display:block;margin:0 auto;max-width:${logoWidth}px;max-height:${logoMaxHeight}px;width:auto;height:auto;border:0" />`
+    : `<div style="font-family:${FONT_STACK};font-size:18px;font-weight:800;letter-spacing:1px;color:${textColor};text-transform:uppercase;line-height:1.2;text-align:center">${esc(s.name)}</div>`;
+  const logoCell = `<td width="180" valign="middle" align="center" style="width:180px;padding:14px 12px;background-color:${logoColBg};border-right:1px solid ${borderColor};border-radius:8px 0 0 8px;text-align:center;vertical-align:middle">${logoInner}</td>`;
 
   // Tekst-kolonnen: navn, tagline, beskrivelse, knapp — komprimert padding
   const textCell = `<td valign="middle" style="padding:16px 20px;vertical-align:middle"><h3 style="margin:0 0 2px 0;padding:0;font-family:${FONT_STACK};font-size:18px;font-weight:800;letter-spacing:0.5px;color:${textColor};text-transform:uppercase;line-height:1.15">${esc(s.name)}</h3><p style="margin:0;padding:0;font-family:${FONT_STACK};font-size:12px;color:${accentColor};font-weight:700;letter-spacing:0.4px;line-height:1.3">${esc(s.tagline)}</p>${descHtml}${renderButton(blockId, s.ctaText, ctaHref, 200, "left")}</td>`;
