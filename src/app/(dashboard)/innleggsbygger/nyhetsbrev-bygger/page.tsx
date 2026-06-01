@@ -128,6 +128,8 @@ interface WizardStatePayload {
   templateVariant?: "standard" | "jubileum" | "jubileum-leverandor";
   showFridayPost?: boolean;
   showMidtCta?: boolean;
+  hideJubileumBanner?: boolean;
+  jubileumFooterText?: string;
   /** Planlagt sendedato (YYYY-MM-DD). Brukes på innhold-kalender for å
    *  plassere utkastet på riktig dag, og vises i oversikten som badge. */
   scheduledSendDate?: string;
@@ -187,6 +189,10 @@ export default function NyhetsbrevByggerPage() {
   const [showFridayPost, setShowFridayPost] = useState<boolean>(true);
   /* «Les mer»-CTA-knapp under midtseksjonen. Default på — skru av for ren info-midt. */
   const [showMidtCta, setShowMidtCta] = useState<boolean>(true);
+  /* Skjul jubileumsbanner i toppen (selv om jubileum-leverandor-mal er valgt). */
+  const [hideJubileumBanner, setHideJubileumBanner] = useState<boolean>(false);
+  /* Én-linjes jubileumsfooter-rad rett over svart footer. Tom = skjult. */
+  const [jubileumFooterText, setJubileumFooterText] = useState<string>("");
   /* Planlagt sendedato — YYYY-MM-DD, tom hvis ikke satt. */
   const [scheduledSendDate, setScheduledSendDate] = useState<string>("");
 
@@ -259,6 +265,8 @@ export default function NyhetsbrevByggerPage() {
             templateVariant,
             showFridayPost,
             showMidtCta,
+            hideJubileumBanner,
+            jubileumFooterText,
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -274,7 +282,7 @@ export default function NyhetsbrevByggerPage() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [editContent, editProducts, editSuppliers, midtImageUrl, footerImageUrl, socialInstagram, socialLinkedin, showPreview, templateVariant, showFridayPost, showMidtCta]);
+  }, [editContent, editProducts, editSuppliers, midtImageUrl, footerImageUrl, socialInstagram, socialLinkedin, showPreview, templateVariant, showFridayPost, showMidtCta, hideJubileumBanner, jubileumFooterText]);
 
   /* Suggestions fetch */
   useEffect(() => {
@@ -511,6 +519,8 @@ export default function NyhetsbrevByggerPage() {
         templateVariant,
         showFridayPost,
         showMidtCta,
+        hideJubileumBanner,
+        jubileumFooterText,
       };
       const res = await fetch("/api/mailchimp/newsletter/create", {
         method: "POST",
@@ -547,6 +557,8 @@ export default function NyhetsbrevByggerPage() {
     setEditSuppliers([]);
     setShowFridayPost(true);
     setShowMidtCta(true);
+    setHideJubileumBanner(false);
+    setJubileumFooterText("");
     setScheduledSendDate("");
     setThemeInput("");
     setManualProductUrls("");
@@ -587,6 +599,8 @@ export default function NyhetsbrevByggerPage() {
       templateVariant,
       showFridayPost,
       showMidtCta,
+      hideJubileumBanner,
+      jubileumFooterText,
       scheduledSendDate,
     };
   }
@@ -663,6 +677,10 @@ export default function NyhetsbrevByggerPage() {
         else setShowFridayPost(true);
         if (typeof s.showMidtCta === "boolean") setShowMidtCta(s.showMidtCta);
         else setShowMidtCta(true);
+        if (typeof s.hideJubileumBanner === "boolean") setHideJubileumBanner(s.hideJubileumBanner);
+        else setHideJubileumBanner(false);
+        if (typeof s.jubileumFooterText === "string") setJubileumFooterText(s.jubileumFooterText);
+        else setJubileumFooterText("");
         if (typeof s.scheduledSendDate === "string") setScheduledSendDate(s.scheduledSendDate);
         else setScheduledSendDate("");
 
@@ -812,6 +830,8 @@ export default function NyhetsbrevByggerPage() {
     templateVariant,
     showFridayPost,
     showMidtCta,
+    hideJubileumBanner,
+    jubileumFooterText,
     scheduledSendDate,
   ]);
 
