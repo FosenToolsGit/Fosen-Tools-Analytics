@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
     suppliers,
     showFridayPost: body.showFridayPost,
     showMidtCta: body.showMidtCta,
+    hideJubileumBanner: body.hideJubileumBanner,
+    jubileumFooterText: body.jubileumFooterText,
   };
 
   // Auto-derive brand logo from first product URL if not provided (mirrors createNewsletter logic).

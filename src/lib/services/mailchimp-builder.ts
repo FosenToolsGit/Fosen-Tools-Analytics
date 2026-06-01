@@ -157,6 +157,13 @@ export interface NewsletterInput {
    *  når midtseksjonen er ren info uten en ekstern destinasjon (typisk
    *  program-/event-info-seksjoner). */
   showMidtCta?: boolean;
+  /** Skjul jubileums-banneret selv om templateVariant er «jubileum» eller
+   *  «jubileum-leverandor». Brukes når vi vil ha leverandør-kort-malen
+   *  uten å koble innlegget eksplisitt til 26. juni-eventet. */
+  hideJubileumBanner?: boolean;
+  /** Én-linjes jubileums-tekst som rendres rett over svart bunn-footer
+   *  (typisk «Fosen Tools fyller 25 år i 2026»). Skjules hvis tom. */
+  jubileumFooterText?: string;
 }
 
 export interface NewsletterProduct {
@@ -314,10 +321,14 @@ export class MailchimpBuilderService {
       variant,
     ));
 
-    // Section 1b: Jubileums-banner — for begge jubileum-variantene.
-    //   Speiler det røde topp-banneret på fosen-tools.no:
-    //   "25-ÅRSJUBILEUM · NY PROFF-BUTIKK · 26. JUNI 2026 · 10:00–16:00"
-    if (variant === "jubileum" || variant === "jubileum-leverandor") {
+    // Section 1b: Jubileums-banner — for begge jubileum-variantene,
+    //   med mindre hideJubileumBanner er satt (for ordinære nyhetsbrev
+    //   som bruker leverandør-mal-strukturen uten å eksplisitt promotere
+    //   26. juni-eventet).
+    if (
+      (variant === "jubileum" || variant === "jubileum-leverandor") &&
+      input.hideJubileumBanner !== true
+    ) {
       rootSections.push(renderJubileumBanner());
     }
 
@@ -329,6 +340,13 @@ export class MailchimpBuilderService {
       products,
       utm
     ));
+
+    // Section 2b: Én-linjes jubileums-tekst rett over svart footer.
+    //   Skjules hvis jubileumFooterText er tom. Brukes for å holde
+    //   25-årsjubileet diskret tilstede i ordinære nyhetsbrev.
+    if (input.jubileumFooterText && input.jubileumFooterText.trim()) {
+      rootSections.push(renderJubileumFooterRow(input.jubileumFooterText));
+    }
 
     // Section 3: Footer — svart med firma-info + sosiale ikoner
     rootSections.push(renderFooterSection(variant));
@@ -732,6 +750,27 @@ function renderJubileumBanner(): string {
   </tr></tbody></table>`;
 
   return wrapSection("jubileum-banner", OUTER_BG, bg, innerContent);
+}
+
+/**
+ * Subtil jubileums-footer-rad rett over svart bunn-footer. Én linje
+ * sentrert tekst med 25-årslogoen til venstre. Brukes på ordinære
+ * nyhetsbrev for å minne om jubileet uten å dominere innholdet.
+ */
+function renderJubileumFooterRow(text: string): string {
+  const bg = "#E11A22"; // FT-rød (samme som banneret)
+  const ftPrimary = FT_WHITE;
+  const fontFamily = FONT_STACK;
+  const logoHeight = 32;
+
+  const inner = `<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr>
+    <td align="center" style="padding:14px 16px;vertical-align:middle;font-family:${fontFamily}">
+      <img src="${esc(FT_JUBILEUM_LOGO_URL)}" alt="25-årsjubileum" height="${logoHeight}" style="height:${logoHeight}px;width:auto;border:0;display:inline-block;vertical-align:middle;margin-right:14px" />
+      <span style="color:${ftPrimary};font-family:${fontFamily};font-weight:700;font-size:13px;letter-spacing:0.6px;line-height:1.3;vertical-align:middle">${esc(text)}</span>
+    </td>
+  </tr></tbody></table>`;
+
+  return wrapSection("jubileum-footer-row", OUTER_BG, bg, inner);
 }
 
 /**

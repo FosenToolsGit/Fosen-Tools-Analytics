@@ -1,16 +1,17 @@
 /**
- * Tirsdag 2. juni 2026 — utgave 1, VERSJON 2 (produkt-fokus).
+ * Tirsdag 2. juni 2026 — utgave 1, VERSJON 3 (kort + mekanikersett-midt)
  *
- * Bygd om etter Erik sin tilbakemelding: ukas nyhetsbrev skal handle om de
- * tre MERKENE som lanseres samme dag (Milwaukee, Wera, Zweibrüder), ikke om
- * selve jubileums-eventet. Jubileumet er konteksten, ikke hovedhistorien.
+ * Erik-feedback (1. juni):
+ * - Alt for mye tekst, kort ned betraktelig
+ * - Ingen 26. juni-fokus i ordinære nyhetsbrev (jubileums-mailer sendes separat)
+ * - Midt: mekanikersett-referansen (HDFI custom)
+ * - Helt nederst: én linje om 25-årsjubileet + jubileumslogo
  *
- * Forskjeller fra v1:
- *  - Tone: produkt-fokus, ikke event-/save-the-date
- *  - Subject: presenterer merkene som «tre i sortimentet», ikke «på besøk»
- *  - Per merke: hva merket er kjent for + invitasjon til sortimentet
- *  - Midtseksjon: kort, lavmælt påminnelse om åpningen 26. juni
- *  - Ingen «dagstilbud»-kommunikasjon (det er separat utsendelse)
+ * Teknikk:
+ * - Bruker jubileum-leverandor-malen for å få leverandør-kort-rendring,
+ *   men setter hideJubileumBanner=true så banneret skjules
+ * - Leverandører Milwaukee, Wera, Zweibrüder med MYE kortere tekst
+ * - jubileumFooterText: 25-års-linje rendres rett over svart bunn-footer
  *
  *   node --env-file=.env.local scripts/seed-nyhetsbrev-2026-06-02-v2-merker.mjs
  */
@@ -35,41 +36,33 @@ const LOGO_BASE =
 
 const UTM = "utm_source=mailchimp&utm_medium=email&utm_campaign=2026-06-02-tre-merker";
 
-// Hvert merke som et produkt-fokusert kort, ikke som «leverandør på besøk»
+// Leverandør-kort — mye kortere tekst per Erik-feedback
 const editSuppliers = [
   {
     name: "Milwaukee",
-    tagline: "Batteriverktøy som matcher din arbeidsdag",
+    tagline: "M18 og M12-økosystemet",
     logoUrl: `${LOGO_BASE}/milwaukee.png`,
-    ctaText: "Se Milwaukee-sortimentet →",
+    ctaText: "Se sortimentet →",
     ctaUrl: `https://fosen-tools.no/milwaukee?${UTM}&utm_content=milwaukee`,
-    description:
-      "M18- og M12-økosystemet gir deg over 200 maskiner som deler samme batteri og lader. " +
-      "Bor- og slagdrill, vinkelslipere, sirkelsager, lykter, multiverktøy, hele veien til kompresjon og rørkutting. " +
-      "Markedsledende på profesjonelt batteriverktøy.",
+    description: "Over 200 maskiner på samme batteri og lader.",
     logoWidth: 160,
   },
   {
     name: "Wera",
-    tagline: "Tysk presisjon i håndverktøy",
+    tagline: "Tysk presisjon",
     logoUrl: `${LOGO_BASE}/wera.png`,
-    ctaText: "Se Wera-sortimentet →",
+    ctaText: "Se sortimentet →",
     ctaUrl: `https://fosen-tools.no/wera?${UTM}&utm_content=wera`,
-    description:
-      "Skrutrekkere med Kraftform-grep, presisjons-bits, momentnøkler og spesialverktøy. " +
-      "Wera har bygd seg opp som de fagfolks førstevalg i Europa, kjent for ergonomi, slitestyrke og smarte detaljer som tar tid å forstå men umulig å gå tilbake fra.",
+    description: "Skrutrekkere og bits fagfolk velger først.",
     logoWidth: 150,
   },
   {
     name: "Zweibrüder",
-    tagline: "Profesjonelle LED-lykter",
+    tagline: "Tyske LED-lykter",
     logoUrl: `${LOGO_BASE}/zweibruder.png`,
-    ctaText: "Se Zweibrüder-sortimentet →",
+    ctaText: "Se sortimentet →",
     ctaUrl: `https://fosen-tools.no/zweibr%C3%BCder?${UTM}&utm_content=zweibruder`,
-    description:
-      "Hodelykter, hånd-lykter og arbeidslamper i tysk kvalitet. " +
-      "Lang batteritid, robuste hus, høy lysstyrke når du trenger den. " +
-      "Brukt av industri, redning og beredskapspersonell, men minst like nyttige i verkstedet og på hytta.",
+    description: "Robuste lykter for industri og hverdag.",
     logoWidth: 150,
   },
 ];
@@ -77,39 +70,33 @@ const editSuppliers = [
 const editContent = {
   themeSlug: "2026-06-02-tre-merker",
   topBadge: "🛠️ TRE MERKER I SORTIMENTET",
-  subjectLine: "Milwaukee, Wera og Zweibrüder, tre toppmerker hos Fosen Tools",
+  subjectLine: "Milwaukee, Wera og Zweibrüder, tre merker vi fører",
   previewText:
-    "Vi løfter frem tre av merkene vi fører: Milwaukee for batteridrevne maskiner, " +
-    "Wera for tysk håndverktøy og Zweibrüder for proff-LED. Bla deg gjennom sortimentet.",
-  headingMain: "Tre sterke merker",
+    "Tre toppmerker i sortimentet vårt: Milwaukee for batteriverktøy, Wera for tysk presisjon, Zweibrüder for LED-lykter.",
+  headingMain: "Tre merker vi fører",
   headingSub: "Milwaukee · Wera · Zweibrüder",
   ingress:
-    "Hos Fosen Tools fører vi over 40 merker, og denne uken vil vi løfte frem tre " +
-    "av dem ekstra. Milwaukee tar grunnarbeidet med batteridrevne maskiner. " +
-    "Wera leverer tysk presisjon i håndverktøy. Zweibrüder gir deg lyset du trenger " +
-    "når det er som mørkest. Tre veldig ulike merker, alle på lager hos oss.",
-  midtTitle: "VI FYLLER 25 ÅR 26. JUNI",
+    "Hos Fosen Tools fører vi over 40 merker. Denne uken løfter vi frem " +
+    "tre av dem som dekker tre helt ulike fagområder.",
+  midtTitle: "MEKANIKERSETT I PELI 1610",
   midtBody:
-    "Fredag 26. juni feirer vi 25 år som leverandør av kvalitetsverktøy. " +
-    "Vi har holdt på siden 2001 og åpner samme dag dørene til vår nye PROFF-butikk " +
-    "på Brekstad. Du er hjertelig velkommen innom mellom 10:00 og 16:00 for å se " +
-    "sortimentet, prate verktøy og hilse på teamet.",
-  midtCtaText: "Les mer om besøket", // skjules av showMidtCta=false, men har en plass-holder
-  midtCtaUrl: `https://fosen-tools.no/?${UTM}&utm_content=jubileum-info`,
+    "Skreddersydd Snap-on mekanikersett i HDFI-tilpasset Peli 1610-koffert. " +
+    "CAD-tegnet, CNC-maskinert i Brekstad, klart for bruk dagen det leveres.",
+  midtCtaText: "Se referansen",
+  midtCtaUrl: `https://fosen-tools.no/referanser/medium-kofferter-hdfi/mekanikersett?${UTM}&utm_content=midt-cta`,
   preferredManufacturers: ["Milwaukee", "Wera", "Zweibrüder"],
-  productKeywords: ["batteri", "skrutrekker", "lykt"],
+  productKeywords: ["sortiment"],
 };
 
 const wizardState = {
-  themeInput: "Utgave 1 v2: Tre merker i sortimentet (produkt-fokus)",
+  themeInput: "Utgave 1 v3: Tre merker + mekanikersett-referanse",
   focus: "annet",
   discountPct: "",
   extraContext:
-    "VERSJON 2 etter Erik-feedback (1. juni): Ukas nyhetsbrev skal handle om de " +
-    "tre merkene Milwaukee, Wera, Zweibrüder, ikke om jubileums-eventet. " +
-    "Produkt-fokus, ikke event-fokus. Jubileums-konteksten er kort omtalt i " +
-    "midtseksjonen som «kom innom»-invitasjon, ingen dagstilbud-kommunikasjon. " +
-    "Tone: forklarende for en kunde som ikke kjenner FT fra før.",
+    "VERSJON 3 etter Erik-feedback (1. juni): MYE kortere tekst. INGEN " +
+    "26. juni-fokus (egne jubileums-mailer kommer separat). Tre merker " +
+    "(Milwaukee/Wera/Zweibrüder) i kort form. Midtseksjon: HDFI mekanikersett-" +
+    "referanse. Én linje om 25-årsjubileet rett over footeren.",
   productCount: 0,
   onlyInStock: true,
   manualProductUrls: "",
@@ -119,20 +106,31 @@ const wizardState = {
   editProducts: [],
   editSuppliers,
   midtImageInput: "",
-  midtImageUrl: "https://fosen-tools.no/userfiles/image/HDFI/HDFI-svart-bedre.jpg",
+  // Mekanikersett-bilde fra referanse-siden
+  midtImageUrl: "https://fosen-tools.no/userfiles/image/Inspirasjon/Kasseløsninger/Medium kofferter HDFI/Snapon 1.jpeg",
   footerImageInput: "",
   footerImageUrl: "",
   socialInstagram: `https://www.instagram.com/fosentools/?${UTM}&utm_content=footer-social`,
   socialLinkedin: `https://www.linkedin.com/company/fosen-tools-as?${UTM}&utm_content=footer-social`,
   templateVariant: "jubileum-leverandor",
   showFridayPost: false,
-  showMidtCta: false, // midtseksjonen er ren info, ingen ekstern destinasjon
+  showMidtCta: true, // «Se referansen»-knapp under mekanikersettet
+  hideJubileumBanner: true, // INGEN 26. juni-banner i denne utgaven
+  jubileumFooterText: "Fosen Tools fyller 25 år i 2026",
   scheduledSendDate: "2026-06-02",
 };
 
-const title = "UTGAVE 1 V2: Tre merker i sortimentet (Milwaukee, Wera, Zweibrüder)";
+const title = "UTGAVE 1 V3: Tre merker + mekanikersett-referanse";
 
-console.log("📧 Setter inn (eller oppdaterer) utkast V2 (produkt-fokus) for tirsdag 2. juni 2026...");
+console.log("📧 Setter inn V3-utkast for tirsdag 2. juni 2026...");
+
+// Slett gamle V2-titler så vi ikke får duplikater
+const obsoleteTitles = [
+  "UTGAVE 1 V2: Tre merker i sortimentet (Milwaukee, Wera, Zweibrüder)",
+];
+for (const t of obsoleteTitles) {
+  await sb.from("newsletter_wizard_drafts").delete().eq("title", t);
+}
 
 await sb.from("newsletter_wizard_drafts").delete().eq("title", title);
 
@@ -152,11 +150,9 @@ if (error) {
   process.exit(1);
 }
 
-console.log("\n✅ Utkast V2 opprettet!");
+console.log("\n✅ V3-utkast opprettet!");
 console.log("   ID:", data.id);
 console.log("   Tittel:", data.title);
-console.log("\n🛠  Sammenlign med V1 («JUBILEUM 1/4…») i UI:");
-console.log("   http://localhost:3001/innleggsbygger/nyhetsbrev-bygger");
-console.log("   https://fosen-tools-analytics.vercel.app/innleggsbygger/nyhetsbrev-bygger");
-console.log("\n📋 Vinkling V2: produkt-fokus, jubileums-info som lavmælt sub-tema");
-console.log("📋 Vinkling V1: event-fokus, leverandører som besøkende");
+console.log("   Jubileumsbanner SKJULT, jubileumsfooter-linje SYNLIG.");
+console.log("\n🛠  Åpne i UI:");
+console.log("   https://fosen-tools-analytics.vercel.app/innleggsbygger/nyhetsbrev-oversikt");

@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
     templateVariant: body.templateVariant,
     showFridayPost: body.showFridayPost,
     showMidtCta: body.showMidtCta,
+    hideJubileumBanner: body.hideJubileumBanner,
+    jubileumFooterText: body.jubileumFooterText,
     suppliers: (body.suppliers ?? []).slice(0, 8).map((s: NewsletterSupplier) => ({
       name: s.name ?? "",
       tagline: s.tagline ?? "",

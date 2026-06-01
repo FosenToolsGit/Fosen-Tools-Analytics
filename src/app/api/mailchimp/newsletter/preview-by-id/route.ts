@@ -43,6 +43,8 @@ interface WizardState {
   templateVariant?: "standard" | "jubileum" | "jubileum-leverandor";
   showFridayPost?: boolean;
   showMidtCta?: boolean;
+  hideJubileumBanner?: boolean;
+  jubileumFooterText?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -105,6 +107,8 @@ export async function GET(request: NextRequest) {
     templateVariant: ws.templateVariant,
     showFridayPost: ws.showFridayPost,
     showMidtCta: ws.showMidtCta,
+    hideJubileumBanner: ws.hideJubileumBanner,
+    jubileumFooterText: ws.jubileumFooterText,
   };
 
   try {
