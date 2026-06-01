@@ -306,44 +306,34 @@ const TEMPLATES: IdeTemplate[] = [
     trenger: "Bilder av Milwaukee-produkter (kan bruke Multicase-CDN-URLer)",
     destinasjoner: [],
     innleggsmaler_prefill: {
-      mal: "produkt-mfr",
-      variant: "A",
+      mal: "feature",
+      variant: "B",
       aspect: "fb",
       data: {
         scalars: {
-          manufacturer: "MILWAUKEE",
-          tagline: "Én batteripakke, 200+ maskiner",
+          eyebrow: "BATTERIVERKTØY",
+          kicker: "MILWAUKEE",
+          headline: "200+ maskiner. Én batteripakke.",
+          accent: "200+",
+          subhead: "M18 og M12-økosystemet hos Fosen Tools",
+          description:
+            "Drill, sirkelsag, muttertrekker, kompressor, lykter og resten av Milwaukee-utvalget deler samme batteri og lader. Det er forskjellen mellom en samling verktøy og et arbeidssystem.",
+          chapter: "Spotlight",
+          cta: "fosen-tools.no/milwaukee",
+          photo: "",
         },
         arrays: {
-          items: [
-            {
-              name: "Verktøyvogn 10 skuffer SRC46-1",
-              priceBefore: "",
-              priceNow: "16667",
-              discount: "",
-              photo: "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/32403/image/66640dc9-0bd3-41ae-bc77-604be8b1eb80/4932478852--hero_1.w900.jpg",
-            },
-            {
-              name: "Sirkelsag M18 CCS55-0",
-              priceBefore: "",
-              priceNow: "3475",
-              discount: "",
-              photo: "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/52148/image/ff5a89f2-c16a-47a2-8318-c596cfdfc78a/m18_ccs55-0--hero_1.w900.jpg",
-            },
-            {
-              name: "Popnaglepistol M12 BPRT",
-              priceBefore: "",
-              priceNow: "4190",
-              discount: "",
-              photo: "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/55333/image/b3bd145d-e9fe-47f5-a7f9-c26286768128/m12_bprt-201x--hero_2.w900.jpg",
-            },
-            {
-              name: "Muttertrekker M12 FIWF12-0",
-              priceBefore: "",
-              priceNow: "950",
-              discount: "",
-              photo: "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/55999/image/00aee763-6b11-4f8f-9b80-8dd7f41ff7cc/m12_fiwf12-0--hero_1.w720.jpg",
-            },
+          bullets: [
+            { v: "Samme batteri på over 200 maskiner" },
+            { v: "M18 for de tunge jobbene, M12 for trange steder" },
+            { v: "Hele økosystemet på lager hos oss" },
+            { v: "Vi hjelper deg sette opp riktig pakke for jobben" },
+          ],
+          bulletsNum: [
+            { num: "01", txt: "Samme batteri på 200+ maskiner" },
+            { num: "02", txt: "M18 for tunge jobber" },
+            { num: "03", txt: "M12 for trange steder" },
+            { num: "04", txt: "Vi setter opp riktig pakke" },
           ],
         },
       },
