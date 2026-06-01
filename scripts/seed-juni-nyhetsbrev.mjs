@@ -121,6 +121,8 @@ const utgave2 = {
   },
   showFridayPost: true,
   showMidtCta: false,
+  hideJubileumBanner: true,
+  jubileumFooterText: "Fosen Tools fyller 25 år i 2026",
 };
 
 // ─── UTGAVE 3 — Tir 16. juni 2026 — TRE FAGMERKER ──────────────────
@@ -203,6 +205,8 @@ const utgave3 = {
   },
   showFridayPost: true,
   showMidtCta: false,
+  hideJubileumBanner: true,
+  jubileumFooterText: "Fosen Tools fyller 25 år i 2026",
 };
 
 // ─── UTGAVE 4 — Tir 23. juni 2026 — SPESIELLE GJESTER + REMINDER ───
@@ -268,6 +272,8 @@ const utgave4 = {
   },
   showFridayPost: true,
   showMidtCta: false,
+  hideJubileumBanner: true,
+  jubileumFooterText: "Fosen Tools fyller 25 år i 2026",
 };
 
 // ─── UTGAVE 5 — Tir 30. juni 2026 — TAKK + TILBAKE TIL HVERDAGEN ───
