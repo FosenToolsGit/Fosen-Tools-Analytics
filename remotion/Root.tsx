@@ -14,14 +14,20 @@ import { MilepaelClip } from "./compositions/MilepaelClip";
 import { KampanjeTeaser } from "./compositions/KampanjeTeaser";
 import { SitatClip } from "./compositions/SitatClip";
 import { HdfiHero } from "./compositions/HdfiHero";
+import { KundeLeveranseV2 } from "./compositions/KundeLeveranseV2";
+import { HdfiBeforeAfter } from "./compositions/HdfiBeforeAfter";
+import { TeamPortrett } from "./compositions/TeamPortrett";
 import {
   DIMENSIONS,
   SAMPLE_HDFI,
+  SAMPLE_HDFI_BA,
   SAMPLE_KAMPANJE,
+  SAMPLE_KUNDE_V2,
   SAMPLE_LEVERANSE,
   SAMPLE_MILEPAEL,
   SAMPLE_PRODUKT,
   SAMPLE_SITAT,
+  SAMPLE_TEAM,
   type VideoFormat,
 } from "./types";
 import {
@@ -131,6 +137,41 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={SAMPLE_HDFI}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+
+      {/* ── nye Pakke 3-komposisjoner (multi-scene + audio + captions) ── */}
+      <Composition
+        id="KundeLeveranseV2"
+        component={KundeLeveranseV2}
+        // 6 scener: 60 + 60·N(bilder) + 80 + 70 = 450 frames @ 30fps = 15s
+        durationInFrames={450}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_KUNDE_V2}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="HdfiBeforeAfter"
+        component={HdfiBeforeAfter}
+        // 4 scener: 30 + 60 + 90 + 60 = 240 frames @ 30fps = 8s
+        durationInFrames={240}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_HDFI_BA}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="TeamPortrett"
+        component={TeamPortrett}
+        // 4 scener: 60 + 120 + 120 + 60 = 360 frames @ 30fps = 12s
+        durationInFrames={360}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_TEAM}
         calculateMetadata={({ props }) => dimsFromFormat(props)}
       />
 

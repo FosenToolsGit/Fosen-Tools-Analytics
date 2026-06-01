@@ -249,6 +249,9 @@ export type VideoType =
   | "kampanje-teaser"
   | "sitat"
   | "hdfi-hero"
+  | "kunde-leveranse-v2"
+  | "hdfi-before-after"
+  | "team-portrett"
   | "jub-t14"
   | "jub-t13"
   | "jub-t12"
@@ -273,6 +276,9 @@ export const COMPOSITION_ID: Record<VideoType, string> = {
   "kampanje-teaser": "KampanjeTeaser",
   sitat: "SitatClip",
   "hdfi-hero": "HdfiHero",
+  "kunde-leveranse-v2": "KundeLeveranseV2",
+  "hdfi-before-after": "HdfiBeforeAfter",
+  "team-portrett": "TeamPortrett",
   "jub-t14": "JubileumT14",
   "jub-t13": "JubileumT13",
   "jub-t12": "JubileumT12",
@@ -322,4 +328,91 @@ export const SAMPLE_HDFI: HdfiHeroProps = {
     "Identisk gravering på verktøy og HDFI",
   ],
   ctaUrl: "fosen-tools.no/hdfi",
+};
+
+// ── kunde-leveranse v2 (multi-scene reel) ────────────────────────────
+
+export type KundeLeveranseV2Props = {
+  format: VideoFormat;
+  /** Kundenavn — skjules når `anonymous = true`. */
+  customer: string;
+  /** Bransje, f.eks. "Offshore" / "Forsvar". */
+  industry: string;
+  /** Kunde-logo (URL), eller null. */
+  customerLogoUrl: string | null;
+  /** Hovedoverskrift om leveransen. */
+  heading: string;
+  /** Body-tekst (2-3 setninger) som typewriter-rendres. */
+  bodyText: string;
+  /** 3-6 bilde-URL-er for galleri-scenene. */
+  images: string[];
+  /** 2-4 stikkord/highlights som vises over bildene + i outro-chips. */
+  highlights: string[];
+  /** CTA-URL nederst. */
+  ctaUrl: string;
+  /** Skjul kundeidentitet — vis "BRANSJEKUNDE" i stedet. */
+  anonymous: boolean;
+};
+
+export const SAMPLE_KUNDE_V2: KundeLeveranseV2Props = {
+  format: "reel",
+  customer: "Norwegian Aero",
+  industry: "Aviation",
+  customerLogoUrl: null,
+  heading: "Skreddersydd verktøyløsning for vingedrift",
+  bodyText:
+    "CAD-tegnet i CADLAB, CNC-maskinert i Brekstad. Hver pipe og hver nøkkel har sin egen plass, og avvik oppdages før de blir et problem.",
+  images: [],
+  highlights: ["HDFI", "CADLAB", "CNC-maskinert", "FOD-sikret"],
+  ctaUrl: "fosen-tools.no/aviation",
+  anonymous: false,
+};
+
+// ── hdfi før/etter (split-screen) ────────────────────────────────────
+
+export type HdfiBeforeAfterProps = {
+  format: VideoFormat;
+  /** Før-bilde (URL) — kaotisk hyllevare-skuff. Null gir fallback. */
+  beforeImageUrl: string | null;
+  /** Etter-bilde (URL) — skreddersydd HDFI-skuff. Null gir fallback. */
+  afterImageUrl: string | null;
+  /** Kundenavn, f.eks. "Norwegian Aero". */
+  customerName: string;
+  /** Kort beskrivelse av leveransen (1-2 setninger). */
+  description: string;
+};
+
+export const SAMPLE_HDFI_BA: HdfiBeforeAfterProps = {
+  format: "reel",
+  beforeImageUrl: null,
+  afterImageUrl: null,
+  customerName: "Norwegian Aero",
+  description:
+    "Fra rotete hyllevare til skreddersydd HDFI med gravert silhuett — hver pipe på rett plass.",
+};
+
+// ── team-portrett (ansatt-intro) ─────────────────────────────────────
+
+export type TeamPortrettProps = {
+  format: VideoFormat;
+  /** Fullt navn. */
+  name: string;
+  /** Rolle/tittel. */
+  role: string;
+  /** Årstall ansatt, f.eks. "2018". */
+  since: string;
+  /** Sitat fra personen. */
+  quote: string;
+  /** Portrett-URL, eller null for initial-fallback. */
+  photoUrl: string | null;
+};
+
+export const SAMPLE_TEAM: TeamPortrettProps = {
+  format: "reel",
+  name: "Erik Strøm",
+  role: "Daglig leder",
+  since: "2018",
+  quote:
+    "Vi selger ikke verktøy fordi vi har mange, vi selger riktig verktøy for hverdagen.",
+  photoUrl: null,
 };

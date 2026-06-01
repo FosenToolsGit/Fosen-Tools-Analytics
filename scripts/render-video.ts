@@ -16,11 +16,14 @@ import path from "node:path";
 
 import { renderVideo } from "../src/lib/services/video-render";
 import {
+  SAMPLE_HDFI_BA,
   SAMPLE_KAMPANJE,
+  SAMPLE_KUNDE_V2,
   SAMPLE_LEVERANSE,
   SAMPLE_MILEPAEL,
   SAMPLE_PRODUKT,
   SAMPLE_SITAT,
+  SAMPLE_TEAM,
   type VideoType,
 } from "../remotion/types";
 
@@ -52,6 +55,21 @@ const JOBS: Record<
     type: "sitat",
     data: { ...SAMPLE_SITAT },
     out: "sitat.mp4",
+  },
+  "kunde-v2": {
+    type: "kunde-leveranse-v2",
+    data: { ...SAMPLE_KUNDE_V2 },
+    out: "kunde-leveranse-v2.mp4",
+  },
+  "hdfi-ba": {
+    type: "hdfi-before-after",
+    data: { ...SAMPLE_HDFI_BA },
+    out: "hdfi-before-after.mp4",
+  },
+  "team": {
+    type: "team-portrett",
+    data: { ...SAMPLE_TEAM },
+    out: "team-portrett.mp4",
   },
 };
 
