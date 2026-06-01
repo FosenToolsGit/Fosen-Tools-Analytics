@@ -79,22 +79,30 @@ function deriveHeadline(meta) {
 }
 
 function deriveBodyLines(meta) {
+  // Datostyrte linjer er bevisst utelatt — vi vet ikke når referansen
+  // faktisk ble levert, så «Levert mai 2026» / «Juni 2026» er feil signal.
+  // Erstattet med en outro-linje som forsterker Brekstad/CADLAB-doktrinen.
   const lines = ["CAD-tegnet, CNC-maskinert."];
   const t = `${meta.tema || ""} ${meta.title || ""}`;
   if (/aviation|f-16|sikorsky|helikopter|flightline/i.test(t)) {
     lines.push("Designet for flightline.");
+    lines.push("Klar for daglig drift.");
   } else if (/forsvar|våpen|rifle|ammo/i.test(t)) {
     lines.push("Bygget for Forsvaret.");
-  } else if (/offshore|havbruk/i.test(t)) {
+    lines.push("Klar for daglig drift.");
+  } else if (/offshore|havbruk|fiskefarm/i.test(t)) {
     lines.push("Designet for tøffe miljøer.");
+    lines.push("Klar for daglig drift.");
   } else if (/akutt|beredskap|helse/i.test(t)) {
     lines.push("Klar på minuttet.");
-  } else if (/innredning|systemvegg|fabrikk|verksted|garasje/i.test(t)) {
+    lines.push("Skreddersydd i Brekstad.");
+  } else if (/innredning|systemvegg|fabrikk|verksted|garasje|hyllesystem/i.test(t)) {
     lines.push("Skreddersydd til verkstedet.");
+    lines.push("Produsert i Brekstad.");
   } else {
     lines.push("Designet for arbeidsflyten.");
+    lines.push("Skreddersydd i Brekstad.");
   }
-  lines.push("Juni 2026.");
   return lines;
 }
 
