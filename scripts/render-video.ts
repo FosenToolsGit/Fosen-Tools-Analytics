@@ -17,12 +17,15 @@ import path from "node:path";
 import { renderVideo } from "../src/lib/services/video-render";
 import {
   SAMPLE_CADLAB,
+  SAMPLE_DEFINISJON,
   SAMPLE_HDFI_BA,
+  SAMPLE_HERO_POSTER,
   SAMPLE_KAMPANJE,
   SAMPLE_KUNDE_V2,
   SAMPLE_LEVERANSE,
   SAMPLE_MILEPAEL,
   SAMPLE_PRODUKT,
+  SAMPLE_REFERANSE,
   SAMPLE_SITAT,
   SAMPLE_TEAM,
   type VideoType,
@@ -76,6 +79,21 @@ const JOBS: Record<
     type: "cadlab-prosess",
     data: { ...SAMPLE_CADLAB },
     out: "cadlab-prosess.mp4",
+  },
+  referanse: {
+    type: "referanse-spotlight",
+    data: { ...SAMPLE_REFERANSE },
+    out: "referanse-spotlight.mp4",
+  },
+  definisjon: {
+    type: "definisjon",
+    data: { ...SAMPLE_DEFINISJON },
+    out: "definisjon.mp4",
+  },
+  hero: {
+    type: "hero-poster",
+    data: { ...SAMPLE_HERO_POSTER },
+    out: "hero-poster.mp4",
   },
 };
 

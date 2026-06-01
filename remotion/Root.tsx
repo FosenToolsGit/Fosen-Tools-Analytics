@@ -18,16 +18,22 @@ import { KundeLeveranseV2 } from "./compositions/KundeLeveranseV2";
 import { HdfiBeforeAfter } from "./compositions/HdfiBeforeAfter";
 import { TeamPortrett } from "./compositions/TeamPortrett";
 import { CADLABProsess } from "./compositions/CADLABProsess";
+import { ReferanseSpotlight } from "./compositions/ReferanseSpotlight";
+import { Definisjon } from "./compositions/Definisjon";
+import { HeroPoster } from "./compositions/HeroPoster";
 import {
   DIMENSIONS,
   SAMPLE_CADLAB,
+  SAMPLE_DEFINISJON,
   SAMPLE_HDFI,
   SAMPLE_HDFI_BA,
+  SAMPLE_HERO_POSTER,
   SAMPLE_KAMPANJE,
   SAMPLE_KUNDE_V2,
   SAMPLE_LEVERANSE,
   SAMPLE_MILEPAEL,
   SAMPLE_PRODUKT,
+  SAMPLE_REFERANSE,
   SAMPLE_SITAT,
   SAMPLE_TEAM,
   type VideoFormat,
@@ -185,6 +191,41 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={SAMPLE_CADLAB}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+
+      {/* ── nye juni-2026-komposisjoner (matcher fosen-tools.no-DNA) ── */}
+      <Composition
+        id="ReferanseSpotlight"
+        component={ReferanseSpotlight}
+        // 1 hovedscene m/ sekvensiell fade-in, rolig zoom — 11s
+        durationInFrames={330}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_REFERANSE}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="Definisjon"
+        component={Definisjon}
+        // Linje-for-linje fade-in på definisjon — 10s
+        durationInFrames={300}
+        fps={FPS}
+        width={1080}
+        height={1080}
+        defaultProps={SAMPLE_DEFINISJON}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="HeroPoster"
+        component={HeroPoster}
+        // Brand-presence m/ subtil zoom — 8s
+        durationInFrames={240}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_HERO_POSTER}
         calculateMetadata={({ props }) => dimsFromFormat(props)}
       />
 

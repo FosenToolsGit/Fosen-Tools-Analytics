@@ -240,6 +240,82 @@ export const SAMPLE_SITAT: SitatClipProps = {
   ctaUrl: "fosen-tools.no/referanser",
 };
 
+// ── referanse-spotlight ──────────────────────────────────────────────
+
+export type ReferanseSpotlightProps = {
+  format: VideoFormat;
+  /** Eyebrow over H1, f.eks. "LEVERT TIL ANDØYA SPACE". */
+  eyebrow: string;
+  /** Hovedoverskrift — 2–3 ord, UPPERCASE-rendres automatisk. */
+  headline: string;
+  /** Produktfoto-URL eller null for fallback. */
+  imageUrl: string | null;
+  /** 1–3 linjer body-tekst (CAD-tegnet, CNC-maskinert, levert mai 2026). */
+  bodyLines: string[];
+  /** Valgfri CTA-URL nederst, f.eks. "fosen-tools.no/referanser". */
+  ctaUrl?: string;
+};
+
+export const SAMPLE_REFERANSE: ReferanseSpotlightProps = {
+  format: "reel",
+  eyebrow: "Levert til Andøya Space",
+  headline: "Skreddersydd HDFI",
+  imageUrl: null,
+  bodyLines: [
+    "CAD-tegnet, CNC-maskinert.",
+    "Levert mai 2026.",
+  ],
+  ctaUrl: "fosen-tools.no/referanser",
+};
+
+// ── definisjon ───────────────────────────────────────────────────────
+
+export type DefinisjonProps = {
+  format: VideoFormat;
+  /** Mini-tekst over H1 — selve fagordet, f.eks. "HDFI" / "CADLAB". */
+  eyebrow: string;
+  /** Hovedoverskrift — 3–6 ord. */
+  headline: string;
+  /** 3–5 linjer body-tekst, hver linje en konsept-byggeklosse. */
+  bodyLines: string[];
+};
+
+export const SAMPLE_DEFINISJON: DefinisjonProps = {
+  format: "square",
+  eyebrow: "HDFI",
+  headline: "Verktøykontroll med gravert silhuett",
+  bodyLines: [
+    "Substantiv,",
+    "CAD-tegnet, CNC-maskinert,",
+    "segmentert etter brukerens arbeidsflyt.",
+  ],
+};
+
+// ── hero-poster ──────────────────────────────────────────────────────
+
+export type HeroPosterProps = {
+  format: VideoFormat;
+  /** Video-URL for bakgrunn — har prioritet over imageUrl. */
+  videoUrl?: string;
+  /** Stillbilde-fallback hvis videoUrl er tom. */
+  imageUrl?: string;
+  /** Brand-tekst (UPPERCASE-rendres), f.eks. "FOSEN TOOLS". */
+  brand: string;
+  /** Tagline under brand, f.eks. "Profesjonelle verktøyløsninger". */
+  tagline: string;
+  /** Valgfri CTA-knapp-tekst, f.eks. "Kontakt oss". */
+  ctaText?: string;
+};
+
+export const SAMPLE_HERO_POSTER: HeroPosterProps = {
+  format: "reel",
+  videoUrl: undefined,
+  imageUrl: undefined,
+  brand: "FOSEN TOOLS",
+  tagline: "Profesjonelle verktøyløsninger",
+  ctaText: "Kontakt oss",
+};
+
 // ── felles registry-typer (brukt av Root + render-pipeline) ──────────
 
 export type VideoType =
@@ -253,6 +329,9 @@ export type VideoType =
   | "hdfi-before-after"
   | "team-portrett"
   | "cadlab-prosess"
+  | "referanse-spotlight"
+  | "definisjon"
+  | "hero-poster"
   | "jub-t14"
   | "jub-t13"
   | "jub-t12"
@@ -281,6 +360,9 @@ export const COMPOSITION_ID: Record<VideoType, string> = {
   "hdfi-before-after": "HdfiBeforeAfter",
   "team-portrett": "TeamPortrett",
   "cadlab-prosess": "CADLABProsess",
+  "referanse-spotlight": "ReferanseSpotlight",
+  definisjon: "Definisjon",
+  "hero-poster": "HeroPoster",
   "jub-t14": "JubileumT14",
   "jub-t13": "JubileumT13",
   "jub-t12": "JubileumT12",

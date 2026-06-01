@@ -13,22 +13,137 @@ import {
   useCurrentFrame,
 } from "remotion";
 
-import { FT, SANS_FONT } from "../theme";
+import { BG, FT, SANS_FONT } from "../theme";
 import type { VideoFormat } from "../types";
+
+// ── FTUnderline ──────────────────────────────────────────────────────
+
+/**
+ * Rød horisontal strek — FT-signaturelementet under enhver hoved-
+ * overskrift. Bruk 70–120px bredde og 4–6px tykkelse.
+ */
+export const FTUnderline: React.FC<{
+  width?: number;
+  thickness?: number;
+  color?: string;
+}> = ({ width = 70, thickness = 4, color = FT.red }) => (
+  <div
+    style={{
+      width,
+      height: thickness,
+      background: color,
+    }}
+  />
+);
+
+// ── FTEyebrow ────────────────────────────────────────────────────────
+
+/**
+ * Rød UPPERCASE-mini-tekst over hovedoverskrifter. Matcher
+ * `.ft-eyebrow` på nettsiden — letter-spacing 0.18em, font-weight 700.
+ */
+export const FTEyebrow: React.FC<{
+  children: string;
+  size?: number;
+  color?: string;
+}> = ({ children, size = 14, color = FT.red }) => (
+  <div
+    style={{
+      fontFamily: SANS_FONT,
+      fontWeight: 700,
+      fontSize: size,
+      letterSpacing: "0.18em",
+      textTransform: "uppercase",
+      color,
+      lineHeight: 1,
+    }}
+  >
+    {children}
+  </div>
+);
+
+// ── FTArrow ──────────────────────────────────────────────────────────
+
+/**
+ * FT-signatur-pil — samme SVG-path som CTAene på fosen-tools.no.
+ * Bruk som ikon ved siden av CTA-tekst.
+ */
+export const FTArrow: React.FC<{
+  size?: number;
+  color?: string;
+}> = ({ size = 24, color = FT.white }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+    style={{ display: "block" }}
+  >
+    <path
+      d="M16.4133 6L15.5553 6.92298L19.6739 11.3473H2V12.6527H19.6739L15.5541 17.077L16.4145 18L22 12L16.4145 6H16.4133Z"
+      fill={color}
+    />
+  </svg>
+);
+
+// ── FTBackground ─────────────────────────────────────────────────────
+
+/**
+ * Helbakgrunn med FT-varianter — "ink" (mørk), "red", "white", "cream".
+ * Subtil støy-/grid-effekt på ink for filmisk preg. Plasser children
+ * inne så de havner over bakgrunnen.
+ */
+export const FTBackground: React.FC<{
+  variant?: "ink" | "red" | "white" | "cream";
+  children?: React.ReactNode;
+}> = ({ variant = "ink", children }) => {
+  const styles: Record<typeof variant, React.CSSProperties> = {
+    ink: { background: BG.ink },
+    red: { background: BG.red },
+    white: { background: FT.white },
+    cream: { background: "#F5F7FA" },
+  };
+  return (
+    <AbsoluteFill>
+      <AbsoluteFill style={styles[variant]} />
+      {variant === "ink" ? (
+        <AbsoluteFill
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+            backgroundSize: "120px 120px",
+            opacity: 0.5,
+          }}
+        />
+      ) : null}
+      {children}
+    </AbsoluteFill>
+  );
+};
 
 // ── FTHeading ────────────────────────────────────────────────────────
 
 /**
  * H1-stil som matcher nettsidens `.ftseo-heading`. UPPERCASE, 800-vekt,
- * letter-spacing 0.08em, og en 70px roed underline rett under teksten
- * — signaturelementet fra fosen-tools.no.
+ * letter-spacing 0.08em, og en rød underline rett under teksten —
+ * signaturelementet fra fosen-tools.no.
  */
 export const FTHeading: React.FC<{
   children: string;
   size?: number;
   color?: string;
   centered?: boolean;
-}> = ({ children, size = 56, color = FT.white, centered = false }) => {
+  underlineWidth?: number;
+  underlineThickness?: number;
+}> = ({
+  children,
+  size = 56,
+  color = FT.white,
+  centered = false,
+  underlineWidth = 70,
+  underlineThickness = 4,
+}) => {
   return (
     <div
       style={{
@@ -53,13 +168,7 @@ export const FTHeading: React.FC<{
       >
         {children}
       </div>
-      <div
-        style={{
-          width: 70,
-          height: 4,
-          background: FT.red,
-        }}
-      />
+      <FTUnderline width={underlineWidth} thickness={underlineThickness} />
     </div>
   );
 };
