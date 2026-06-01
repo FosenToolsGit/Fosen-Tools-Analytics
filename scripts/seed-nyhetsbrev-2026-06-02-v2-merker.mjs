@@ -116,7 +116,7 @@ const wizardState = {
   showFridayPost: false,
   showMidtCta: true, // «Se referansen»-knapp under mekanikersettet
   hideJubileumBanner: true, // INGEN 26. juni-banner i denne utgaven
-  jubileumFooterText: "Fosen Tools fyller 25 år i 2026",
+  jubileumFooterText: "Vi feirer 25 år fredag 26. juni 2026",
   scheduledSendDate: "2026-06-02",
 };
 
