@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Tailwind v4 scanner alle filer i prosjektet på default. Eksplisitt ekskludér
+   binær-/asset-mapper som har bytefolger som ligner arbitrary-utility-klasser
+   ([-:...]). Treffet i PDF/PNG-data resulterte i korrupt CSS i .next-cachen. */
+@source not "../../Fosen Tools";
+@source not "../../Fosen Tools Brosjyre";
+@source not "../../Fosen Tools Nettside Utsende";
+@source not "../../public/social/overlays";
+@source not "../../public/social/sfx";
+@source not "../../out";
+@source not "../../.claude";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

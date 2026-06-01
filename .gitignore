@@ -45,9 +45,11 @@ fosen-tools-analytics-*.json
 *-credentials.json
 *-service-account*.json
 
-# Lokale arbeidsfiler (ikke kode)
+# Lokale arbeidsfiler (ikke kode) — også ekskludert fra Tailwind v4-scanning
+# (Tailwind scanner binær-data og kan trigge bogus arbitrary-utility-feil)
 /Fosen Tools Brosjyre/
 /Fosen Tools Nettside Utsende/
+/Fosen Tools/
 
 # Generert sitemap (publiseres separat)
 /sitemap.xml
