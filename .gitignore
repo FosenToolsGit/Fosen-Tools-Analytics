@@ -65,3 +65,7 @@ fosen-tools-analytics-*.json
 # Tunge media for Remotion-komposisjoner (skal i Supabase Storage, ikke Git)
 /public/social/overlays/
 /public/social/sfx/
+
+# Vim swap-filer
+*.swp
+*.swo
