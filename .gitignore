@@ -59,3 +59,7 @@ fosen-tools-analytics-*.json
 
 # Claude Code worktrees (intern sesjonsstate)
 .claude/worktrees/
+
+# Tunge media for Remotion-komposisjoner (skal i Supabase Storage, ikke Git)
+/public/social/overlays/
+/public/social/sfx/

@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
+import { NewsletterPreviewThumb } from "@/components/newsletter/NewsletterPreviewThumb";
 import type {
   PlannedPost,
   PlannedNewsletter,
@@ -377,23 +378,67 @@ function PlannedPostCard({ post }: { post: PlannedPost }) {
 }
 
 function NewsletterDraftCard({ newsletter }: { newsletter: PlannedNewsletter }) {
+  const owner = newsletter.owner_email
+    ? newsletter.owner_email.split("@")[0]
+    : null;
+  const ownerName = owner
+    ? owner.charAt(0).toUpperCase() + owner.slice(1)
+    : null;
+  const scheduledLabel = newsletter.scheduled_date
+    ? new Date(newsletter.scheduled_date).toLocaleDateString("nb-NO", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      })
+    : null;
+
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4 transition hover:border-slate-700">
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="rounded-md bg-amber-900/40 px-2 py-0.5 text-xs font-bold text-amber-300">
-          UTKAST
+          📧 NYHETSBREV
         </span>
+        {scheduledLabel && (
+          <span className="rounded-md bg-blue-900/40 px-2 py-0.5 text-xs font-bold text-blue-300">
+            🕒 {scheduledLabel}
+          </span>
+        )}
         <span className="text-xs text-slate-500">
           Sist endret {formatRelativeOrDate(newsletter.updated_at)}
         </span>
       </div>
-      <div className="mb-3 font-semibold text-slate-100">{newsletter.title}</div>
-      <a
-        href={newsletter.edit_url}
-        className="text-xs font-semibold text-red-400 hover:text-red-300"
-      >
-        Åpne i nyhetsbrev-bygger →
-      </a>
+
+      <div className="flex gap-3">
+        {/* Preview-thumbnail */}
+        <a
+          href={newsletter.edit_url}
+          className="flex-shrink-0 block hover:opacity-90 transition"
+          title="Åpne i byggeren"
+        >
+          <NewsletterPreviewThumb draftId={newsletter.id} width={140} maxHeight={180} />
+        </a>
+
+        {/* Info */}
+        <div className="flex flex-col gap-1 flex-1 min-w-0">
+          <div className="font-semibold text-slate-100 line-clamp-2">
+            {newsletter.title}
+          </div>
+          {newsletter.subject_line && (
+            <div className="text-xs text-amber-300 line-clamp-2 mt-0.5">
+              📨 {newsletter.subject_line}
+            </div>
+          )}
+          {ownerName && (
+            <div className="text-[11px] text-slate-500">👤 {ownerName}</div>
+          )}
+          <a
+            href={newsletter.edit_url}
+            className="mt-2 inline-block text-xs font-semibold text-red-400 hover:text-red-300"
+          >
+            Åpne i bygger →
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

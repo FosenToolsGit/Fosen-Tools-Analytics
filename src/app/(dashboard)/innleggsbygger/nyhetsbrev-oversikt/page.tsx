@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { NewsletterPreviewThumb } from "@/components/newsletter/NewsletterPreviewThumb";
 
 /**
  * Nyhetsbrev-oversikt: alle utkast på tvers av teamet.
@@ -273,15 +274,26 @@ export default function NewsletterOversiktPage() {
             : "Ingen utkast matcher filtrene."}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {filtered.map((d) => (
             <div
               key={d.id}
               className="p-4 bg-gray-900 border border-gray-800 rounded hover:border-gray-700 transition group"
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
+                {/* Preview thumbnail */}
+                <Link
+                  href={`/innleggsbygger/nyhetsbrev-bygger?draft=${d.id}`}
+                  className="flex-shrink-0 block hover:opacity-90 transition"
+                  title="Åpne i byggeren"
+                >
+                  <NewsletterPreviewThumb draftId={d.id} width={200} maxHeight={260} />
+                </Link>
+
+                {/* Info col */}
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
                 {/* Badges */}
-                <div className="flex flex-col gap-1 items-start min-w-[140px]">
+                <div className="flex flex-wrap gap-1.5">
                   {d.template_variant && (
                     <span
                       className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-mono ${
@@ -331,7 +343,7 @@ export default function NewsletterOversiktPage() {
                 </Link>
 
                 {/* Actions */}
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                <div className="flex gap-2 mt-1">
                   <Link
                     href={`/innleggsbygger/nyhetsbrev-bygger?draft=${d.id}`}
                     className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded text-xs font-medium"
@@ -348,6 +360,7 @@ export default function NewsletterOversiktPage() {
                     </button>
                   )}
                 </div>
+                </div>{/* /info col */}
               </div>
             </div>
           ))}
