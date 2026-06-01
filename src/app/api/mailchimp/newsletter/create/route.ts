@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   MailchimpBuilderService,
   type NewsletterInput,
+  type NewsletterSupplier,
 } from "@/lib/services/mailchimp-builder";
 import { scrapeProductByUrl } from "@/lib/services/scrape-product";
 
@@ -23,11 +24,17 @@ export async function POST(request: NextRequest) {
   if (!body.themeSlug?.trim()) return NextResponse.json({ error: "themeSlug påkrevd" }, { status: 400 });
   if (!body.subjectLine?.trim() || !body.previewText?.trim())
     return NextResponse.json({ error: "subjectLine og previewText påkrevd" }, { status: 400 });
-  if (!body.products || body.products.length === 0)
+
+  // Hvis leverandør-utgave: aksepter 0 produkter når suppliers er satt.
+  const isSupplierVariant =
+    body.templateVariant === "jubileum-leverandor" &&
+    Array.isArray(body.suppliers) &&
+    body.suppliers.length > 0;
+  if (!isSupplierVariant && (!body.products || body.products.length === 0))
     return NextResponse.json({ error: "Minst 1 produkt påkrevd" }, { status: 400 });
 
   const products = await Promise.all(
-    body.products.slice(0, 5).map(async (p) => {
+    (body.products ?? []).slice(0, 5).map(async (p) => {
       if (p.name && p.priceText && p.imageUrl) {
         return {
           url: p.url,
@@ -81,6 +88,18 @@ export async function POST(request: NextRequest) {
     socialLinkedinPostUrl: body.socialLinkedinPostUrl ?? "",
     customerStoryText: body.customerStoryText,
     utmTerm: body.utmTerm,
+    templateVariant: body.templateVariant,
+    showFridayPost: body.showFridayPost,
+    showMidtCta: body.showMidtCta,
+    suppliers: (body.suppliers ?? []).slice(0, 8).map((s: NewsletterSupplier) => ({
+      name: s.name ?? "",
+      tagline: s.tagline ?? "",
+      logoUrl: s.logoUrl ?? "",
+      ctaText: s.ctaText ?? "Se sortimentet →",
+      ctaUrl: s.ctaUrl ?? "",
+      description: s.description,
+      logoWidth: typeof s.logoWidth === "number" ? s.logoWidth : undefined,
+    })),
   };
 
   // #6 Preheader-validering — 80–110 tegn er optimalt for innboks-forhåndsvisning

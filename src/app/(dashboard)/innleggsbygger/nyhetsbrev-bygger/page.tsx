@@ -44,6 +44,30 @@ interface NewsletterProduct {
   imageUrl: string;
 }
 
+interface NewsletterSupplier {
+  name: string;
+  tagline: string;
+  logoUrl: string;
+  ctaText: string;
+  ctaUrl: string;
+  description?: string;
+  logoWidth?: number;
+}
+
+/** Default logo-URL-mønster — bruk slug fra Supabase Storage. */
+const SUPABASE_LOGO_BASE =
+  "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer";
+
+/** Slugs som er forhåndslastet til Supabase. Last opp flere via
+ *  scripts/upload-leverandor-logoer.mjs. */
+const KNOWN_SUPPLIER_SLUGS = [
+  "milwaukee", "wera", "zweibruder", "facom", "husqvarna", "knipex", "snap-on",
+  "stahlwille", "hellberg", "bahco", "leatherman", "morakniv",
+  "pelicase", "hultafors", "fluke", "gedore", "zarges", "rennsteig", "gigant",
+  "bondhus", "viking-arm", "lista", "mitutoyo", "pb-swiss-tools", "solid-gear",
+  "snickers-workwear", "kc-tools", "brockhaus-heuer", "fosen-tools-custom",
+];
+
 interface GeneratedContent {
   themeSlug: string;
   topBadge: string;
@@ -94,12 +118,16 @@ interface WizardStatePayload {
   preview: GenerateResponse | null;
   editContent: GeneratedContent | null;
   editProducts: NewsletterProduct[];
+  editSuppliers?: NewsletterSupplier[];
   midtImageInput: string;
   midtImageUrl: string;
   footerImageInput: string;
   footerImageUrl: string;
   socialInstagram: string;
   socialLinkedin: string;
+  templateVariant?: "standard" | "jubileum" | "jubileum-leverandor";
+  showFridayPost?: boolean;
+  showMidtCta?: boolean;
 }
 
 const THEME_IDEAS = [
@@ -133,6 +161,9 @@ export default function NyhetsbrevByggerPage() {
   /* ── Editable content (synced from preview.content but user-editable) ── */
   const [editContent, setEditContent] = useState<GeneratedContent | null>(null);
   const [editProducts, setEditProducts] = useState<NewsletterProduct[]>([]);
+  /* Leverandør-kort — kun brukt når templateVariant === "jubileum-leverandor". */
+  const [editSuppliers, setEditSuppliers] = useState<NewsletterSupplier[]>([]);
+  const [editingSupplierIdx, setEditingSupplierIdx] = useState<number | null>(null);
 
   /* ── Images & social ── */
   const [midtImageInput, setMidtImageInput] = useState("");
@@ -143,6 +174,16 @@ export default function NyhetsbrevByggerPage() {
   const [footerImageLoading, setFooterImageLoading] = useState(false);
   const [socialInstagram, setSocialInstagram] = useState("");
   const [socialLinkedin, setSocialLinkedin] = useState("");
+
+  /* ── Mal-variant — «standard» (svart header/footer) eller «jubileum»
+       (FT-rød header + 25-årslogo + rød footer). Brukes i juni 2026. ── */
+  const [templateVariant, setTemplateVariant] =
+    useState<"standard" | "jubileum" | "jubileum-leverandor">("standard");
+  /* «Fredagsinnlegg»-seksjon nederst (footer-bilde + sosiale CTA + kundehistorie).
+     Default på — skru av for jubileum/event-utgaver uten ekte kundehistorie. */
+  const [showFridayPost, setShowFridayPost] = useState<boolean>(true);
+  /* «Les mer»-CTA-knapp under midtseksjonen. Default på — skru av for ren info-midt. */
+  const [showMidtCta, setShowMidtCta] = useState<boolean>(true);
 
   /* ── Create state ── */
   const [creating, setCreating] = useState(false);
@@ -205,10 +246,14 @@ export default function NyhetsbrevByggerPage() {
           body: JSON.stringify({
             ...editContent,
             products: editProducts,
+            suppliers: editSuppliers,
             midtImageUrl,
             footerImageUrl,
             socialInstagramPostUrl: socialInstagram,
             socialLinkedinPostUrl: socialLinkedin,
+            templateVariant,
+            showFridayPost,
+            showMidtCta,
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -224,7 +269,7 @@ export default function NyhetsbrevByggerPage() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [editContent, editProducts, midtImageUrl, footerImageUrl, socialInstagram, socialLinkedin, showPreview]);
+  }, [editContent, editProducts, editSuppliers, midtImageUrl, footerImageUrl, socialInstagram, socialLinkedin, showPreview, templateVariant, showFridayPost, showMidtCta]);
 
   /* Suggestions fetch */
   useEffect(() => {
@@ -278,6 +323,55 @@ export default function NyhetsbrevByggerPage() {
 
   function removeProduct(index: number) {
     setEditProducts((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  /* ── Supplier helpers (leverandør-kort for jubileum-leverandor-malen) ── */
+  function updateSupplier(index: number, updates: Partial<NewsletterSupplier>) {
+    setEditSuppliers((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, ...updates } : s))
+    );
+  }
+
+  function moveSupplier(index: number, direction: -1 | 1) {
+    setEditSuppliers((prev) => {
+      const next = [...prev];
+      const targetIdx = index + direction;
+      if (targetIdx < 0 || targetIdx >= next.length) return prev;
+      [next[index], next[targetIdx]] = [next[targetIdx], next[index]];
+      return next;
+    });
+  }
+
+  function removeSupplier(index: number) {
+    setEditSuppliers((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function addSupplier() {
+    if (editSuppliers.length >= 8) {
+      alert("Maks 8 leverandører per utgave.");
+      return;
+    }
+    setEditSuppliers((prev) => [
+      ...prev,
+      {
+        name: "Ny leverandør",
+        tagline: "Spesialitet · kort beskrivelse",
+        logoUrl: "",
+        ctaText: "Se sortimentet →",
+        ctaUrl: "https://fosen-tools.no/",
+        description: "",
+        logoWidth: 140,
+      },
+    ]);
+    // Åpne det nye kortet for redigering
+    setTimeout(() => setEditingSupplierIdx(editSuppliers.length), 0);
+  }
+
+  /** Når brukeren skriver en slug, oppdater logoUrl automatisk. */
+  function setSupplierSlug(index: number, slug: string) {
+    const trimmed = slug.trim().toLowerCase();
+    const logoUrl = trimmed ? `${SUPABASE_LOGO_BASE}/${trimmed}.png` : "";
+    updateSupplier(index, { logoUrl });
   }
 
   async function addProductFromUrl(url: string) {
@@ -404,10 +498,14 @@ export default function NyhetsbrevByggerPage() {
       const body = {
         ...editContent,
         products: editProducts,
+        suppliers: editSuppliers,
         midtImageUrl,
         footerImageUrl,
         socialInstagramPostUrl: socialInstagram,
         socialLinkedinPostUrl: socialLinkedin,
+        templateVariant,
+        showFridayPost,
+        showMidtCta,
       };
       const res = await fetch("/api/mailchimp/newsletter/create", {
         method: "POST",
@@ -441,6 +539,9 @@ export default function NyhetsbrevByggerPage() {
     setPreview(null);
     setEditContent(null);
     setEditProducts([]);
+    setEditSuppliers([]);
+    setShowFridayPost(true);
+    setShowMidtCta(true);
     setThemeInput("");
     setManualProductUrls("");
     setMidtImageUrl("");
@@ -470,12 +571,16 @@ export default function NyhetsbrevByggerPage() {
       preview,
       editContent,
       editProducts,
+      editSuppliers,
       midtImageInput,
       midtImageUrl,
       footerImageInput,
       footerImageUrl,
       socialInstagram,
       socialLinkedin,
+      templateVariant,
+      showFridayPost,
+      showMidtCta,
     };
   }
 
@@ -527,6 +632,7 @@ export default function NyhetsbrevByggerPage() {
         if (s.preview !== undefined) setPreview(s.preview);
         if (s.editContent !== undefined) setEditContent(s.editContent);
         if (Array.isArray(s.editProducts)) setEditProducts(s.editProducts);
+        if (Array.isArray(s.editSuppliers)) setEditSuppliers(s.editSuppliers);
         if (typeof s.midtImageInput === "string")
           setMidtImageInput(s.midtImageInput);
         if (typeof s.midtImageUrl === "string") setMidtImageUrl(s.midtImageUrl);
@@ -538,6 +644,18 @@ export default function NyhetsbrevByggerPage() {
           setSocialInstagram(s.socialInstagram);
         if (typeof s.socialLinkedin === "string")
           setSocialLinkedin(s.socialLinkedin);
+        if (
+          s.templateVariant === "jubileum" ||
+          s.templateVariant === "jubileum-leverandor" ||
+          s.templateVariant === "standard"
+        )
+          setTemplateVariant(s.templateVariant);
+        else
+          setTemplateVariant("standard");
+        if (typeof s.showFridayPost === "boolean") setShowFridayPost(s.showFridayPost);
+        else setShowFridayPost(true);
+        if (typeof s.showMidtCta === "boolean") setShowMidtCta(s.showMidtCta);
+        else setShowMidtCta(true);
 
         setCurrentDraftId(id);
         // Markér tilstanden som "synket" så auto-save ikke umiddelbart re-saver
@@ -636,6 +754,22 @@ export default function NyhetsbrevByggerPage() {
     void loadDraftsList();
   }, [loadDraftsList]);
 
+  /* Hvis URL har ?draft=<id> ved mount, last det utkastet automatisk.
+     Brukes når man kommer fra /innleggsbygger/nyhetsbrev-oversikt. */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const draftId = params.get("draft");
+    if (draftId) {
+      void loadDraft(draftId);
+      // Rydd URL-en så reload ikke laster på nytt
+      const url = new URL(window.location.href);
+      url.searchParams.delete("draft");
+      window.history.replaceState({}, "", url.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* Auto-save (debounced 4s) — ALLE relevante state-felter i deps */
   useEffect(() => {
     if (skipFirstAutoSaveRef.current) {
@@ -659,12 +793,16 @@ export default function NyhetsbrevByggerPage() {
     preview,
     editContent,
     editProducts,
+    editSuppliers,
     midtImageInput,
     midtImageUrl,
     footerImageInput,
     footerImageUrl,
     socialInstagram,
     socialLinkedin,
+    templateVariant,
+    showFridayPost,
+    showMidtCta,
   ]);
 
   /* ═══════════════════════════════════ */
@@ -859,6 +997,94 @@ export default function NyhetsbrevByggerPage() {
           </p>
 
           <div className="space-y-4">
+            {/* Mal-velger — standard, jubileum (produkt-grid) eller jubileum-leverandor */}
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-2">Mal</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTemplateVariant("standard")}
+                  className={`text-left p-3 rounded border transition ${
+                    templateVariant === "standard"
+                      ? "border-orange-500 bg-orange-950/40"
+                      : "border-gray-700 bg-gray-900 hover:border-gray-600"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-4 h-4 rounded-sm bg-black border border-gray-600"></div>
+                    <div className="font-semibold text-sm text-white">Standard</div>
+                  </div>
+                  <div className="text-[11px] text-gray-400">Svart header + produktgrid</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTemplateVariant("jubileum")}
+                  className={`text-left p-3 rounded border transition ${
+                    templateVariant === "jubileum"
+                      ? "border-orange-500 bg-orange-950/40"
+                      : "border-gray-700 bg-gray-900 hover:border-gray-600"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-4 h-4 rounded-sm bg-red-600"></div>
+                    <div className="font-semibold text-sm text-white">🎉 Jubileum</div>
+                  </div>
+                  <div className="text-[11px] text-gray-400">Jubileumsbanner + produktgrid</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTemplateVariant("jubileum-leverandor")}
+                  className={`text-left p-3 rounded border transition ${
+                    templateVariant === "jubileum-leverandor"
+                      ? "border-orange-500 bg-orange-950/40"
+                      : "border-gray-700 bg-gray-900 hover:border-gray-600"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-4 h-4 rounded-sm bg-red-600 border border-red-800"></div>
+                    <div className="font-semibold text-sm text-white">🤝 Leverandører</div>
+                  </div>
+                  <div className="text-[11px] text-gray-400">Jubileumsbanner + leverandør-kort</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Fredagsinnlegg-toggle — skjul nederste seksjon (footer-bilde + sosiale CTA + kundehistorie) */}
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showFridayPost}
+                  onChange={(e) => setShowFridayPost(e.target.checked)}
+                  className="rounded border-gray-700"
+                />
+                <span className="text-xs font-medium text-gray-300">
+                  Vis fredagsinnlegg-seksjon nederst
+                </span>
+              </label>
+              <p className="ml-6 mt-1 text-[11px] text-gray-500">
+                Footer-bilde + sosiale CTA + kundehistorie. Skru av for jubileum/event-utgaver uten ekte ukentlig kundehistorie.
+              </p>
+            </div>
+
+            {/* Midt-CTA-toggle — skjul «Les mer»-knapp under midtseksjonen */}
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showMidtCta}
+                  onChange={(e) => setShowMidtCta(e.target.checked)}
+                  className="rounded border-gray-700"
+                />
+                <span className="text-xs font-medium text-gray-300">
+                  Vis «Les mer»-knapp under midtseksjonen
+                </span>
+              </label>
+              <p className="ml-6 mt-1 text-[11px] text-gray-500">
+                Skru av når midtseksjonen er ren info uten ekstern destinasjon (typisk program-/event-info).
+              </p>
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-gray-300">Tema</label>
               <input
@@ -1088,7 +1314,193 @@ export default function NyhetsbrevByggerPage() {
                 </div>
               </Card>
 
-              {/* Products */}
+              {/* Suppliers — only shown for jubileum-leverandor variant */}
+              {templateVariant === "jubileum-leverandor" && (
+                <Card>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                      Leverandører ({editSuppliers.length}/8)
+                    </h3>
+                    <button
+                      onClick={addSupplier}
+                      disabled={editSuppliers.length >= 8}
+                      className="text-xs px-2 py-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded"
+                    >
+                      + Legg til
+                    </button>
+                  </div>
+
+                  <datalist id="supplier-slugs">
+                    {KNOWN_SUPPLIER_SLUGS.map((slug) => (
+                      <option key={slug} value={slug} />
+                    ))}
+                  </datalist>
+
+                  <div className="space-y-2">
+                    {editSuppliers.map((s, i) => {
+                      const isEditing = editingSupplierIdx === i;
+                      // Avled slug fra logo-URL hvis den følger Supabase-mønsteret
+                      const slug = (() => {
+                        const m = s.logoUrl?.match(/\/leverandor-logoer\/([^/.]+)\.png$/);
+                        return m ? m[1] : "";
+                      })();
+                      const currentWidth = s.logoWidth ?? 140;
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-start gap-2 p-2.5 border rounded transition-colors ${
+                            isEditing ? "border-orange-500 bg-gray-900" : "border-gray-800 bg-gray-900/50"
+                          }`}
+                        >
+                          {/* Reorder */}
+                          <div className="flex flex-col items-center gap-0.5 pt-1">
+                            <button
+                              onClick={() => moveSupplier(i, -1)}
+                              disabled={i === 0}
+                              className="p-0.5 text-gray-600 hover:text-gray-300 disabled:opacity-30 disabled:cursor-default"
+                              title="Flytt opp"
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </button>
+                            <GripVertical className="h-3 w-3 text-gray-700" />
+                            <button
+                              onClick={() => moveSupplier(i, 1)}
+                              disabled={i === editSuppliers.length - 1}
+                              className="p-0.5 text-gray-600 hover:text-gray-300 disabled:opacity-30 disabled:cursor-default"
+                              title="Flytt ned"
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </button>
+                          </div>
+
+                          {/* Logo thumbnail (alltid synlig — på hvit bakgrunn for kontrast) */}
+                          {s.logoUrl && (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={s.logoUrl}
+                              alt={s.name}
+                              className="object-contain rounded flex-shrink-0 bg-white p-1"
+                              style={{ width: `${Math.max(48, currentWidth * 0.4)}px`, height: "56px" }}
+                            />
+                          )}
+
+                          {/* Info or edit form */}
+                          <div className="flex-1 min-w-0">
+                            {isEditing ? (
+                              <div className="space-y-1.5">
+                                <input
+                                  value={s.name}
+                                  onChange={(e) => updateSupplier(i, { name: e.target.value })}
+                                  className="w-full px-2 py-1 bg-gray-800 border border-gray-700 text-white rounded text-xs font-medium"
+                                  placeholder="Leverandør-navn"
+                                />
+                                <input
+                                  value={s.tagline}
+                                  onChange={(e) => updateSupplier(i, { tagline: e.target.value })}
+                                  className="w-full px-2 py-1 bg-gray-800 border border-gray-700 text-orange-300 rounded text-xs"
+                                  placeholder="Tagline (én linje)"
+                                />
+                                <textarea
+                                  value={s.description ?? ""}
+                                  onChange={(e) => updateSupplier(i, { description: e.target.value })}
+                                  className="w-full px-2 py-1 bg-gray-800 border border-gray-700 text-gray-300 rounded text-xs"
+                                  placeholder="Beskrivelse (valgfritt, 1–3 setninger)"
+                                  rows={2}
+                                />
+                                <div className="flex gap-2">
+                                  <input
+                                    value={slug}
+                                    onChange={(e) => setSupplierSlug(i, e.target.value)}
+                                    list="supplier-slugs"
+                                    className="flex-1 px-2 py-1 bg-gray-800 border border-gray-700 text-gray-300 rounded text-xs font-mono"
+                                    placeholder="Slug (f.eks. milwaukee)"
+                                  />
+                                  <input
+                                    value={s.logoUrl}
+                                    onChange={(e) => updateSupplier(i, { logoUrl: e.target.value })}
+                                    className="flex-1 px-2 py-1 bg-gray-800 border border-gray-700 text-gray-400 rounded text-xs font-mono"
+                                    placeholder="Eller full logo-URL"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <label className="text-[11px] text-gray-400 whitespace-nowrap">
+                                    Logo-bredde: <span className="text-orange-400 font-mono">{currentWidth}px</span>
+                                  </label>
+                                  <input
+                                    type="range"
+                                    min={80}
+                                    max={180}
+                                    step={5}
+                                    value={currentWidth}
+                                    onChange={(e) => updateSupplier(i, { logoWidth: parseInt(e.target.value, 10) })}
+                                    className="flex-1 accent-orange-500"
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <input
+                                    value={s.ctaText}
+                                    onChange={(e) => updateSupplier(i, { ctaText: e.target.value })}
+                                    className="w-1/3 px-2 py-1 bg-gray-800 border border-gray-700 text-white rounded text-xs"
+                                    placeholder="CTA-tekst"
+                                  />
+                                  <input
+                                    value={s.ctaUrl}
+                                    onChange={(e) => updateSupplier(i, { ctaUrl: e.target.value })}
+                                    className="flex-1 px-2 py-1 bg-gray-800 border border-gray-700 text-gray-400 rounded text-xs font-mono"
+                                    placeholder="CTA-URL"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => setEditingSupplierIdx(null)}
+                                  className="text-xs text-orange-400 hover:underline"
+                                >
+                                  Ferdig
+                                </button>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="text-xs font-medium text-white truncate">{s.name}</div>
+                                <div className="text-xs text-orange-400 truncate">{s.tagline}</div>
+                                {s.description && (
+                                  <div className="text-[11px] text-gray-500 truncate mt-0.5">{s.description}</div>
+                                )}
+                                <div className="text-[10px] text-gray-600 mt-0.5 font-mono">{slug || "(ingen slug)"} · {currentWidth}px</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => setEditingSupplierIdx(isEditing ? null : i)}
+                              title="Rediger"
+                              className="p-1 text-gray-500 hover:text-orange-400 transition-colors"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => removeSupplier(i)}
+                              title="Fjern"
+                              className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {editSuppliers.length === 0 && (
+                      <div className="text-center py-6 text-xs text-gray-500">
+                        Ingen leverandører lagt til. Trykk «+ Legg til» for å starte.
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Products — skjult i leverandør-modus siden produktgriden ikke rendres da */}
+              {templateVariant !== "jubileum-leverandor" && (
               <Card>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
@@ -1257,6 +1669,7 @@ export default function NyhetsbrevByggerPage() {
                   </div>
                 )}
               </Card>
+              )}
 
               {/* Midtseksjon */}
               <Card>

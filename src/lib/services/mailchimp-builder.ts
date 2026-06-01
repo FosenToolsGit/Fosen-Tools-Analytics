@@ -22,9 +22,24 @@ const TEXT_COLOR = "rgb(34, 34, 34)";
 const FONT_STACK = "'Helvetica Neue', Helvetica, Arial, Verdana, sans-serif";
 const ROBOTO_STACK = "'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 const MAX_WIDTH = 660;
-const FT_LOGO_URL = "https://fosen-tools.no/userfiles/image/Logo/Fosen-Tools_white.svg";
+// FT-logo med RØD BAKGRUNN — alltid denne i nyhetsbrev og marketing-flater.
+// Bevisst valg etter brukerens beslutning 1. juni 2026: rødbakgrunns-logoen
+// er FTs definitive brand-mark og skal brukes konsekvent på tvers av kanaler.
+const FT_LOGO_URL = "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/ft-logo-rod-bakgrunn.png";
 const FT_SITE = "https://fosen-tools.no";
 const FT_LOGO_BASE = `${FT_SITE}/userfiles/image/Logo`;
+
+// 25-årsjubileum-tema (juni 2026): rød header/footer + jubileumslogo som
+// sentralt hovedlogo. Bruker offisiell SVG fra Supabase Storage (uploaded
+// via upload-jubileum-logoer.mjs / brosjyre-editor-assets).
+const FT_JUBILEUM_LOGO_URL =
+  "https://fosen-tools-analytics.vercel.app/brosjyre/Jubileumslogo-25aar.svg";
+
+/** Mal-varianter.
+ *  `standard` = svart header + svart footer (default).
+ *  `jubileum` = jubileums-banner + produkt-grid (kun for utgaver med produkt-fokus).
+ *  `jubileum-leverandor` = jubileums-banner + full-bredde leverandør-kort under hverandre. */
+export type TemplateVariant = "standard" | "jubileum" | "jubileum-leverandor";
 
 /**
  * Complete brand list from fosen-tools.no logo ticker.
@@ -80,7 +95,7 @@ const ALL_BRANDS: Array<{ name: string; slug: string; file: string }> = [
   { name: "Emhart", slug: "emhart-teknologies", file: "Emhart.svg" },
   { name: "Lista", slug: "lista-ag", file: "Lista.svg" },
   { name: "Gigant", slug: "gigant", file: "Gigant.svg" },
-  { name: "Led Lenser", slug: "ledlenser", file: "Led-Lenser.svg" },
+  { name: "Zweibrüder", slug: "zweibruder", file: "Led-Lenser.svg" },
   { name: "Hellberg", slug: "hellberg", file: "Hellberg.svg" },
   { name: "Morakniv", slug: "mora-of-sweden", file: "Morakniv.svg" },
   { name: "Bondhus", slug: "bondhus", file: "Bondhus.svg" },
@@ -126,6 +141,22 @@ export interface NewsletterInput {
   customerStoryText?: string;
   /** A/B-variant for emnelinje. Brukes som utm_term så vi kan måle hvilken konverterte best. */
   utmTerm?: string;
+  /** Mal-variant: «standard», «jubileum», eller «jubileum-leverandor».
+   *  Default = «standard». Settes til «jubileum» for produkt-fokuserte juni-utsendelser,
+   *  eller «jubileum-leverandor» for leverandør-presentasjons-utsendelser. */
+  templateVariant?: TemplateVariant;
+  /** Leverandør-kort. Kun brukt når templateVariant=«jubileum-leverandor».
+   *  Hver entry rendres som en full-bredde rad. Hvis satt + variant matcher,
+   *  rendres disse i stedet for produkt-griden. */
+  suppliers?: NewsletterSupplier[];
+  /** Vis «fredagsinnlegg»-seksjonen nederst (divider + footer-bilde + sosiale CTA-lenker
+   *  + kundehistorie-tekst). Default true. Sett false når nyhetsbrevet ikke har en
+   *  ekte ukentlig kundehistorie (typisk jubileum-utgaver). */
+  showFridayPost?: boolean;
+  /** Vis «Les mer»-CTA-knappen under midtseksjonen. Default true. Sett false
+   *  når midtseksjonen er ren info uten en ekstern destinasjon (typisk
+   *  program-/event-info-seksjoner). */
+  showMidtCta?: boolean;
 }
 
 export interface NewsletterProduct {
@@ -135,6 +166,26 @@ export interface NewsletterProduct {
   priceText: string;
   imageUrl: string;
   ctaText?: string;
+}
+
+/** Leverandør-kort for jubileum-leverandor-malen. Rendres som full-bredde rad
+ *  med logo til venstre + navn/tagline/beskrivelse/CTA-knapp til høyre. */
+export interface NewsletterSupplier {
+  /** Display-navn, f.eks. «Milwaukee» eller «Zweibrüder». */
+  name: string;
+  /** Kort tagline (én linje), f.eks. «Batteriverktøy · M18 og M12». */
+  tagline: string;
+  /** Logo-URL (PNG anbefales — Outlook støtter ikke SVG). */
+  logoUrl: string;
+  /** Knapp-tekst, f.eks. «Se sortimentet →». */
+  ctaText: string;
+  /** Knapp-URL (typisk leverandør-siden på fosen-tools.no). */
+  ctaUrl: string;
+  /** Lengre beskrivelse (1–3 setninger). Valgfritt. */
+  description?: string;
+  /** Logo-bredde i pixler. Default 140. Range 80–180. Logo-kolonnen er fast 180px,
+   *  så større bilde fyller mer av kolonnen — bra for kvadratiske/horisontale logoer. */
+  logoWidth?: number;
 }
 
 export interface CreatedDraft {
@@ -254,11 +305,21 @@ export class MailchimpBuilderService {
     //   ødelagt e-post-rendering. Liten grå tekst over header.
     rootSections.push(renderBrowserViewSection());
 
-    // Section 1: Header (black bg) — logo + top badge
+    const variant: TemplateVariant = input.templateVariant ?? "standard";
+
+    // Section 1: Header — svart med FT-wordmark (standard) eller 25-årslogo (jubileum)
     rootSections.push(renderHeaderSection(
       utm("https://fosen-tools.no/", "header-logo"),
-      input.topBadge
+      input.topBadge,
+      variant,
     ));
+
+    // Section 1b: Jubileums-banner — for begge jubileum-variantene.
+    //   Speiler det røde topp-banneret på fosen-tools.no:
+    //   "25-ÅRSJUBILEUM · NY PROFF-BUTIKK · 26. JUNI 2026 · 10:00–16:00"
+    if (variant === "jubileum" || variant === "jubileum-leverandor") {
+      rootSections.push(renderJubileumBanner());
+    }
 
     // Section 2: Content (white bg) — heading, ingress, brand logo, product grid,
     //   button, divider, midt image, midt title, midt body, midt CTA,
@@ -269,8 +330,8 @@ export class MailchimpBuilderService {
       utm
     ));
 
-    // Section 3: Footer (black bg) — social icons, company info, mailchimp links
-    rootSections.push(renderFooterSection());
+    // Section 3: Footer — svart med firma-info + sosiale ikoner
+    rootSections.push(renderFooterSection(variant));
 
     return wrapInDocument(rootSections.join("\n"), input.previewText, input.subjectLine);
   }
@@ -635,12 +696,67 @@ function renderBrowserViewSection(): string {
 }
 
 /**
+ * Jubileums-banner — rød strip som speiler topp-banneret på fosen-tools.no.
+ * Tre seksjoner, midtstilt:
+ *   [25-årslogo (bilde)]   ·   NY PROFF-BUTIKK   ·   [26. JUNI 2026 · 10:00–16:00]
+ *
+ * Bruker en center-table med fixed width per celle slik at innholdet
+ * blir visuelt sentrert i banneret. Hairline-separatorer mellom hver
+ * seksjon (samme stil som nettside-banneret).
+ */
+function renderJubileumBanner(): string {
+  const bg = "#E11A22";           // FT-rød (matcher fosen-tools.no-banneret)
+  const ftPrimary = FT_WHITE;
+  const fontFamily = FONT_STACK;
+
+  // 3 kolonner side-om-side, hver tar 1/3 bredde med innhold sentrert
+  // i sin egen kolonne. Hairline-separatorer som tynne kolonner mellom.
+  const logoHeight = 40;
+  const colCell = `padding:18px 16px;text-align:center;vertical-align:middle;font-family:${fontFamily}`;
+  // Skillelinje — kortere (ikke full høyde) og mer dempet (lavere opacity)
+  const sepCell = `padding:0;width:1px;vertical-align:middle;text-align:center`;
+  const sepLine = `<div style="width:1px;height:36px;background-color:rgba(255,255,255,0.22);margin:0 auto"></div>`;
+
+  const col1 = `<img src="${esc(FT_JUBILEUM_LOGO_URL)}" alt="25-årsjubileum" height="${logoHeight}" style="height:${logoHeight}px;width:auto;border:0;display:inline-block;vertical-align:middle" />`;
+
+  const col2 = `<span style="color:${ftPrimary};font-family:${fontFamily};font-weight:800;font-size:14px;letter-spacing:1.2px;line-height:1">NY PROFF-BUTIKK</span>`;
+
+  const col3 = `<div style="line-height:1.3"><div style="color:${ftPrimary};font-family:${fontFamily};font-weight:800;font-size:14px;letter-spacing:1.2px">26. JUNI 2026</div><div style="color:${ftPrimary};font-family:${fontFamily};font-weight:600;font-size:12px;letter-spacing:1px;opacity:0.9;margin-top:2px">10:00 – 16:00</div></div>`;
+
+  const innerContent = `<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="table-layout:fixed"><tbody><tr>
+    <td width="33%" align="center" style="${colCell}">${col1}</td>
+    <td style="${sepCell}">${sepLine}</td>
+    <td width="33%" align="center" style="${colCell}">${col2}</td>
+    <td style="${sepCell}">${sepLine}</td>
+    <td width="33%" align="center" style="${colCell}">${col3}</td>
+  </tr></tbody></table>`;
+
+  return wrapSection("jubileum-banner", OUTER_BG, bg, innerContent);
+}
+
+/**
  * Header section: black bg with FT logo + top badge + brand logo ticker strip.
  */
-function renderHeaderSection(logoHref: string, topBadge?: string): string {
-  const logoWidth = 264;
-  const logoHeight = 24;
-  const logoImgTag = `<a href="${esc(logoHref)}" target="_blank" style="display:inline-block;text-decoration:none"><img src="${esc(FT_LOGO_URL)}" alt="Fosen Tools" width="${logoWidth}" height="${logoHeight}" style="display:block;margin:0 auto;width:${logoWidth}px;height:${logoHeight}px;max-width:100%;border:0" class="mceLogo" /></a>`;
+function renderHeaderSection(
+  logoHref: string,
+  topBadge?: string,
+  variant: TemplateVariant = "standard",
+): string {
+  // Marker variant-flagget for fremtidige differensieringer (vi bruker det
+  // ikke akkurat nå — header er identisk for standard og jubileum slik at
+  // jubileum-banneret under er det som skiller variantene).
+  void variant;
+
+  // Header er IDENTISK for standard og jubileum: svart bakgrunn med
+  // FT-logo (rød bakgrunn — 5:1 aspect). Det jubileumsspesifikke ligger i
+  // jubileum-banneret som rendres rett under header.
+  const headerBg = FT_INK;
+  const logoUrl = FT_LOGO_URL;
+  const logoWidth = 180;          // 5:1 logo, 180×36 — moderat tilstedeværelse
+  const logoHeight = 36;
+  const logoAlt = "Fosen Tools";
+
+  const logoImgTag = `<a href="${esc(logoHref)}" target="_blank" style="display:inline-block;text-decoration:none"><img src="${esc(logoUrl)}" alt="${logoAlt}" width="${logoWidth}" height="${logoHeight}" style="display:block;margin:0 auto;width:${logoWidth}px;height:${logoHeight}px;max-width:100%;border:0" class="mceLogo" /></a>`;
 
   const badgeLabel = topBadge || "NYHETSBREV";
   const badgeText = `<h2 style="line-height: 1; mso-line-height-alt: 100%; text-align: center;" class="last-child"><span style="color:#ffffff;"><span style="font-size: 12px">${esc(badgeLabel)}</span></span></h2>`;
@@ -654,7 +770,7 @@ function renderHeaderSection(logoHref: string, topBadge?: string): string {
     badgeText
   )}</tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
 
-  return wrapSection("3", OUTER_BG, FT_INK, innerContent);
+  return wrapSection("3", OUTER_BG, headerBg, innerContent);
 }
 
 /**
@@ -694,17 +810,11 @@ function renderContentSection(
 
   // --- Ingress + brand logo ---
   {
-    // #1 Personalisering: prepend conditional hilsen. Tidligere brukte vi
-    // «Hei *|FNAME|*,» direkte, men når en abonnent mangler fornavn ble
-    // resultatet «Hei ,» (stygg). Bruker nå Mailchimp IF/ELSE-merge-tag:
-    //   *|IF:FNAME|*Hei *|FNAME|*,*|ELSE:|*Hei!*|END:IF|*
-    // → «Hei Adrian,» når fornavn finnes, ellers «Hei!»
-    const greeting = "*|IF:FNAME|*Hei *|FNAME|*,*|ELSE:|*Hei!*|END:IF|*";
-    const ingressText = input.ingress.includes("*|FNAME|*") || input.ingress.includes("*|MERGE")
-      ? input.ingress
-      : `${greeting}\n\n${input.ingress}`;
-    // *|FNAME|* skal ikke esc-es — esc() bevarer * og | så det er trygt.
-    const ingressHtml = esc(ingressText).replace(/\n+/g, "<br><br>");
+    // Ingressen rendres som den er, uten auto-prepend av «Hei *|FNAME|*,»-hilsen.
+    // Brukeren legger inn egen åpning i ingress-teksten hvis ønskelig.
+    // *|FNAME|* og andre Mailchimp merge-tags fungerer fortsatt — esc() bevarer
+    // * og | så abonnent-feltene plukkes opp ved utsendelse.
+    const ingressHtml = esc(input.ingress).replace(/\n+/g, "<br><br>");
     let ingressInner = `<p style="line-height: 1.5; mso-line-height-alt: 150%; text-align: center;" class="${input.brandLogoUrl ? "" : "last-child"}"><span style="font-size: 14px">${ingressHtml}</span></p>`;
 
     // Brand logo as inline image after ingress text
@@ -721,13 +831,23 @@ function renderContentSection(
     rows.push(`<tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="gutterContainerId-6"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="b6"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:60px;padding-right:60px;padding-top:12px;padding-bottom:25px" class="mceTextBlockContainer"><div data-block-id="6" class="mceText" id="d6" style="width:100%">${ingressInner}</div></td></tr>${brandLogoRow}</tbody></table></td></tr></tbody></table></td></tr>`);
   }
 
-  // --- Product grid ---
-  if (products.length > 0) {
+  // --- Leverandør-kort (jubileum-leverandor) ELLER produkt-grid (default) ---
+  const useSupplierLayout =
+    input.templateVariant === "jubileum-leverandor" &&
+    Array.isArray(input.suppliers) &&
+    input.suppliers.length > 0;
+
+  if (useSupplierLayout && input.suppliers) {
+    // renderSupplierRows returnerer komplette <tr>…</tr>-fragmenter, ett per leverandør.
+    rows.push(renderSupplierRows(input.suppliers, utm));
+  } else if (products.length > 0) {
     rows.push(`<tr><td style="padding-top:0;padding-bottom:0;padding-right:32px;padding-left:32px" valign="top" class="mceGutterContainer" id="gutterContainerId-17"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:24px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b17">${renderProductGrid(products, input.themeSlug)}</td></tr></tbody></table></td></tr>`);
   }
 
-  // --- "SE ALLE PRODUKTENE VÅRE" button ---
-  rows.push(`<tr><td style="background-color:transparent;padding-top:10px;padding-bottom:20px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b40">${renderButton("40", "SE ALLE PRODUKTENE VÅRE", utm("https://fosen-tools.no/produkter", "alle-produkter"))}</td></tr>`);
+  // --- "SE ALLE PRODUKTENE VÅRE" button (skjules i leverandør-utgaver) ---
+  if (!useSupplierLayout) {
+    rows.push(`<tr><td style="background-color:transparent;padding-top:10px;padding-bottom:20px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b40">${renderButton("40", "SE ALLE PRODUKTENE VÅRE", utm("https://fosen-tools.no/produkter", "alle-produkter"))}</td></tr>`);
+  }
 
   // --- Divider ---
   rows.push(`<tr>${renderDivider("b100")}</tr>`);
@@ -748,20 +868,32 @@ function renderContentSection(
   )}</tr>`);
 
   // --- Midt body ---
+  //   Konverter nylinjer til <br>: dobbelt-nylinje (\n\n) = avsnitt (<br><br>),
+  //   enkel-nylinje (\n) = linjebrudd (<br>). Uten dette ramler alle linjer
+  //   sammen i en lang setning siden HTML kollapser whitespace.
+  const midtBodyHtml = esc(input.midtBody)
+    .replace(/\n{2,}/g, "<br><br>")
+    .replace(/\n/g, "<br>");
   rows.push(`<tr>${renderTextBlock(
     "gutterContainerId-92",
     "b92",
     "d92",
     "padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px",
     "transparent",
-    `<p class="last-child"><span style="font-size: 14px">${esc(input.midtBody)}</span></p>`
+    `<p class="last-child" style="line-height:1.5;mso-line-height-alt:150%;text-align:center"><span style="font-size: 14px">${midtBodyHtml}</span></p>`
   )}</tr>`);
 
-  // --- Midt CTA button ---
-  rows.push(`<tr><td style="background-color:transparent;padding-top:12px;padding-bottom:12px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b93">${renderButton("93", esc(input.midtCtaText), utm(input.midtCtaUrl, "midt-cta"))}</td></tr>`);
+  // --- Midt CTA button (kan skrus av med showMidtCta: false) ---
+  if (input.showMidtCta !== false) {
+    rows.push(`<tr><td style="background-color:transparent;padding-top:12px;padding-bottom:12px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b93">${renderButton("93", esc(input.midtCtaText), utm(input.midtCtaUrl, "midt-cta"))}</td></tr>`);
+  }
 
-  // --- Social section: divider + footer image + 3 buttons + description ---
-  rows.push(renderSocialArea(input, utm));
+  // --- «Fredagsinnlegg»-seksjon: divider + footer-bilde + sosiale CTA + kundehistorie.
+  //     Kan skrus av (showFridayPost: false) for jubileum/event-utgaver der
+  //     vi ikke har en ekte ukentlig kundehistorie. Default = true (vis). ---
+  if (input.showFridayPost !== false) {
+    rows.push(renderSocialArea(input, utm));
+  }
 
   // Assemble the content section inner HTML
   const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="41"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" data-block-id="-19" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody>${rows.join("\n")}</tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
@@ -834,6 +966,71 @@ function renderProductGrid(products: NewsletterProduct[], themeSlug: string): st
   const row2Html = row2Cols ? `<tr class="mceKeepColumns">${row2Cols}</tr>` : "";
 
   return `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="17" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="16"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody>${row1Html}${row2Html}</tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
+}
+
+/**
+ * Leverandør-kort som full-bredde rader under hverandre. Brukes når
+ * templateVariant = "jubileum-leverandor" og input.suppliers er satt.
+ *
+ * Hver leverandør rendres som ett kort:
+ *   ┌──────────────┬──────────────────────────────────┐
+ *   │              │ NAVN                             │
+ *   │   [LOGO]     │ Tagline (rød)                    │
+ *   │              │ Eventuell beskrivelse            │
+ *   │              │ [Se sortimentet →]               │
+ *   └──────────────┴──────────────────────────────────┘
+ *
+ * 660px bred (matcher hovedinnholdet). Logo-kolonne 180px med lys grå bakgrunn.
+ * Knappen følger samme FT-røde stil som resten av nyhetsbrevet.
+ */
+function renderSupplierRows(
+  suppliers: NewsletterSupplier[],
+  utm: (url: string, content: string) => string
+): string {
+  return suppliers
+    .map((s, i) => renderSupplierCard(s, i, utm))
+    .join("\n");
+}
+
+function renderSupplierCard(
+  s: NewsletterSupplier,
+  index: number,
+  utm: (url: string, content: string) => string
+): string {
+  const slug = s.name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const ctaHref = utm(s.ctaUrl, `leverandor-${slug || "x"}`);
+  const blockId = `bSup${index}`;
+
+  const cardBg = "#ffffff";
+  const logoColBg = "#fafafa";
+  const borderColor = "#e5e7eb";
+  const textColor = "#0f1115";
+  const accentColor = FT_RED;
+  const descColor = "#555555";
+
+  const descHtml = s.description
+    ? `<p style="margin:0;padding:4px 0 10px 0;line-height:1.4;color:${descColor};font-family:${FONT_STACK};font-size:13px">${esc(s.description)}</p>`
+    : `<div style="height:6px;line-height:6px;font-size:0">&nbsp;</div>`;
+
+  // Logo-bredde: konfigurerbar per leverandør (default 140, klemt 80–180).
+  // Kolonnen er fast 180px så alle kort har lik bredde uansett logo.
+  const logoWidth = Math.max(80, Math.min(180, Math.round(s.logoWidth ?? 140)));
+  const logoMaxHeight = Math.round(logoWidth * 0.7); // bevarer aspekt-grense
+  const logoCell = `<td width="180" valign="middle" align="center" style="width:180px;padding:14px 12px;background-color:${logoColBg};border-right:1px solid ${borderColor};border-radius:8px 0 0 8px;text-align:center;vertical-align:middle"><img src="${esc(s.logoUrl)}" alt="${esc(s.name)}" width="${logoWidth}" style="display:block;margin:0 auto;max-width:${logoWidth}px;max-height:${logoMaxHeight}px;width:auto;height:auto;border:0" /></td>`;
+
+  // Tekst-kolonnen: navn, tagline, beskrivelse, knapp — komprimert padding
+  const textCell = `<td valign="middle" style="padding:16px 20px;vertical-align:middle"><h3 style="margin:0 0 2px 0;padding:0;font-family:${FONT_STACK};font-size:18px;font-weight:800;letter-spacing:0.5px;color:${textColor};text-transform:uppercase;line-height:1.15">${esc(s.name)}</h3><p style="margin:0;padding:0;font-family:${FONT_STACK};font-size:12px;color:${accentColor};font-weight:700;letter-spacing:0.4px;line-height:1.3">${esc(s.tagline)}</p>${descHtml}${renderButton(blockId, s.ctaText, ctaHref, 200, "left")}</td>`;
+
+  // Kortet
+  const card = `<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="border-collapse:separate;background-color:${cardBg};border:1px solid ${borderColor};border-radius:8px"><tbody><tr>${logoCell}${textCell}</tr></tbody></table>`;
+
+  // Wrappet i row med padding under (mindre mellomrom mellom kort)
+  return `<tr><td style="padding:0 24px 12px 24px" valign="top" class="mceLayoutContainer" id="${blockId}-wrap">${card}</td></tr>`;
 }
 
 /**
@@ -948,17 +1145,32 @@ function renderSocialButton(
 /**
  * Footer section: black bg with social follow icons, company info, Mailchimp links.
  */
-function renderFooterSection(): string {
-  // Social follow icons from CDN
+function renderFooterSection(variant: TemplateVariant = "standard"): string {
+  // Jubileum: rød footer-bg. Standard: svart.
+  const isJubileum = variant === "jubileum" || variant === "jubileum-leverandor";
+  // Begge varianter bruker FT-ink (svart) footer for konsistens.
+  const bg = FT_INK;
+
+  // Social follow icons fra Mailchimp CDN.
+  // - Standard-tema: fargete ikoner (Facebook-blå, Instagram-gradient osv.)
+  //   Disse fungerer fint mot svart footer-bg.
+  // - Jubileum-tema: «dark» SVG-silhuett-variant + CSS-filter for å
+  //   invertere til ren hvit på rød bg. Outlook desktop (Word-renderer)
+  //   støtter ikke CSS-filter — der fallback'er ikonene til svart
+  //   silhuett som fortsatt er lesbar mot rød.
+  const iconVariant = isJubileum ? "dark" : "color";
+  const filterStyle = isJubileum
+    ? "filter:brightness(0) invert(1);-webkit-filter:brightness(0) invert(1);"
+    : "";
   const socialIcons = [
-    { href: "https://facebook.com/fosentools", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/facebook-icon-color-40.png", alt: "Facebook icon" },
-    { href: "https://instagram.com/fosentools", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/instagram-icon-color-40.png", alt: "Instagram icon" },
-    { href: "https://fosen-tools.no/", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/website-icon-color-40.png", alt: "Website icon" },
-    { href: "https://www.linkedin.com/company/fosen-tools/", src: "https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/linkedin-icon-color-40.png", alt: "LinkedIn icon" },
+    { href: "https://facebook.com/fosentools", src: `https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/facebook-icon-${iconVariant}-40.png`, alt: "Facebook icon" },
+    { href: "https://instagram.com/fosentools", src: `https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/instagram-icon-${iconVariant}-40.png`, alt: "Instagram icon" },
+    { href: "https://fosen-tools.no/", src: `https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/website-icon-${iconVariant}-40.png`, alt: "Website icon" },
+    { href: "https://www.linkedin.com/company/fosen-tools/", src: `https://cdn-images.mailchimp.com/icons/social-block-v3/block-icons-v3/linkedin-icon-${iconVariant}-40.png`, alt: "LinkedIn icon" },
   ];
 
   const iconCells = socialIcons.map(icon => {
-    return `<!--[if mso]><td align="center" valign="top"><![endif]--><table align="left" border="0" cellpadding="0" cellspacing="0" style="display:inline;float:left" role="presentation"><tbody><tr><td style="padding-top:3px;padding-bottom:3px;padding-left:30px;padding-right:30px" valign="top" class="mceSocialFollowIcon" align="center" width="24"><a href="${esc(icon.href)}" target="_blank" rel="noreferrer"><img class="mceSocialFollowImage" width="24" height="24" alt="${esc(icon.alt)}" src="${esc(icon.src)}"></a></td></tr></tbody></table><!--[if mso]></td><![endif]-->`;
+    return `<!--[if mso]><td align="center" valign="top"><![endif]--><table align="left" border="0" cellpadding="0" cellspacing="0" style="display:inline;float:left" role="presentation"><tbody><tr><td style="padding-top:3px;padding-bottom:3px;padding-left:30px;padding-right:30px" valign="top" class="mceSocialFollowIcon" align="center" width="24"><a href="${esc(icon.href)}" target="_blank" rel="noreferrer"><img class="mceSocialFollowImage" width="24" height="24" alt="${esc(icon.alt)}" src="${esc(icon.src)}" style="${filterStyle}display:block"></a></td></tr></tbody></table><!--[if mso]></td><![endif]-->`;
   }).join("");
 
   const socialFollowBlock = `<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" class="mceSocialFollowBlock"><tbody><tr><td valign="middle" align="center"><!--[if mso]><table align="left" border="0" cellspacing="0" cellpadding="0"><tr><![endif]-->${iconCells}<!--[if mso]></tr></table><![endif]--></td></tr></tbody></table>`;
@@ -970,7 +1182,7 @@ function renderFooterSection(): string {
   const footerLinksHtml = `<p style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="color:rgb(255, 255, 255);"><span style="font-size: 11px"><br>    </span></span><a href="*|ARCHIVE|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Vis e-posten i nettleser</span></span></a><span style="font-size: 11px"><br>    </span><a href="*|UPDATE_PROFILE|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Oppdater dine preferanser</span></span></a><span style="font-size: 11px">•    </span><a href="*|UNSUB|*" style="color: #cccccc;"><span style="color:rgb(204, 204, 204);"><span style="font-size: 11px">Meld deg av</span></span></a></p>`;
 
   // Build inner content — social icons + company info + footer links
-  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="57"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:${FT_INK};padding-top:17px;padding-bottom:0;padding-right:10px;padding-left:10px;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b52"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="52"><tbody><tr class="mceRow"><td style="background-color:${FT_INK};background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" class="mceSocialFollowBlockContainer">${socialFollowBlock}</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-101"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="background-color:${FT_INK};padding-top:12px;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b101"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="101" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="108"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="center" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="gutterContainerId-113"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="b113"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px" class="mceTextBlockContainer"><div data-block-id="113" class="mceText" id="d113" style="width:100%">${companyInfoHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><tr><td style="background-color:${FT_INK};padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b56"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="56" class="mceFooterSection"><tbody><tr class="mceRow"><td style="background-color:${FT_INK};background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="12" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px" valign="top" class="mceGutterContainer" id="gutterContainerId-54"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" align="center" id="b54"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:0;padding-right:0;padding-top:0;padding-bottom:0" class="mceTextBlockContainer"><div data-block-id="54" class="mceText" id="d54" style="display:inline-block;width:100%">${footerLinksHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
+  const innerContent = `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="57"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:${bg};padding-top:17px;padding-bottom:0;padding-right:10px;padding-left:10px;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b52"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="52"><tbody><tr class="mceRow"><td style="background-color:${bg};background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" class="mceSocialFollowBlockContainer">${socialFollowBlock}</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-101"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="background-color:${bg};padding-top:12px;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b101"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="101" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="108"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="center" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="gutterContainerId-113"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="b113"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px" class="mceTextBlockContainer"><div data-block-id="113" class="mceText" id="d113" style="width:100%">${companyInfoHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><tr><td style="background-color:${bg};padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b56"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="56" class="mceFooterSection"><tbody><tr class="mceRow"><td style="background-color:${bg};background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="12" width="100%" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px" valign="top" class="mceGutterContainer" id="gutterContainerId-54"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" align="center" id="b54"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="padding-left:0;padding-right:0;padding-top:0;padding-bottom:0" class="mceTextBlockContainer"><div data-block-id="54" class="mceText" id="d54" style="display:inline-block;width:100%">${footerLinksHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
 
-  return wrapSection("58", OUTER_BG, FT_INK, innerContent);
+  return wrapSection("58", OUTER_BG, bg, innerContent);
 }

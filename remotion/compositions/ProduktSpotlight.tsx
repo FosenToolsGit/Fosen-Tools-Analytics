@@ -213,56 +213,76 @@ const ProductScene: React.FC<ProduktSpotlightProps> = (p) => {
         ) : null}
       </div>
 
-      {/* pris */}
-      <div
-        style={{
-          marginTop: 30,
-          display: "flex",
-          alignItems: "baseline",
-          gap: 26,
-          opacity: fade(frame, 50, 64, 174, 175),
-        }}
-      >
-        {p.priceBefore ? (
+      {/* pris — skjules hvis priceNow er 0 og ingen priceBefore (HDFI/skreddersøm uten prislapp) */}
+      {p.priceNow > 0 || p.priceBefore ? (
+        <>
           <div
             style={{
-              fontFamily: SANS_FONT,
-              fontWeight: 600,
-              fontSize: 52,
-              color: FT.inkMute,
-              textDecorationLine: "line-through",
-              textDecorationColor: FT.red,
-              textDecorationThickness: "4px",
+              marginTop: 30,
+              display: "flex",
+              alignItems: "baseline",
+              gap: 26,
+              opacity: fade(frame, 50, 64, 174, 175),
             }}
           >
-            {formatNOK(p.priceBefore)}
+            {p.priceBefore ? (
+              <div
+                style={{
+                  fontFamily: SANS_FONT,
+                  fontWeight: 600,
+                  fontSize: 52,
+                  color: FT.inkMute,
+                  textDecorationLine: "line-through",
+                  textDecorationColor: FT.red,
+                  textDecorationThickness: "4px",
+                }}
+              >
+                {formatNOK(p.priceBefore)}
+              </div>
+            ) : null}
+            <div
+              style={{
+                fontFamily: SANS_FONT,
+                fontWeight: 800,
+                fontSize: 132,
+                lineHeight: 1,
+                letterSpacing: -3,
+                color: FT.red,
+              }}
+            >
+              {formatNOK(price)}
+            </div>
           </div>
-        ) : null}
+          <div
+            style={{
+              marginTop: 6,
+              fontFamily: MONO_FONT,
+              fontSize: 26,
+              letterSpacing: 2,
+              color: FT.inkMute,
+              opacity: fade(frame, 50, 64, 174, 175),
+            }}
+          >
+            EKS. MVA
+          </div>
+        </>
+      ) : (
+        /* Skreddersøm-tagline når det ikke er noen pris */
         <div
           style={{
+            marginTop: 30,
             fontFamily: SANS_FONT,
             fontWeight: 800,
-            fontSize: 132,
+            fontSize: 96,
             lineHeight: 1,
-            letterSpacing: -3,
+            letterSpacing: -1.5,
             color: FT.red,
+            opacity: fade(frame, 50, 64, 174, 175),
           }}
         >
-          {formatNOK(price)}
+          SKREDDERSØM
         </div>
-      </div>
-      <div
-        style={{
-          marginTop: 6,
-          fontFamily: MONO_FONT,
-          fontSize: 26,
-          letterSpacing: 2,
-          color: FT.inkMute,
-          opacity: fade(frame, 50, 64, 174, 175),
-        }}
-      >
-        EKS. MVA
-      </div>
+      )}
     </AbsoluteFill>
   );
 };

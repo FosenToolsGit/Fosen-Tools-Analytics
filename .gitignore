@@ -56,3 +56,6 @@ fosen-tools-analytics-*.json
 .Rhistory
 .RData
 .Ruserdata
+
+# Claude Code worktrees (intern sesjonsstate)
+.claude/worktrees/

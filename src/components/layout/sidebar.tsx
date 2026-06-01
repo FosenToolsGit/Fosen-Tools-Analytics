@@ -122,11 +122,14 @@ const navItems: NavEntry[] = [
 
   // ── Innhold ─────────────────────────────────────
   { kind: "section", label: "Innhold" },
+  { label: "📅 Innhold-kalender", href: "/innhold-kalender", icon: FileText },
   { label: "Alle innlegg", href: "/posts", icon: FileText },
   { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
   { label: "Innleggsbygger", href: "/innleggsbygger/poster", icon: Sparkles },
   { label: "Innleggsmaler", href: "/innleggsbygger/maler", icon: LayoutGrid },
+  { label: "🎉 Jubileum-kampanje", href: "/innleggsbygger/jubileum", icon: Sparkles },
   { label: "Nyhetsbrev-bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Mail, localOnly: true },
+  { label: "Nyhetsbrev-oversikt", href: "/innleggsbygger/nyhetsbrev-oversikt", icon: Mail },
   { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
   { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
   { label: "Etiketter", href: "/etikett", icon: BookOpen },

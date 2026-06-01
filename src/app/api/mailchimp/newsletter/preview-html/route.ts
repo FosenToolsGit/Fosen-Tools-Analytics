@@ -4,6 +4,7 @@ import {
   MailchimpBuilderService,
   type NewsletterInput,
   type NewsletterProduct,
+  type NewsletterSupplier,
 } from "@/lib/services/mailchimp-builder";
 
 export async function POST(request: NextRequest) {
@@ -27,6 +28,16 @@ export async function POST(request: NextRequest) {
     ctaText: p.ctaText,
   }));
 
+  const suppliers: NewsletterSupplier[] = (body.suppliers ?? []).slice(0, 8).map((s) => ({
+    name: s.name ?? "",
+    tagline: s.tagline ?? "",
+    logoUrl: s.logoUrl ?? "",
+    ctaText: s.ctaText ?? "Se sortimentet →",
+    ctaUrl: s.ctaUrl ?? "",
+    description: s.description,
+    logoWidth: typeof s.logoWidth === "number" ? s.logoWidth : undefined,
+  }));
+
   const input: NewsletterInput = {
     themeSlug: body.themeSlug ?? "preview",
     subjectLine: body.subjectLine ?? "",
@@ -48,6 +59,10 @@ export async function POST(request: NextRequest) {
     socialInstagramPostUrl: body.socialInstagramPostUrl ?? "",
     socialFacebookPostUrl: body.socialFacebookPostUrl ?? "https://www.facebook.com/fosentools",
     socialLinkedinPostUrl: body.socialLinkedinPostUrl ?? "",
+    templateVariant: body.templateVariant,
+    suppliers,
+    showFridayPost: body.showFridayPost,
+    showMidtCta: body.showMidtCta,
   };
 
   // Auto-derive brand logo from first product URL if not provided (mirrors createNewsletter logic).

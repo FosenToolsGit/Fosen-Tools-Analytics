@@ -247,7 +247,23 @@ export type VideoType =
   | "leveranse-reel"
   | "milepael"
   | "kampanje-teaser"
-  | "sitat";
+  | "sitat"
+  | "hdfi-hero"
+  | "jub-t14"
+  | "jub-t13"
+  | "jub-t12"
+  | "jub-t11"
+  | "jub-t10"
+  | "jub-t9"
+  | "jub-t8"
+  | "jub-t7"
+  | "jub-t6"
+  | "jub-t5"
+  | "jub-t4"
+  | "jub-t3"
+  | "jub-t2"
+  | "jub-t1"
+  | "jub-dagen";
 
 /** Komposisjons-id slik den er registrert i Root.tsx. */
 export const COMPOSITION_ID: Record<VideoType, string> = {
@@ -256,4 +272,54 @@ export const COMPOSITION_ID: Record<VideoType, string> = {
   milepael: "MilepaelClip",
   "kampanje-teaser": "KampanjeTeaser",
   sitat: "SitatClip",
+  "hdfi-hero": "HdfiHero",
+  "jub-t14": "JubileumT14",
+  "jub-t13": "JubileumT13",
+  "jub-t12": "JubileumT12",
+  "jub-t11": "JubileumT11",
+  "jub-t10": "JubileumT10",
+  "jub-t9": "JubileumT9",
+  "jub-t8": "JubileumT8",
+  "jub-t7": "JubileumT7",
+  "jub-t6": "JubileumT6",
+  "jub-t5": "JubileumT5",
+  "jub-t4": "JubileumT4",
+  "jub-t3": "JubileumT3",
+  "jub-t2": "JubileumT2",
+  "jub-t1": "JubileumT1",
+  "jub-dagen": "JubileumDagen",
+};
+
+// ── hdfi-hero ────────────────────────────────────────────────────────
+// Dedikert HDFI-video: visualiserer 3-lags-strukturen (rød plast topp /
+// hvit kontrast under / sort skum bunn) + CNC-kutt-animasjon som viser
+// hvordan en verktøy-silhuett blir maskinert ut. Bruker FT-logo,
+// 25-årslogo, og Four Editors light-leak + whoosh-SFX for filmisk feel.
+
+export type HdfiHeroProps = {
+  format: VideoFormat;
+  /** Hovedtittel — typisk "HDFI" alene. */
+  title: string;
+  /** Lille etikett over tittelen, f.eks. "EGEN PRODUKSJON". */
+  eyebrow: string;
+  /** Sub-tagline under tittelen i intro-scenen. */
+  tagline: string;
+  /** USP-punkter for closing-scenen (3-5 stk). */
+  bullets: string[];
+  /** CTA-tekst nederst, f.eks. "fosen-tools.no/hdfi". */
+  ctaUrl: string;
+};
+
+export const SAMPLE_HDFI: HdfiHeroProps = {
+  format: "reel",
+  title: "HDFI",
+  eyebrow: "EGEN PRODUKSJON",
+  tagline: "Verktøykontroll med gravert silhuett",
+  bullets: [
+    "Designet i CADLABen vår",
+    "CNC-maskinert",
+    "Forebygger FOD",
+    "Identisk gravering på verktøy og HDFI",
+  ],
+  ctaUrl: "fosen-tools.no/hdfi",
 };

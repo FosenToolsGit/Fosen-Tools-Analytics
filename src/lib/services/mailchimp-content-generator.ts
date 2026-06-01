@@ -158,7 +158,7 @@ export interface ParsedTheme {
 
 const MANUFACTURERS_DISPLAY: Record<string, string> = {
   milwaukee: "Milwaukee", wera: "Wera", knipex: "Knipex", stahlwille: "Stahlwille",
-  "snap-on": "Snap-on", facom: "Facom", ledlenser: "Ledlenser", pelicase: "Pelicase",
+  "snap-on": "Snap-on", facom: "Facom", ledlenser: "Zweibrüder", pelicase: "Pelicase",
   hellberg: "Hellberg", husqvarna: "Husqvarna", bahco: "Bahco", leatherman: "Leatherman",
   mitutoyo: "Mitutoyo", rennsteig: "Rennsteig", brockhaus: "Brockhaus Heuer",
   "kc-tools": "KC Tools", sumake: "Sumake", hultafors: "Hultafors", bondhus: "Bondhus",
