@@ -979,6 +979,52 @@ export default function InnleggsmalerPage() {
   // Alle bilder tilgjengelig i bilde-velgerne: side-bilder + opplastet pool
   const pickerImages = useMemo(() => [...sourceImages, ...pool], [sourceImages, pool]);
 
+  // ── Prefill fra «Idéer i dag» (sessionStorage-bru) ────────────────
+  // Når brukeren klikker «Generér nå» på en idé som har innleggsmaler_prefill,
+  // legges prefill-data i sessionStorage og brukeren navigeres hit. Vi
+  // plukker opp prefill ved mount, setter aktiv mal/variant/aspect og
+  // merger inn skalar/array-data over DEMO-defaults.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.sessionStorage.getItem("innleggsmaler:prefill");
+    if (!raw) return;
+    window.sessionStorage.removeItem("innleggsmaler:prefill");
+    try {
+      const pref = JSON.parse(raw) as {
+        mal?: string;
+        variant?: string;
+        aspect?: string;
+        data?: { scalars?: Record<string, string>; arrays?: Record<string, Array<Record<string, string>>> };
+      };
+      // Valider mal-id mot vår MAL_ORDER
+      if (pref.mal && MAL_ORDER.includes(pref.mal as Mal)) {
+        const targetMal = pref.mal as Mal;
+        setMal(targetMal);
+        if (pref.variant && ["A", "B", "C"].includes(pref.variant)) {
+          setVariant(pref.variant as Variant);
+        }
+        if (pref.aspect && ["fb", "ig", "li"].includes(pref.aspect)) {
+          setAspect(pref.aspect as Aspect);
+        }
+        if (pref.data) {
+          setForms((prev) => {
+            const base = cloneState(prev[targetMal]);
+            if (pref.data!.scalars) {
+              base.scalars = { ...base.scalars, ...pref.data!.scalars };
+            }
+            if (pref.data!.arrays) {
+              base.arrays = { ...base.arrays, ...pref.data!.arrays };
+            }
+            return { ...prev, [targetMal]: base };
+          });
+        }
+      }
+    } catch {
+      // ignore — bad JSON shouldn't crash the page
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const def = MALER[mal];
   const state = forms[mal];
 

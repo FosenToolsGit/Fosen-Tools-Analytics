@@ -46,6 +46,20 @@ export interface IdeDestinasjon {
   prefill?: Record<string, string>;
 }
 
+/** Pre-utfyll-konfig for Innleggsmaler. Når en idé har dette settet,
+ *  kan brukeren klikke «Generér nå» og hoppe rett inn i malen med
+ *  ferdige felter (kan justeres før eksport). */
+export interface InnleggsmalerPrefill {
+  mal: string;          // f.eks. "leveranse", "milepael", "feature"
+  variant: "A" | "B" | "C";
+  aspect: "fb" | "ig" | "li";
+  /** Form-state-data — { scalars: { eyebrow, headline, ... }, arrays: {...} } */
+  data: {
+    scalars?: Record<string, string>;
+    arrays?: Record<string, Array<Record<string, string>>>;
+  };
+}
+
 export interface IdeTemplate {
   id: string;
   kategori: IdeKategori;
@@ -63,6 +77,9 @@ export interface IdeTemplate {
   destinasjoner: IdeDestinasjon[];
   /** Dager-i-uka denne idéen passer (0=søn ... 6=lør). Tom = alle. */
   beste_dager?: number[];
+  /** Innleggsmaler-prefill: når satt, kan brukeren klikke «Generér nå»
+   *  og hoppe rett inn i Innleggsmaler med ferdige felter. */
+  innleggsmaler_prefill?: InnleggsmalerPrefill;
 }
 
 // ─── Idé-bibliotek (utvides over tid) ────────────────────────────────
@@ -89,10 +106,28 @@ const TEMPLATES: IdeTemplate[] = [
       "+144% engagement-lift når posten bruker «skreddersydd / HDFI / CADLAB».",
     trenger: "Video-klipp fra CADLAB, CNC-maskin og ferdig produkt (15-30 sek)",
     destinasjoner: [
-      { label: "Generér i Remotion (LeveranseReel)", href: "/innleggsbygger/maler" },
       { label: "Lag bilde i Innleggsmaler", href: "/innleggsbygger/maler" },
     ],
-    beste_dager: [4, 5], // tor/fre — beste posting-vindu
+    beste_dager: [4, 5],
+    innleggsmaler_prefill: {
+      mal: "prosess",
+      variant: "A",
+      aspect: "fb",
+      data: {
+        scalars: {
+          eyebrow: "EGEN PRODUKSJON",
+          headline: "Fra CAD-tegning til ferdig HDFI",
+          subhead: "Slik tar vi en idé fra tegning til ferdig produkt",
+        },
+        arrays: {
+          steps: [
+            { num: "01", title: "CAD-tegning", txt: "CADLAB tegner skuffen 1:1 med kundens verktøy" },
+            { num: "02", title: "CNC-maskinert", txt: "Hver fordypning freses ut i Brekstad" },
+            { num: "03", title: "Levert", txt: "Skreddersydd kontroll på pulten din" },
+          ],
+        },
+      },
+    },
   },
   {
     id: "hdfi-for-etter",
@@ -290,10 +325,25 @@ const TEMPLATES: IdeTemplate[] = [
       "Brand-bygging. «Fosen Tools-standard» er referert av Forsvaret — " +
       "vi er etablert som premium leverandør i 25 år.",
     trenger: "Bilde av lokalene, helikopter-landing, eller team utenfor",
-    destinasjoner: [
-      { label: "Lag i Innleggsmaler (milepael)", href: "/innleggsbygger/maler" },
-    ],
-    beste_dager: [1], // mandag — passer bedrift-start-uka
+    destinasjoner: [],
+    beste_dager: [1],
+    innleggsmaler_prefill: {
+      mal: "milepael",
+      variant: "B",
+      aspect: "fb",
+      data: {
+        scalars: {
+          eyebrow: "FOSEN TOOLS",
+          number: "25",
+          unit: "ÅR FRA BREKSTAD",
+          headline: "25 år fra Brekstad",
+          subhead: "Fra én verktøyforhandler i 2001 til skreddersydde løsninger",
+          description:
+            "Fra én verktøyforhandler i 2001 til skreddersydde løsninger for Forsvaret, aviation og industri. CADLAB · HDFI · 40+ merker.",
+          footer: "Industrigata 1, 7130 Brekstad",
+        },
+      },
+    },
   },
   {
     id: "bedrift-miljofyrtarn",
@@ -329,10 +379,22 @@ const TEMPLATES: IdeTemplate[] = [
       "Brand-bygging. B2B-kunder velger leverandører de stoler på — " +
       "mennesker bygger den tilliten.",
     trenger: "Portrett-bilde av ansatt + 2-3 setninger fra dem",
-    destinasjoner: [
-      { label: "Lag i Innleggsmaler (ansatt)", href: "/innleggsbygger/maler" },
-    ],
-    beste_dager: [1], // mandag
+    destinasjoner: [],
+    beste_dager: [1],
+    innleggsmaler_prefill: {
+      mal: "ansatt",
+      variant: "A",
+      aspect: "fb",
+      data: {
+        scalars: {
+          eyebrow: "TEAMET",
+          name: "[Fornavn Etternavn]",
+          role: "[Rolle]",
+          since: "[År]",
+          quote: "[En setning fra personen om hva de gjør / brenner for]",
+        },
+      },
+    },
   },
 
   // ─── Kunde-leveranse (+38% stolthet, +144% skreddersøm) ─────────────
@@ -350,10 +412,22 @@ const TEMPLATES: IdeTemplate[] = [
       "+38% lift på «stolthet-tone» (levert/ferdigstilt). +144% når kombinert " +
       "med skreddersøm/HDFI. Konkrete leveranser slår filosofiske poster med −94%.",
     trenger: "Bilder/video fra leveransen + kunde-tillatelse",
-    destinasjoner: [
-      { label: "Lag reel i Remotion (LeveranseReel)", href: "/innleggsbygger/maler" },
-    ],
+    destinasjoner: [],
     beste_dager: [4, 5],
+    innleggsmaler_prefill: {
+      mal: "leveranse",
+      variant: "A",
+      aspect: "fb",
+      data: {
+        scalars: {
+          eyebrow: "LEVERT TIL",
+          customer: "[Kunde-navn]",
+          headline: "[Hva ble levert — kort]",
+          location: "[Sted]",
+          description: "Skreddersydd HDFI · CAD-tegnet · CNC-maskinert i Brekstad",
+        },
+      },
+    },
   },
 
   // ─── Produkt-spotlight (kobler til nyhetsbrev) ──────────────────────

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   KATEGORI_LABEL,
   FORMAT_LABEL,
   type IdeTemplate,
   type IdeFormat,
   type IdeKategori,
+  type InnleggsmalerPrefill,
 } from "@/lib/services/ide-engine";
 
 /**
@@ -60,6 +62,7 @@ function formatDate(iso: string): string {
 }
 
 export default function IdeerPage() {
+  const router = useRouter();
   const [ideas, setIdeas] = useState<IdeTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -87,6 +90,20 @@ export default function IdeerPage() {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(text);
     }
+  }
+
+  /** Send prefill til Innleggsmaler via sessionStorage og naviger dit. */
+  function genererInnleggsmaler(prefill: InnleggsmalerPrefill) {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.setItem(
+        "innleggsmaler:prefill",
+        JSON.stringify(prefill)
+      );
+    } catch {
+      // ignore — fallback til vanlig navigering
+    }
+    router.push("/innleggsbygger/maler");
   }
 
   return (
@@ -200,15 +217,31 @@ export default function IdeerPage() {
 
               {/* Destinasjoner */}
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-800">
+                {idea.innleggsmaler_prefill && (
+                  <button
+                    onClick={() => genererInnleggsmaler(idea.innleggsmaler_prefill!)}
+                    className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition flex items-center gap-1.5"
+                  >
+                    ⚡ Generér nå →
+                  </button>
+                )}
                 {idea.destinasjoner.map((dest, i) => (
                   <Link
                     key={`${idea.id}-dest-${i}`}
                     href={dest.href}
-                    className="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition"
+                    className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded font-medium transition"
                   >
                     {dest.label} →
                   </Link>
                 ))}
+                {!idea.innleggsmaler_prefill && idea.destinasjoner.length === 0 && (
+                  <Link
+                    href="/innleggsbygger/maler"
+                    className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded font-medium transition"
+                  >
+                    Åpne Innleggsmaler →
+                  </Link>
+                )}
               </div>
             </div>
           ))}
