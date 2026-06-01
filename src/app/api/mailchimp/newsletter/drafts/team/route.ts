@@ -31,6 +31,7 @@ export interface NewsletterDraftTeamItem {
   supplier_count: number;
   product_count: number;
   theme_input: string | null;
+  scheduled_send_date: string | null;
 }
 
 interface DraftRow {
@@ -110,6 +111,10 @@ export async function GET(request: NextRequest) {
       supplier_count: suppliers.length,
       product_count: products.length,
       theme_input: typeof ws.themeInput === "string" ? ws.themeInput : null,
+      scheduled_send_date:
+        typeof ws.scheduledSendDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(ws.scheduledSendDate)
+          ? ws.scheduledSendDate
+          : null,
     };
   });
 

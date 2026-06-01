@@ -128,6 +128,9 @@ interface WizardStatePayload {
   templateVariant?: "standard" | "jubileum" | "jubileum-leverandor";
   showFridayPost?: boolean;
   showMidtCta?: boolean;
+  /** Planlagt sendedato (YYYY-MM-DD). Brukes på innhold-kalender for å
+   *  plassere utkastet på riktig dag, og vises i oversikten som badge. */
+  scheduledSendDate?: string;
 }
 
 const THEME_IDEAS = [
@@ -184,6 +187,8 @@ export default function NyhetsbrevByggerPage() {
   const [showFridayPost, setShowFridayPost] = useState<boolean>(true);
   /* «Les mer»-CTA-knapp under midtseksjonen. Default på — skru av for ren info-midt. */
   const [showMidtCta, setShowMidtCta] = useState<boolean>(true);
+  /* Planlagt sendedato — YYYY-MM-DD, tom hvis ikke satt. */
+  const [scheduledSendDate, setScheduledSendDate] = useState<string>("");
 
   /* ── Create state ── */
   const [creating, setCreating] = useState(false);
@@ -542,6 +547,7 @@ export default function NyhetsbrevByggerPage() {
     setEditSuppliers([]);
     setShowFridayPost(true);
     setShowMidtCta(true);
+    setScheduledSendDate("");
     setThemeInput("");
     setManualProductUrls("");
     setMidtImageUrl("");
@@ -581,6 +587,7 @@ export default function NyhetsbrevByggerPage() {
       templateVariant,
       showFridayPost,
       showMidtCta,
+      scheduledSendDate,
     };
   }
 
@@ -656,6 +663,8 @@ export default function NyhetsbrevByggerPage() {
         else setShowFridayPost(true);
         if (typeof s.showMidtCta === "boolean") setShowMidtCta(s.showMidtCta);
         else setShowMidtCta(true);
+        if (typeof s.scheduledSendDate === "string") setScheduledSendDate(s.scheduledSendDate);
+        else setScheduledSendDate("");
 
         setCurrentDraftId(id);
         // Markér tilstanden som "synket" så auto-save ikke umiddelbart re-saver
@@ -803,6 +812,7 @@ export default function NyhetsbrevByggerPage() {
     templateVariant,
     showFridayPost,
     showMidtCta,
+    scheduledSendDate,
   ]);
 
   /* ═══════════════════════════════════ */
@@ -1047,6 +1057,22 @@ export default function NyhetsbrevByggerPage() {
                   <div className="text-[11px] text-gray-400">Jubileumsbanner + leverandør-kort</div>
                 </button>
               </div>
+            </div>
+
+            {/* Planlagt sendedato — vises på oversikten og innhold-kalenderen */}
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                📅 Planlagt sendedato
+              </label>
+              <input
+                type="date"
+                value={scheduledSendDate}
+                onChange={(e) => setScheduledSendDate(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 text-white rounded text-sm"
+              />
+              <p className="mt-1 text-[11px] text-gray-500">
+                Brukes på innhold-kalenderen og i nyhetsbrev-oversikten. La være tom hvis du ikke har bestemt enda.
+              </p>
             </div>
 
             {/* Fredagsinnlegg-toggle — skjul nederste seksjon (footer-bilde + sosiale CTA + kundehistorie) */}

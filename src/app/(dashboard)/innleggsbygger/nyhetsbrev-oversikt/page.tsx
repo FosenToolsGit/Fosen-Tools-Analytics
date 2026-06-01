@@ -29,6 +29,7 @@ interface DraftItem {
   supplier_count: number;
   product_count: number;
   theme_input: string | null;
+  scheduled_send_date: string | null;
 }
 
 type StatusFilter = "draft" | "pushed" | "archived" | "all";
@@ -87,6 +88,20 @@ function formatRelative(iso: string): string {
   }
 }
 
+function formatScheduledBadge(iso: string | null): string | null {
+  if (!iso) return null;
+  try {
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString("nb-NO", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 function emailToName(email: string | null): string {
   if (!email) return "Ukjent";
   const local = email.split("@")[0] ?? "";
@@ -130,7 +145,17 @@ export default function NewsletterOversiktPage() {
   }, [statusFilter]);
 
   const filtered = useMemo(() => {
-    return drafts.filter((d) => {
+    // Sortér: utkast med planlagt dato først (kronologisk, nærmeste først),
+    // deretter utkast uten dato sortert på updated_at desc.
+    const sorted = [...drafts].sort((a, b) => {
+      if (a.scheduled_send_date && b.scheduled_send_date) {
+        return a.scheduled_send_date.localeCompare(b.scheduled_send_date);
+      }
+      if (a.scheduled_send_date) return -1;
+      if (b.scheduled_send_date) return 1;
+      return b.updated_at.localeCompare(a.updated_at);
+    });
+    return sorted.filter((d) => {
       if (statusFilter !== "all" && d.status !== statusFilter) return false;
       if (ownerFilter === "mine" && d.owner_email !== currentUserEmail) return false;
       if (variantFilter !== "all" && d.template_variant !== variantFilter) return false;
@@ -294,6 +319,11 @@ export default function NewsletterOversiktPage() {
                 <div className="flex flex-col gap-2 flex-1 min-w-0">
                 {/* Badges */}
                 <div className="flex flex-wrap gap-1.5">
+                  {d.scheduled_send_date && (
+                    <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-mono bg-amber-700/30 text-amber-200 border border-amber-700">
+                      📅 {formatScheduledBadge(d.scheduled_send_date)}
+                    </span>
+                  )}
                   {d.template_variant && (
                     <span
                       className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-mono ${
