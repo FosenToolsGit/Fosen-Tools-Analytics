@@ -145,7 +145,7 @@ const navItems: NavEntry[] = [
     ],
   },
   {
-    label: "🖨️ Trykk & print",
+    label: "📺 TV og Print",
     href: "/brosjyre",
     icon: BookOpen,
     children: [
