@@ -134,47 +134,23 @@ export default async function InnholdKalenderPage() {
     }
   }
 
-  /** Utled planlagt dato fra utkast-tittel/themeSlug.
-   *  Mønster: «2026-06-02», «2026-06-09», osv. eller «JUBILEUM 1/4» → mappes
-   *  til faste datoer mot jubileet. Returnerer YYYY-MM-DD eller null. */
-  function deriveScheduledDate(
-    title: string,
-    themeSlug: string | undefined
-  ): string | null {
-    // Direkte dato i themeSlug eller tittel (YYYY-MM-DD)
-    const dateMatch = `${themeSlug ?? ""} ${title}`.match(/(\d{4}-\d{2}-\d{2})/);
-    if (dateMatch) return dateMatch[1];
-
-    // Tirsdag-utgaver basert på «UTGAVE 1/2/3/4» eller «JUBILEUM 1/2/3/4»
-    const utgaveMatch = title.match(/(?:UTGAVE|JUBILEUM)\s+(\d)\/4/i);
-    if (utgaveMatch) {
-      const n = parseInt(utgaveMatch[1], 10);
-      const tuesdays = ["2026-06-02", "2026-06-09", "2026-06-16", "2026-06-23"];
-      if (n >= 1 && n <= 4) return tuesdays[n - 1];
-    }
-    return null;
-  }
-
+  // Manuell dato: hentes kun fra wizard_state.scheduledSendDate som brukeren
+  // setter i nyhetsbrev-byggerens Steg 1. Ingen auto-utledning fra tittel.
   const planned_newsletters: PlannedNewsletter[] = (nlDrafts ?? []).map((r) => {
     const ws = (r.wizard_state ?? {}) as Record<string, unknown>;
     const content = (ws.editContent ?? {}) as Record<string, unknown>;
-    // Bruk eksplisitt satt scheduledSendDate først, fallback til auto-utledet fra tittelen
     const explicitDate =
       typeof ws.scheduledSendDate === "string" &&
       /^\d{4}-\d{2}-\d{2}$/.test(ws.scheduledSendDate)
         ? ws.scheduledSendDate
         : null;
-    const derivedDate = deriveScheduledDate(
-      r.title,
-      typeof content.themeSlug === "string" ? content.themeSlug : undefined
-    );
     return {
       id: r.id,
       title: r.title,
       status: r.status,
       updated_at: r.updated_at,
       edit_url: `/innleggsbygger/nyhetsbrev-bygger?draft=${r.id}`,
-      scheduled_date: explicitDate ?? derivedDate ?? undefined,
+      scheduled_date: explicitDate ?? undefined,
       owner_email: ownerEmails[r.user_id] ?? null,
       subject_line:
         typeof content.subjectLine === "string" ? content.subjectLine : null,

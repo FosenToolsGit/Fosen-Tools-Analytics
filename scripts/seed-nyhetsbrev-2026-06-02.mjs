@@ -127,6 +127,7 @@ const wizardState = {
   templateVariant: "jubileum-leverandor",
   showFridayPost: false, // jubileum-utgave — ingen ekte ukentlig kundehistorie
   showMidtCta: false,    // midtseksjonen er program/info, ikke en ekstern destinasjon
+  scheduledSendDate: "2026-06-02",
 };
 
 const title = "JUBILEUM 1/4: Hold av 26. juni — Milwaukee, Wera, Zweibrüder";

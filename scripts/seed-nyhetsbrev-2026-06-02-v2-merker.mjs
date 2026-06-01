@@ -127,6 +127,7 @@ const wizardState = {
   templateVariant: "jubileum-leverandor",
   showFridayPost: false,
   showMidtCta: false, // midtseksjonen er ren info, ingen ekstern destinasjon
+  scheduledSendDate: "2026-06-02",
 };
 
 const title = "UTGAVE 1 V2: Tre merker i sortimentet (Milwaukee, Wera, Zweibrüder)";
