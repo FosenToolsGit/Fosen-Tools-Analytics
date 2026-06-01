@@ -312,7 +312,7 @@ const TEMPLATES: IdeTemplate[] = [
       data: {
         scalars: {
           manufacturer: "MILWAUKEE",
-          tagline: "M18 og M12-økosystemet",
+          tagline: "Én batteripakke, 200+ maskiner",
         },
         arrays: {
           items: [

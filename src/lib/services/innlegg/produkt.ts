@@ -845,6 +845,7 @@ function produktMfrALI(W: number, H: number, data: ProduktMfrData): string {
 export function produktMfrB(W: number, H: number, data: ProduktMfrData): string {
   if (aspectOf(W, H) === "li") return produktMfrBLI(W, H, data);
   const manufacturer = data.manufacturer || "WERA";
+  const tagline = data.tagline || "Spotlight-partner";
   const items = data.items || [
     { name: "Kraftform Skrutrekkersett", priceBefore: 1790, priceNow: 1290, discount: "-28%" },
     { name: "Bit-set 47-deler", priceBefore: 1290, priceNow: 890, discount: "-31%" },
@@ -881,8 +882,8 @@ export function produktMfrB(W: number, H: number, data: ProduktMfrData): string 
     `<div style="font-weight:600;font-size:${W * 0.018}px;letter-spacing:0.22em;text-transform:uppercase;opacity:0.85;">Spotlight</div>` +
     `<div style="font-weight:800;font-size:${W * 0.078}px;text-transform:uppercase;letter-spacing:-0.02em;line-height:1;">` +
     `${escapeHtml(manufacturer)}</div></div>` +
-    `<div style="text-align:right;font-weight:700;font-size:${W * 0.018}px;letter-spacing:0.04em;line-height:1.3;opacity:0.95;">` +
-    `PARTNER<br/>SIDEN 2003</div></div>` +
+    `<div style="text-align:right;font-weight:700;font-size:${W * 0.018}px;letter-spacing:0.04em;line-height:1.3;opacity:0.95;text-transform:uppercase;">` +
+    `${escapeHtml(tagline)}</div></div>` +
     `<div style="margin-top:${W * 0.04}px;display:flex;flex-direction:column;gap:${W * 0.018}px;flex:1;position:relative;z-index:1;">` +
     rows +
     `</div>` +
@@ -895,6 +896,7 @@ export function produktMfrB(W: number, H: number, data: ProduktMfrData): string 
 
 function produktMfrBLI(W: number, H: number, data: ProduktMfrData): string {
   const manufacturer = data.manufacturer || "WERA";
+  const tagline = data.tagline || "Spotlight-partner";
   const items = data.items || [
     { name: "Kraftform Skrutrekkersett", priceBefore: 1790, priceNow: 1290, discount: "-28%" },
     { name: "Bit-set 47-deler", priceBefore: 1290, priceNow: 890, discount: "-31%" },
@@ -930,8 +932,8 @@ function produktMfrBLI(W: number, H: number, data: ProduktMfrData): string {
     `<div>` +
     `<div style="font-weight:800;font-size:${s.h1}px;text-transform:uppercase;letter-spacing:-0.02em;line-height:0.95;">` +
     `${escapeHtml(manufacturer)}</div>` +
-    `<div style="font-weight:700;font-size:${s.bodyXs}px;letter-spacing:0.04em;margin-top:${s.gapXs * 0.8}px;opacity:0.95;">` +
-    `PARTNER SIDEN 2003</div></div></div>` +
+    `<div style="font-weight:700;font-size:${s.bodyXs}px;letter-spacing:0.04em;margin-top:${s.gapXs * 0.8}px;opacity:0.95;text-transform:uppercase;">` +
+    `${escapeHtml(tagline)}</div></div></div>` +
     `<div style="display:flex;flex-direction:column;gap:${s.gapXs}px;">${rows}</div>` +
     `</div>` +
     footerRow(W, H, `fosen-tools.no/${manufacturer.toLowerCase()}`, { dark: true });
