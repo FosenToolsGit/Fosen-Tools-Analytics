@@ -341,6 +341,8 @@ function buildWizardState(utgave) {
     templateVariant: utgave.templateVariant,
     showFridayPost: utgave.showFridayPost,
     showMidtCta: utgave.showMidtCta,
+    hideJubileumBanner: utgave.hideJubileumBanner,
+    jubileumFooterText: utgave.jubileumFooterText,
     scheduledSendDate: utgave.scheduledSendDate,
   };
 }

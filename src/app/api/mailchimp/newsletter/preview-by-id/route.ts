@@ -118,7 +118,9 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "private, max-age=300", // 5 min
+        // Ingen cache: utkast endres ofte og brukeren forventer å se
+        // endringer umiddelbart i oversikten/kalenderen.
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (e) {
