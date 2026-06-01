@@ -124,19 +124,47 @@ const navItems: NavEntry[] = [
   { kind: "section", label: "Innhold" },
   { label: "📅 Innhold-kalender", href: "/innhold-kalender", icon: FileText },
   { label: "Alle innlegg", href: "/posts", icon: FileText },
-  { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
-  { label: "Innleggsbygger", href: "/innleggsbygger/poster", icon: Sparkles },
-  { label: "Innleggsmaler", href: "/innleggsbygger/maler", icon: LayoutGrid },
-  { label: "🎉 Jubileum-kampanje", href: "/innleggsbygger/jubileum", icon: Sparkles },
-  { label: "Nyhetsbrev-bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Mail, localOnly: true },
-  { label: "Nyhetsbrev-oversikt", href: "/innleggsbygger/nyhetsbrev-oversikt", icon: Mail },
-  { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
-  { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
-  { label: "Etiketter", href: "/etikett", icon: BookOpen },
-  { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
-  { label: "Produkt-import", href: "/innleggsbygger/produkt-import", icon: FileSpreadsheet },
-  { label: "Enkelprodukt (AI)", href: "/innleggsbygger/enkelprodukt", icon: FileSpreadsheet, localOnly: true },
-  { label: "Bulk-redigér produkter", href: "/innleggsbygger/produkt-bulk-edit", icon: FileSpreadsheet },
+  {
+    label: "📱 Sosiale medier",
+    href: "/innholdsmotor",
+    icon: Share2,
+    children: [
+      { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
+      { label: "Innleggsbygger", href: "/innleggsbygger/poster", icon: PenTool },
+      { label: "Innleggsmaler", href: "/innleggsbygger/maler", icon: LayoutGrid },
+      { label: "🎉 Jubileum-kampanje", href: "/innleggsbygger/jubileum", icon: Sparkles },
+    ],
+  },
+  {
+    label: "📧 Nyhetsbrev",
+    href: "/innleggsbygger/nyhetsbrev-oversikt",
+    icon: Mail,
+    children: [
+      { label: "Oversikt", href: "/innleggsbygger/nyhetsbrev-oversikt", icon: Mail },
+      { label: "Bygger (AI)", href: "/innleggsbygger/nyhetsbrev-bygger", icon: Sparkles, localOnly: true },
+    ],
+  },
+  {
+    label: "🖨️ Trykk & print",
+    href: "/brosjyre",
+    icon: BookOpen,
+    children: [
+      { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
+      { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
+      { label: "Etiketter", href: "/etikett", icon: BookOpen },
+    ],
+  },
+  {
+    label: "🛠️ Produkter & data",
+    href: "/innleggsbygger/produkt-import",
+    icon: FileSpreadsheet,
+    children: [
+      { label: "Produkt-import", href: "/innleggsbygger/produkt-import", icon: FileSpreadsheet },
+      { label: "Enkelprodukt (AI)", href: "/innleggsbygger/enkelprodukt", icon: Sparkles, localOnly: true },
+      { label: "Bulk-redigér produkter", href: "/innleggsbygger/produkt-bulk-edit", icon: FileSpreadsheet },
+      { label: "UTM-linker", href: "/innleggsbygger/utm", icon: Link2 },
+    ],
+  },
 
   // ── Søkeord ─────────────────────────────────────
   { kind: "section", label: "Søkeord" },
@@ -179,16 +207,36 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     pathname.startsWith("/innsikt/") ||
     pathname === "/attribution" ||
     pathname === "/kundereise";
-  const isInnleggActive =
-    pathname === "/posts" || pathname.startsWith("/innleggsbygger/");
   const isSokeordActive = pathname.startsWith("/sokeord-generator");
+
+  // Innhold-undergrupper (auto-expand basert på pathname)
+  const isSosialeActive =
+    pathname === "/innholdsmotor" ||
+    pathname.startsWith("/innleggsbygger/poster") ||
+    pathname.startsWith("/innleggsbygger/maler") ||
+    pathname.startsWith("/innleggsbygger/jubileum");
+  const isNyhetsbrevActive =
+    pathname.startsWith("/innleggsbygger/nyhetsbrev-bygger") ||
+    pathname.startsWith("/innleggsbygger/nyhetsbrev-oversikt");
+  const isTrykkPrintActive =
+    pathname.startsWith("/brosjyre") ||
+    pathname.startsWith("/prisplakat") ||
+    pathname.startsWith("/etikett");
+  const isProdukterDataActive =
+    pathname.startsWith("/innleggsbygger/produkt-import") ||
+    pathname.startsWith("/innleggsbygger/enkelprodukt") ||
+    pathname.startsWith("/innleggsbygger/produkt-bulk-edit") ||
+    pathname.startsWith("/innleggsbygger/utm");
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     "/platform/ga4": isGA4Active,
     "/ga4/google-ads": isGoogleAdsActive,
     "/innsikt/ukesrapport": isInnsiktActive,
-    "/posts": isInnleggActive,
     "/sokeord-generator/intelligens": isSokeordActive,
+    "/innholdsmotor": isSosialeActive,
+    "/innleggsbygger/nyhetsbrev-oversikt": isNyhetsbrevActive,
+    "/brosjyre": isTrykkPrintActive,
+    "/innleggsbygger/produkt-import": isProdukterDataActive,
   });
   const toggleExpanded = (href: string) =>
     setExpanded((prev) => ({ ...prev, [href]: !prev[href] }));
