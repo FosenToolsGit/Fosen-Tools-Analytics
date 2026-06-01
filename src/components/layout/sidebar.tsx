@@ -126,9 +126,10 @@ const navItems: NavEntry[] = [
   { label: "Alle innlegg", href: "/posts", icon: FileText },
   {
     label: "📱 Sosiale medier",
-    href: "/innholdsmotor",
+    href: "/innleggsbygger/ideer",
     icon: Share2,
     children: [
+      { label: "💡 Idéer i dag", href: "/innleggsbygger/ideer", icon: Lightbulb },
       { label: "Innholdsmotor (AI)", href: "/innholdsmotor", icon: Sparkles },
       { label: "Innleggsbygger", href: "/innleggsbygger/poster", icon: PenTool },
       { label: "Innleggsmaler", href: "/innleggsbygger/maler", icon: LayoutGrid },
@@ -212,6 +213,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   // Innhold-undergrupper (auto-expand basert på pathname)
   const isSosialeActive =
     pathname === "/innholdsmotor" ||
+    pathname.startsWith("/innleggsbygger/ideer") ||
     pathname.startsWith("/innleggsbygger/poster") ||
     pathname.startsWith("/innleggsbygger/maler") ||
     pathname.startsWith("/innleggsbygger/jubileum");
@@ -233,7 +235,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     "/ga4/google-ads": isGoogleAdsActive,
     "/innsikt/ukesrapport": isInnsiktActive,
     "/sokeord-generator/intelligens": isSokeordActive,
-    "/innholdsmotor": isSosialeActive,
+    "/innleggsbygger/ideer": isSosialeActive,
     "/innleggsbygger/nyhetsbrev-oversikt": isNyhetsbrevActive,
     "/brosjyre": isTrykkPrintActive,
     "/innleggsbygger/produkt-import": isProdukterDataActive,
