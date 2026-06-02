@@ -70,15 +70,15 @@ const editSuppliers = [
 
 const editContent = {
   themeSlug: "jubileum-2026-06-02-leverandorer",
-  topBadge: "🎉 25 ÅR + NY PROFF-BUTIKK",
+  topBadge: "🎉 25 ÅR + ÅPNING PROFF-BUTIKK",
   subjectLine: "🔧 Hold av 26. juni: Milwaukee, Wera og Zweibrüder på besøk",
   previewText:
-    "Vi feirer 25 år og åpner ny PROFF-butikk på Brekstad. Tre av de seks " +
+    "Vi feirer 25 år og åpner PROFF-butikk på Brekstad. Tre av de seks " +
     "leverandørene presenterer vi nå — resten kommer i neste utgave.",
   headingMain: "Hold av 26. juni",
-  headingSub: "25-årsjubileum · Ny PROFF-butikk · 6 leverandører på besøk",
+  headingSub: "25-årsjubileum · Åpning PROFF-butikk · 6 leverandører på besøk",
   ingress:
-    "26. juni feirer Fosen Tools 25 år, og åpner samtidig dørene til ny " +
+    "26. juni feirer Fosen Tools 25 år, og åpner samtidig dørene til " +
     "PROFF-butikk på Brekstad. Seks av våre viktigste leverandører kommer på " +
     "besøk for å vise frem produktene sine og svare på spørsmål direkte. " +
     "I dag presenterer vi de tre første.\n\n" +

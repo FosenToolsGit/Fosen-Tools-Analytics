@@ -92,10 +92,10 @@ export const DEFAULT_JUB_PARTNERS: JubPosterPartner[] = [
 ];
 
 export const DEFAULT_JUB_POSTER: Omit<JubPosterInput, "format"> = {
-  eyebrow: "25-ÅRSJUBILEUM · GJENÅPNING AV PROFF-BUTIKK",
+  eyebrow: "25-ÅRSJUBILEUM · ÅPNING PROFF-BUTIKK",
   dateLine: "26. JUNI 2026",
   headlines: ["LEVERANDØR STANDER", "HOLD AV DAGEN"],
-  subtitle: "Vi feirer 25 år & gjenåpner PROFF-butikk · Brekstad",
+  subtitle: "Vi feirer 25 år & åpner PROFF-butikk · Brekstad",
   partnersTagline: "MØT EKSPERTENE · FÅ FAGLIG PÅFYLL · STILL SPØRSMÅL",
   partners: DEFAULT_JUB_PARTNERS,
   openingHours: "10:00–16:00",

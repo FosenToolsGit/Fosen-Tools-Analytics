@@ -596,7 +596,7 @@ export const JUBILEUM_KAMPANJE: JubileumPost[] = [
     facebook: {
       caption:
         "🎁 Goodiebag til besøkende — begrenset antall!\n\n" +
-        "26. juni feirer vi 25 år og gjenåpner PROFF-butikk. Kom innom så har vi en liten takk klar — først til mølla.\n\n" +
+        "26. juni feirer vi 25 år og åpner PROFF-butikk. Kom innom så har vi en liten takk klar — først til mølla.\n\n" +
         "📍 Industrigata 1, Brekstad · 10:00 – 16:00",
       cta_link: `${BUTIKK_URL}goodiebag`,
     },

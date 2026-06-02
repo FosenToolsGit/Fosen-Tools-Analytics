@@ -716,7 +716,7 @@ function renderBrowserViewSection(): string {
 /**
  * Jubileums-banner — rød strip som speiler topp-banneret på fosen-tools.no.
  * Tre seksjoner, midtstilt:
- *   [25-årslogo (bilde)]   ·   NY PROFF-BUTIKK   ·   [26. JUNI 2026 · 10:00–16:00]
+ *   [25-årslogo (bilde)]   ·   ÅPNING PROFF-BUTIKK   ·   [26. JUNI 2026 · 10:00–16:00]
  *
  * Bruker en center-table med fixed width per celle slik at innholdet
  * blir visuelt sentrert i banneret. Hairline-separatorer mellom hver
@@ -737,7 +737,7 @@ function renderJubileumBanner(): string {
 
   const col1 = `<img src="${esc(FT_JUBILEUM_LOGO_URL)}" alt="25-årsjubileum" height="${logoHeight}" style="height:${logoHeight}px;width:auto;border:0;display:inline-block;vertical-align:middle" />`;
 
-  const col2 = `<span style="color:${ftPrimary};font-family:${fontFamily};font-weight:800;font-size:14px;letter-spacing:1.2px;line-height:1">NY PROFF-BUTIKK</span>`;
+  const col2 = `<span style="color:${ftPrimary};font-family:${fontFamily};font-weight:800;font-size:14px;letter-spacing:1.2px;line-height:1">ÅPNING PROFF-BUTIKK</span>`;
 
   const col3 = `<div style="line-height:1.3"><div style="color:${ftPrimary};font-family:${fontFamily};font-weight:800;font-size:14px;letter-spacing:1.2px">26. JUNI 2026</div><div style="color:${ftPrimary};font-family:${fontFamily};font-weight:600;font-size:12px;letter-spacing:1px;opacity:0.9;margin-top:2px">10:00 – 16:00</div></div>`;
 

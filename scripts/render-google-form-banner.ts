@@ -185,7 +185,7 @@ body{
   <img class="jubileum-logo" src="${JUBILEUM_LOGO_DATA_URL}" alt="25-årsjubileum 2001-2026 Fosen Tools" />
   <div class="plus-line">
     <div class="plus">+</div>
-    <div class="store">PROFF-BUTIKK</div>
+    <div class="store">ÅPNING PROFF-BUTIKK</div>
   </div>
 </div>
 
