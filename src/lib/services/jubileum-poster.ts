@@ -99,7 +99,7 @@ export const DEFAULT_JUB_POSTER: Omit<JubPosterInput, "format"> = {
   partnersTagline: "MØT EKSPERTENE · FÅ FAGLIG PÅFYLL · STILL SPØRSMÅL",
   partners: DEFAULT_JUB_PARTNERS,
   openingHours: "10:00–16:00",
-  grillingHours: "11:00–13:00",
+  grillingHours: "Fra kl. 11",
 };
 
 // =============================================================================

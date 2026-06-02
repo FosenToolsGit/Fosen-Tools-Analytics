@@ -16,9 +16,14 @@ interface ExportOptions {
 }
 
 export async function exportPricetagToPdf(opts: ExportOptions): Promise<void> {
-  if (!opts.format.startsWith("a4_")) throw new Error("Kun A4-format kan eksporteres til PDF");
+  const isA5 = opts.format === "a5_kundeark";
+  if (!opts.format.startsWith("a4_") && !isA5) {
+    throw new Error("Kun A4 og A5-format kan eksporteres til PDF");
+  }
 
-  const pageEls = Array.from(document.querySelectorAll(".a4-pricetag")) as HTMLElement[];
+  const pageEls = Array.from(
+    document.querySelectorAll(isA5 ? ".a5-pricetag" : ".a4-pricetag"),
+  ) as HTMLElement[];
   if (pageEls.length === 0) throw new Error("Ingen sider å eksportere");
 
   // Vent på fonter og bilder
@@ -34,7 +39,10 @@ export async function exportPricetagToPdf(opts: ExportOptions): Promise<void> {
     )
   );
 
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+  const pageFormat = isA5 ? "a5" : "a4";
+  const pageW = isA5 ? 148 : 210;
+  const pageH = isA5 ? 210 : 297;
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: pageFormat, compress: true });
 
   for (let i = 0; i < pageEls.length; i++) {
     opts.onProgress?.(i + 1, pageEls.length);
@@ -54,8 +62,8 @@ export async function exportPricetagToPdf(opts: ExportOptions): Promise<void> {
         fetch: { requestInit: { cache: "no-cache" } },
       });
       const imgData = canvas.toDataURL("image/jpeg", 0.92);
-      if (i > 0) pdf.addPage("a4", "portrait");
-      pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+      if (i > 0) pdf.addPage(pageFormat, "portrait");
+      pdf.addImage(imgData, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
     } finally {
       el.style.transform = prevTransform;
       if (parent && prevParentTransform !== undefined) parent.style.transform = prevParentTransform;

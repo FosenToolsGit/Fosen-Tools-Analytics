@@ -453,6 +453,13 @@ function JubileumEventSlide({
   const accent = slide.accent_color || "#FFFFFF";
   const partners = slide.partners ?? [];
   const rundellDuration = slide.rundell_duration ?? 40;
+  const topLogoSize = slide.top_logo_size ?? 1;
+  const jubLogoSize = slide.jub_logo_size ?? 1;
+  const partnerSize = slide.partner_size ?? 1;
+  const preTitle = slide.pre_title?.trim();
+  const timeLayout = slide.time_layout ?? "row";
+  const extraText = slide.extra_text?.trim();
+  const taglineText = slide.url?.trim();
 
   // Tagline-banner i gull-tone for "MØT EKSPERTENE"-rad
   const goldGradient = "linear-gradient(90deg, #85704D, #DBB78B)";
@@ -534,7 +541,7 @@ function JubileumEventSlide({
             src={logoUrl(slide.top_logo, slide.custom_logo_url) ?? ""}
             alt=""
             style={{
-              height: landscape ? "8cqh" : "6cqh",
+              height: `${(landscape ? 8 : 6) * topLogoSize}cqh`,
               width: "auto",
               objectFit: "contain",
             }}
@@ -578,6 +585,24 @@ function JubileumEventSlide({
           zIndex: 3,
         }}
       >
+        {/* Valgfri tekst over dato */}
+        {preTitle && (
+          <div
+            style={{
+              fontFamily: HEAD,
+              fontSize: landscape ? "3.6cqh" : "3.4cqh",
+              fontWeight: 700,
+              letterSpacing: "0.05cqh",
+              textTransform: "uppercase",
+              opacity: 0.95,
+              whiteSpace: "pre-line",
+              lineHeight: 1.15,
+            }}
+          >
+            {preTitle}
+          </div>
+        )}
+
         {/* Stor dato med pulserende glow */}
         {slide.title && (
           <div
@@ -615,15 +640,34 @@ function JubileumEventSlide({
           </div>
         )}
 
+        {/* Valgfri tagline-linje over tids-kort */}
+        {taglineText && (
+          <div
+            style={{
+              fontFamily: MONO,
+              fontSize: landscape ? "2cqh" : "2.2cqh",
+              fontWeight: 700,
+              letterSpacing: "0.4cqh",
+              textTransform: "uppercase",
+              opacity: 0.92,
+              marginTop: "0.5cqh",
+            }}
+          >
+            {taglineText}
+          </div>
+        )}
+
         {/* TIDS-KORT: åpent + grilling */}
         {(slide.hours || slide.grilling_hours) && (
           <div
             style={{
               display: "flex",
+              flexDirection: timeLayout === "stacked" ? "column" : "row",
               gap: "2.5cqh",
               marginTop: "1.5cqh",
               flexWrap: "wrap",
               justifyContent: "center",
+              alignItems: "center",
             }}
           >
             {slide.hours && (
@@ -642,6 +686,24 @@ function JubileumEventSlide({
                 animated={active}
               />
             )}
+          </div>
+        )}
+
+        {/* Valgfri ekstra tekst under tids-kort */}
+        {extraText && (
+          <div
+            style={{
+              fontFamily: HEAD,
+              fontSize: landscape ? "2.6cqh" : "2.8cqh",
+              fontWeight: 700,
+              lineHeight: 1.3,
+              whiteSpace: "pre-line",
+              opacity: 0.92,
+              marginTop: "0.8cqh",
+              maxWidth: "80%",
+            }}
+          >
+            {extraText}
           </div>
         )}
       </div>
@@ -714,7 +776,7 @@ function JubileumEventSlide({
               }}
             >
               {[...partners, ...partners].map((p, i) => (
-                <JubileumPartnerLogo key={i} partner={p} />
+                <JubileumPartnerLogo key={i} partner={p} sizeScale={partnerSize} />
               ))}
             </div>
           </div>
@@ -737,7 +799,7 @@ function JubileumEventSlide({
                 src={logoUrl(slide.bottom_logo, slide.custom_logo_url) ?? ""}
                 alt=""
                 style={{
-                  height: landscape ? "7cqh" : "6.5cqh",
+                  height: `${(landscape ? 7 : 6.5) * jubLogoSize}cqh`,
                   width: "auto",
                   objectFit: "contain",
                 }}
@@ -747,7 +809,7 @@ function JubileumEventSlide({
                 src={LOGO_URLS["jub-100"] ?? ""}
                 alt=""
                 style={{
-                  height: landscape ? "5.5cqh" : "5cqh",
+                  height: `${(landscape ? 5.5 : 5) * jubLogoSize}cqh`,
                   width: "auto",
                   objectFit: "contain",
                 }}
@@ -892,6 +954,7 @@ function TimeCardSlide({
 // ikke 10× monster.
 function JubileumPartnerLogo({
   partner,
+  sizeScale = 1,
 }: {
   partner: {
     name: string;
@@ -900,6 +963,7 @@ function JubileumPartnerLogo({
     filter_black?: boolean;
     scale?: number;
   };
+  sizeScale?: number;
 }) {
   const hasLogo = !!partner.logo_url;
   const rawScale = partner.scale ?? 1;
@@ -912,9 +976,9 @@ function JubileumPartnerLogo({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        width: "32cqh",
-        height: "18cqh",
-        padding: "1.6cqh",
+        width: `${32 * sizeScale}cqh`,
+        height: `${18 * sizeScale}cqh`,
+        padding: `${1.6 * sizeScale}cqh`,
         background: "#ffffff",
         borderRadius: "1cqh",
         boxShadow: "0 0.5cqh 1.2cqh rgba(0, 0, 0, 0.25)",

@@ -77,6 +77,7 @@ export type PricetagFormat =
   | "a4_single"
   | "a4_2up"
   | "a4_4up"
+  | "a5_kundeark"
   | "slideshow_landscape"
   | "slideshow_portrait";
 
@@ -165,9 +166,23 @@ export interface CustomSlide {
   brand_logo_url?: string;
 
   // ─── For jubileum_event ────────────────────
-  /** Grilling-tider, f.eks. "11:00–13:00". Vises som egen pulse-card
-   *  ved siden av åpningstid (hours-feltet). */
+  /** Grilling-tider, f.eks. "Fra kl. 11" eller "11:00–13:00". Vises som
+   *  egen pulse-card ved siden av åpningstid (hours-feltet). */
   grilling_hours?: string;
+  /** Multiplier på topp-logo størrelse (FT-merket). 0.5–2.0, default 1.0. */
+  top_logo_size?: number;
+  /** Multiplier på jubileumslogoer (25/100). 0.5–2.0, default 1.0. */
+  jub_logo_size?: number;
+  /** Ekstra fri tekst Brit kan legge til (under subtitle, over tids-kort).
+   *  Tom = skjul. Brukes for ad-hoc-meldinger som ikke passer eyebrow/title. */
+  extra_text?: string;
+  /** Multiplier på partner-tile størrelse i grid. 0.7–2.5, default 1.0. */
+  partner_size?: number;
+  /** Ekstra tekst OVER dato (mellom eyebrow og hovedtittelen). Tom = skjul. */
+  pre_title?: string;
+  /** Hvordan tids-kortene plasseres. "row" = side-om-side (default),
+   *  "stacked" = grilling under åpent. */
+  time_layout?: "row" | "stacked";
 
   // ─── For partners_rundell ──────────────────
   /** Liste med leverandører/gjester som scroller horisontalt på slide-en.
@@ -401,7 +416,7 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         title: "26. JUNI 2026",
         subtitle: "LEVERANDØR-STANDER\nHOLD AV DAGEN",
         hours: "10:00–16:00",
-        grilling_hours: "11:00–13:00",
+        grilling_hours: "Fra kl. 11",
         rundell_duration: 40,
         duration_seconds: 14,
         partners: [
@@ -476,6 +491,7 @@ export const FORMAT_LABELS: Record<PricetagFormat, string> = {
   a4_single: "A4 — 1 produkt per ark",
   a4_2up: "A4 — 2 produkter per ark",
   a4_4up: "A4 — 4 produkter per ark",
+  a5_kundeark: "A5 — kundeark (jubileum/event-mal)",
   slideshow_landscape: "Slideshow — landskap 16:9",
   slideshow_portrait: "Slideshow — portrett 9:16",
 };

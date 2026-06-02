@@ -389,6 +389,118 @@ function SlideRow({ slide, idx, total, products, expanded, onToggle, onChange, o
                 </>
               )}
 
+              {/* Jubileum-event extras (åpningstid, grilling, tagline, logoer, ekstra tekst) */}
+              {slide.template === "jubileum_event" && (
+                <>
+                  <label style={{ ...labelStyle, marginTop: 6 }}>Tekst over dato (valgfri)</label>
+                  <textarea
+                    rows={2}
+                    value={slide.pre_title ?? ""}
+                    onChange={(e) => onChange({ pre_title: e.target.value })}
+                    style={{ ...fieldStyle, fontFamily: "inherit", resize: "vertical" }}
+                    placeholder="Valgfri intro-linje rett over 26. juni 2026"
+                  />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 6 }}>
+                    <div>
+                      <label style={labelStyle}>Åpningstid</label>
+                      <input
+                        type="text"
+                        value={slide.hours ?? ""}
+                        onChange={(e) => onChange({ hours: e.target.value })}
+                        style={fieldStyle}
+                        placeholder="10:00–16:00"
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Grilling</label>
+                      <input
+                        type="text"
+                        value={slide.grilling_hours ?? ""}
+                        onChange={(e) => onChange({ grilling_hours: e.target.value })}
+                        style={fieldStyle}
+                        placeholder="Fra kl. 11"
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, marginTop: 6, fontSize: 11 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--chrome-muted)" }}>
+                      <input
+                        type="radio"
+                        name={`time_layout_${slide.id}`}
+                        checked={(slide.time_layout ?? "row") === "row"}
+                        onChange={() => onChange({ time_layout: "row" })}
+                      />
+                      Side om side
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--chrome-muted)" }}>
+                      <input
+                        type="radio"
+                        name={`time_layout_${slide.id}`}
+                        checked={slide.time_layout === "stacked"}
+                        onChange={() => onChange({ time_layout: "stacked" })}
+                      />
+                      Grilling under
+                    </label>
+                  </div>
+                  <label style={{ ...labelStyle, marginTop: 6 }}>Tagline-linje (over tids-kort)</label>
+                  <input
+                    type="text"
+                    value={slide.url ?? ""}
+                    onChange={(e) => onChange({ url: e.target.value })}
+                    style={fieldStyle}
+                    placeholder="VI FEIRER 25 ÅR & ÅPNER PROFF-BUTIKK · BREKSTAD"
+                  />
+                  <label style={{ ...labelStyle, marginTop: 6 }}>Ekstra tekst (under subtitle, over tids-kort)</label>
+                  <textarea
+                    rows={2}
+                    value={slide.extra_text ?? ""}
+                    onChange={(e) => onChange({ extra_text: e.target.value })}
+                    style={{ ...fieldStyle, fontFamily: "inherit", resize: "vertical" }}
+                    placeholder="Valgfri ekstra tekst — la stå tom for å skjule"
+                  />
+
+                  <div style={{ ...sectionLabel, marginTop: 10 }}>Logo-størrelser</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                    <div>
+                      <label style={labelStyle}>FT-merket ({((slide.top_logo_size ?? 1) * 100).toFixed(0)} %)</label>
+                      <input
+                        type="range"
+                        min={0.5}
+                        max={2}
+                        step={0.05}
+                        value={slide.top_logo_size ?? 1}
+                        onChange={(e) => onChange({ top_logo_size: parseFloat(e.target.value) })}
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Jubileumslogoer ({((slide.jub_logo_size ?? 1) * 100).toFixed(0)} %)</label>
+                      <input
+                        type="range"
+                        min={0.5}
+                        max={2}
+                        step={0.05}
+                        value={slide.jub_logo_size ?? 1}
+                        onChange={(e) => onChange({ jub_logo_size: parseFloat(e.target.value) })}
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Hvite partner-bokser ({((slide.partner_size ?? 1) * 100).toFixed(0)} %)</label>
+                      <input
+                        type="range"
+                        min={0.7}
+                        max={2.5}
+                        step={0.05}
+                        value={slide.partner_size ?? 1}
+                        onChange={(e) => onChange({ partner_size: parseFloat(e.target.value) })}
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* Brand-spotlight extras */}
               {slide.template === "brand_spotlight" && (
                 <>
@@ -399,8 +511,8 @@ function SlideRow({ slide, idx, total, products, expanded, onToggle, onChange, o
                 </>
               )}
 
-              {/* Partner-rundell extras */}
-              {slide.template === "partners_rundell" && (
+              {/* Partner-rundell + jubileum-event deler samme partners-editor */}
+              {(slide.template === "partners_rundell" || slide.template === "jubileum_event") && (
                 <>
                   <div style={{ ...sectionLabel, marginTop: 10 }}>Karusell-innstillinger</div>
                   <label style={labelStyle}>Sekunder per full loop</label>

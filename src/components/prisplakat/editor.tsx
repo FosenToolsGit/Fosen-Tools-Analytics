@@ -5,8 +5,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PricetagProduct, PricetagPlaylist, PricetagFormat, PricetagSettings, ProductMode, CustomSlide } from "./types";
-import { DEFAULT_SETTINGS, FORMAT_LABELS, defaultCustomSlides, PRODUCT_MODE_LABELS, buildSlideList, SLIDE_TEMPLATE_LABELS } from "./types";
+import { DEFAULT_SETTINGS, FORMAT_LABELS, defaultCustomSlides, PRODUCT_MODE_LABELS, buildSlideList, SLIDE_TEMPLATE_LABELS, makeNewSlide } from "./types";
 import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer";
+import { PricetagA5Kundeark } from "./a5-kundeark-renderer";
+import { A5KundearkEditor } from "./a5-kundeark-editor";
 import { Slideshow } from "./slideshow";
 import { SlideEditor } from "./slide-editor";
 
@@ -30,6 +32,9 @@ export function PrisplakatEditor() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showPlaylistList, setShowPlaylistList] = useState(false);
   const [zoom, setZoom] = useState(0.55);
+  /** Vis midtstillings-guides (vertikal + horisontal linje gjennom midtpunktet)
+   *  på A5/A4-preview. Kun visuell i editoren — påvirker IKKE PDF-eksport. */
+  const [showGuides, setShowGuides] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [brochures, setBrochures] = useState<BrochureListItem[]>([]);
   const [importing, setImporting] = useState(false);
@@ -98,6 +103,22 @@ export function PrisplakatEditor() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentId, title, format, products, settings }));
     } catch { /* ignore quota etc */ }
   }, [currentId, title, format, products, settings]);
+
+  // Når A5-kundeark-format velges, sørg for at det finnes en jubileum_event-slide
+  // som data-kilde. Hvis ikke, opprett en default.
+  useEffect(() => {
+    if (format !== "a5_kundeark") return;
+    const slides = settings.custom_slides ?? [];
+    const hasJub = slides.some((s) => s.template === "jubileum_event");
+    if (!hasJub) {
+      const newSlide = makeNewSlide("jubileum_event");
+      setSettings((s) => ({
+        ...s,
+        custom_slides: [...(s.custom_slides ?? []), newSlide],
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [format]);
 
   // Når slideshow-format velges og custom_slides mangler, last inn default-slides.
   // (For A4-formater trenger vi ikke disse.)
@@ -373,13 +394,33 @@ export function PrisplakatEditor() {
               {shareCopied ? "✓ URL kopiert" : "📺 Skjerm-URL"}
             </button>
           )}
-          {format.startsWith("a4_") && (
-            <button onClick={exportPdf} disabled={products.length === 0} style={{
-              background: "var(--ft-red)", color: "#fff", border: "none",
-              padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 700,
-              cursor: products.length > 0 ? "pointer" : "not-allowed",
-              opacity: products.length > 0 ? 1 : 0.5,
-            }}>Eksporter PDF</button>
+          {(format.startsWith("a4_") || format === "a5_kundeark") && (
+            <>
+              <button
+                onClick={() => setShowGuides((g) => !g)}
+                title="Vis midtstillings-guides (vertikal + horisontal linje gjennom midtpunktet) — kun i preview, ikke i PDF"
+                style={{
+                  background: showGuides ? "var(--ft-red)" : "var(--chrome-bg-3)",
+                  color: "#fff", border: "none",
+                  padding: "6px 12px", borderRadius: 4, fontSize: 13, fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >{showGuides ? "✓ Guides" : "+ Guides"}</button>
+              <button
+                onClick={exportPdf}
+                disabled={format.startsWith("a4_") && products.length === 0}
+                style={{
+                  background: "var(--ft-red)", color: "#fff", border: "none",
+                  padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 700,
+                  cursor:
+                    format === "a5_kundeark" || products.length > 0
+                      ? "pointer"
+                      : "not-allowed",
+                  opacity:
+                    format === "a5_kundeark" || products.length > 0 ? 1 : 0.5,
+                }}
+              >Eksporter PDF</button>
+            </>
           )}
         </div>
       </div>
@@ -636,12 +677,37 @@ export function PrisplakatEditor() {
               transform: `scale(${zoom})`, transformOrigin: "top center",
               boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
               marginBottom: `${(297 * (1 - zoom))}mm`,
+              position: "relative",
             }}>
               {format === "a4_single" && grp[0] && <PricetagA4Single product={grp[0]} settings={settings} />}
               {format === "a4_2up" && <PricetagA4_2Up products={grp} settings={settings} />}
               {format === "a4_4up" && <PricetagA4_4Up products={grp} settings={settings} />}
+              {showGuides && <CenterGuides />}
             </div>
           ))}
+          {format === "a5_kundeark" && (() => {
+            const jubSlide = (settings.custom_slides ?? []).find(
+              (s) => s.template === "jubileum_event",
+            );
+            if (!jubSlide) {
+              return (
+                <div style={{ color: "var(--chrome-muted)", fontSize: 14, marginTop: 80, textAlign: "center" }}>
+                  Initialiserer A5-kundeark…
+                </div>
+              );
+            }
+            return (
+              <div style={{
+                transform: `scale(${zoom})`, transformOrigin: "top center",
+                boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
+                marginBottom: `${(210 * (1 - zoom))}mm`,
+                position: "relative",
+              }}>
+                <PricetagA5Kundeark slide={jubSlide} />
+                {showGuides && <CenterGuides />}
+              </div>
+            );
+          })()}
           {format.startsWith("slideshow") && products.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", alignItems: "center" }}>
               {/* Preview-toolbar: pause + slide-navigasjon */}
@@ -819,12 +885,131 @@ export function PrisplakatEditor() {
             </>
           )}
 
+          {/* A5-kundeark — dedikert redigeringspanel uten "slide"-paradigme */}
+          {format === "a5_kundeark" && (() => {
+            const jubSlide = (settings.custom_slides ?? []).find(
+              (s) => s.template === "jubileum_event",
+            );
+            if (!jubSlide) return null;
+            return (
+              <>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "var(--chrome-muted)",
+                    marginTop: 18,
+                    marginBottom: 8,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  A5-kundeark
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "var(--chrome-muted)",
+                    marginBottom: 12,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Rediger alt direkte under. Endringer vises live i preview. Bruk
+                  <strong> «+ Guides»</strong> for midtstillings-linjer og <strong>«Eksporter PDF»</strong>
+                  for å laste ned A5-arket.
+                </div>
+                <A5KundearkEditor
+                  slide={jubSlide}
+                  onChange={(changes) => {
+                    const slides = (settings.custom_slides ?? []).map((s) =>
+                      s.id === jubSlide.id ? { ...s, ...changes } : s,
+                    );
+                    setSettings((prev) => ({ ...prev, custom_slides: slides }));
+                  }}
+                />
+              </>
+            );
+          })()}
+
           <div style={{ fontSize: 11, color: "var(--chrome-muted)", marginTop: 18, marginBottom: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Info</div>
           <div style={{ fontSize: 11, color: "var(--chrome-muted)", lineHeight: 1.5 }}>
-            {format.startsWith("a4_") ? "A4-print: bruk «Eksporter PDF» for å laste ned printbart ark." : "Slideshow: lagre playlist, åpne /prisplakat/[id]/play for fullskjerm-visning."}
+            {format === "a5_kundeark"
+              ? "A5-print: rediger felter til høyre, eksportér PDF for å printe."
+              : format.startsWith("a4_")
+                ? "A4-print: bruk «Eksporter PDF» for å laste ned printbart ark."
+                : "Slideshow: lagre playlist, åpne /prisplakat/[id]/play for fullskjerm-visning."}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Midtstillings-guides (vertikal + horisontal linje gjennom midtpunktet) ──
+// Vises kun i editor-preview når Brit toggler "Guides"-knappen. Inkluderer
+// IKKE i PDF-eksport siden vi rendrer plakaten direkte med .a4-pricetag/
+// .a5-pricetag-class — guidene ligger utenfor disse.
+function CenterGuides() {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: 10,
+      }}
+    >
+      {/* Vertikal midt-linje */}
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: 0,
+          bottom: 0,
+          width: "1px",
+          background: "rgba(34, 197, 94, 0.7)",
+          boxShadow: "0 0 2px rgba(34, 197, 94, 0.5)",
+        }}
+      />
+      {/* Horisontal midt-linje */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: 0,
+          right: 0,
+          height: "1px",
+          background: "rgba(34, 197, 94, 0.7)",
+          boxShadow: "0 0 2px rgba(34, 197, 94, 0.5)",
+        }}
+      />
+      {/* Midt-prikk */}
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          background: "#22c55e",
+          transform: "translate(-50%, -50%)",
+          boxShadow: "0 0 4px rgba(34, 197, 94, 0.8)",
+        }}
+      />
+      {/* Tredjedels-snitt (rule of thirds) — svakere streker */}
+      {[33.33, 66.66].map((pct) => (
+        <div key={`v-${pct}`} style={{
+          position: "absolute", left: `${pct}%`, top: 0, bottom: 0,
+          width: "1px", background: "rgba(34, 197, 94, 0.25)",
+        }} />
+      ))}
+      {[33.33, 66.66].map((pct) => (
+        <div key={`h-${pct}`} style={{
+          position: "absolute", top: `${pct}%`, left: 0, right: 0,
+          height: "1px", background: "rgba(34, 197, 94, 0.25)",
+        }} />
+      ))}
     </div>
   );
 }
