@@ -7,7 +7,7 @@
  *
  * Etter kjøring:
  *  - Åpne /innleggsbygger/nyhetsbrev-bygger → «Mine utkast»
- *  - Finn «STANDARD: 25-årsjubileum + butikkåpning»
+ *  - Finn «STANDARD: 25-årsjubileum + åpning PROFF-butikk»
  *  - Justér tekstene, legg til evt. produkter, opprett kampanje i Mailchimp
  */
 
@@ -29,15 +29,15 @@ const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
 // ─── GeneratedContent: tekstene som bygger nyhetsbrevet ───────────────
 const editContent = {
   themeSlug: "jubileum-2026-06-26",
-  topBadge: "🎉 25 ÅR + BUTIKKÅPNING",
+  topBadge: "🎉 25 ÅR + ÅPNING PROFF-BUTIKK",
   subjectLine: "🎉 Vi feirer 25 år — kom innom 26. juni",
-  previewText: "Vi åpner ombygget butikk og inviterer til en hel dag med tilbud, leverandører og noen spesielle gjester. Møt oss på Brekstad!",
+  previewText: "Vi åpner PROFF-butikk og inviterer til en hel dag med tilbud, leverandører og noen spesielle gjester. Møt oss på Brekstad!",
   headingMain: "Vi feirer 25 år",
-  headingSub: "Velkommen til ombygget butikk · 26. juni",
+  headingSub: "Velkommen til åpning av PROFF-butikk · 26. juni",
   ingress:
     "I 25 år har vi levert verktøy og skreddersydde løsninger til håndverkere, " +
     "industri og Forsvaret. Torsdag 26. juni markerer vi jubileet OG åpner " +
-    "dørene til vår ombygde butikk på Brekstad — med en innholdsrik dag full " +
+    "dørene til PROFF-butikk på Brekstad — med en innholdsrik dag full " +
     "av eksklusive tilbud, faglig påfyll og besøk fra bransjens sterkeste " +
     "leverandører.",
   midtTitle: "PROGRAM 26. JUNI · 10:00 — 16:00",
@@ -58,11 +58,11 @@ const editContent = {
 
 // ─── Hele wizard-state-payloaden ─────────────────────────────────────
 const wizardState = {
-  themeInput: "25-årsjubileum + butikkåpning",
+  themeInput: "25-årsjubileum + åpning PROFF-butikk",
   focus: "annet",
   discountPct: "",
   extraContext:
-    "Vi feirer 25 år 26. juni 2026 og åpner samtidig ombygget butikk på " +
+    "Vi feirer 25 år 26. juni 2026 og åpner samtidig PROFF-butikk på " +
     "Brekstad. Innholdsrik dag 10:00 – 16:00 med leverandører (Milwaukee, " +
     "Wera, Soudal, Picard/Halder, Zweibrüder) og spesielle gjester " +
     "(Red Bull, Tesla Mobile Service). Eksklusive dagstilbud, " +
@@ -91,7 +91,7 @@ const { data, error } = await sb
   .from("newsletter_wizard_drafts")
   .insert({
     user_id: OWNER_USER_ID,
-    title: "STANDARD: 25-årsjubileum + butikkåpning",
+    title: "STANDARD: 25-årsjubileum + åpning PROFF-butikk",
     wizard_state: wizardState,
     status: "draft",
   })
