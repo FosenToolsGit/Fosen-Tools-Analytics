@@ -344,6 +344,8 @@ export type VideoType =
   | "ft-kunderes"
   | "ft-hvorfor"
   | "ft-leverandor"
+  // Jubileum-event 26. juni 2026 — animert TV-loop for butikk-skjerm
+  | "ft-jubileum-26juni"
   | "jub-t14"
   | "jub-t13"
   | "jub-t12"
@@ -385,6 +387,7 @@ export const COMPOSITION_ID: Record<VideoType, string> = {
   "ft-kunderes": "FTKundeResultat",
   "ft-hvorfor": "FTHvorforHDFI",
   "ft-leverandor": "FTLeverandorNyhet",
+  "ft-jubileum-26juni": "FTJubileum26Juni",
   "jub-t14": "JubileumT14",
   "jub-t13": "JubileumT13",
   "jub-t12": "JubileumT12",
@@ -462,16 +465,16 @@ export type KundeLeveranseV2Props = {
 
 export const SAMPLE_KUNDE_V2: KundeLeveranseV2Props = {
   format: "reel",
-  customer: "Norwegian Aero",
+  customer: "Tidligere leveranse",
   industry: "Aviation",
   customerLogoUrl: null,
-  heading: "Skreddersydd verktøyløsning for vingedrift",
+  heading: "Skreddersydd verktøyløsning",
   bodyText:
     "CAD-tegnet i CADLAB, CNC-maskinert på Brekstad. Hver pipe og hver nøkkel har sin egen plass, og avvik oppdages før de blir et problem.",
   images: [],
   highlights: ["HDFI", "CADLAB", "CNC-maskinert", "FOD-sikret"],
   ctaUrl: "fosen-tools.no/aviation",
-  anonymous: false,
+  anonymous: true,
 };
 
 // ── hdfi før/etter (split-screen) ────────────────────────────────────
@@ -492,9 +495,9 @@ export const SAMPLE_HDFI_BA: HdfiBeforeAfterProps = {
   format: "reel",
   beforeImageUrl: null,
   afterImageUrl: null,
-  customerName: "Norwegian Aero",
+  customerName: "Tidligere leveranse",
   description:
-    "Fra rotete hyllevare til skreddersydd HDFI med gravert silhuett — hver pipe på rett plass.",
+    "Fra rotete hyllevare til skreddersydd HDFI med gravert silhuett, hver pipe på rett plass.",
 };
 
 // ── team-portrett (ansatt-intro) ─────────────────────────────────────
@@ -541,8 +544,8 @@ export type CADLABProsessProps = {
 
 export const SAMPLE_CADLAB: CADLABProsessProps = {
   format: "reel",
-  productName: "Aviation EOR Kit",
-  customerName: "Norwegian Aero",
+  productName: "Skreddersydd HDFI",
+  customerName: undefined,
   cadImageUrl: undefined,
   cncImageUrl: undefined,
   finishedImageUrl: undefined,
@@ -571,8 +574,11 @@ export type FTReferanseStoryProps = {
   eyebrow: string;
   /** Hovedoverskrift — 2-4 ord. UPPERCASE-rendres automatisk. */
   headline: string;
-  /** Produktfoto-URL eller null for blueprint-fallback. */
-  imageUrl: string | null;
+  /** Liste med produktfoto-URL-er. 1-6 bilder. Tom liste = blueprint-fallback.
+   *  Bildene crossfader gjennom Scene 2, ~3 sek per bilde med Ken Burns. */
+  imageUrls?: string[];
+  /** DEPRECATED — bruk imageUrls. Beholdt for bakoverkompatibilitet. */
+  imageUrl?: string | null;
   /** 1-3 stikkord (HDFI, CADLAB, CNC-maskinert) som chips. */
   tags: string[];
   /** Banner-card-tekst som overlay, f.eks. "Skreddersydd verktøykontroll". */
@@ -583,17 +589,23 @@ export type FTReferanseStoryProps = {
   tagline?: string;
   /** Åpnings-hook. Default: eyebrow-slam. */
   hook?: HookKindStr;
+  /** Kunde-logo-URL. Hvis satt, vises som logo i Hook B i stedet for
+   *  tekst-navn. Gir "Levert til [LOGO]"-effekt. */
+  customerLogoUrl?: string | null;
 };
 
 export const SAMPLE_FT_REFERANSE: FTReferanseStoryProps = {
   format: "reel",
-  eyebrow: "Levert til Norwegian Aero",
+  // SAMPLE: bruker generisk frase. Faktiske kundenavn settes via
+  // --data <fil>.json når Adrian har verifisert kunden.
+  eyebrow: "Skreddersydd HDFI",
   headline: "Aviation EOR Kit",
-  imageUrl: null,
+  imageUrls: [],
   tags: ["HDFI", "CADLAB", "CNC-MASKINERT"],
   bannerHeadline: "Skreddersydd verktøykontroll",
   bannerSubline: "Fra konsept til ferdig",
   tagline: "Skreddersydd på Brekstad",
+  customerLogoUrl: null,
 };
 
 // ── FTHDFISpotlight (HDFI-fokus med 3 USP-bullets) ──────────────────
@@ -734,11 +746,13 @@ export type FTSitatV2Props = {
 
 export const SAMPLE_FT_SITAT: FTSitatV2Props = {
   format: "reel",
-  quote:
-    "Verktøykontrollen er noe av det viktigste vi har lært. Avvik oppdages før de blir et problem.",
-  attributedTo: "Per Hansen",
-  role: "Logistikkansvarlig",
-  company: "Norwegian Aero",
+  // SAMPLE: dette er placeholder. FTSitatV2 skal ALDRI publiseres
+  // uten et VERIFISERT sitat fra en ekte navngitt person.
+  // Bruk en annen komposisjon hvis du ikke har ekte sitat.
+  quote: "[Verifisert kundesitat plasseres her]",
+  attributedTo: "[Kundens navn]",
+  role: "[Tittel]",
+  company: "[Firma]",
   portraitUrl: null,
   tagline: "Verktøykontroll for fagfolk",
 };
@@ -860,7 +874,9 @@ export type FTKundeResultatProps = {
 
 export const SAMPLE_FT_KUNDERES: FTKundeResultatProps = {
   format: "reel",
-  customer: "Norwegian Aero",
+  // SAMPLE: kunde-navn er null = "TIDLIGERE LEVERANSE" rendres.
+  // Sett customer til navn KUN når Adrian har verifisert kunden.
+  customer: null,
   industry: "Aviation",
   statValue: "0",
   statContext: "FOD-hendelser på 18 måneder",

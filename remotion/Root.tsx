@@ -32,6 +32,10 @@ import { FTKundeResultat } from "./compositions/FTKundeResultat";
 import { FTHvorforHDFI } from "./compositions/FTHvorforHDFI";
 import { FTLeverandorNyhet } from "./compositions/FTLeverandorNyhet";
 import {
+  FTJubileum26Juni,
+  SAMPLE_FT_JUBILEUM,
+} from "./compositions/FTJubileum26Juni";
+import {
   DIMENSIONS,
   SAMPLE_CADLAB,
   SAMPLE_DEFINISJON,
@@ -350,6 +354,18 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={SAMPLE_FT_LEVERANDOR}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+
+      {/* ── FT Jubileum 26. juni 2026 (TV-skjerm-loop) ── */}
+      <Composition
+        id="FTJubileum26Juni"
+        component={FTJubileum26Juni}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_JUBILEUM}
         calculateMetadata={({ props }) => dimsFromFormat(props)}
       />
 

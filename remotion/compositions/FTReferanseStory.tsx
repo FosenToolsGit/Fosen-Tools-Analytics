@@ -31,7 +31,7 @@ import { FTHook } from "../components/hooks/FTHook";
 import { FTOutroCta } from "../components/FTOutroCta";
 import { FTTransition } from "../components/FTTransition";
 import { MUSIC_BED_VOLUME } from "../ft-pipeline";
-import { musicBed } from "../audio-registry";
+import { musicBed, sfx, sfxVolume } from "../audio-registry";
 import { FT, MONO_FONT } from "../theme";
 import type { FTReferanseStoryProps } from "../types";
 
@@ -43,13 +43,20 @@ const OUTRO_START = 450;
 export const FTReferanseStory: React.FC<FTReferanseStoryProps> = ({
   eyebrow,
   headline,
+  imageUrls,
   imageUrl,
   tags,
   bannerHeadline,
   bannerSubline,
   tagline,
   hook = "eyebrow-slam",
+  customerLogoUrl,
 }) => {
+  // Bakoverkompat: hvis kaller fortsatt sender imageUrl (string), wrap til array
+  const images: string[] = (imageUrls && imageUrls.length > 0)
+    ? imageUrls
+    : imageUrl ? [imageUrl] : [];
+
   // Split eyebrow for Hook B — "Levert til X" → eyebrow "LEVERT TIL"
   // + primary "X". Hvis ikke matching pattern, send hele eyebrow som
   // primaryText med "LEVERT" som default eyebrow-text.
@@ -65,14 +72,16 @@ export const FTReferanseStory: React.FC<FTReferanseStoryProps> = ({
       {/* Always-on ambient backdrop (blueprint grid + dust) */}
       <AmbientLayer variant="ink" />
 
-      {/* Scene 1 — åpnings-hook (default: eyebrow-slam = "LEVERT TIL X") */}
+      {/* Scene 1 — åpnings-hook (default: eyebrow-slam = "LEVERT TIL X").
+          Hvis customerLogoUrl er satt, vises logo i stedet for tekst-navn. */}
       <Sequence from={0} durationInFrames={LOADING_END}>
         <FTHook
           kind={hook}
           eyebrow={hookEyebrow}
           primaryText={hookPrimary?.toUpperCase()}
+          logoUrl={customerLogoUrl ?? undefined}
           tagline={tagline ?? "Skreddersydd på Brekstad"}
-          imageUrl={imageUrl}
+          imageUrl={images[0] ?? null}
         />
       </Sequence>
 
@@ -87,7 +96,7 @@ export const FTReferanseStory: React.FC<FTReferanseStoryProps> = ({
         <ReferanseScene2
           eyebrow={eyebrow}
           headline={headline}
-          imageUrl={imageUrl}
+          images={images}
           tags={tags}
         />
       </Sequence>
@@ -101,6 +110,25 @@ export const FTReferanseStory: React.FC<FTReferanseStoryProps> = ({
           durationInFrames={150}
         />
       )}
+
+      {/* Soft-sweep SFX ved hvert bildeskift i karusellen.
+          Carousel-koden definerer slots fra frame 40 i Scene 2 til
+          frame 360. Vi ligger sweep-en 5 frames før hvert nye bilde
+          (i = 1,2,3...) så den lander akkurat i overgang. */}
+      {images.length > 1 &&
+        Array.from({ length: images.length - 1 }, (_, idx) => {
+          const i = idx + 1;
+          const slotStart = 40 + i * ((360 - 40) / images.length);
+          const sfxAt = LOADING_END - 5 + Math.round(slotStart) - 8;
+          return (
+            <Sequence key={`sweep-${i}`} from={sfxAt} durationInFrames={2}>
+              <Audio
+                src={sfx("soft-sweep")}
+                volume={sfxVolume("soft-sweep") * 0.5}
+              />
+            </Sequence>
+          );
+        })}
 
       {/* Scene 2 → outro transition */}
       <FTTransition from={OUTRO_START - 15} kind="wipe-open-blur" />
@@ -116,9 +144,9 @@ export const FTReferanseStory: React.FC<FTReferanseStoryProps> = ({
 const ReferanseScene2: React.FC<{
   eyebrow: string;
   headline: string;
-  imageUrl: string | null;
+  images: string[];
   tags: string[];
-}> = ({ eyebrow, headline, imageUrl, tags }) => {
+}> = ({ eyebrow, headline, images, tags }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
@@ -127,13 +155,9 @@ const ReferanseScene2: React.FC<{
     extrapolateRight: "clamp",
   });
 
-  // Image rolls in 12-40 with subtle zoom 0.94→1.0 then a slow
-  // Ken Burns 1.0→1.04 over remaining scene.
-  const imgT = interpolate(frame, [12, 40], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const kenBurns = interpolate(frame, [40, 360], [1.0, 1.04], {
+  // Scene 2 starter på frame 0 (lokalt). Image fader inn 12-40 og
+  // får så individual cross-fade-bytter etterpå.
+  const imgInT = interpolate(frame, [12, 40], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -203,7 +227,9 @@ const ReferanseScene2: React.FC<{
         />
       </div>
 
-      {/* Image box with blueprint-frame overlay */}
+      {/* Image carousel — cycler gjennom bildene med cross-fade og
+          Ken Burns. Hvert bilde har egen pan-retning (4 varianter)
+          slik at karusellen ikke kjenner monoton selv på 3-4 bilder. */}
       <div
         style={{
           position: "absolute",
@@ -213,20 +239,17 @@ const ReferanseScene2: React.FC<{
           height: imageBoxH,
           overflow: "hidden",
           borderRadius: 6,
-          opacity: imgT,
+          opacity: imgInT,
           background: FT.inkDeep,
         }}
       >
-        {imageUrl ? (
-          <Img
-            src={imageUrl}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              transform: `scale(${kenBurns})`,
-              transformOrigin: "center",
-            }}
+        {images.length > 0 ? (
+          <ImageCarousel
+            images={images}
+            startFrame={40}
+            endFrame={360}
+            width={imageBoxW}
+            height={imageBoxH}
           />
         ) : (
           <BlueprintFallback width={imageBoxW} height={imageBoxH} />
@@ -278,6 +301,92 @@ const ReferanseScene2: React.FC<{
         })}
       </div>
     </AbsoluteFill>
+  );
+};
+
+/**
+ * ImageCarousel — viser flere bilder med cross-fade-bytter og
+ * subtle Ken Burns på hvert bilde. Hver "slot" varer like lenge
+ * (totalt span delt på antall bilder) med 12-frame fade-overlapp
+ * mellom hvert.
+ *
+ * Pan-retning roterer mellom 4 varianter (center, top-left, bottom-right,
+ * top-right) så feeden ikke kjenner monoton selv på 3-4 bilder.
+ */
+const ImageCarousel: React.FC<{
+  images: string[];
+  startFrame: number;
+  endFrame: number;
+  width: number;
+  height: number;
+}> = ({ images, startFrame, endFrame, width: _w, height: _h }) => {
+  const frame = useCurrentFrame();
+  const span = endFrame - startFrame;
+  const slot = span / images.length;
+  const overlap = 14; // frames cross-fade
+
+  const panOrigins = [
+    "center",
+    "top left",
+    "bottom right",
+    "top right",
+    "bottom left",
+    "center",
+  ];
+
+  return (
+    <>
+      {images.map((src, i) => {
+        const slotStart = startFrame + i * slot;
+        const slotEnd = slotStart + slot;
+
+        // Opacity: cross-fade i de første 14 frames, cross-fade ut de siste 14
+        const fadeIn = interpolate(
+          frame,
+          [slotStart - overlap, slotStart + overlap],
+          [0, 1],
+          { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+        );
+        const fadeOut = interpolate(
+          frame,
+          [slotEnd - overlap, slotEnd + overlap],
+          [1, 0],
+          { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+        );
+        // Første bilde: ingen fade-in fra negativ side
+        const isFirst = i === 0;
+        const isLast = i === images.length - 1;
+        const opacity =
+          (isFirst ? 1 : fadeIn) * (isLast ? 1 : fadeOut);
+
+        // Ken Burns per bilde — fra 1.0 til 1.06 over slot-en
+        const kenBurns = interpolate(
+          frame,
+          [slotStart - overlap, slotEnd + overlap],
+          [1.0, 1.06],
+          { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+        );
+
+        const origin = panOrigins[i % panOrigins.length] ?? "center";
+
+        return (
+          <Img
+            key={`${src}-${i}`}
+            src={src}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              opacity,
+              transform: `scale(${kenBurns})`,
+              transformOrigin: origin,
+            }}
+          />
+        );
+      })}
+    </>
   );
 };
 

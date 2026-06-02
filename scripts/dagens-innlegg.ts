@@ -33,6 +33,7 @@ import {
   SAMPLE_FT_SITAT,
   type VideoType,
 } from "../remotion/types";
+import { SAMPLE_FT_JUBILEUM } from "../remotion/compositions/FTJubileum26Juni";
 import { validateCaption, logValidation } from "./caption-rules";
 
 // ── arg-parsing ─────────────────────────────────────────────────────
@@ -42,7 +43,8 @@ type FTType =
   | "ft-hdfi"
   | "ft-definisjon"
   | "ft-milepael"
-  | "ft-sitat";
+  | "ft-sitat"
+  | "ft-jubileum-26juni";
 
 const VALID_TYPES: FTType[] = [
   "ft-referanse",
@@ -50,6 +52,7 @@ const VALID_TYPES: FTType[] = [
   "ft-definisjon",
   "ft-milepael",
   "ft-sitat",
+  "ft-jubileum-26juni",
 ];
 
 const args = process.argv.slice(2);
@@ -79,6 +82,7 @@ const SAMPLES: Record<FTType, Record<string, unknown>> = {
   "ft-definisjon": SAMPLE_FT_DEFINISJON,
   "ft-milepael": SAMPLE_FT_MILEPAEL,
   "ft-sitat": SAMPLE_FT_SITAT,
+  "ft-jubileum-26juni": SAMPLE_FT_JUBILEUM,
 };
 
 let data: Record<string, unknown>;
@@ -238,6 +242,7 @@ function pickEmoji(type: FTType): string {
     "ft-definisjon": "📐",
     "ft-milepael": "🎉",
     "ft-sitat": "💬",
+    "ft-jubileum-26juni": "🎉",
   };
   return map[type] || "🛠️";
 }
@@ -262,6 +267,8 @@ function buildHook(type: FTType, data: DataLike, emoji: string): string {
       return `${emoji} ${s(data.value)} ${s(data.unit)}, ${s(data.headline)}.`;
     case "ft-sitat":
       return `${emoji} «${s(data.quote)}»`;
+    case "ft-jubileum-26juni":
+      return `🎉 ${s(data.date)} — Leverandør-stander · Hold av dagen.`;
   }
 }
 
@@ -287,6 +294,15 @@ function buildBody(type: FTType, data: DataLike): string {
       return (arr(data.body) as string[]).join(" ");
     case "ft-sitat":
       return `— ${s(data.attributedTo)}, ${s(data.role)}\n${s(data.company)}`;
+    case "ft-jubileum-26juni": {
+      const partners = arr(data.partners) as { name?: string }[];
+      const names = partners.map((p) => p?.name).filter(Boolean).join(" · ");
+      return [
+        `Vi feirer 25 år & åpner ombygget butikk på Brekstad.`,
+        `Åpent: ${s(data.openingHours)}. Grilling: ${s(data.grillingHours)}.`,
+        `Møt ekspertene fra: ${names}.`,
+      ].join("\n");
+    }
   }
 }
 
@@ -298,6 +314,7 @@ function pickHashtags(type: FTType): string {
     "ft-definisjon": ["#Fagord", "#Industri"],
     "ft-milepael": ["#25år", "#Jubileum", "#Fagfolk"],
     "ft-sitat": ["#Kundehistorie", "#Stolt"],
+    "ft-jubileum-26juni": ["#25år", "#Jubileum", "#Butikkåpning", "#Brekstad"],
   };
   return [...base, ...typeTags[type]].slice(0, 10).join(" ");
 }
@@ -319,6 +336,9 @@ function buildAltText({ type, data }: { type: FTType; data: DataLike }): string 
       break;
     case "ft-sitat":
       alt = `Sitat fra ${s(data.attributedTo)}, ${s(data.role)} hos ${s(data.company)}: «${s(data.quote)}»`;
+      break;
+    case "ft-jubileum-26juni":
+      alt = `Fosen Tools 25-årsjubileum og butikkåpning ${s(data.date)} på Brekstad. Åpent ${s(data.openingHours)}, grilling ${s(data.grillingHours)}.`;
       break;
   }
 

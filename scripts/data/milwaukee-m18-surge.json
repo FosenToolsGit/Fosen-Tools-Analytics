@@ -1,0 +1,15 @@
+{
+  "format": "reel",
+  "supplierSlug": "milwaukee",
+  "supplierName": "MILWAUKEE",
+  "supplierLogoUrl": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/milwaukee.png",
+  "productName": "M18 FUEL SURGE",
+  "productTagline": "Hydraulisk slagskrutrekker, 50% stillere",
+  "bullets": [
+    "FLUID-DRIVE: 3x mindre vibrasjon",
+    "6300 slag/min, 113 Nm dreiemoment",
+    "9,4 m/s² vibrasjonsnivå — godt egnet for lange økter"
+  ],
+  "productImageUrl": null,
+  "ctaUrl": "fosen-tools.no/milwaukee"
+}

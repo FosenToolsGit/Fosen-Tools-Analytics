@@ -166,7 +166,7 @@ const KundeScene2: React.FC<{
             lineHeight: 1.1,
           }}
         >
-          {customer ?? "KONFIDENSIELT"}
+          {customer ?? "TIDLIGERE LEVERANSE"}
         </div>
       </div>
 

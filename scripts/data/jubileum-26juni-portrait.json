@@ -1,0 +1,17 @@
+{
+  "format": "reel",
+  "date": "26. JUNI 2026",
+  "openingHours": "10:00–16:00",
+  "grillingHours": "11:00–13:00",
+  "partners": [
+    { "name": "MILWAUKEE", "logoUrl": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/milwaukee.png" },
+    { "name": "WERA", "logoUrl": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/wera.png" },
+    { "name": "SOUDAL", "logoUrl": null },
+    { "name": "PICARD", "logoUrl": null },
+    { "name": "HALDER", "logoUrl": null },
+    { "name": "ZWEIBRÜDER", "logoUrl": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/zweibruder.png" },
+    { "name": "RED BULL", "logoUrl": null },
+    { "name": "TESLA", "logoUrl": null }
+  ],
+  "silent": false
+}
