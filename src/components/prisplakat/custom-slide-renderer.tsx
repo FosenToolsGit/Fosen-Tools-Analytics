@@ -82,6 +82,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   if (slide.template === "partners_rundell") {
     return <PartnersRundellSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
   }
+  if (slide.template === "jubileum_event") {
+    return <JubileumEventSlide slide={slide} active={active} landscape={landscape} />;
+  }
   if (slide.template === "youtube") {
     return <YouTubeSlide slide={slide} active={active} />;
   }
@@ -426,6 +429,454 @@ function PartnerCard({ partner, accent }: { partner: { name: string; logo_url?: 
           opacity: 0.85,
         }}>{partner.badge}</div>
       )}
+    </div>
+  );
+}
+
+// ─── Jubileum event slide ────────────────────────────────────────────────
+// Brukes for 25-årsjubileum + butikkåpning 26. juni 2026. Animert med:
+//  - Pulserende glow på dato + tids-kort
+//  - Kontinuerlig scanline-sweep (sakte ned over hele slide-en)
+//  - Partner-rundell scroller horisontalt
+//  - Subtilt blueprint-grid på bg
+// Designet for å kjøre i loop på kioskskjerm (UniFi US Cast Pro etc.).
+
+function JubileumEventSlide({
+  slide,
+  active,
+  landscape,
+}: {
+  slide: CustomSlide;
+  active: boolean;
+  landscape: boolean;
+}) {
+  const accent = slide.accent_color || "#FFFFFF";
+  const partners = slide.partners ?? [];
+  const rundellDuration = slide.rundell_duration ?? 40;
+
+  // Tagline-banner i gull-tone for "MØT EKSPERTENE"-rad
+  const goldGradient = "linear-gradient(90deg, #85704D, #DBB78B)";
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: slide.bg_color || "#ED1C24",
+        color: slide.text_color || "#FFFFFF",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Subtilt rød-mørk-shimmer-gradient */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse 60% 50% at 30% 20%, rgba(255,255,255,0.08), transparent 60%), radial-gradient(ellipse 50% 50% at 75% 85%, rgba(0,0,0,0.22), transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Animert scanline — sakte sveiper ned. Bare aktiv når slide vises. */}
+      {active && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            height: "8cqh",
+            background:
+              "linear-gradient(to bottom, transparent, rgba(255,255,255,0.10), transparent)",
+            pointerEvents: "none",
+            animation: "ftJubScanline 8s linear infinite",
+            zIndex: 2,
+          }}
+        />
+      )}
+
+      {/* Subtilt blueprint-grid */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)
+          `,
+          backgroundSize: "4cqh 4cqh",
+          maskImage:
+            "radial-gradient(ellipse at center, black 0%, black 50%, transparent 100%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse at center, black 0%, black 50%, transparent 100%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* TOPP: FT-merket + eyebrow */}
+      <div
+        style={{
+          padding: landscape ? "5cqh 8cqh 0" : "6cqh 6cqh 0",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "1.5cqh",
+          zIndex: 3,
+        }}
+      >
+        {slide.top_logo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoUrl(slide.top_logo, slide.custom_logo_url) ?? ""}
+            alt=""
+            style={{
+              height: landscape ? "8cqh" : "6cqh",
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
+        )}
+        {slide.eyebrow && (
+          <div
+            style={{
+              fontFamily: MONO,
+              fontSize: landscape ? "2.4cqh" : "2.2cqh",
+              fontWeight: 700,
+              letterSpacing: "0.6cqh",
+              textTransform: "uppercase",
+              opacity: 0.92,
+              textAlign: "center",
+            }}
+          >
+            {slide.eyebrow}
+          </div>
+        )}
+        <div
+          style={{
+            width: "8cqh",
+            height: "0.3cqh",
+            background: goldGradient,
+          }}
+        />
+      </div>
+
+      {/* HERO: dato + tittel-linjer */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "2cqh 6cqh",
+          textAlign: "center",
+          gap: "2cqh",
+          zIndex: 3,
+        }}
+      >
+        {/* Stor dato med pulserende glow */}
+        {slide.title && (
+          <div
+            style={{
+              fontFamily: HEAD,
+              fontSize: landscape ? "14cqh" : "13cqh",
+              fontWeight: 800,
+              lineHeight: 0.95,
+              letterSpacing: "-0.3cqh",
+              animation: active
+                ? "ftJubPulse 3.5s ease-in-out infinite"
+                : "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {slide.title}
+          </div>
+        )}
+
+        {/* Subtitle (LEVERANDØR STANDER / HOLD AV DAGEN) */}
+        {slide.subtitle && (
+          <div
+            style={{
+              fontFamily: HEAD,
+              fontSize: landscape ? "5.4cqh" : "5.6cqh",
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: "-0.1cqh",
+              textTransform: "uppercase",
+              whiteSpace: "pre-line",
+              textShadow: "0 0 4cqh rgba(0,0,0,0.25)",
+            }}
+          >
+            {slide.subtitle}
+          </div>
+        )}
+
+        {/* TIDS-KORT: åpent + grilling */}
+        {(slide.hours || slide.grilling_hours) && (
+          <div
+            style={{
+              display: "flex",
+              gap: "2.5cqh",
+              marginTop: "1.5cqh",
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
+          >
+            {slide.hours && (
+              <TimeCardSlide
+                kind="clock"
+                label="ÅPENT"
+                value={slide.hours}
+                animated={active}
+              />
+            )}
+            {slide.grilling_hours && (
+              <TimeCardSlide
+                kind="grill"
+                label="GRILLING"
+                value={slide.grilling_hours}
+                animated={active}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* BUNN: partner-rundell + jubileumslogoer */}
+      {partners.length > 0 && (
+        <div
+          style={{
+            background:
+              "linear-gradient(to bottom, transparent, rgba(15,17,21,0.92) 14%, rgba(15,17,21,0.98))",
+            padding: landscape ? "4cqh 4cqh 5cqh" : "5cqh 4cqh 5cqh",
+            position: "relative",
+            zIndex: 3,
+          }}
+        >
+          {/* "MØT EKSPERTENE"-banner */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "2cqh",
+              justifyContent: "center",
+              marginBottom: "2.5cqh",
+              fontFamily: MONO,
+              fontSize: landscape ? "2cqh" : "2.2cqh",
+              fontWeight: 700,
+              letterSpacing: "0.5cqh",
+              textTransform: "uppercase",
+              color: "#DBB78B",
+            }}
+          >
+            <span
+              style={{
+                width: "6cqh",
+                height: "0.25cqh",
+                background: "linear-gradient(to right, transparent, #DBB78B)",
+              }}
+            />
+            <span style={{ whiteSpace: "nowrap" }}>
+              Møt ekspertene · Få faglig påfyll · Still spørsmål
+            </span>
+            <span
+              style={{
+                width: "6cqh",
+                height: "0.25cqh",
+                background: "linear-gradient(to left, transparent, #DBB78B)",
+              }}
+            />
+          </div>
+
+          {/* Horisontalt rullende partner-bånd (gjenbruker rundell-pattern) */}
+          <div
+            style={{
+              overflow: "hidden",
+              maskImage:
+                "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                gap: "2cqh",
+                width: "max-content",
+                animation: active
+                  ? `ftJubRundell ${rundellDuration}s linear infinite`
+                  : "none",
+              }}
+            >
+              {[...partners, ...partners].map((p, i) => (
+                <PartnerCard key={i} partner={p} accent={accent} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Jubileumslogoer 25 + 100 helt nederst */}
+      {slide.bottom_logo && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "1.5cqh",
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            gap: "5cqh",
+            zIndex: 4,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoUrl(slide.bottom_logo, slide.custom_logo_url) ?? ""}
+            alt=""
+            style={{
+              height: landscape ? "6cqh" : "5.5cqh",
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={LOGO_URLS["jub-100"] ?? ""}
+            alt=""
+            style={{
+              height: landscape ? "5cqh" : "4.5cqh",
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
+        </div>
+      )}
+
+      {/* Animasjons-keyframes */}
+      <style>{`
+        @keyframes ftJubScanline {
+          0% { transform: translateY(-5cqh); }
+          100% { transform: translateY(110cqh); }
+        }
+        @keyframes ftJubPulse {
+          0%, 100% { text-shadow: 0 0 3cqh rgba(255,255,255,0.18), 0 0 6cqh rgba(0,0,0,0.4); }
+          50% { text-shadow: 0 0 5cqh rgba(255,255,255,0.45), 0 0 8cqh rgba(255,255,255,0.25); }
+        }
+        @keyframes ftJubRundell {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function TimeCardSlide({
+  kind,
+  label,
+  value,
+  animated,
+}: {
+  kind: "clock" | "grill";
+  label: string;
+  value: string;
+  animated: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "1.6cqh",
+        padding: "1.8cqh 3cqh",
+        background: "rgba(0,0,0,0.32)",
+        border: "0.25cqh solid rgba(255,255,255,0.85)",
+        borderRadius: "0.8cqh",
+        boxShadow: "0 0 2.5cqh rgba(255,255,255,0.18)",
+        minWidth: "26cqh",
+        animation: animated
+          ? "ftJubCardPulse 3.5s ease-in-out infinite"
+          : "none",
+      }}
+    >
+      {kind === "clock" ? (
+        <svg
+          width="4.5cqh"
+          height="4.5cqh"
+          viewBox="0 0 24 24"
+          fill="none"
+          style={{ flexShrink: 0 }}
+        >
+          <circle cx="12" cy="12" r="9.5" stroke="white" strokeWidth="1.6" />
+          <path
+            d="M12 7v5l3 2"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      ) : (
+        <svg
+          width="4.5cqh"
+          height="4.5cqh"
+          viewBox="0 0 24 24"
+          fill="none"
+          style={{ flexShrink: 0 }}
+        >
+          <path
+            d="M12 3 C 10 6, 7.5 8, 7 11 C 6.4 14.5, 8.5 17.5, 12 18 C 15.5 17.5, 17.6 14.5, 17 11 C 16.5 8.5, 14.5 7.5, 13.5 5 C 13 4, 12.5 3.4, 12 3 Z"
+            fill="white"
+            opacity="0.9"
+          />
+          <path
+            d="M12 8 C 10.8 10, 9.8 11.5, 9.5 13 C 9.2 14.8, 10.4 16.4, 12 16.6 C 13.6 16.4, 14.8 14.8, 14.5 13 C 14.2 11.5, 13.2 10, 12 8 Z"
+            fill="#FFD86C"
+          />
+        </svg>
+      )}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.4cqh",
+          textAlign: "left",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: "1.6cqh",
+            fontWeight: 700,
+            letterSpacing: "0.35cqh",
+            opacity: 0.75,
+            textTransform: "uppercase",
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            fontFamily: HEAD,
+            fontSize: "3.4cqh",
+            fontWeight: 800,
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {value}
+        </div>
+      </div>
+      <style>{`
+        @keyframes ftJubCardPulse {
+          0%, 100% { box-shadow: 0 0 2.5cqh rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.72); }
+          50% { box-shadow: 0 0 4cqh rgba(255,255,255,0.32); border-color: rgba(255,255,255,1); }
+        }
+      `}</style>
     </div>
   );
 }

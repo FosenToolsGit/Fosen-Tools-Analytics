@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
     subtitle: body.subtitle ?? DEFAULT_JUB_POSTER.subtitle,
     partnersTagline: body.partnersTagline ?? DEFAULT_JUB_POSTER.partnersTagline,
     partners: body.partners ?? DEFAULT_JUB_POSTER.partners,
+    openingHours: body.openingHours ?? DEFAULT_JUB_POSTER.openingHours,
+    grillingHours: body.grillingHours ?? DEFAULT_JUB_POSTER.grillingHours,
   };
 
   try {

@@ -1,0 +1,60 @@
+{
+  "id": "jubileum-26juni-2026",
+  "enabled": true,
+  "label": "Jubileum-event (26. juni 2026)",
+  "template": "jubileum_event",
+  "placement": "end",
+  "order": 50,
+  "bg_color": "#ED1C24",
+  "text_color": "#ffffff",
+  "accent_color": "#ffffff",
+  "top_logo": "ft-white",
+  "bottom_logo": "jub-25",
+  "eyebrow": "25-ÅRSJUBILEUM · BUTIKKÅPNING",
+  "title": "26. JUNI 2026",
+  "subtitle": "LEVERANDØR-STANDER\nHOLD AV DAGEN",
+  "hours": "10:00–16:00",
+  "grilling_hours": "11:00–13:00",
+  "rundell_duration": 40,
+  "duration_seconds": 14,
+  "align": "center",
+  "title_scale": 1,
+  "divider": true,
+  "partners": [
+    {
+      "name": "Milwaukee",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/Milwaukee_Logo.svg"
+    },
+    {
+      "name": "Wera",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/Wera_Tools_logo.svg",
+      "scale": 10
+    },
+    {
+      "name": "Soudal",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/Soudal.svg"
+    },
+    {
+      "name": "Picard",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/RGB_Picard_Logo_2024.svg"
+    },
+    {
+      "name": "Halder",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/erwin-halder-kg-vector-logo.svg",
+      "scale": 3
+    },
+    {
+      "name": "Zweibrüder",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/Zweibrueder_Logo_K0.png",
+      "filter_black": true
+    },
+    {
+      "name": "Red Bull",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/redbull-logo-svgrepo-com.svg"
+    },
+    {
+      "name": "Tesla Mobile Service",
+      "logo_url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer/Tesla_Motors.svg"
+    }
+  ]
+}

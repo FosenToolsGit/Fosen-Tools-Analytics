@@ -17,12 +17,13 @@ export const JUBILEUM_FT_RED = "#ED1C24";
 /** FT-slate-grå (samme som remotion/theme.ts og brosjyre-paletten). */
 export const JUBILEUM_FT_GREY = "#1B1E23";
 
-export type JubPosterFormat = "square" | "feed" | "reel" | "wide" | "a4";
+export type JubPosterFormat = "square" | "feed" | "reel" | "wide" | "a4" | "a5";
 
 /**
  * A4-print bruker 300 dpi (2480×3508 px) for skarpt print-resultat på
- * vanlig A4-ark (210×297 mm). Hvis Playwright/Chromium henter tregt på
- * så stor canvas kan vi senke til 200 dpi (1654×2339).
+ * vanlig A4-ark (210×297 mm). A5 = 1748×2480 (148×210 mm).
+ * Hvis Playwright/Chromium henter tregt på så stor canvas kan vi senke
+ * til 200 dpi.
  */
 export const JUB_POSTER_DIMS: Record<JubPosterFormat, { w: number; h: number; label: string }> = {
   square: { w: 1080, h: 1080, label: "Kvadrat 1:1 (feed/IG)" },
@@ -30,6 +31,7 @@ export const JUB_POSTER_DIMS: Record<JubPosterFormat, { w: number; h: number; la
   reel: { w: 1080, h: 1920, label: "Story/Reel 9:16" },
   wide: { w: 1920, h: 1080, label: "Bred 16:9 (LI/skjerm)" },
   a4: { w: 2480, h: 3508, label: "A4 print 300dpi (210×297 mm)" },
+  a5: { w: 1748, h: 2480, label: "A5 print 300dpi (148×210 mm)" },
 };
 
 export interface JubPosterPartner {
@@ -58,6 +60,11 @@ export interface JubPosterInput {
   partnersTagline: string;
   /** Partner-logoer som vises i grid. */
   partners: JubPosterPartner[];
+  /** Åpningstid, f.eks. "10:00–16:00". Hvis satt vises et tids-kort
+   *  mellom subtitle og partner-grid. */
+  openingHours?: string;
+  /** Grilling-tid, f.eks. "11:00–13:00". */
+  grillingHours?: string;
 }
 
 // =============================================================================
@@ -91,6 +98,8 @@ export const DEFAULT_JUB_POSTER: Omit<JubPosterInput, "format"> = {
   subtitle: "Vi feirer 25 år & gjenåpner PROFF-butikk · Brekstad",
   partnersTagline: "MØT EKSPERTENE · FÅ FAGLIG PÅFYLL · STILL SPØRSMÅL",
   partners: DEFAULT_JUB_PARTNERS,
+  openingHours: "10:00–16:00",
+  grillingHours: "11:00–13:00",
 };
 
 // =============================================================================
@@ -244,6 +253,47 @@ body{
   max-width:${W * 0.78}px;
   line-height:1.3;
 }
+/* Tids-kort — ÅPENT + GRILLING side om side under subtitle */
+.time-cards{
+  display:flex;
+  gap:${24 * scale}px;
+  margin-top:${textGap * 0.4}px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.time-card{
+  display:flex;
+  align-items:center;
+  gap:${18 * scale}px;
+  padding:${20 * scale}px ${32 * scale}px;
+  background: rgba(0,0,0,0.28);
+  border: ${2.5 * scale}px solid rgba(255,255,255,0.85);
+  border-radius:${10 * scale}px;
+  box-shadow: 0 0 ${20 * scale}px rgba(255,255,255,0.18);
+  min-width:${300 * scale}px;
+}
+.time-icon{
+  width:${52 * scale}px;
+  height:${52 * scale}px;
+  flex-shrink:0;
+}
+.time-meta{ display:flex; flex-direction:column; gap:${4 * scale}px; text-align:left; }
+.time-label{
+  font-family:'JetBrains Mono', monospace;
+  font-size:${18 * scale}px;
+  font-weight:700;
+  letter-spacing:${4 * scale}px;
+  color:rgba(255,255,255,0.75);
+  text-transform:uppercase;
+}
+.time-value{
+  font-size:${36 * scale}px;
+  font-weight:800;
+  color:#fff;
+  letter-spacing:${0.3 * scale}px;
+  line-height:1;
+  white-space:nowrap;
+}
 /* Tagline-linjen sitter øverst i den grå seksjonen — hvit tekst med
    rød markør-streker (samme stil som "25-ÅRSJUBILEUM"-eyebrow). */
 .partners-tagline{
@@ -313,6 +363,40 @@ body{
       <div class="headline">${escapeHtml(input.headlines[0])}</div>
       <div class="headline">${escapeHtml(input.headlines[1])}</div>
       <div class="subtitle">${escapeHtml(input.subtitle)}</div>
+      ${
+        input.openingHours || input.grillingHours
+          ? `<div class="time-cards">
+              ${
+                input.openingHours
+                  ? `<div class="time-card">
+                      <svg class="time-icon" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.8"/>
+                        <path d="M12 7v5l3 2" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <div class="time-meta">
+                        <div class="time-label">ÅPENT</div>
+                        <div class="time-value">${escapeHtml(input.openingHours)}</div>
+                      </div>
+                    </div>`
+                  : ""
+              }
+              ${
+                input.grillingHours
+                  ? `<div class="time-card">
+                      <svg class="time-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3 C 10 6, 7.5 8, 7 11 C 6.4 14.5, 8.5 17.5, 12 18 C 15.5 17.5, 17.6 14.5, 17 11 C 16.5 8.5, 14.5 7.5, 13.5 5 C 13 4, 12.5 3.4, 12 3 Z" fill="white" opacity="0.9"/>
+                        <path d="M12 8 C 10.8 10, 9.8 11.5, 9.5 13 C 9.2 14.8, 10.4 16.4, 12 16.6 C 13.6 16.4, 14.8 14.8, 14.5 13 C 14.2 11.5, 13.2 10, 12 8 Z" fill="#FFD86C"/>
+                      </svg>
+                      <div class="time-meta">
+                        <div class="time-label">GRILLING</div>
+                        <div class="time-value">${escapeHtml(input.grillingHours)}</div>
+                      </div>
+                    </div>`
+                  : ""
+              }
+            </div>`
+          : ""
+      }
     </div>
   </section>
 

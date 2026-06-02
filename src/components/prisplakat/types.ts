@@ -88,6 +88,7 @@ export type SlideTemplate =
   | "outro"            // Kontakt-info (telefon + adresse + åpningstider)
   | "brand_spotlight"  // Merke-logo + tagline + accent
   | "partners_rundell" // Horisontalt rullende karusell av flere brand-logoer
+  | "jubileum_event"   // 25-årsjubileum + butikkåpning: dato + tider + partnere
   | "multi_product"    // 2/4 produkter på én slide
   | "combo"            // 2 produkter med kombi-pris
   | "blank"            // Fri layout
@@ -162,6 +163,11 @@ export interface CustomSlide {
   // ─── For brand_spotlight ───────────────────
   brand_name?: string;
   brand_logo_url?: string;
+
+  // ─── For jubileum_event ────────────────────
+  /** Grilling-tider, f.eks. "11:00–13:00". Vises som egen pulse-card
+   *  ved siden av åpningstid (hours-feltet). */
+  grilling_hours?: string;
 
   // ─── For partners_rundell ──────────────────
   /** Liste med leverandører/gjester som scroller horisontalt på slide-en.
@@ -380,6 +386,33 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
           { name: "Soudal" },
         ],
       };
+    case "jubileum_event":
+      return {
+        ...base,
+        label: "Jubileum-event (26. juni)",
+        bg_color: "#ED1C24",
+        text_color: "#ffffff",
+        accent_color: "#ffffff",
+        top_logo: "ft-white",
+        bottom_logo: "jub-25",
+        eyebrow: "25-ÅRSJUBILEUM · BUTIKKÅPNING",
+        title: "26. JUNI 2026",
+        subtitle: "LEVERANDØR-STANDER\nHOLD AV DAGEN",
+        hours: "10:00–16:00",
+        grilling_hours: "11:00–13:00",
+        rundell_duration: 40,
+        duration_seconds: 14,
+        partners: [
+          { name: "Milwaukee" },
+          { name: "Wera" },
+          { name: "Soudal" },
+          { name: "Picard" },
+          { name: "Halder" },
+          { name: "Zweibrüder" },
+          { name: "Red Bull" },
+          { name: "Tesla" },
+        ],
+      };
     case "multi_product":
       return { ...base, label: "Multi-produkt", product_indexes: [], align: "center" };
     case "combo":
@@ -451,6 +484,7 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
   outro: "Kontakt-info (telefon + adresse)",
   brand_spotlight: "Brand-spotlight",
   partners_rundell: "Partner-rundell (horisontalt rullende)",
+  jubileum_event: "🎉 Jubileum-event (26. juni)",
   multi_product: "Multi-produkt (2 / 4-up)",
   combo: "Kombi-tilbud (2 produkter)",
   blank: "Tom — fri redigering",
