@@ -652,9 +652,10 @@ function JubileumEventSlide({
           style={{
             background:
               "linear-gradient(to bottom, transparent, rgba(15,17,21,0.92) 14%, rgba(15,17,21,0.98))",
-            padding: landscape ? "4cqh 4cqh 5cqh" : "5cqh 4cqh 5cqh",
+            padding: landscape ? "3cqh 4cqh 3cqh" : "3.5cqh 4cqh 3cqh",
             position: "relative",
             zIndex: 3,
+            flexShrink: 0,
           }}
         >
           {/* "MØT EKSPERTENE"-banner */}
@@ -713,47 +714,46 @@ function JubileumEventSlide({
               }}
             >
               {[...partners, ...partners].map((p, i) => (
-                <PartnerCard key={i} partner={p} accent={accent} />
+                <JubileumPartnerLogo key={i} partner={p} />
               ))}
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Jubileumslogoer 25 + 100 helt nederst */}
-      {slide.bottom_logo && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "1.5cqh",
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "center",
-            gap: "5cqh",
-            zIndex: 4,
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={logoUrl(slide.bottom_logo, slide.custom_logo_url) ?? ""}
-            alt=""
-            style={{
-              height: landscape ? "6cqh" : "5.5cqh",
-              width: "auto",
-              objectFit: "contain",
-            }}
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={LOGO_URLS["jub-100"] ?? ""}
-            alt=""
-            style={{
-              height: landscape ? "5cqh" : "4.5cqh",
-              width: "auto",
-              objectFit: "contain",
-            }}
-          />
+          {/* Jubileumslogoer 25 + 100 — flex-item INNE i bunn-seksjonen,
+              etter partner-rundellen. Plassering blir naturlig (ingen
+              absolute-overlap), og vi kan gjøre dem større. */}
+          {slide.bottom_logo && (
+            <div
+              style={{
+                marginTop: landscape ? "1.5cqh" : "2cqh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: landscape ? "5cqh" : "4cqh",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={logoUrl(slide.bottom_logo, slide.custom_logo_url) ?? ""}
+                alt=""
+                style={{
+                  height: landscape ? "7cqh" : "6.5cqh",
+                  width: "auto",
+                  objectFit: "contain",
+                }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={LOGO_URLS["jub-100"] ?? ""}
+                alt=""
+                style={{
+                  height: landscape ? "5.5cqh" : "5cqh",
+                  width: "auto",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -877,6 +877,79 @@ function TimeCardSlide({
           50% { box-shadow: 0 0 4cqh rgba(255,255,255,0.32); border-color: rgba(255,255,255,1); }
         }
       `}</style>
+    </div>
+  );
+}
+
+// ─── Jubileum partner-logo (hvit kort-tile, original-farger) ────────────
+// Hver logo får sin egen hvite tile (samme stil som A5-PDF-versjonen) så
+// original-farger leses bra mot rød/mørk slide-bg. filter_black gir svart
+// silhuett (Zweibrüder-tilfellet — logoen er svart-på-transparent og må
+// holdes svart selv om tilen er hvit).
+//
+// Scale-demping: bruker samme formel som A5-PDF (`scale * 0.3 + 0.7`) så
+// scale: 10 (Wera, mye negative space) gir faktisk transform:scale(3.7),
+// ikke 10× monster.
+function JubileumPartnerLogo({
+  partner,
+}: {
+  partner: {
+    name: string;
+    logo_url?: string;
+    badge?: string;
+    filter_black?: boolean;
+    scale?: number;
+  };
+}) {
+  const hasLogo = !!partner.logo_url;
+  const rawScale = partner.scale ?? 1;
+  const effectiveScale = rawScale > 1 ? rawScale * 0.3 + 0.7 : 1;
+  const filter = partner.filter_black ? "brightness(0)" : undefined;
+
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "32cqh",
+        height: "18cqh",
+        padding: "1.6cqh",
+        background: "#ffffff",
+        borderRadius: "1cqh",
+        boxShadow: "0 0.5cqh 1.2cqh rgba(0, 0, 0, 0.25)",
+        overflow: "hidden",
+        flexShrink: 0,
+      }}
+    >
+      {hasLogo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={proxyImage(partner.logo_url!) || partner.logo_url!}
+          alt={partner.name}
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+            transform: `scale(${effectiveScale})`,
+            filter,
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            fontFamily: HEAD,
+            fontWeight: 800,
+            fontSize: "3cqh",
+            color: "#0F1115",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            textAlign: "center",
+          }}
+        >
+          {partner.name}
+        </div>
+      )}
     </div>
   );
 }

@@ -386,7 +386,9 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
           { name: "Soudal" },
         ],
       };
-    case "jubileum_event":
+    case "jubileum_event": {
+      const jubLogoBase =
+        "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/jubileum-2026/logoer";
       return {
         ...base,
         label: "Jubileum-event (26. juni)",
@@ -403,16 +405,17 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         rundell_duration: 40,
         duration_seconds: 14,
         partners: [
-          { name: "Milwaukee" },
-          { name: "Wera" },
-          { name: "Soudal" },
-          { name: "Picard" },
-          { name: "Halder" },
-          { name: "Zweibrüder" },
-          { name: "Red Bull" },
-          { name: "Tesla" },
+          { name: "Milwaukee", logo_url: `${jubLogoBase}/Milwaukee_Logo.svg` },
+          { name: "Wera", logo_url: `${jubLogoBase}/Wera_Tools_logo.svg`, scale: 1.4 },
+          { name: "Soudal", logo_url: `${jubLogoBase}/Soudal.svg` },
+          { name: "Picard", logo_url: `${jubLogoBase}/RGB_Picard_Logo_2024.svg` },
+          { name: "Halder", logo_url: `${jubLogoBase}/erwin-halder-kg-vector-logo.svg`, scale: 3 },
+          { name: "Zweibrüder", logo_url: `${jubLogoBase}/Zweibrueder_Logo_K0.png`, filter_black: true },
+          { name: "Red Bull", logo_url: `${jubLogoBase}/redbull-logo-svgrepo-com.svg` },
+          { name: "Tesla", logo_url: `${jubLogoBase}/Tesla_Motors.svg` },
         ],
       };
+    }
     case "multi_product":
       return { ...base, label: "Multi-produkt", product_indexes: [], align: "center" };
     case "combo":
