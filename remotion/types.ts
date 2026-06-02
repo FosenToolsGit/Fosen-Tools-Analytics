@@ -332,6 +332,18 @@ export type VideoType =
   | "referanse-spotlight"
   | "definisjon"
   | "hero-poster"
+  // FT-pipeline (juni 2026) — 4-scene-mal med Four Editors-transitions
+  | "ft-referanse"
+  | "ft-hdfi"
+  | "ft-definisjon"
+  | "ft-milepael"
+  | "ft-sitat"
+  // Salgs-orienterte (2026-06-02): bygd for å SELGE HDFI
+  | "ft-prosess"
+  | "ft-vshyllevare"
+  | "ft-kunderes"
+  | "ft-hvorfor"
+  | "ft-leverandor"
   | "jub-t14"
   | "jub-t13"
   | "jub-t12"
@@ -363,6 +375,16 @@ export const COMPOSITION_ID: Record<VideoType, string> = {
   "referanse-spotlight": "ReferanseSpotlight",
   definisjon: "Definisjon",
   "hero-poster": "HeroPoster",
+  "ft-referanse": "FTReferanseStory",
+  "ft-hdfi": "FTHDFISpotlight",
+  "ft-definisjon": "FTDefinisjonNeo",
+  "ft-milepael": "FTMilepaelV2",
+  "ft-sitat": "FTSitatV2",
+  "ft-prosess": "FTProsessSpotlight",
+  "ft-vshyllevare": "FTHDFIvsHyllevare",
+  "ft-kunderes": "FTKundeResultat",
+  "ft-hvorfor": "FTHvorforHDFI",
+  "ft-leverandor": "FTLeverandorNyhet",
   "jub-t14": "JubileumT14",
   "jub-t13": "JubileumT13",
   "jub-t12": "JubileumT12",
@@ -445,7 +467,7 @@ export const SAMPLE_KUNDE_V2: KundeLeveranseV2Props = {
   customerLogoUrl: null,
   heading: "Skreddersydd verktøyløsning for vingedrift",
   bodyText:
-    "CAD-tegnet i CADLAB, CNC-maskinert i Brekstad. Hver pipe og hver nøkkel har sin egen plass, og avvik oppdages før de blir et problem.",
+    "CAD-tegnet i CADLAB, CNC-maskinert på Brekstad. Hver pipe og hver nøkkel har sin egen plass, og avvik oppdages før de blir et problem.",
   images: [],
   highlights: ["HDFI", "CADLAB", "CNC-maskinert", "FOD-sikret"],
   ctaUrl: "fosen-tools.no/aviation",
@@ -524,4 +546,406 @@ export const SAMPLE_CADLAB: CADLABProsessProps = {
   cadImageUrl: undefined,
   cncImageUrl: undefined,
   finishedImageUrl: undefined,
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// 4-SCENE-MAL — alle nye komposisjoner pr juni 2026 bruker samme shell:
+// FTLoadingScreen (90 frames) → FTTransition → Scene 2 → FTTransition →
+// FTOutroCta (120 frames). Det som varierer er Scene 2.
+// ─────────────────────────────────────────────────────────────────────
+
+// ── FTReferanseStory (kundereferanse / leveranse-storytelling) ──────
+
+/** Hook-typer som komposisjoner kan velge åpning fra. */
+export type HookKindStr =
+  | "brand-coldopen"
+  | "eyebrow-slam"
+  | "stat-shock"
+  | "visual-reveal"
+  | "process-glimpse"
+  | "leverandor-tagin";
+
+export type FTReferanseStoryProps = {
+  format: VideoFormat;
+  /** Eyebrow over H1, f.eks. "LEVERT TIL NORWEGIAN AERO". */
+  eyebrow: string;
+  /** Hovedoverskrift — 2-4 ord. UPPERCASE-rendres automatisk. */
+  headline: string;
+  /** Produktfoto-URL eller null for blueprint-fallback. */
+  imageUrl: string | null;
+  /** 1-3 stikkord (HDFI, CADLAB, CNC-maskinert) som chips. */
+  tags: string[];
+  /** Banner-card-tekst som overlay, f.eks. "Skreddersydd verktøykontroll". */
+  bannerHeadline?: string;
+  /** Banner-subline. */
+  bannerSubline?: string;
+  /** Tagline brukt i outro. */
+  tagline?: string;
+  /** Åpnings-hook. Default: eyebrow-slam. */
+  hook?: HookKindStr;
+};
+
+export const SAMPLE_FT_REFERANSE: FTReferanseStoryProps = {
+  format: "reel",
+  eyebrow: "Levert til Norwegian Aero",
+  headline: "Aviation EOR Kit",
+  imageUrl: null,
+  tags: ["HDFI", "CADLAB", "CNC-MASKINERT"],
+  bannerHeadline: "Skreddersydd verktøykontroll",
+  bannerSubline: "Fra konsept til ferdig",
+  tagline: "Skreddersydd på Brekstad",
+};
+
+// ── FTHDFISpotlight (HDFI-fokus med 3 USP-bullets) ──────────────────
+
+export type FTHDFISpotlightProps = {
+  format: VideoFormat;
+  /** Lille etikett over tittel, f.eks. "EGEN PRODUKSJON". */
+  eyebrow: string;
+  /** Hovedtittel — typisk "HDFI" alene eller "HDFI / FOD-SIKRING". */
+  headline: string;
+  /** Tagline under tittel. */
+  tagline: string;
+  /** Produktbilde-URL, eller null for blueprint-fallback. */
+  imageUrl: string | null;
+  /** 3 USP-bullets — staggered inn. */
+  bullets: string[];
+  /** Banner-tekst som lander på climax. */
+  bannerHeadline?: string;
+  /** Banner-subline. */
+  bannerSubline?: string;
+  /** Outro CTA URL. */
+  ctaUrl?: string;
+};
+
+export const SAMPLE_FT_HDFI: FTHDFISpotlightProps = {
+  format: "reel",
+  eyebrow: "Egen produksjon",
+  headline: "HDFI",
+  tagline: "Verktøykontroll med gravert silhuett",
+  imageUrl: null,
+  bullets: [
+    "CAD-tegnet i CADLABen vår",
+    "CNC-maskinert på Brekstad",
+    "Identisk gravering på verktøy og innlegg",
+  ],
+  bannerHeadline: "FOD-sikker verktøykontroll",
+  bannerSubline: "CADLAB · Brekstad",
+  ctaUrl: "fosen-tools.no/hdfi",
+};
+
+// ── FTDefinisjonNeo (fagord — fix av krem/svart-versjon) ────────────
+
+/**
+ * FTDefinisjonNeo — refactored 2026-06-02. Brukes IKKE lenger som
+ * generell fagord-ordbok (Adrian: «føles rart ut»). Beholdt KUN for
+ * direkte HDFI/FOD-konsept-forklaring som lukker mot salg.
+ *
+ * For andre fagord/prosess-forklaringer, bruk i stedet:
+ *   - FTProsessSpotlight (4-stadier — selger prosessen)
+ *   - FTHvorforHDFI (3-grunner — selger fordelen)
+ */
+export type FTDefinisjonNeoProps = {
+  format: VideoFormat;
+  /** Fagordet — KUN "HDFI" eller "FOD" (compile-time guard). */
+  term: "HDFI" | "FOD";
+  /** Ordklasse, f.eks. "Substantiv" / "Adjektiv". */
+  partOfSpeech: string;
+  /** Definisjonens kjerne-setning. */
+  definition: string;
+  /** Etymologi / kontekst — 1-2 setninger. */
+  etymology?: string;
+  /** Eksempel-bruk eller sosial bevis. */
+  example?: string;
+  /** CTA-knapp-tekst nederst i Scene 2. Default "Få en demo". */
+  ctaText?: string;
+  /** Outro tagline. */
+  tagline?: string;
+  /** Outro CTA URL. */
+  ctaUrl?: string;
+};
+
+export const SAMPLE_FT_DEFINISJON: FTDefinisjonNeoProps = {
+  format: "reel",
+  term: "HDFI",
+  partOfSpeech: "Substantiv",
+  definition:
+    "CAD-tegnet skuminnlegg med gravert verktøy-silhuett. CNC-maskinert på Brekstad.",
+  etymology: "High Density Foam Insert. Brukt av Forsvaret, aviation og industri.",
+  example: "Hvert verktøy har én plass, og avvik oppdages før de blir et problem.",
+  ctaText: "Få en demo",
+  tagline: "Egen CADLAB · Brekstad",
+  ctaUrl: "fosen-tools.no/hdfi",
+};
+
+// ── FTMilepaelV2 (stort tall — count-up med rød pulse) ──────────────
+
+export type FTMilepaelV2Props = {
+  format: VideoFormat;
+  /** Lille etikett over tallet. */
+  eyebrow: string;
+  /** Tallet (count-up til denne verdien). */
+  value: number;
+  /** Tekst etter tallet, f.eks. "år", "kunder", "produkter". */
+  unit: string;
+  /** Hovedoverskrift under tallet. */
+  headline: string;
+  /** Body-tekst (1-3 setninger). */
+  body: string[];
+  /** Tagline brukt i outro. */
+  tagline?: string;
+  /** Åpnings-hook. Default: stat-shock. */
+  hook?: HookKindStr;
+};
+
+export const SAMPLE_FT_MILEPAEL: FTMilepaelV2Props = {
+  format: "reel",
+  eyebrow: "Fosen Tools",
+  value: 25,
+  unit: "år",
+  headline: "Levert til Forsvaret, aviation og industri",
+  body: [
+    "Etablert 2001 på Brekstad.",
+    "Egen CADLAB og CNC-produksjon.",
+    "Sertifisert leverandør gjennom 25 år.",
+  ],
+  tagline: "Fra 2001 til i dag",
+};
+
+// ── FTSitatV2 (kundesitat med FTSpriteDisk-monogram) ────────────────
+
+export type FTSitatV2Props = {
+  format: VideoFormat;
+  /** Selve sitatet. */
+  quote: string;
+  /** Personens navn (initialer brukes på FTSpriteDisk). */
+  attributedTo: string;
+  /** Rolle/tittel, f.eks. "Logistikkansvarlig". */
+  role: string;
+  /** Kundenavn/firma, f.eks. "TESS VEST". */
+  company: string;
+  /** Bilde-URL hvis vi har et faktisk portrett. Null = bruk SpriteDisk. */
+  portraitUrl?: string | null;
+  /** Tagline brukt i outro. */
+  tagline?: string;
+  /** Åpnings-hook. Default: visual-reveal. */
+  hook?: HookKindStr;
+};
+
+export const SAMPLE_FT_SITAT: FTSitatV2Props = {
+  format: "reel",
+  quote:
+    "Verktøykontrollen er noe av det viktigste vi har lært. Avvik oppdages før de blir et problem.",
+  attributedTo: "Per Hansen",
+  role: "Logistikkansvarlig",
+  company: "Norwegian Aero",
+  portraitUrl: null,
+  tagline: "Verktøykontroll for fagfolk",
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// SALGS-ORIENTERTE KOMPOSISJONER — bygd for å selge HDFI direkte
+// (B2B SoMe-research 2026-06-02: prosess > definisjon, tall > generelle
+// påstander, før/etter driver konvertering).
+// ─────────────────────────────────────────────────────────────────────
+
+// ── FTProsessSpotlight: "Slik lager vi din HDFI" (4 stadier) ───────
+
+export type FTProsessSpotlightProps = {
+  format: VideoFormat;
+  /** Lille etikett, default "SLIK LAGER VI DIN HDFI". */
+  eyebrow: string;
+  /** Hovedtittel — typisk "Skreddersydd HDFI" eller "Slik gjør vi det". */
+  headline: string;
+  /** 4 stadier (orden viktig — vises sekvensielt). */
+  stages: {
+    /** Stadie-navn, f.eks. "Konsept" / "CAD" / "CNC" / "Levert". */
+    label: string;
+    /** Kort beskrivelse av hva som skjer her. */
+    description: string;
+    /** Valgfri bilde-URL — uten = blueprint-/grafikk-fallback. */
+    imageUrl?: string | null;
+  }[];
+  /** Outro-CTA. */
+  ctaUrl?: string;
+  /** Tagline brukt i outro. */
+  tagline?: string;
+};
+
+export const SAMPLE_FT_PROSESS: FTProsessSpotlightProps = {
+  format: "reel",
+  eyebrow: "Slik lager vi din HDFI",
+  headline: "Fra konsept til ferdig",
+  stages: [
+    {
+      label: "Konsept",
+      description: "Vi måler ditt verktøy og forstår arbeidsflyten.",
+    },
+    {
+      label: "CAD",
+      description: "Hvert verktøy får sin egen lomme i CADLABen.",
+    },
+    {
+      label: "CNC",
+      description: "Skummet CNC-maskineres på Brekstad.",
+    },
+    {
+      label: "Levert",
+      description: "Hver pipe har én plass — null FOD-risiko.",
+    },
+  ],
+  ctaUrl: "fosen-tools.no/hdfi",
+  tagline: "Egen CADLAB · CNC-maskinert",
+};
+
+// ── FTHDFIvsHyllevare: før/etter med ROI-tagline ────────────────────
+
+export type FTHDFIvsHyllevareProps = {
+  format: VideoFormat;
+  /** Eyebrow, default "FØR vs ETTER". */
+  eyebrow: string;
+  /** Hovedtittel — typisk "Slutt på rotet" eller "Verktøykontroll". */
+  headline: string;
+  /** Før-bilde (kaotisk hyllevare). Null = stylisert fallback. */
+  beforeImageUrl: string | null;
+  /** Etter-bilde (ordnet HDFI). Null = stylisert fallback. */
+  afterImageUrl: string | null;
+  /** ROI-tagline, f.eks. "Reduserte verktøysøk-tid med 73%". */
+  roiTagline: string;
+  /** Tre punkter som forklarer hvorfor HDFI vinner. */
+  bullets: string[];
+  /** Outro-CTA. */
+  ctaUrl?: string;
+  /** Tagline brukt i outro. */
+  tagline?: string;
+};
+
+export const SAMPLE_FT_VSHYLLEVARE: FTHDFIvsHyllevareProps = {
+  format: "reel",
+  eyebrow: "Før vs etter",
+  headline: "Slutt på rotet",
+  beforeImageUrl: null,
+  afterImageUrl: null,
+  roiTagline: "Hver pipe på rett plass. Hver gang.",
+  bullets: [
+    "Avvik oppdages før de blir et problem",
+    "FOD-sikret verktøykontroll",
+    "Verktøysøk-tid redusert betydelig",
+  ],
+  ctaUrl: "fosen-tools.no/hdfi",
+  tagline: "Verktøykontroll for fagfolk",
+};
+
+// ── FTKundeResultat: kundereferanse med konkret tall ────────────────
+
+export type FTKundeResultatProps = {
+  format: VideoFormat;
+  /** Kundenavn. Settes til null hvis konfidensielt. */
+  customer: string | null;
+  /** Bransje, f.eks. "Aviation" / "Forsvar" / "Offshore". */
+  industry: string;
+  /** Det konkrete tallet (count-up-mål). */
+  statValue: string;
+  /** Hva tallet betyr, f.eks. "raskere verktøysøk" / "null FOD-hendelser". */
+  statContext: string;
+  /** Kort beskrivelse av løsningen (1-2 setninger). */
+  description: string;
+  /** Valgfri bilde-URL av leveransen. */
+  imageUrl?: string | null;
+  /** Outro-CTA. */
+  ctaUrl?: string;
+  /** Tagline brukt i outro. */
+  tagline?: string;
+};
+
+export const SAMPLE_FT_KUNDERES: FTKundeResultatProps = {
+  format: "reel",
+  customer: "Norwegian Aero",
+  industry: "Aviation",
+  statValue: "0",
+  statContext: "FOD-hendelser på 18 måneder",
+  description:
+    "Skreddersydd HDFI med gravert silhuett for hver pipe. Avvik oppdages før de blir et problem.",
+  imageUrl: null,
+  ctaUrl: "fosen-tools.no/aviation",
+  tagline: "Sertifisert leverandør gjennom 25 år",
+};
+
+// ── FTHvorforHDFI: 3-grunner salgs-pitch ────────────────────────────
+
+export type FTHvorforHDFIProps = {
+  format: VideoFormat;
+  /** Eyebrow, default "HVORFOR HDFI". */
+  eyebrow: string;
+  /** Hovedtittel, default "Tre grunner". */
+  headline: string;
+  /** 3 grunner — kort headline + setning per. */
+  reasons: { title: string; body: string }[];
+  /** Closing-tagline. */
+  closingTagline: string;
+  /** Outro-CTA. */
+  ctaUrl?: string;
+  /** Tagline brukt i outro. */
+  tagline?: string;
+};
+
+export const SAMPLE_FT_HVORFOR: FTHvorforHDFIProps = {
+  format: "reel",
+  eyebrow: "Hvorfor HDFI",
+  headline: "Tre grunner",
+  reasons: [
+    {
+      title: "FOD-sikret",
+      body: "Hvert verktøy tilbake på rett plass. Null FOD-risiko.",
+    },
+    {
+      title: "Sertifisert",
+      body: "Levert til Forsvaret, aviation og industri.",
+    },
+    {
+      title: "Skreddersydd",
+      body: "CAD-tegnet i CADLAB. CNC-maskinert på Brekstad.",
+    },
+  ],
+  closingTagline: "Det er din HDFI. Vi bygger den.",
+  ctaUrl: "fosen-tools.no/hdfi",
+  tagline: "Egen CADLAB · CNC-maskinert",
+};
+
+// ── FTLeverandorNyhet: produkt-nyhet fra Milwaukee/Wera/Husqvarna ───
+
+export type FTLeverandorNyhetProps = {
+  format: VideoFormat;
+  /** Leverandør-slug, f.eks. "milwaukee" / "wera" / "husqvarna". */
+  supplierSlug: string;
+  /** Leverandør display-navn. */
+  supplierName: string;
+  /** URL til leverandør-logo (PNG/SVG). Vises i Hook F + outro. */
+  supplierLogoUrl: string | null;
+  /** Produktnavn. */
+  productName: string;
+  /** Produkt-tagline. */
+  productTagline: string;
+  /** USP-bullets (2-4). */
+  bullets: string[];
+  /** Produktbilde-URL. */
+  productImageUrl?: string | null;
+  /** Outro-CTA — typisk "fosen-tools.no/{merke-slug}". */
+  ctaUrl?: string;
+};
+
+export const SAMPLE_FT_LEVERANDOR: FTLeverandorNyhetProps = {
+  format: "reel",
+  supplierSlug: "milwaukee",
+  supplierName: "MILWAUKEE",
+  supplierLogoUrl: null,
+  productName: "M18 FUEL Slagdrill",
+  productTagline: "Mer moment. Lengre kjøretid.",
+  bullets: [
+    "Børsteløs motor",
+    "1357 Nm bremsemoment",
+    "ONE-KEY-kompatibel",
+  ],
+  productImageUrl: null,
+  ctaUrl: "fosen-tools.no/milwaukee",
 };

@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "video:studio": "remotion studio remotion/index.ts",
-    "video:render": "tsx scripts/render-video.ts"
+    "video:render": "tsx scripts/render-video.ts",
+    "dagens": "tsx scripts/dagens-innlegg.ts",
+    "uke": "tsx scripts/uke-batch.ts",
+    "leverandor": "tsx scripts/leverandor-fra-pdf.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.94.0",

@@ -21,10 +21,30 @@ import { CADLABProsess } from "./compositions/CADLABProsess";
 import { ReferanseSpotlight } from "./compositions/ReferanseSpotlight";
 import { Definisjon } from "./compositions/Definisjon";
 import { HeroPoster } from "./compositions/HeroPoster";
+import { FTReferanseStory } from "./compositions/FTReferanseStory";
+import { FTHDFISpotlight } from "./compositions/FTHDFISpotlight";
+import { FTDefinisjonNeo } from "./compositions/FTDefinisjonNeo";
+import { FTMilepaelV2 } from "./compositions/FTMilepaelV2";
+import { FTSitatV2 } from "./compositions/FTSitatV2";
+import { FTProsessSpotlight } from "./compositions/FTProsessSpotlight";
+import { FTHDFIvsHyllevare } from "./compositions/FTHDFIvsHyllevare";
+import { FTKundeResultat } from "./compositions/FTKundeResultat";
+import { FTHvorforHDFI } from "./compositions/FTHvorforHDFI";
+import { FTLeverandorNyhet } from "./compositions/FTLeverandorNyhet";
 import {
   DIMENSIONS,
   SAMPLE_CADLAB,
   SAMPLE_DEFINISJON,
+  SAMPLE_FT_DEFINISJON,
+  SAMPLE_FT_HDFI,
+  SAMPLE_FT_HVORFOR,
+  SAMPLE_FT_KUNDERES,
+  SAMPLE_FT_LEVERANDOR,
+  SAMPLE_FT_MILEPAEL,
+  SAMPLE_FT_PROSESS,
+  SAMPLE_FT_REFERANSE,
+  SAMPLE_FT_SITAT,
+  SAMPLE_FT_VSHYLLEVARE,
   SAMPLE_HDFI,
   SAMPLE_HDFI_BA,
   SAMPLE_HERO_POSTER,
@@ -226,6 +246,110 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={SAMPLE_HERO_POSTER}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+
+      {/* ── FT-pipeline (juni 2026): 4-scene-mal med Four Editors-transitions ── */}
+      <Composition
+        id="FTReferanseStory"
+        component={FTReferanseStory}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_REFERANSE}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTHDFISpotlight"
+        component={FTHDFISpotlight}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_HDFI}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTDefinisjonNeo"
+        component={FTDefinisjonNeo}
+        durationInFrames={630}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_DEFINISJON}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTMilepaelV2"
+        component={FTMilepaelV2}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_MILEPAEL}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTSitatV2"
+        component={FTSitatV2}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_SITAT}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+
+      {/* ── Salgs-orienterte (2026-06-02) — bygd for å SELGE HDFI ── */}
+      <Composition
+        id="FTProsessSpotlight"
+        component={FTProsessSpotlight}
+        durationInFrames={640}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_PROSESS}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTHDFIvsHyllevare"
+        component={FTHDFIvsHyllevare}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_VSHYLLEVARE}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTKundeResultat"
+        component={FTKundeResultat}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_KUNDERES}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTHvorforHDFI"
+        component={FTHvorforHDFI}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_HVORFOR}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTLeverandorNyhet"
+        component={FTLeverandorNyhet}
+        durationInFrames={600}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_LEVERANDOR}
         calculateMetadata={({ props }) => dimsFromFormat(props)}
       />
 
