@@ -47,7 +47,6 @@ export const FTSitatV2: React.FC<FTSitatV2Props> = ({
 }) => {
   return (
     <AbsoluteFill>
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
       <AmbientLayer variant="ink" />
 
       <Sequence from={0} durationInFrames={LOADING_END}>

@@ -172,6 +172,8 @@ export type KampanjeTeaserProps = {
   products: KampanjeProdukt[];
   /** CTA-tekst nederst. */
   ctaUrl: string;
+  /** Musikk-variant. Default "hope". */
+  musicVariant?: "hope" | "life" | "faraway" | "deephigh" | "together" | "buildup";
 };
 
 export const SAMPLE_KAMPANJE: KampanjeTeaserProps = {
@@ -948,6 +950,12 @@ export type FTLeverandorNyhetProps = {
   productImageUrl?: string | null;
   /** Outro-CTA — typisk "fosen-tools.no/{merke-slug}". */
   ctaUrl?: string;
+  /** Overstyr Hook F-eyebrow. Default "Nyhet fra". Sett f.eks. "Ukens tips". */
+  eyebrowOverride?: string;
+  /** Overstyr Scene 2-badge. Default "NYHET". Sett f.eks. "TIPS". */
+  badgeLabel?: string;
+  /** Musikk-variant. Default "hope". */
+  musicVariant?: "hope" | "life" | "faraway" | "deephigh" | "together" | "buildup";
 };
 
 export const SAMPLE_FT_LEVERANDOR: FTLeverandorNyhetProps = {

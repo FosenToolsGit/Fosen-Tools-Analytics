@@ -1,0 +1,22 @@
+{
+  "_note": "16-ukers rotasjon for mandag-produktshowcase. Hver kategori får tilordnet en hook + SFX-bed så ingen 2 uker rad føles like. Kategori-slug må matche /produkter/<slug> på fosen-tools.no.",
+  "_hooks": "Available: eyebrow-slam, stat-shock, visual-reveal, process-glimpse, leverandor-tagin, brand-coldopen",
+  "rotasjon": [
+    { "uke_offset": 0, "kategori": "verktøyvogner", "label": "Verktøyvogner", "hook": "visual-reveal", "eyebrow": "Ukens topp 3 · Verktøyvogner" },
+    { "uke_offset": 1, "kategori": "skrutrekkere", "label": "Skrutrekkere", "hook": "stat-shock", "eyebrow": "Ukens topp 3 · Skrutrekkere" },
+    { "uke_offset": 2, "kategori": "måling-og-merking", "label": "Måling & merking", "hook": "eyebrow-slam", "eyebrow": "Ukens topp 3 · Måling" },
+    { "uke_offset": 3, "kategori": "arbeidsklær", "label": "Arbeidsklær", "hook": "visual-reveal", "eyebrow": "Ukens topp 3 · Arbeidsklær" },
+    { "uke_offset": 4, "kategori": "piper-og-skraller", "label": "Piper & skraller", "hook": "stat-shock", "eyebrow": "Ukens topp 3 · Piper" },
+    { "uke_offset": 5, "kategori": "lysutstyr", "label": "Lykter & lysutstyr", "hook": "visual-reveal", "eyebrow": "Ukens topp 3 · Lykter" },
+    { "uke_offset": 6, "kategori": "tenger", "label": "Tenger", "hook": "eyebrow-slam", "eyebrow": "Ukens topp 3 · Tenger" },
+    { "uke_offset": 7, "kategori": "verneutstyr", "label": "Verneutstyr", "hook": "visual-reveal", "eyebrow": "Ukens topp 3 · Verneutstyr" },
+    { "uke_offset": 8, "kategori": "verktøykoffert", "label": "Verktøykofferter", "hook": "stat-shock", "eyebrow": "Ukens topp 3 · Kofferter" },
+    { "uke_offset": 9, "kategori": "batteriverktøy", "label": "Batteriverktøy", "hook": "process-glimpse", "eyebrow": "Ukens topp 3 · Batteriverktøy" },
+    { "uke_offset": 10, "kategori": "nøkler", "label": "Nøkler", "hook": "eyebrow-slam", "eyebrow": "Ukens topp 3 · Nøkler" },
+    { "uke_offset": 11, "kategori": "hammere", "label": "Hammere", "hook": "stat-shock", "eyebrow": "Ukens topp 3 · Hammere" },
+    { "uke_offset": 12, "kategori": "momentverktøy", "label": "Momentverktøy", "hook": "visual-reveal", "eyebrow": "Ukens topp 3 · Momentverktøy" },
+    { "uke_offset": 13, "kategori": "stiger-og-plattformer", "label": "Stiger & plattformer", "hook": "eyebrow-slam", "eyebrow": "Ukens topp 3 · Stiger" },
+    { "uke_offset": 14, "kategori": "oppbevaring", "label": "Oppbevaring", "hook": "visual-reveal", "eyebrow": "Ukens topp 3 · Oppbevaring" },
+    { "uke_offset": 15, "kategori": "verktøysett", "label": "Verktøysett", "hook": "stat-shock", "eyebrow": "Ukens topp 3 · Verktøysett" }
+  ]
+}

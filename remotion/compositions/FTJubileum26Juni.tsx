@@ -143,7 +143,6 @@ export const FTJubileum26Juni: React.FC<FTJubileum26JuniProps> = ({
   return (
     <AbsoluteFill style={{ background: FT.red }}>
       {/* Music bed (kan slås av) */}
-      {!silent && <Audio src={musicBed()} volume={MUSIC_BED_VOLUME * 0.5} />}
 
       {/* AmbientLayer over rødflate — gir tekstur og "alive" */}
       <AbsoluteFill style={{ opacity: 0.4 }}>

@@ -46,7 +46,6 @@ export const FTDefinisjonNeo: React.FC<FTDefinisjonNeoProps> = ({
 }) => {
   return (
     <AbsoluteFill>
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
       <AmbientLayer variant="ink-deep" intensity={0.7} />
 
       {/* Scene 1 — brand cold-open for HDFI/FOD-konsept */}

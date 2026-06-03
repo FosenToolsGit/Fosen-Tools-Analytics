@@ -49,7 +49,6 @@ export const FTMilepaelV2: React.FC<FTMilepaelV2Props> = ({
 }) => {
   return (
     <AbsoluteFill>
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
       <AmbientLayer variant="ink" />
 
       {/* Riser builds under count-up */}

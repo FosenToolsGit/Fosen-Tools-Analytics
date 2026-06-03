@@ -47,7 +47,6 @@ export const FTKundeResultat: React.FC<FTKundeResultatProps> = ({
 }) => {
   return (
     <AbsoluteFill>
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
       <AmbientLayer variant="ink" />
 
       {/* Hook C: stat shock med tall + kontekst */}

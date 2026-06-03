@@ -67,7 +67,6 @@ export const FTReferanseStory: React.FC<FTReferanseStoryProps> = ({
   return (
     <AbsoluteFill>
       {/* Music bed runs through everything */}
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
 
       {/* Always-on ambient backdrop (blueprint grid + dust) */}
       <AmbientLayer variant="ink" />

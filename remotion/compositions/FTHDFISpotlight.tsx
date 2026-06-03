@@ -51,7 +51,6 @@ export const FTHDFISpotlight: React.FC<FTHDFISpotlightProps> = ({
 }) => {
   return (
     <AbsoluteFill>
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
       <AmbientLayer variant="ink" />
 
       {/* Riser plays subtly under Scene 2's first half */}

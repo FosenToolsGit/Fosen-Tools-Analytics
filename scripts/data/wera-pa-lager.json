@@ -1,0 +1,162 @@
+[
+  {
+    "id": "123449",
+    "navn": "BITS 840/1 Z HEX PLUS 7/32&quot; X25 MM",
+    "pris": 44,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/28196/image/ceaa2f1e-97a9-4332-a40b-d4c6dabc5363/05135079001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/123449"
+  },
+  {
+    "id": "124726",
+    "navn": "BITS 1/4&quot; UNBRAKO 4MM L=25MM",
+    "pris": 45,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/64304/image/212e0d83-1ec0-4cac-a6b6-c918f4c48315/05056684001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/124726"
+  },
+  {
+    "id": "120374",
+    "navn": "BITS 1/4&quot; TORX&#174; HF TX20 25MM",
+    "pris": 54,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/32801/image/94ece6b6-0ede-444b-a078-ddbb56c45023/867_1_torx_hf_tx20.w240.jpg",
+    "url": "https://fosen-tools.no/wera/120374"
+  },
+  {
+    "id": "126281",
+    "navn": "BITS 1/4&quot; PH 2 X 25 MM DIAMANT 851/1 RDC",
+    "pris": 61,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/69764/image/f84376db-54f6-4508-a561-7fe46b31e8d3/05135008001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/126281"
+  },
+  {
+    "id": "111646",
+    "navn": "BITS PZ1X50 DIAMANT 855/4 BDC",
+    "pris": 83,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/60180/image/d85afdaf-b380-4867-bcd7-e96b182687ba/bits%2Bpz1x50%2Bdiamant%2B855-4%2Bbdc.w720.png",
+    "url": "https://fosen-tools.no/wera/111646"
+  },
+  {
+    "id": "111647",
+    "navn": "BITS PZ2X50 DIAMANT 855/4 BDC",
+    "pris": 83,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/60178/image/e6450364-5771-4041-ad2b-1fb022d9e3a4/111647.w720.png",
+    "url": "https://fosen-tools.no/wera/111647"
+  },
+  {
+    "id": "111648",
+    "navn": "BITS PZ3X50 DIAMANT 855/4 BDC",
+    "pris": 83,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/60177/image/889f9f25-817d-4a5b-924d-392b636b2bf7/111648.w720.png",
+    "url": "https://fosen-tools.no/wera/111648"
+  },
+  {
+    "id": "123829",
+    "navn": "BITS 1/4&quot; TX10 89MM 867/4 Z TORX&#174; Bits",
+    "pris": 110,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/27671/image/9a881315-7e7f-49bb-875a-07c53806b0f5/867_4_z_torx_152mm.w900.jpg",
+    "url": "https://fosen-tools.no/wera/123829"
+  },
+  {
+    "id": "123830",
+    "navn": "BITS 1/4&quot; TX20 89MM 867/4 Z TORX&#174; Bits",
+    "pris": 110,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/27670/image/b696dede-7856-4513-8572-a6374a73d0b8/867_4_z_torx_152mm.w900.jpg",
+    "url": "https://fosen-tools.no/wera/123830"
+  },
+  {
+    "id": "124725",
+    "navn": "BITS 1/4&quot; NR6 TORQ-SET&#174; Mplus",
+    "pris": 155,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/64300/image/2acfa85c-a4d6-4f0a-8db3-041ea220bab9/05066640001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/124725"
+  },
+  {
+    "id": "120670",
+    "navn": "BITS 1/4&quot; TORQ-SET&#174; #10 X 25MM 871/1 DC",
+    "pris": 155,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/32308/image/e9877fa9-2213-4aa3-8718-a898a742cd54/871_1_dc_torq-set_mplus.w900.jpg",
+    "url": "https://fosen-tools.no/wera/120670"
+  },
+  {
+    "id": "124861",
+    "navn": "L-N&#216;KKEL UNBRAKO 14,0MM 950 BLANK",
+    "pris": 176,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/64603/image/7d4f8926-513d-47c4-9d08-878c8322856d/05021005001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/124861"
+  },
+  {
+    "id": "123215",
+    "navn": "PIPE 3/8&quot; KORT 3/8&quot; UNBRAKO HF",
+    "pris": 177,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/28569/image/78a0c9b0-2e09-4ea0-a89e-f0df2054c7b8/05003093001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/123215"
+  },
+  {
+    "id": "118842",
+    "navn": "BITS 1/4&quot; TORX&#174; HF TX20 89MM",
+    "pris": 190,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/34878/image/7eed6c3d-9938-432a-852e-0411770837cf/867_4_torx_hf_tx20_89.jpg",
+    "url": "https://fosen-tools.no/wera/118842"
+  },
+  {
+    "id": "124730",
+    "navn": "KRAFTFORM BALL-GRIP SKRUTREKKERSETT",
+    "pris": 1239,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/mc10256nofosentools/64327/image/094be218-a083-44a6-b95a-1518aa4179e7/05136033001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/124730"
+  },
+  {
+    "id": "123695",
+    "navn": "BITSSKRUTREKKER M/SKRALLE 20 RA-R",
+    "pris": 1491,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/67874/image/153012db-c323-4122-924d-cd1039ce7cd7/05051514001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/123695"
+  },
+  {
+    "id": "125865",
+    "navn": "BITSSKRUTREKKER M/SKRALLE 838 RA S",
+    "pris": 1519,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/67877/image/0f7548eb-cd8c-4599-863c-a9419d04b898/05051492001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/125865"
+  },
+  {
+    "id": "125549",
+    "navn": "MOMENTN&#216;KKEL SAFE-TORQUE A1 1/4&quot; DR.",
+    "pris": 4504,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/66862/image/3d248aee-b753-4c2c-8fa9-2a963387926a/skjermbilde%2B2026-02-03%2Bkl.%2B13.52.10.w900.png",
+    "url": "https://fosen-tools.no/wera/125549"
+  },
+  {
+    "id": "125508",
+    "navn": "MOMENTN&#216;KKEL 1/2&quot; 40-200NM",
+    "pris": 4551,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/67771/image/ca3269b7-bea6-44c9-9aaa-b749a8456813/atech3fr300b.w900.png",
+    "url": "https://fosen-tools.no/wera/125508"
+  },
+  {
+    "id": "126002",
+    "navn": "MOMENTN&#216;KKEL SAFE-TORQUE A 2 1/4&quot; BITS",
+    "pris": 4625,
+    "lager": true,
+    "bilde": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/68495/image/60d7085d-8667-4334-9b96-f2d1264c0f65/05075801001.w900.jpg",
+    "url": "https://fosen-tools.no/wera/126002"
+  }
+]

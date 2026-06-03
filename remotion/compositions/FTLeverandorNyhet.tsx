@@ -45,16 +45,20 @@ export const FTLeverandorNyhet: React.FC<FTLeverandorNyhetProps> = ({
   bullets,
   productImageUrl,
   ctaUrl,
+  eyebrowOverride,
+  badgeLabel,
+  musicVariant,
 }) => {
+  const eyebrowText = eyebrowOverride ?? "Nyhet fra";
+  const badgeText = badgeLabel ?? "NYHET";
   return (
     <AbsoluteFill>
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
       <AmbientLayer variant="ink" />
 
       <Sequence from={0} durationInFrames={LOADING_END}>
         <FTHook
           kind="leverandor-tagin"
-          eyebrow="Nyhet fra"
+          eyebrow={eyebrowText}
           primaryText={supplierName}
           logoUrl={supplierLogoUrl}
         />
@@ -73,6 +77,7 @@ export const FTLeverandorNyhet: React.FC<FTLeverandorNyhetProps> = ({
           productTagline={productTagline}
           bullets={bullets}
           productImageUrl={productImageUrl ?? null}
+          badgeText={badgeText}
         />
       </Sequence>
 
@@ -80,7 +85,7 @@ export const FTLeverandorNyhet: React.FC<FTLeverandorNyhetProps> = ({
 
       <Sequence from={OUTRO_START} durationInFrames={130}>
         <FTOutroCta
-          tagline={`Forhandlet av Fosen Tools`}
+          tagline={productTagline}
           url={ctaUrl ?? `fosen-tools.no/${supplierSlug}`}
         />
       </Sequence>
@@ -95,7 +100,8 @@ const LeverandorScene2: React.FC<{
   productTagline: string;
   bullets: string[];
   productImageUrl: string | null;
-}> = ({ supplierName, supplierLogoUrl, productName, productTagline, bullets, productImageUrl }) => {
+  badgeText?: string;
+}> = ({ supplierName, supplierLogoUrl, productName, productTagline, bullets, productImageUrl, badgeText = "NYHET" }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
@@ -128,16 +134,17 @@ const LeverandorScene2: React.FC<{
 
   return (
     <AbsoluteFill style={{ opacity: sceneT }}>
-      {/* Leverandør-logo + produktnavn øverst */}
+      {/* Leverandør-logo + badge sentralt øverst */}
       <div
         style={{
           position: "absolute",
-          top: height * 0.07,
-          left: width * 0.08,
-          right: width * 0.08,
+          top: height * 0.06,
+          left: 0,
+          right: 0,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          gap: 24,
+          gap: 16,
           opacity: logoSpring,
           transform: `translateY(${(1 - logoSpring) * 10}px)`,
         }}
@@ -146,7 +153,8 @@ const LeverandorScene2: React.FC<{
           <Img
             src={supplierLogoUrl}
             style={{
-              height: 56,
+              height: 150,
+              maxWidth: width * 0.75,
               objectFit: "contain",
               filter: "brightness(1.1)",
             }}
@@ -155,7 +163,7 @@ const LeverandorScene2: React.FC<{
           <div
             style={{
               fontFamily: SANS_FONT,
-              fontSize: 32,
+              fontSize: 76,
               fontWeight: 800,
               color: FT.white,
               letterSpacing: 1,
@@ -167,69 +175,76 @@ const LeverandorScene2: React.FC<{
         <div
           style={{
             fontFamily: MONO_FONT,
-            fontSize: 18,
+            fontSize: 28,
             color: FT.red,
-            letterSpacing: 4,
-            fontWeight: 600,
+            letterSpacing: 5,
+            fontWeight: 800,
             textTransform: "uppercase",
-            padding: "6px 12px",
-            border: `1px solid ${FT.red}`,
+            padding: "10px 22px",
+            border: `2px solid ${FT.red}`,
             borderRadius: 2,
+            background: "rgba(237, 28, 36, 0.1)",
           }}
         >
-          NYHET
+          {badgeText}
         </div>
       </div>
 
-      {/* Produktnavn — H1 */}
+      {/* Produktnavn — H1 (sentrert). Auto-skalér font basert på lengde
+          så lange navn ikke kolliderer med tagline. */}
       <div
         style={{
           position: "absolute",
-          top: height * 0.13,
-          left: width * 0.08,
-          right: width * 0.08,
+          top: height * 0.265,
+          left: width * 0.04,
+          right: width * 0.04,
+          display: "flex",
+          justifyContent: "center",
+          textAlign: "center",
         }}
       >
         <FTHeadingReveal
           text={productName}
           from={25}
-          fontSize={56}
-          maxWidth={width * 0.85}
-          underlineWidthFactor={0.4}
+          fontSize={productName.length > 14 ? 64 : 84}
+          maxWidth={width * 0.92}
+          underlineWidthFactor={0.5}
         />
       </div>
 
-      {/* Tagline */}
+      {/* Tagline — sentrert (over produktbilde) */}
       <div
         style={{
           position: "absolute",
-          top: height * 0.225,
-          left: width * 0.08,
-          right: width * 0.08,
+          top: height * 0.395,
+          left: width * 0.06,
+          right: width * 0.06,
           opacity: taglineT,
+          textAlign: "center",
         }}
       >
         <div
           style={{
             fontFamily: SANS_FONT,
-            fontSize: 26,
-            color: "rgba(255, 255, 255, 0.78)",
-            fontWeight: 500,
+            fontSize: 32,
+            color: "rgba(255, 255, 255, 0.9)",
+            fontWeight: 600,
             letterSpacing: 0.3,
+            lineHeight: 1.3,
           }}
         >
           {productTagline}
         </div>
       </div>
 
-      {/* Produktbilde-boks */}
+      {/* Produktbilde-boks (under tagline, over bullets) */}
       <div
         style={{
           position: "absolute",
-          top: height * 0.3,
+          top: height * 0.48,
           left: width * 0.08,
           right: width * 0.08,
-          height: height * 0.4,
+          height: height * 0.28,
           background: FT.inkDeep,
           overflow: "hidden",
           opacity: imgT,
@@ -290,9 +305,10 @@ const LeverandorScene2: React.FC<{
               <div
                 style={{
                   fontFamily: SANS_FONT,
-                  fontSize: 22,
+                  fontSize: 30,
                   color: FT.white,
-                  fontWeight: 500,
+                  fontWeight: 600,
+                  lineHeight: 1.3,
                 }}
               >
                 {b}

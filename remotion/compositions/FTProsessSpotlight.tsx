@@ -46,7 +46,6 @@ export const FTProsessSpotlight: React.FC<FTProsessSpotlightProps> = ({
 }) => {
   return (
     <AbsoluteFill>
-      <Audio src={musicBed()} volume={MUSIC_BED_VOLUME} />
       <AmbientLayer variant="ink" />
 
       {/* Scene 1 — Hook E (Process Glimpse) */}

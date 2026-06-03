@@ -64,7 +64,7 @@ export const HookLeverandorTagIn: React.FC<HookProps> = ({
   });
 
   // Logo-størrelse — leverandør-logo skal være stor (større enn FT)
-  const logoMaxSize = width > 1600 ? 540 : 480;
+  const logoMaxSize = width > 1600 ? 720 : 660;
 
   // FT-merket nederst — sentralisert spec
   const ftMarkWidth = FT_BRAND_MARK.widthFor(width) * 0.55;
@@ -100,14 +100,14 @@ export const HookLeverandorTagIn: React.FC<HookProps> = ({
         <div
           style={{
             fontFamily: MONO_FONT,
-            fontSize: 28,
+            fontSize: 40,
             color: FT.red,
-            letterSpacing: 10,
-            fontWeight: 700,
+            letterSpacing: 12,
+            fontWeight: 800,
             textTransform: "uppercase",
-            padding: "12px 32px",
-            border: `1.5px solid ${FT.red}`,
-            background: "rgba(237, 28, 36, 0.08)",
+            padding: "16px 40px",
+            border: `2px solid ${FT.red}`,
+            background: "rgba(237, 28, 36, 0.1)",
           }}
         >
           {eyebrow}
@@ -129,7 +129,7 @@ export const HookLeverandorTagIn: React.FC<HookProps> = ({
             src={logoUrl}
             style={{
               maxWidth: logoMaxSize,
-              maxHeight: logoMaxSize * 0.5,
+              maxHeight: logoMaxSize * 0.6,
               objectFit: "contain",
               filter: "brightness(1.05) drop-shadow(0 0 24px rgba(255,255,255,0.18))",
             }}
@@ -138,7 +138,7 @@ export const HookLeverandorTagIn: React.FC<HookProps> = ({
           <div
             style={{
               fontFamily: SANS_FONT,
-              fontSize: width > 1600 ? 160 : 130,
+              fontSize: width > 1600 ? 200 : 170,
               fontWeight: 800,
               color: FT.white,
               letterSpacing: -2,

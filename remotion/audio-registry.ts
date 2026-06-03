@@ -48,6 +48,31 @@ export function sfxVolume(name: Sfx): number {
  *  Same file always — `Ambience Hope` from Four Editors gives a soft
  *  build-up that loops cleanly. Override by passing a different
  *  staticFile() path on the consumer side. */
-export function musicBed(): string {
-  return staticFile("sfx/music-bed.wav");
+export type MusicBedVariant =
+  | "hope"        // Ambience Hope: bright, positive build (default)
+  | "life"        // Ambience Life: warm, energetic
+  | "faraway"     // Ambience Far Away: atmospheric, calm
+  | "deephigh"    // Ambience Deep High: moody, deep
+  | "together"    // Ambience All Together: full, layered
+  | "buildup";    // Ambience Sharp Buildup: tension-building
+
+const MUSIC_BED_FILES: Record<MusicBedVariant, string> = {
+  hope: "sfx/music-bed.wav",
+  life: "sfx/music-bed-life.wav",
+  faraway: "sfx/music-bed-faraway.wav",
+  deephigh: "sfx/music-bed-deephigh.wav",
+  together: "sfx/music-bed-together.wav",
+  buildup: "sfx/music-bed-buildup.wav",
+};
+
+export function musicBed(variant: MusicBedVariant = "hope"): string {
+  return staticFile(MUSIC_BED_FILES[variant]);
+}
+
+/** Deterministisk velger basert på seed (f.eks. dato eller uke).
+ *  Bruk i skript-laget for å rotere musikk per post.
+ *  Pr. nå returnerer den alltid "hope" — venter på nye lyder fra Adrian.
+ *  Four Editors Ambience-pakka passer ikke FT-stilen (for drømmende). */
+export function pickMusicBed(_seed: string | number): MusicBedVariant {
+  return "hope";
 }

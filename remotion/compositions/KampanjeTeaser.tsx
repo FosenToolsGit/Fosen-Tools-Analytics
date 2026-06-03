@@ -5,6 +5,7 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Audio,
   Img,
   Sequence,
   interpolate,
@@ -23,6 +24,7 @@ import {
   fade,
   formatNOK,
 } from "../components/shared";
+import { sfx, sfxVolume } from "../audio-registry";
 import type { KampanjeProdukt, KampanjeTeaserProps } from "../types";
 
 // Total varighet er låst i Root.tsx (430 frames @ 30fps). Karusellen
@@ -256,6 +258,31 @@ export const KampanjeTeaser: React.FC<KampanjeTeaserProps> = (props) => {
   return (
     <AbsoluteFill>
       <Backdrop tone="ink" />
+
+      {/* SFX-hits — fyrer kun på animasjons-events, ingen bakgrunnsmusikk */}
+      {/* Intro whoosh — wordmark + headline pop-in */}
+      <Sequence from={0} durationInFrames={30}>
+        <Audio src={sfx("whoosh-cinematic")} volume={sfxVolume("whoosh-cinematic")} />
+      </Sequence>
+      {/* Per-produkt soft-sweep — fyrer på hvert crossfade */}
+      {products.map((p, i) => {
+        const from =
+          CAROUSEL_START + Math.round((CAROUSEL_DURATION / slotCount) * i);
+        return (
+          <Sequence
+            key={`sfx-${p.name}-${i}`}
+            from={Math.max(0, from - 4)}
+            durationInFrames={28}
+          >
+            <Audio src={sfx("soft-sweep")} volume={sfxVolume("soft-sweep")} />
+          </Sequence>
+        );
+      })}
+      {/* Outro impact */}
+      <Sequence from={OUTRO_FROM} durationInFrames={50}>
+        <Audio src={sfx("impact-movie")} volume={sfxVolume("impact-movie")} />
+      </Sequence>
+
       <Sequence durationInFrames={INTRO}>
         <IntroScene
           eyebrow={props.eyebrow}
@@ -277,7 +304,7 @@ export const KampanjeTeaser: React.FC<KampanjeTeaserProps> = (props) => {
         );
       })}
       <Sequence from={OUTRO_FROM} durationInFrames={60}>
-        <OutroCta ctaUrl={props.ctaUrl} wordmarkWidth={640} ctaSize={46} />
+        <OutroCta ctaUrl={props.ctaUrl} wordmarkWidth={640} ctaSize={36} />
       </Sequence>
     </AbsoluteFill>
   );
