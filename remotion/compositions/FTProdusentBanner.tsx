@@ -85,30 +85,73 @@ export const FTProdusentBanner: React.FC<FTProdusentBannerProps> = ({
           justifyContent: "center",
         }}
       >
-        {/* Hvit radial glow bak logoen */}
+        {/* Blueprint-grid bak logoen — tekniske tegneblokk-linjer som fader */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background:
-              "radial-gradient(ellipse 55% 70% at 50% 50%, rgba(255,255,255,0.55), rgba(255,255,255,0.18) 50%, transparent 72%)",
+            backgroundImage:
+              // Vertikale + horisontale tynne linjer (cyan/teknisk hvit) hver 80px
+              "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), " +
+              "linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px), " +
+              // Tykkere linje hver 400px (major grid)
+              "linear-gradient(to right, rgba(255,255,255,0.10) 2px, transparent 2px), " +
+              "linear-gradient(to bottom, rgba(255,255,255,0.10) 2px, transparent 2px)",
+            backgroundSize: "80px 80px, 80px 80px, 400px 400px, 400px 400px",
+            // Radial mask så grid fader til transparent mot kantene
+            maskImage:
+              "radial-gradient(ellipse 60% 75% at 50% 50%, black 20%, transparent 75%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 60% 75% at 50% 50%, black 20%, transparent 75%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Diagonal kryss-marker midt i grid (cross-hair, kun synlig der grid er sterk) */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "linear-gradient(135deg, transparent calc(50% - 1px), rgba(255,255,255,0.08) calc(50% - 1px), rgba(255,255,255,0.08) calc(50% + 1px), transparent calc(50% + 1px)), " +
+              "linear-gradient(45deg, transparent calc(50% - 1px), rgba(255,255,255,0.08) calc(50% - 1px), rgba(255,255,255,0.08) calc(50% + 1px), transparent calc(50% + 1px))",
+            maskImage:
+              "radial-gradient(circle 350px at 50% 50%, black 0%, transparent 100%)",
+            WebkitMaskImage:
+              "radial-gradient(circle 350px at 50% 50%, black 0%, transparent 100%)",
             pointerEvents: "none",
           }}
         />
 
         {logoUrl ? (
-          <Img
-            src={logoUrl}
+          // Bounding-box: respekterer både maks-bredde og maks-høyde
+          // så kvadrat-logoer (Picard, Wera, Milwaukee) OG brede logoer
+          // (Halder 7:1) rendres innenfor samme visuelle "ramme".
+          <div
             style={{
               position: "relative",
-              height: 1600,
-              width: "auto",
-              maxWidth: "90%",
-              objectFit: "contain",
-              filter: "drop-shadow(0 0 80px rgba(255,255,255,0.55))",
-              imageRendering: "auto",
+              width: 3200,
+              height: 1300,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          />
+          >
+            <Img
+              src={logoUrl}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                // Stacked drop-shadows → ekte "outer glow" som popper på mørk bg
+                filter:
+                  "drop-shadow(0 0 12px rgba(255,255,255,0.45)) " +
+                  "drop-shadow(0 0 30px rgba(255,255,255,0.30)) " +
+                  "drop-shadow(0 0 70px rgba(255,255,255,0.15))",
+                imageRendering: "auto",
+              }}
+            />
+          </div>
         ) : (
           <div
             style={{

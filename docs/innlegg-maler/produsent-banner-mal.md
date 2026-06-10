@@ -83,10 +83,12 @@ npm run video:studio
 ## Historikk
 
 - **V1 (10. juni 2026):** 2-kolonne med EST 1857-pille + tagline + accent-stripe
-  + svart Picard-logo direkte på mørk bg (logo usynlig)
-- **V2:** ren full-bleed hero (for sparten — Adrian likte V1-fargekoding bedre)
-- **V3:** logo i hvit boks med padding (for «boxy»)
-- **V4:** kun logoen med radial glow, ingen tekst (riktig retning, men logo
-  for liten)
-- **V5 (LÅST):** `height: 1600` på logoen tvinger oppskalering siden PNG
-  ikke skalerer over native med `maxWidth`. Glow utvidet til 55%×70%.
+- **V2-V4:** iterasjoner på layout og logo-størrelse
+- **V5:** `height: 1600` med stacked drop-shadow glow
+- **V6:** blueprint-grid bak logoen (80px hoved + 400px major + diagonal cross-hair)
+- **V7:** bounding-box-tilnærming (3200×1300 container med objectFit:contain)
+  så både kvadrat- og bredelogoer rendres innenfor samme visuelle ramme
+- **V8 (LÅST):** Container `width: 3200, height: 1300`. For svært brede
+  logoer (Halder 7:1, Soudal 2.3:1) padder vi PNG-en horisontalt i upload-
+  scriptene så de rendres mindre i samme container. Stacked outer-glow:
+  12px / 30px / 70px drop-shadows.
