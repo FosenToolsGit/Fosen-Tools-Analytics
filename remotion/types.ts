@@ -973,3 +973,51 @@ export const SAMPLE_FT_LEVERANDOR: FTLeverandorNyhetProps = {
   productImageUrl: null,
   ctaUrl: "fosen-tools.no/milwaukee",
 };
+
+// ── FTThumbnail (statisk cover-image for reels) ─────────────────────
+
+export type FTThumbnailProps = {
+  format: VideoFormat;
+  /** Hero-bilde som fyller hele canvas. */
+  imageUrl: string;
+  /** Liten etikett over headline (UPPERCASE auto). */
+  eyebrow: string;
+  /** Hovedoverskrift (UPPERCASE auto). 1-4 ord. */
+  headline: string;
+  /** Tags-chips på bunnen (max 3-4 anbefalt). */
+  tags: string[];
+  /** Vis 25-årspille i toppen. */
+  showJubileum?: boolean;
+};
+
+export const SAMPLE_FT_THUMBNAIL: FTThumbnailProps = {
+  format: "reel",
+  imageUrl: "https://fosen-tools.no/userfiles/image/HDFI/HDFI-svart-bedre.jpg",
+  eyebrow: "Skreddersydd HDFI",
+  headline: "Helikopter-kit",
+  tags: ["HDFI", "PELI 0450", "CADLAB"],
+  showJubileum: true,
+};
+
+// ── FTProdusentBanner (10000×2500 banner for produsent-sider) ──────
+
+export type FTProdusentBannerProps = {
+  /** Produsent-navn (vises som tekst hvis ingen logo). */
+  brandName: string;
+  /** Tagline (UPPERCASE auto), f.eks. "TYSKE PRESISJONSHAMMERE". */
+  tagline: string;
+  /** Etablerings-år. */
+  estYear: number;
+  /** URL til produsent-logo (transparent PNG/SVG). */
+  logoUrl?: string;
+  /** Hero-bilde for høyre side (cropped med diagonal mask). */
+  heroImageUrl?: string;
+};
+
+export const SAMPLE_FT_PRODUSENT_BANNER: FTProdusentBannerProps = {
+  brandName: "Picard",
+  tagline: "Tyske presisjonshammere",
+  estYear: 1857,
+  logoUrl: "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/picard.png",
+  heroImageUrl: undefined,
+};

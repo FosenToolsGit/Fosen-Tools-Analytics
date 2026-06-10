@@ -14,7 +14,9 @@
     "leverandor": "tsx scripts/leverandor-fra-pdf.ts",
     "torsdag": "tsx scripts/torsdag-tipset.ts",
     "mandag": "tsx scripts/mandag-kategori.ts",
-    "produktbilde": "tsx scripts/hent-produktbilde.ts"
+    "produktbilde": "tsx scripts/hent-produktbilde.ts",
+    "thumbnail": "tsx scripts/render-thumbnail.ts",
+    "produsent-banner": "tsx scripts/render-produsent-banner.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.94.0",

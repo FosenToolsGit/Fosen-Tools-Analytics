@@ -22,6 +22,8 @@ import { ReferanseSpotlight } from "./compositions/ReferanseSpotlight";
 import { Definisjon } from "./compositions/Definisjon";
 import { HeroPoster } from "./compositions/HeroPoster";
 import { FTReferanseStory } from "./compositions/FTReferanseStory";
+import { FTThumbnail } from "./compositions/FTThumbnail";
+import { FTProdusentBanner } from "./compositions/FTProdusentBanner";
 import { FTHDFISpotlight } from "./compositions/FTHDFISpotlight";
 import { FTDefinisjonNeo } from "./compositions/FTDefinisjonNeo";
 import { FTMilepaelV2 } from "./compositions/FTMilepaelV2";
@@ -47,6 +49,8 @@ import {
   SAMPLE_FT_MILEPAEL,
   SAMPLE_FT_PROSESS,
   SAMPLE_FT_REFERANSE,
+  SAMPLE_FT_THUMBNAIL,
+  SAMPLE_FT_PRODUSENT_BANNER,
   SAMPLE_FT_SITAT,
   SAMPLE_FT_VSHYLLEVARE,
   SAMPLE_HDFI,
@@ -263,6 +267,25 @@ export const RemotionRoot: React.FC = () => {
         height={1920}
         defaultProps={SAMPLE_FT_REFERANSE}
         calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTThumbnail"
+        component={FTThumbnail}
+        durationInFrames={1}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={SAMPLE_FT_THUMBNAIL}
+        calculateMetadata={({ props }) => dimsFromFormat(props)}
+      />
+      <Composition
+        id="FTProdusentBanner"
+        component={FTProdusentBanner}
+        durationInFrames={1}
+        fps={FPS}
+        width={10000}
+        height={2500}
+        defaultProps={SAMPLE_FT_PRODUSENT_BANNER}
       />
       <Composition
         id="FTHDFISpotlight"
