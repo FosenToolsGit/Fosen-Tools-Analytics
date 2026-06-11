@@ -1,0 +1,17 @@
+{
+  "format": "reel",
+  "eyebrow": "Skreddersydd Helikopter-kit",
+  "headline": "Helikopter-kit",
+  "imageUrls": [
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/mobile%20verkt%C3%B8ykasser/Helikoptersett%202.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/mobile%20verkt%C3%B8ykasser/Helikoptersett%203.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/mobile%20verkt%C3%B8ykasser/Helikoptersett%204.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/mobile%20verkt%C3%B8ykasser/Helikoptersett%205.jpeg"
+  ],
+  "tags": ["HDFI", "PELI 0450", "CADLAB"],
+  "bannerHeadline": "Helikopter service-kit",
+  "bannerSubline": "Peli 0450 med skreddersydd HDFI",
+  "tagline": "Skreddersydd på Brekstad",
+  "customerLogoUrl": null,
+  "hook": "eyebrow-slam"
+}
