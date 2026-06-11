@@ -71,7 +71,10 @@ const type = typeArg as FTType;
 
 const dataPath = arg("data");
 const date = arg("date", new Date().toISOString().slice(0, 10))!;
-const formats = (arg("formats", "reel,square,wide") || "reel").split(",").map((s) => s.trim()).filter(Boolean);
+// Default: kun reel-format (Instagram + Facebook). LinkedIn = ikke for FT-reels.
+// Tidligere default var "reel,square,wide" — overkill. Beslutning 9. juni 2026:
+// reels kun på IG + FB, ikke LinkedIn (se memory feedback_reels_kun_ig_fb.md).
+const formats = (arg("formats", "reel") || "reel").split(",").map((s) => s.trim()).filter(Boolean);
 const utmCampaign = arg("utm-campaign", `${type}-${date}`)!;
 
 // ── data-resolution ────────────────────────────────────────────────

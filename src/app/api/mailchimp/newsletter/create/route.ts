@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
     midtImageUrl: body.midtImageUrl ?? "",
     brandLogoUrl: body.brandLogoUrl,
     brandLogoLink: body.brandLogoLink,
+    hideBrandLogo: body.hideBrandLogo,
     topBadge: body.topBadge,
     footerImageUrl: body.footerImageUrl ?? "",
     socialInstagramPostUrl: body.socialInstagramPostUrl ?? "",
@@ -120,13 +121,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Mailchimp-feil" }, { status: 500 });
   }
 
-  // #13 Send-tidspunkt: kommende tirsdag kl 11:00 norsk tid (publiseringsrytmen vår)
-  try {
-    const sendIso = nextTuesdayElevenIso();
-    await builder.scheduleCampaign(draft.campaignId, sendIso);
-  } catch {
-    // Stille feil — bruker kan sette tidspunkt manuelt i Mailchimp om scheduling feiler
-  }
+  // (Tidligere auto-scheduled til neste tirsdag kl 11:00 norsk tid. Fjernet
+  //  9. juni 2026 — bruker vil pushe som UTKAST og selv velge i Mailchimp UI
+  //  om de skal publisere nå, schedule, eller redigere først.)
 
   const { data: savedDraft } = await supabase
     .from("mailchimp_drafts")

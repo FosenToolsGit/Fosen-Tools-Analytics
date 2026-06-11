@@ -132,6 +132,9 @@ export interface NewsletterInput {
   midtImageUrl: string;
   brandLogoUrl?: string;
   brandLogoLink?: string;
+  /** Skip auto-fill og rendering av brand-logo helt. Bruk på utgaver
+   *  som ikke skal fremheve én enkelt leverandør (f.eks. topp-N-lister). */
+  hideBrandLogo?: boolean;
   topBadge?: string;
   footerImageUrl: string;
   socialInstagramPostUrl: string;
@@ -341,8 +344,8 @@ export class MailchimpBuilderService {
       utm
     ));
 
-    // Section 2b: Én-linjes jubileums-tekst rett over svart footer.
-    //   Skjules hvis jubileumFooterText er tom. Brukes for å holde
+    // Section 2b: Jubileums-tekst-rad — rett over footer, men som SEPARAT
+    //   seksjon (egen wrapSection), ikke inni footer. Brukes til å holde
     //   25-årsjubileet diskret tilstede i ordinære nyhetsbrev.
     if (input.jubileumFooterText && input.jubileumFooterText.trim()) {
       rootSections.push(renderJubileumFooterRow(input.jubileumFooterText));
@@ -411,7 +414,7 @@ export class MailchimpBuilderService {
   async createNewsletter(input: NewsletterInput): Promise<CreatedDraft> {
     const { id: campaignId } = await this.replicateCampaign(MASTER_CAMPAIGN_ID);
 
-    if (!input.brandLogoUrl && input.products.length > 0) {
+    if (!input.hideBrandLogo && !input.brandLogoUrl && input.products.length > 0) {
       const firstProductUrl = input.products[0].url;
       try {
         const u = new URL(firstProductUrl);
@@ -580,6 +583,9 @@ function wrapInDocument(body: string, previewText: string, subjectLine: string):
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Tving light mode i e-postklienter (Apple Mail, Outlook iOS respekterer; Gmail ignorerer) -->
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
 <title>${esc(subjectLine)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -601,7 +607,10 @@ function wrapInDocument(body: string, previewText: string, subjectLine: string):
 }
 
 function renderCssBlock(): string {
-  return `<style type="text/css">img{-ms-interpolation-mode:bicubic;}
+  return `<style type="text/css">
+/* Tving light mode CSS-side (komplementerer meta-tag i head) */
+:root { color-scheme: light only; supported-color-schemes: light; }
+img{-ms-interpolation-mode:bicubic;}
 table, td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
 .mceStandardButton, .mceStandardButton td, .mceStandardButton td a{mso-hide:all!important;}
 p, a, li, td, blockquote{mso-line-height-rule:exactly;}
@@ -854,16 +863,18 @@ function renderContentSection(
     // *|FNAME|* og andre Mailchimp merge-tags fungerer fortsatt — esc() bevarer
     // * og | så abonnent-feltene plukkes opp ved utsendelse.
     const ingressHtml = esc(input.ingress).replace(/\n+/g, "<br><br>");
-    let ingressInner = `<p style="line-height: 1.5; mso-line-height-alt: 150%; text-align: center;" class="${input.brandLogoUrl ? "" : "last-child"}"><span style="font-size: 14px">${ingressHtml}</span></p>`;
+    const showBrandLogo = !input.hideBrandLogo && Boolean(input.brandLogoUrl);
+    let ingressInner = `<p style="line-height: 1.5; mso-line-height-alt: 150%; text-align: center;" class="${showBrandLogo ? "" : "last-child"}"><span style="font-size: 14px">${ingressHtml}</span></p>`;
 
     // Brand logo as inline image after ingress text
     let brandLogoRow = "";
-    if (input.brandLogoUrl) {
+    if (showBrandLogo) {
+      const brandLogoUrlStr = input.brandLogoUrl ?? "";
       const brandHref = input.brandLogoLink ? utm(input.brandLogoLink, "brand-logo") : null;
       const brandImgStyle = "display:block;margin:0 auto;width:180px;max-width:180px;height:70px;max-height:70px;object-fit:contain;border:0";
       const brandImgTag = brandHref
-        ? `<a href="${esc(brandHref)}" target="_blank" style="display:block;text-align:center"><img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="70" style="${brandImgStyle}" class="mceImage"></a>`
-        : `<img alt="" src="${esc(input.brandLogoUrl)}" width="180" height="70" style="${brandImgStyle}" class="mceImage">`;
+        ? `<a href="${esc(brandHref)}" target="_blank" style="display:block;text-align:center"><img alt="" src="${esc(brandLogoUrlStr)}" width="180" height="70" style="${brandImgStyle}" class="mceImage"></a>`
+        : `<img alt="" src="${esc(brandLogoUrlStr)}" width="180" height="70" style="${brandImgStyle}" class="mceImage">`;
       brandLogoRow = `<tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:12px;padding-bottom:0;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b300"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;margin:0;vertical-align:top;max-width:100%;width:100%;height:auto" role="presentation"><tbody><tr><td style="border:0;border-radius:0;margin:0" valign="top" align="center">${brandImgTag}</td></tr></tbody></table></td></tr></tbody></table></td></tr>`;
     }
 
@@ -946,7 +957,11 @@ function renderContentSection(
 function renderMidtImageBlock(imageUrl: string, href: string): string {
   const imgHtml = renderImage("b81", imageUrl, href, 564, "", "mceImage");
 
-  return `<tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-97"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:8px;padding-bottom:8px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b97"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="97" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:12px;padding-bottom:0;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b81">${imgHtml}</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr>`;
+  // 10 åpne <tbody>/<table>/<td>/<tr> i denne strukturen — derfor MÅ slutten ha
+  // EKSAKT 10 close-pairs av </tbody></table></td></tr>. Tidligere versjon hadde 11,
+  // som lukket et tbody/table som ble åpnet utenfor — dette pushet footer-en
+  // ned i en feil wrapper og forårsaket smal footer-rendering i Gmail.
+  return `<tr><td valign="top" class="mceGutterContainer" id="gutterContainerId-97"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:8px;padding-bottom:8px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b97"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="97" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody><tr><td style="padding-top:0;padding-bottom:0" valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:12px;padding-bottom:0;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="b81">${imgHtml}</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr>`;
 }
 
 /**
@@ -986,7 +1001,7 @@ function renderProductGrid(products: NewsletterProduct[], themeSlug: string): st
     );
   }).join("");
 
-  // Build row 2 columns
+  // Build row 2 columns (2 produkter à 50% bredde — Adrian foretrekker dette)
   const row2Cols = row2.map((p, i) => {
     const productUtm = withUtm(p.url, themeSlug, slugFromUrl(p.url));
     return renderProductColumn(
@@ -1090,18 +1105,26 @@ function renderProductColumn(
   gutterContainerId: string,
   textPadding: string
 ): string {
-  // Fast bilde-boks-størrelse per kolonne — alle produktbilder rendres på
-  // identisk plass uavhengig av aspect ratio. `object-fit:contain` bevarer
-  // proporsjonene; hvit bg gir konsistent ramme.
-  const imgWidth = colspan === 4 ? 186 : 282;
-  const imgBoxHeight = colspan === 4 ? 160 : 220;
+  // Fast bilde-boks-størrelse — ALLE produkter bruker samme størrelse (186×160)
+  // uavhengig av om de er i row 1 (colspan 4 / 33%) eller row 2 (colspan 6 / 50%).
+  // Bildet er sentrert i sin celle, og row 2-cellene er fortsatt 50% brede så
+  // posisjonen ligger sentralt under row 1-en.
+  const imgWidth = 186;
+  const imgBoxHeight = 160;
 
-  const productImgStyle = `display:block;margin:0 auto;width:100%;max-width:${imgWidth}px;height:${imgBoxHeight}px;object-fit:contain;background:#ffffff;border:0`;
+  // - background: hardkodet #fff på BÅDE img og <td>-cellen så dark mode på
+  //   Apple Mail/iOS ikke inverterer bakgrunnen til svart (selv om
+  //   color-scheme: light only er satt — defense in depth)
+  // - object-fit: contain bevarer aspekt-ratio, ingen strekk
+  // - height: auto i style overstyrer width/height-attributtene som forced strekk
+  //   (men attributtene MÅ være satt for Outlook/Gmail fallback)
+  const productImgStyle = `display:block;margin:0 auto;width:100%;max-width:${imgWidth}px;height:${imgBoxHeight}px;object-fit:contain;background:#ffffff;background-color:#ffffff;border:0;mix-blend-mode:normal`;
   // #8 Alt-tekst: bruker produktnavn så Outlook + skjermlesere har fallback når bilde ikke laster
   const imgInner = `<img src="${esc(product.imageUrl)}" alt="${esc(product.name)}" width="${imgWidth}" height="${imgBoxHeight}" style="${productImgStyle}" class="imageDropZone mceImage" />`;
+  // Wrap-cellen får ogsåa hvit bg som ekstra forsvar
   const imgHtml = href
-    ? `<a href="${esc(href)}" target="_blank" style="display:block">${imgInner}</a>`
-    : imgInner;
+    ? `<a href="${esc(href)}" target="_blank" style="display:block;background-color:#ffffff">${imgInner}</a>`
+    : `<div style="background-color:#ffffff">${imgInner}</div>`;
 
   // Product text: name (uppercase), sku, price, "Gå til produkt" underlined
   // Min-høyder sikrer at SKU, pris og CTA starter på samme linje på tvers av
@@ -1110,7 +1133,7 @@ function renderProductColumn(
   const ctaText = product.ctaText ?? "Gå til produkt";
   const productTextHtml = `<h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 54px;"><a href="${esc(href)}" target="_blank">${esc(nameUpper)}</a></h4><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 16px; margin: 4px 0 0 0;"><a href="${esc(href)}" target="_blank" style="color:#666"><span style="font-size:11px">${esc(product.brandSku)}</span></a></p><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 36px; margin: 4px 0 0 0;"><a href="${esc(href)}" target="_blank"><strong><span style="font-size:13px">${esc(product.priceText)}</span></strong></a></p><h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; margin-top: 8px;" class="last-child"><a href="${esc(href)}" target="_blank"><strong><span style="text-decoration:underline;">${esc(ctaText)}</span></strong></a></h4>`;
 
-  return `<td style="padding-top:0;padding-bottom:0" valign="top" colspan="${colspan}" width="${widthPct}"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="background-color:transparent;padding-top:0;padding-bottom:0;padding-right:6px;padding-left:6px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="${imgBlockId}">${imgHtml}</td></tr><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="${gutterContainerId}"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="${txtBlockId}"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="${textPadding}" class="mceTextBlockContainer"><div data-block-id="${txtBlockId.replace("b", "")}" class="mceText" id="d${txtBlockId.replace("b", "")}" style="width:100%">${productTextHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td>`;
+  return `<td style="padding-top:0;padding-bottom:0" valign="top" colspan="${colspan}" width="${widthPct}"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding-top:0;padding-bottom:0;padding-right:6px;padding-left:6px;border:0;border-radius:0" valign="top" class="mceImageBlockContainer" align="center" id="${imgBlockId}">${imgHtml}</td></tr><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0" valign="top" class="mceGutterContainer" id="${gutterContainerId}"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" id="${txtBlockId}"><table width="100%" style="border:0;background-color:transparent;border-radius:0;border-collapse:separate"><tbody><tr><td style="${textPadding}" class="mceTextBlockContainer"><div data-block-id="${txtBlockId.replace("b", "")}" class="mceText" id="d${txtBlockId.replace("b", "")}" style="width:100%">${productTextHtml}</div></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td>`;
 }
 
 /**

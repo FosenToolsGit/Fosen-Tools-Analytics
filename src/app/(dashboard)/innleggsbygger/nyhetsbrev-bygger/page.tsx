@@ -130,6 +130,7 @@ interface WizardStatePayload {
   showMidtCta?: boolean;
   hideJubileumBanner?: boolean;
   jubileumFooterText?: string;
+  hideBrandLogo?: boolean;
   /** Planlagt sendedato (YYYY-MM-DD). Brukes på innhold-kalender for å
    *  plassere utkastet på riktig dag, og vises i oversikten som badge. */
   scheduledSendDate?: string;
@@ -193,6 +194,9 @@ export default function NyhetsbrevByggerPage() {
   const [hideJubileumBanner, setHideJubileumBanner] = useState<boolean>(false);
   /* Én-linjes jubileumsfooter-rad rett over svart footer. Tom = skjult. */
   const [jubileumFooterText, setJubileumFooterText] = useState<string>("");
+  /* Skjul brand-logo etter ingressen (vises som default når 1. produkt har manufacturer-logo).
+   *  Skru av for utgaver som ikke skal fremheve én enkelt leverandør (f.eks. topp-N-lister). */
+  const [hideBrandLogo, setHideBrandLogo] = useState<boolean>(false);
   /* Planlagt sendedato — YYYY-MM-DD, tom hvis ikke satt. */
   const [scheduledSendDate, setScheduledSendDate] = useState<string>("");
 
@@ -235,10 +239,18 @@ export default function NyhetsbrevByggerPage() {
   const lastSyncedStateRef = useRef<string>("");
   /** Sett etter første render — første useEffect-run skal IKKE trigge save. */
   const skipFirstAutoSaveRef = useRef(true);
+  /** Når true: en preview-sync er forårsaket av loadDraft, ikke en ny AI-generering.
+   *  loadDraft setter dette før setPreview(...), og denne effecten respekterer flagget. */
+  const skipNextPreviewSyncRef = useRef(false);
 
   /* Sync editContent from preview.content when generated */
   useEffect(() => {
     if (preview) {
+      if (skipNextPreviewSyncRef.current) {
+        // Loadet draft satte preview — editContent/editProducts er allerede satt fra draft
+        skipNextPreviewSyncRef.current = false;
+        return;
+      }
       setEditContent({ ...preview.content });
       setEditProducts([...preview.products]);
     }
@@ -267,6 +279,7 @@ export default function NyhetsbrevByggerPage() {
             showMidtCta,
             hideJubileumBanner,
             jubileumFooterText,
+            hideBrandLogo,
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -282,7 +295,7 @@ export default function NyhetsbrevByggerPage() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [editContent, editProducts, editSuppliers, midtImageUrl, footerImageUrl, socialInstagram, socialLinkedin, showPreview, templateVariant, showFridayPost, showMidtCta, hideJubileumBanner, jubileumFooterText]);
+  }, [editContent, editProducts, editSuppliers, midtImageUrl, footerImageUrl, socialInstagram, socialLinkedin, showPreview, templateVariant, showFridayPost, showMidtCta, hideJubileumBanner, jubileumFooterText, hideBrandLogo]);
 
   /* Suggestions fetch */
   useEffect(() => {
@@ -521,6 +534,7 @@ export default function NyhetsbrevByggerPage() {
         showMidtCta,
         hideJubileumBanner,
         jubileumFooterText,
+        hideBrandLogo,
       };
       const res = await fetch("/api/mailchimp/newsletter/create", {
         method: "POST",
@@ -558,6 +572,7 @@ export default function NyhetsbrevByggerPage() {
     setShowFridayPost(true);
     setShowMidtCta(true);
     setHideJubileumBanner(false);
+    setHideBrandLogo(false);
     setJubileumFooterText("");
     setScheduledSendDate("");
     setThemeInput("");
@@ -602,6 +617,7 @@ export default function NyhetsbrevByggerPage() {
       hideJubileumBanner,
       jubileumFooterText,
       scheduledSendDate,
+      hideBrandLogo,
     };
   }
 
@@ -650,7 +666,11 @@ export default function NyhetsbrevByggerPage() {
         if (typeof s.manualProductUrls === "string")
           setManualProductUrls(s.manualProductUrls);
         if (typeof s.variant === "number") setVariant(s.variant);
-        if (s.preview !== undefined) setPreview(s.preview);
+        // Sett flagget FØR setPreview slik at preview-sync-effecten respekterer det
+        if (s.preview !== undefined) {
+          skipNextPreviewSyncRef.current = true;
+          setPreview(s.preview);
+        }
         if (s.editContent !== undefined) setEditContent(s.editContent);
         if (Array.isArray(s.editProducts)) setEditProducts(s.editProducts);
         if (Array.isArray(s.editSuppliers)) setEditSuppliers(s.editSuppliers);
@@ -679,17 +699,26 @@ export default function NyhetsbrevByggerPage() {
         else setShowMidtCta(true);
         if (typeof s.hideJubileumBanner === "boolean") setHideJubileumBanner(s.hideJubileumBanner);
         else setHideJubileumBanner(false);
+        if (typeof s.hideBrandLogo === "boolean") setHideBrandLogo(s.hideBrandLogo);
+        else setHideBrandLogo(false);
         if (typeof s.jubileumFooterText === "string") setJubileumFooterText(s.jubileumFooterText);
         else setJubileumFooterText("");
         if (typeof s.scheduledSendDate === "string") setScheduledSendDate(s.scheduledSendDate);
         else setScheduledSendDate("");
 
         setCurrentDraftId(id);
-        // Markér tilstanden som "synket" så auto-save ikke umiddelbart re-saver
-        lastSyncedStateRef.current = JSON.stringify(s);
+        // Hopp over neste auto-save tick (utløses av state-kaskaden over),
+        // ellers vil server-state bli overskrevet av forrige browser-state.
+        skipFirstAutoSaveRef.current = true;
+        // Etter at React har flushet alle setState-kall over, snapshot
+        // det BUILDED state-objektet — saveCurrentDraft sammenligner mot
+        // buildWizardState() så vi MÅ matche samme struktur, ikke rå server-payload.
         setLastSavedAt(json.updated_at ? new Date(json.updated_at) : null);
         setSaveStatus("saved");
         setShowDrafts(false);
+        setTimeout(() => {
+          lastSyncedStateRef.current = JSON.stringify(buildWizardState());
+        }, 100);
       }, 0);
     } catch {
       /* stille */
@@ -833,6 +862,7 @@ export default function NyhetsbrevByggerPage() {
     hideJubileumBanner,
     jubileumFooterText,
     scheduledSendDate,
+    hideBrandLogo,
   ]);
 
   /* ═══════════════════════════════════ */
@@ -1128,6 +1158,24 @@ export default function NyhetsbrevByggerPage() {
               </label>
               <p className="ml-6 mt-1 text-[11px] text-gray-500">
                 Skru av når midtseksjonen er ren info uten ekstern destinasjon (typisk program-/event-info).
+              </p>
+            </div>
+
+            {/* Brand-logo-toggle — skjul auto-generert leverandørlogo (typisk når innlegget ikke fremhever én enkelt leverandør) */}
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hideBrandLogo}
+                  onChange={(e) => setHideBrandLogo(e.target.checked)}
+                  className="rounded border-gray-700"
+                />
+                <span className="text-xs font-medium text-gray-300">
+                  Skjul brand-logo etter ingressen
+                </span>
+              </label>
+              <p className="ml-6 mt-1 text-[11px] text-gray-500">
+                Default vises logo for første produktets leverandør. Skru på for topp-N-lister eller utgaver som ikke skal fremheve én leverandør.
               </p>
             </div>
 

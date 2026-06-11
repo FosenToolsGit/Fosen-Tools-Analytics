@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     midtImageUrl: body.midtImageUrl ?? "",
     brandLogoUrl: body.brandLogoUrl,
     brandLogoLink: body.brandLogoLink,
+    hideBrandLogo: body.hideBrandLogo,
     topBadge: body.topBadge,
     footerImageUrl: body.footerImageUrl ?? "",
     socialInstagramPostUrl: body.socialInstagramPostUrl ?? "",
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
   };
 
   // Auto-derive brand logo from first product URL if not provided (mirrors createNewsletter logic).
-  if (!input.brandLogoUrl && input.products.length > 0) {
+  if (!input.hideBrandLogo && !input.brandLogoUrl && input.products.length > 0) {
     try {
       const firstUrl = input.products[0].url;
       if (firstUrl) {
