@@ -324,10 +324,10 @@ function capitalizeFirst(s: string): string {
 function formatPriceText(priceNow: number | null, priceBefore: number | null): string {
   const fmt = (n: number) =>
     new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n).replace(/,/g, " ");
-  if (!priceNow) return "Pris ikke tilgjengelig";
-  const parts = [`${fmt(priceNow)},- eks. mva.`];
-  if (priceBefore && priceBefore > priceNow) parts.push(`(før ${fmt(priceBefore)},-)`);
-  return parts.join(" ");
+  // Vis pris KUN ved rabatt (priceBefore > priceNow). Ikke-rabatterte produkter
+  // står uten pris — leseren går til produktsiden for pris (B2B-norm).
+  if (!priceNow || !priceBefore || priceBefore <= priceNow) return "";
+  return `${fmt(priceNow)},- eks. mva. (før ${fmt(priceBefore)},-)`;
 }
 
 async function getLatestFridayPost(

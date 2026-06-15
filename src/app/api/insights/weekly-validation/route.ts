@@ -112,7 +112,8 @@ async function aggregateWindow(
     if (name.includes("purchase")) {
       ex.real_purchases += Number(r.all_conversions) || 0;
       ex.real_purchase_value += Number(r.all_conversions_value) || 0;
-    } else if (name.includes("form_submit") || name.includes("kontakt") || name.includes("begin_checkout")) {
+    } else if (name.includes("form_submit") || name.includes("kontakt")) {
+      // begin_checkout = kjøpsintensjon (påbegynt kasse), ikke en ekte lead
       ex.real_leads += Number(r.all_conversions) || 0;
     }
   }

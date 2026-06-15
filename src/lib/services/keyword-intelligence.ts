@@ -257,9 +257,10 @@ export async function enrichWithConversions(
   for (const r of convRows ?? []) {
     const name = (r.conversion_action_name as string).toLowerCase();
     const isPurchase = name.includes("purchase");
+    // begin_checkout = kjøpsintensjon (påbegynt kasse), ikke en lead. Utelatt så
+    // keyword-verdsetting og verdikter ikke blåses opp av påbegynte kjøp.
     const isLead =
       name.includes("form_submit") ||
-      name.includes("begin_checkout") ||
       name.includes("kontaktoss") ||
       name.includes("kontakt");
     const ex = campConv.get(r.campaign_id as string) ?? {

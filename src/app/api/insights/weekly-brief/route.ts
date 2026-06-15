@@ -101,18 +101,25 @@ async function gatherAdsTotals(
   let purchases = 0;
   let purchaseValue = 0;
   let leads = 0;
+  let intent = 0; // begin_checkout = kjøpsintensjon (påbegynt kasse), IKKE en lead
+  let intentValue = 0; // samlet handlekurv-verdi for påbegynte kjøp = pipeline
   for (const r of convs ?? []) {
     const name = (r.conversion_action_name as string).toLowerCase();
     if (name.includes("purchase")) {
       purchases += Number(r.all_conversions) || 0;
       purchaseValue += Number(r.all_conversions_value) || 0;
-    } else if (name.includes("form_submit") || name.includes("kontakt") || name.includes("begin_checkout")) {
+    } else if (name.includes("begin_checkout")) {
+      // Påbegynt kasse — kjøpsintensjon, ikke en lead. Holdes adskilt så
+      // lead-tallet kun reflekterer ekte henvendelser (skjema/kontakt).
+      intent += Number(r.all_conversions) || 0;
+      intentValue += Number(r.all_conversions_value) || 0;
+    } else if (name.includes("form_submit") || name.includes("kontakt")) {
       leads += Number(r.all_conversions) || 0;
     }
   }
 
   const roas = cost > 0 ? purchaseValue / cost : 0;
-  return { cost, clicks, impressions, purchases, purchaseValue, leads, roas, campMeta };
+  return { cost, clicks, impressions, purchases, purchaseValue, leads, intent, intentValue, roas, campMeta };
 }
 
 async function gatherSessions(
@@ -638,11 +645,25 @@ export async function GET(request: NextRequest) {
         good: month1Totals.purchases >= month0Totals.purchases,
       },
       {
-        label: "Antall leads",
+        label: "Leads (skjema/kontakt)",
         current: month1Totals.leads.toFixed(1),
         previous: month0Totals.leads.toFixed(1),
         delta_pct: deltaPct(month1Totals.leads, month0Totals.leads),
         good: month1Totals.leads >= month0Totals.leads,
+      },
+      {
+        label: "Påbegynte kjøp (antall)",
+        current: month1Totals.intent.toFixed(1),
+        previous: month0Totals.intent.toFixed(1),
+        delta_pct: deltaPct(month1Totals.intent, month0Totals.intent),
+        good: month1Totals.intent >= month0Totals.intent,
+      },
+      {
+        label: "Påbegynt kjøpsverdi (pipeline)",
+        current: fmtNok(month1Totals.intentValue),
+        previous: fmtNok(month0Totals.intentValue),
+        delta_pct: deltaPct(month1Totals.intentValue, month0Totals.intentValue),
+        good: month1Totals.intentValue >= month0Totals.intentValue,
       },
       {
         label: "GA4 sesjoner",

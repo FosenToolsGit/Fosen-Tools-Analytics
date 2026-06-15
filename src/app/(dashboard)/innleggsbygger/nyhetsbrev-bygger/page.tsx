@@ -417,13 +417,12 @@ export default function NyhetsbrevByggerPage() {
       const scraped = responseData.product ?? responseData;
       const fmt = (n: number) =>
         new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n).replace(/,/g, " ");
-      const priceText = scraped.price_now
-        ? `${fmt(scraped.price_now)},- eks. mva.${
-            scraped.price_before && scraped.price_before > scraped.price_now
-              ? ` (før ${fmt(scraped.price_before)},-)`
-              : ""
-          }`
-        : "Pris ikke tilgjengelig";
+      // Vis pris KUN ved rabatt. Ikke-rabatterte produkter står uten pris —
+      // leseren går til produktsiden via "Gå til produkt" for pris (B2B-norm).
+      const priceText =
+        scraped.price_now && scraped.price_before && scraped.price_before > scraped.price_now
+          ? `${fmt(scraped.price_now)},- eks. mva. (før ${fmt(scraped.price_before)},-)`
+          : "";
       const newProduct: NewsletterProduct = {
         url,
         name: (scraped.name ?? "PRODUKT").toUpperCase(),

@@ -267,7 +267,7 @@ function applyParsedTheme(base: GeneratedContent, parsed: ParsedTheme): Generate
   if (parsed.productCategory) {
     const pc = parsed.productCategory;
     result.themeSlug = `${mfrSlug}-${pc.slug}-${MONTH_NB[new Date().getMonth()]}`;
-    result.topBadge = `${mfrDisplay.toUpperCase()} ${pc.plural.toUpperCase()}`;
+    result.topBadge = "NYHETSBREV";
     // Milwaukee-mønster: "Milwaukee momentnøkler er her" (fortelling) + kort under-tekst
     result.subjectLine = `🔧 ${mfrDisplay} ${pc.plural} er her`;
     result.headingMain = `${mfrDisplay} ${pc.plural} er her`;
@@ -287,7 +287,7 @@ function applyParsedTheme(base: GeneratedContent, parsed: ParsedTheme): Generate
   // Tilfelle 2: bare manufacturer
   // Milwaukee-mønster: punchy hovedtittel + kort ingress + logo-fokus
   result.themeSlug = `${mfrSlug}-${MONTH_NB[new Date().getMonth()]}`;
-  result.topBadge = mfrDisplay.toUpperCase();
+  result.topBadge = "NYHETSBREV";
   result.subjectLine = `🔧 Nytt utvalg fra ${mfrDisplay}`;
   result.previewText = `Plukket utvalg fra ${mfrDisplay} — populært akkurat nå.`;
   result.headingMain = `${mfrDisplay} er her`;
@@ -431,7 +431,7 @@ function generateBaseContent(
       const capPlural = pc.plural.charAt(0).toUpperCase() + pc.plural.slice(1);
       return {
         themeSlug: `${pc.slug}-${month}`,
-        topBadge: capPlural.toUpperCase(),
+        topBadge: "NYHETSBREV",
         subjectLine: pickVariant(
           [
             `🔧 ${capPlural} fra Fosen Tools`,
@@ -494,7 +494,7 @@ function generateBaseContent(
     const displayName = manufacturer.charAt(0).toUpperCase() + manufacturer.slice(1);
     return {
       themeSlug: `${slug}-${month}`,
-      topBadge: displayName.toUpperCase(),
+      topBadge: "NYHETSBREV",
       subjectLine: `Produsent-spotlight: ${displayName}`,
       previewText: `Plukket utvalg fra ${displayName} — hva som selger best akkurat nå.`,
       headingMain: displayName,

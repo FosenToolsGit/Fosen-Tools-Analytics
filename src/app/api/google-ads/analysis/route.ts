@@ -38,7 +38,7 @@ export interface CampaignAnalysis {
   // Reelle kjøp (fra all_conversions_value på purchase-eventet)
   real_purchases: number;
   real_purchase_value: number;
-  // Leads (form_submit, begin_checkout, kontakt)
+  // Leads (form_submit, kontakt) — begin_checkout teller IKKE som lead (kjøpsintensjon)
   real_leads: number;
   estimated_lead_total_value: number; // real_leads * estimated_lead_value_nok
   // Beregninger
@@ -189,9 +189,11 @@ export async function GET(request: NextRequest) {
   for (const row of convRows ?? []) {
     const name = (row.conversion_action_name as string).toLowerCase();
     const isPurchase = name.includes("purchase");
+    // begin_checkout = kjøpsintensjon (påbegynt kasse), ikke en lead. Utelatt
+    // så lead-verdsetting (estimated_lead_total_value) og effective_roas ikke
+    // blåses opp av påbegynte kjøp som aldri ble fullført.
     const isLead =
       name.includes("form_submit") ||
-      name.includes("begin_checkout") ||
       name.includes("kontakt");
 
     const existing = convByCamp.get(row.campaign_id) ?? {
