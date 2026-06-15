@@ -768,15 +768,19 @@ function JubileumEventSlide({
             <div
               style={{
                 display: "flex",
-                gap: "2cqh",
                 width: "max-content",
                 animation: active
                   ? `ftJubRundell ${rundellDuration}s linear infinite`
                   : "none",
               }}
             >
+              {/* Mellomrommet ligger som marginRight PER logo (ikke flex-gap) så
+                  den dobblede listen er perfekt periodisk → translateX(-50%)
+                  lander eksakt på kopi 2 og loopen blir sømløs uten hopp. */}
               {[...partners, ...partners].map((p, i) => (
-                <JubileumPartnerLogo key={i} partner={p} sizeScale={partnerSize} />
+                <div key={i} style={{ marginRight: "2cqh", flexShrink: 0 }}>
+                  <JubileumPartnerLogo partner={p} sizeScale={partnerSize} />
+                </div>
               ))}
             </div>
           </div>

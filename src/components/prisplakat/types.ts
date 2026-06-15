@@ -417,6 +417,8 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         subtitle: "LEVERANDØR-STANDER\nHOLD AV DAGEN",
         hours: "10:00–16:00",
         grilling_hours: "Fra kl. 11",
+        extra_text:
+          "Eksklusive dagstilbud kun i butikken på Brekstad\nIkke på nett, telefon eller e-post",
         rundell_duration: 40,
         duration_seconds: 14,
         partners: [
