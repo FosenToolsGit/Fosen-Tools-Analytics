@@ -76,8 +76,8 @@ const SUPABASE_PUBLIC_BASE =
 
 export const DEFAULT_JUB_PARTNERS: JubPosterPartner[] = [
   { name: "Milwaukee", logo_url: `${SUPABASE_PUBLIC_BASE}/Milwaukee_Logo.svg` },
-  // Wera-logoen har MYE negative space i originalen — skaleres kraftig opp
-  { name: "Wera", logo_url: `${SUPABASE_PUBLIC_BASE}/Wera_Tools_logo.svg`, scale: 10 },
+  // Korrekt offisiell Wera-logo (grønt H-merke + Wera + slogan), normal viewBox
+  { name: "Wera", logo_url: `${SUPABASE_PUBLIC_BASE}/Wera_logo_correct.svg` },
   { name: "Soudal", logo_url: `${SUPABASE_PUBLIC_BASE}/Soudal.svg` },
   { name: "Picard", logo_url: `${SUPABASE_PUBLIC_BASE}/RGB_Picard_Logo_2024.svg` },
   // Halder har stor negative space rundt logoen — skaleres opp

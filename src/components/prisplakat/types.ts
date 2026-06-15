@@ -421,7 +421,7 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         duration_seconds: 14,
         partners: [
           { name: "Milwaukee", logo_url: `${jubLogoBase}/Milwaukee_Logo.svg` },
-          { name: "Wera", logo_url: `${jubLogoBase}/Wera_Tools_logo.svg`, scale: 1.4 },
+          { name: "Wera", logo_url: `${jubLogoBase}/Wera_logo_correct.svg` },
           { name: "Soudal", logo_url: `${jubLogoBase}/Soudal.svg` },
           { name: "Picard", logo_url: `${jubLogoBase}/RGB_Picard_Logo_2024.svg` },
           { name: "Halder", logo_url: `${jubLogoBase}/erwin-halder-kg-vector-logo.svg`, scale: 3 },
