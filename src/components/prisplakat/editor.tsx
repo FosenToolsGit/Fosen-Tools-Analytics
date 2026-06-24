@@ -31,6 +31,8 @@ export function PrisplakatEditor() {
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showPlaylistList, setShowPlaylistList] = useState(false);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [libraryFilter, setLibraryFilter] = useState<"all" | "slideshow" | "a4">("all");
   const [zoom, setZoom] = useState(0.55);
   /** Vis midtstillings-guides (vertikal + horisontal linje gjennom midtpunktet)
    *  på A5/A4-preview. Kun visuell i editoren — påvirker IKKE PDF-eksport. */
@@ -341,7 +343,7 @@ export function PrisplakatEditor() {
         }}>
           {saveStatus === "saving" ? "Lagrer..." : saveStatus === "saved" ? "✓ Lagret" : saveStatus === "error" ? "Feil!" : "Lagre"}
         </button>
-        <button onClick={() => setShowPlaylistList(!showPlaylistList)} style={{
+        <button onClick={() => { setShowPlaylistList(true); loadList(); }} style={{
           background: "var(--chrome-bg-3)", color: "#fff", border: "1px solid var(--chrome-border)",
           padding: "6px 14px", borderRadius: 4, fontSize: 13, cursor: "pointer",
         }}>Mine prisplakater</button>
@@ -432,7 +434,8 @@ export function PrisplakatEditor() {
           background: "var(--chrome-bg-2)", borderRight: "1px solid var(--chrome-border)",
           overflowY: "auto", padding: 14,
         }}>
-          {showPlaylistList ? (
+          {/* «Mine prisplakater» vises nå som modal-galleri (nederst i fila) */}
+          {false ? (
             <div>
               <button onClick={() => setShowPlaylistList(false)} style={{
                 width: "100%", background: "transparent", color: "#fff",
@@ -941,6 +944,91 @@ export function PrisplakatEditor() {
           </div>
         </div>
       </div>
+
+      {/* ───────── Mine prisplakater — modal-galleri ───────── */}
+      {showPlaylistList && (
+        <div
+          onClick={() => setShowPlaylistList(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.62)", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "min(1080px, 96vw)", maxHeight: "86vh", background: "var(--chrome-bg-2)", border: "1px solid var(--chrome-border)", borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "18px 22px", borderBottom: "1px solid var(--chrome-border)" }}>
+              <div style={{ fontSize: 19, fontWeight: 800, color: "#fff" }}>Mine prisplakater</div>
+              <input
+                value={librarySearch}
+                onChange={(e) => setLibrarySearch(e.target.value)}
+                placeholder="Søk…"
+                style={{ flex: 1, maxWidth: 300, background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 13, fontFamily: "inherit" }}
+              />
+              <div style={{ display: "flex", gap: 6 }}>
+                {([["all", "Alle"], ["slideshow", "Slideshow"], ["a4", "A4-print"]] as const).map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => setLibraryFilter(k)}
+                    style={{ fontSize: 12, fontWeight: 700, padding: "7px 13px", borderRadius: 99, border: "1px solid var(--chrome-border)", cursor: "pointer", background: libraryFilter === k ? "var(--ft-red)" : "transparent", color: libraryFilter === k ? "#fff" : "var(--chrome-muted)" }}
+                  >{label}</button>
+                ))}
+              </div>
+              <button onClick={() => setShowPlaylistList(false)} style={{ marginLeft: "auto", background: "transparent", border: "none", color: "var(--chrome-muted)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* Kort-rutenett */}
+            <div style={{ padding: 20, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14, alignContent: "start" }}>
+              {playlists
+                .filter((pl) => {
+                  const s = librarySearch.trim().toLowerCase();
+                  if (s && !pl.title.toLowerCase().includes(s)) return false;
+                  const isSlide = pl.format.startsWith("slideshow");
+                  if (libraryFilter === "slideshow" && !isSlide) return false;
+                  if (libraryFilter === "a4" && isSlide) return false;
+                  return true;
+                })
+                .map((pl) => {
+                  const isSlide = pl.format.startsWith("slideshow");
+                  const stripe = isSlide ? "var(--ft-red)" : pl.format === "a5_kundeark" ? "#6b7280" : "#3b82f6";
+                  return (
+                    <div key={pl.id} style={{ background: "var(--chrome-bg-3)", border: "1px solid var(--chrome-border)", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                      <div style={{ height: 5, background: stripe }} />
+                      <div style={{ padding: "13px 15px", flex: 1, cursor: "pointer" }} onClick={() => { loadPlaylist(pl.id); setShowPlaylistList(false); }}>
+                        <span style={{ display: "inline-block", fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 8px", borderRadius: 6, marginBottom: 9, color: stripe, background: "rgba(255,255,255,0.06)" }}>{FORMAT_LABELS[pl.format]}</span>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{pl.title}</div>
+                        <div style={{ fontSize: 12, color: "var(--chrome-muted)" }}>{pl.products?.length || 0} produkter · {new Date(pl.updated_at).toLocaleDateString("nb-NO", { day: "numeric", month: "short" })}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, padding: "9px 12px", borderTop: "1px solid var(--chrome-border)" }}>
+                        <button onClick={() => { loadPlaylist(pl.id); setShowPlaylistList(false); }} style={{ flex: 1, background: "var(--ft-red)", color: "#fff", border: "none", borderRadius: 6, padding: "7px 0", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Åpne</button>
+                        {isSlide && (
+                          <a href={`/prisplakat/${pl.id}/play?autoplay=1`} target="_blank" rel="noreferrer" title="Spill av" style={{ flex: "0 0 36px", background: "var(--chrome-bg-2)", color: "#cfd3da", borderRadius: 6, padding: "7px 0", fontSize: 12, textAlign: "center", textDecoration: "none", border: "1px solid var(--chrome-border)" }}>▶</a>
+                        )}
+                        {isSlide && pl.share_token && (
+                          <button
+                            title="Kopier skjerm-URL"
+                            onClick={async (e) => {
+                              const url = `${window.location.origin}/prisplakat/share/${pl.share_token}/play`;
+                              try {
+                                await navigator.clipboard.writeText(url);
+                                const b = e.currentTarget; const o = b.textContent;
+                                b.textContent = "✓"; setTimeout(() => { b.textContent = o; }, 1200);
+                              } catch { /* ignore */ }
+                            }}
+                            style={{ flex: "0 0 36px", background: "var(--chrome-bg-2)", color: "#cfd3da", border: "1px solid var(--chrome-border)", borderRadius: 6, padding: "7px 0", fontSize: 12, cursor: "pointer" }}
+                          >📺</button>
+                        )}
+                        <button title="Slett" onClick={() => deletePlaylist(pl.id)} style={{ flex: "0 0 36px", background: "var(--chrome-bg-2)", color: "var(--chrome-muted)", border: "1px solid var(--chrome-border)", borderRadius: 6, padding: "7px 0", fontSize: 12, cursor: "pointer" }}>🗑</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              {playlists.length === 0 && (
+                <div style={{ gridColumn: "1 / -1", textAlign: "center", color: "var(--chrome-muted)", fontSize: 13, padding: 30 }}>Ingen prisplakater lagret ennå.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
