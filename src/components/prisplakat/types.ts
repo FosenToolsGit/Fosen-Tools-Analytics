@@ -97,8 +97,10 @@ export type SlideTemplate =
 
 /** Hvilken logo som vises i topp/bunn av en custom slide */
 export type LogoKey =
-  | "ft-white"   // Fosen Tools wordmark hvit
-  | "ft-black"   // Fosen Tools wordmark mørk
+  | "ft-white"          // Fosen Tools wordmark hvit
+  | "ft-black"          // Fosen Tools wordmark mørk
+  | "factory-white"     // Factory Store by Fosen Tools (stablet, hvit)
+  | "factory-white-h"   // Factory Store by Fosen Tools (horisontal, hvit)
   | "jub-25"     // 25-årslogo (offisiell SVG)
   | "jub-100"    // 100-årslogo (konsernet)
   | "custom"     // Egen URL via custom_logo_url
@@ -293,7 +295,7 @@ export function defaultCustomSlides(): CustomSlide[] {
       bg_color: "#ed1c24",
       text_color: "#ffffff",
       accent_color: "#ffffff",
-      top_logo: "ft-white",
+      top_logo: "factory-white",
       bottom_logo: "jub-25",
       eyebrow: "KAMPANJE VÅR 2026",
       divider: true,
@@ -379,7 +381,7 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
   };
   switch (template) {
     case "intro":
-      return { ...base, label: "Ny intro", bg_color: "#ed1c24", accent_color: "#ffffff", top_logo: "ft-white", bottom_logo: "jub-25", eyebrow: "KAMPANJE 2026" };
+      return { ...base, label: "Ny intro", bg_color: "#ed1c24", accent_color: "#ffffff", top_logo: "factory-white", bottom_logo: "jub-25", eyebrow: "KAMPANJE 2026" };
     case "credentials":
       return { ...base, label: "Stor tekst", eyebrow: "FOSEN TOOLS-STANDARDEN", title: "STOR TITTEL\nPÅ FLERE LINJER" };
     case "certified":
@@ -410,7 +412,7 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         bg_color: "#ED1C24",
         text_color: "#ffffff",
         accent_color: "#ffffff",
-        top_logo: "ft-white",
+        top_logo: "factory-white",
         bottom_logo: "jub-25",
         eyebrow: "25-ÅRSJUBILEUM · BUTIKKÅPNING",
         title: "26. JUNI 2026",
@@ -515,6 +517,8 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
 export const LOGO_LABELS: Record<NonNullable<LogoKey>, string> = {
   "ft-white": "Fosen Tools (hvit)",
   "ft-black": "Fosen Tools (mørk)",
+  "factory-white": "Factory Store (stablet, hvit)",
+  "factory-white-h": "Factory Store (horisontal, hvit)",
   "jub-25": "Jubileumslogo 25 år",
   "jub-100": "Jubileumslogo 100 år (konsern)",
   "custom": "Egen logo (URL)",
@@ -531,6 +535,8 @@ export const PRODUCT_MODE_LABELS: Record<ProductMode, string> = {
 export const LOGO_URLS: Record<NonNullable<Exclude<LogoKey, "custom">>, string> = {
   "ft-white": "/brosjyre/Fosen-Tools_white.svg",
   "ft-black": "/brosjyre/fosentools_logo_ny.png",
+  "factory-white": "/brosjyre/factory-store-stacked-white.png",
+  "factory-white-h": "/brosjyre/factory-store-horizontal-white.png",
   "jub-25": "/brosjyre/Jubileumslogo-25aar.svg",
   "jub-100": "/brosjyre/Jubileumslogo-100aar.svg",
 };

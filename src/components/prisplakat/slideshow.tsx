@@ -143,7 +143,7 @@ function ProductSlideContent({
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", gap: "2cqh" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brosjyre/Fosen-Tools_white.svg" alt="FT" style={{ height: "3.2cqh", width: "auto", flexShrink: 0 }} />
+            <img src="/brosjyre/factory-store-stacked-white.png" alt="Factory Store by Fosen Tools" style={{ height: "7cqh", width: "auto", flexShrink: 0 }} />
             <div style={{
               fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.28em",
               fontSize: "1.4cqh", color: "rgba(255,255,255,0.6)", textTransform: "uppercase",
@@ -262,7 +262,7 @@ function ProductSlideContent({
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: "1.5cqh" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brosjyre/Fosen-Tools_white.svg" alt="FT" style={{ height: "2.4cqh", width: "auto", flexShrink: 0 }} />
+          <img src="/brosjyre/factory-store-stacked-white.png" alt="Factory Store by Fosen Tools" style={{ height: "5.4cqh", width: "auto", flexShrink: 0 }} />
           <div style={{
             fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.28em",
             fontSize: "1.1cqh", color: "rgba(255,255,255,0.6)", textTransform: "uppercase",

@@ -152,6 +152,7 @@ const navItems: NavEntry[] = [
     children: [
       { label: "Brosjyre", href: "/brosjyre", icon: BookOpen },
       { label: "Prisplakat", href: "/prisplakat", icon: BookOpen },
+      { label: "Skjermer", href: "/prisplakat/skjermer", icon: BookOpen },
       { label: "Etiketter", href: "/etikett", icon: BookOpen },
     ],
   },
