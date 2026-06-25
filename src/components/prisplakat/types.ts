@@ -88,6 +88,7 @@ export type SlideTemplate =
   | "certified"        // Stor tekst + pill-rad
   | "outro"            // Kontakt-info (telefon + adresse + åpningstider)
   | "brand_spotlight"  // Merke-logo + tagline + accent
+  | "rabatt_hero"      // Animert rabatt-takeover: roterende stråler, pulserende tall, sweep
   | "partners_rundell" // Horisontalt rullende karusell av flere brand-logoer
   | "jubileum_event"   // 25-årsjubileum + butikkåpning: dato + tider + partnere
   | "multi_product"    // 2/4 produkter på én slide
@@ -390,6 +391,15 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
       return { ...base, label: "Kontakt-info", eyebrow: "VELKOMMEN INN", title: "INDUSTRIGATA 1\nBREKSTAD", phone: "72 51 51 20", url: "fosen-tools.no", hours: "MAN — FRE  07:00 — 15:00" };
     case "brand_spotlight":
       return { ...base, label: "Brand-spotlight", eyebrow: "NYTT FRA", brand_name: "Husqvarna", subtitle: "Diamantblad · Kjernebor · Sagverktøy" };
+    case "rabatt_hero":
+      return {
+        ...base, label: "Rabatt-hero", bg_color: "#0FA08E", text_color: "#ffffff", accent_color: "#FFD400",
+        top_logo: "factory-white",
+        eyebrow: "JUBILEUMSRABATT · 26. JUNI 2026",
+        title: "−40%\nPÅ ALT WERA",
+        pills: ["DAGSTILBUD KUN I PROFF-BUTIKKEN PÅ BREKSTAD"],
+        divider: false,
+      };
     case "partners_rundell":
       return {
         ...base,
@@ -506,6 +516,7 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
   certified: "Sertifikater (med pills)",
   outro: "Kontakt-info (telefon + adresse)",
   brand_spotlight: "Brand-spotlight",
+  rabatt_hero: "💥 Rabatt-hero (animert)",
   partners_rundell: "Partner-rundell (horisontalt rullende)",
   jubileum_event: "🎉 Jubileum-event (26. juni)",
   multi_product: "Multi-produkt (2 / 4-up)",

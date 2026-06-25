@@ -79,6 +79,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   if (slide.template === "brand_spotlight") {
     return <BrandSpotlightSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
   }
+  if (slide.template === "rabatt_hero") {
+    return <RabattHeroSlide slide={slide} active={active} landscape={landscape} />;
+  }
   if (slide.template === "partners_rundell") {
     return <PartnersRundellSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
   }
@@ -109,9 +112,11 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
             src={topLogo}
             alt="Logo"
             style={{
-              width: slide.template === "intro" ? "40%" : "auto",
+              width: "auto",
               height: slide.template === "intro" ? "auto" : "5cqh",
+              maxWidth: slide.template === "intro" ? "40%" : undefined,
               maxHeight: slide.template === "intro" ? "12cqh" : "5cqh",
+              objectFit: "contain",
               marginBottom: "4cqh",
               opacity: active ? 1 : 0,
               transform: active ? "translateY(0)" : "translateY(-1cqh)",
@@ -220,7 +225,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
             src={bottomLogo}
             alt="Logo"
             style={{
-              width: "32%", maxHeight: "16cqh",
+              width: "auto", height: "auto",
+              maxWidth: "32%", maxHeight: "16cqh",
+              objectFit: "contain",
               marginTop: "5cqh",
             }}
           />
@@ -284,6 +291,167 @@ function BrandSpotlightSlide({ slide, baseStyle, active, landscape }: { slide: C
             fontSize: "6cqh", textTransform: "uppercase", lineHeight: 0.98,
             whiteSpace: "pre-line",
           }}>{slide.title}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Rabatt-hero (animert takeover) ──────────────────────────────────────
+// Blikkfanger for butikk-skjerm: roterende sol-stråler bak rabatten,
+// pulserende kjempetall, diagonalt lys-sweep, tekst som slår inn, og en
+// pulserende "kun i dag"-pill. Bevegelse = sterkeste blikkfanger på skjerm.
+
+const RABATT_HERO_KEYFRAMES = `
+@keyframes ftRhSpin { to { transform: rotate(360deg); } }
+@keyframes ftRhPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes ftRhSweep { 0% { transform: translateX(-180%) skewX(-14deg); } 100% { transform: translateX(320%) skewX(-14deg); } }
+@keyframes ftRhPop { 0% { opacity: 0; transform: scale(1.45); } 55% { opacity: 1; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ftRhRise { 0% { opacity: 0; transform: translateY(4cqh); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes ftRhFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.1cqh); } }
+@keyframes ftRhBadge { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.04); opacity: 0.82; } }
+`;
+
+/** Splitt "MASKINER −20%" → { label, disc } for å fremheve prosenttallet. */
+function splitDiscountLine(line: string): { label: string; disc: string | null } {
+  const m = line.match(/^(.*?)[\s·]*([−–-]?\s*\d+\s*%|−?\s*\d[\d\s.,]*,?-?)\s*$/);
+  if (m && m[2] && /\d/.test(m[2])) {
+    return { label: m[1].trim(), disc: m[2].replace(/\s+/g, "") };
+  }
+  return { label: line, disc: null };
+}
+
+function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; active: boolean; landscape: boolean }) {
+  void landscape;
+  const bg = slide.bg_color || "#0f1115";
+  const text = slide.text_color || "#ffffff";
+  const accent = slide.accent_color || "#FFD400";
+  const factory = logoUrl(slide.top_logo, slide.custom_logo_url);
+  const brand = slide.brand_logo_url ? (proxyImage(slide.brand_logo_url) || slide.brand_logo_url) : null;
+  const lines = (slide.title || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const single = lines.length <= 1;
+  // animasjons-key gjør at entré-animasjonene spiller på nytt hver gang slide blir aktiv
+  const animKey = active ? "on" : "off";
+
+  return (
+    <div style={{
+      width: "100%", height: "100%", position: "relative", overflow: "hidden",
+      background: bg, color: text,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "7cqh", textAlign: "center",
+    }}>
+      <style>{RABATT_HERO_KEYFRAMES}</style>
+
+      {/* Roterende sol-stråler */}
+      <div style={{
+        position: "absolute", left: "50%", top: "50%", width: "180cqh", height: "180cqh",
+        marginLeft: "-90cqh", marginTop: "-90cqh", pointerEvents: "none",
+        background: `repeating-conic-gradient(from 0deg, ${text}14 0deg 5deg, transparent 5deg 14deg)`,
+        animation: "ftRhSpin 34s linear infinite",
+        maskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
+        WebkitMaskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
+      }} />
+      {/* Diagonalt lys-sweep */}
+      <div style={{
+        position: "absolute", top: "-20%", bottom: "-20%", width: "26%", left: 0, pointerEvents: "none",
+        background: `linear-gradient(90deg, transparent, ${text}22, transparent)`,
+        animation: "ftRhSweep 6.5s ease-in-out infinite",
+      }} />
+
+      {/* Innhold (key → re-mount → entré-animasjoner spiller på nytt når aktiv) */}
+      <div key={animKey} style={{
+        position: "relative", zIndex: 2, display: "flex", flexDirection: "column",
+        alignItems: "center", gap: "3cqh", width: "100%",
+      }}>
+        {/* Factory Store-logo */}
+        {factory && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={factory} alt="Factory Store by Fosen Tools" style={{
+            width: "auto", height: "auto", maxWidth: "34%", maxHeight: "11cqh",
+            objectFit: "contain", marginBottom: "1cqh",
+            animation: active ? "ftRhRise 0.7s ease-out both" : undefined,
+          }} />
+        )}
+
+        {/* Eyebrow */}
+        {slide.eyebrow && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.32em",
+            fontSize: "2.4cqh", textTransform: "uppercase", opacity: 0.92,
+            animation: active ? "ftRhRise 0.7s ease-out 0.1s both" : undefined,
+          }}>{slide.eyebrow}</div>
+        )}
+
+        {/* Rabatt — single = kjempetall m/ glød + puls. multi = liste m/ fremhevet % */}
+        {single ? (
+          <div style={{ position: "relative", display: "inline-flex", justifyContent: "center" }}>
+            {/* Radial glød bak tallet */}
+            <div style={{
+              position: "absolute", inset: "-18cqh -10cqh", pointerEvents: "none",
+              background: `radial-gradient(ellipse at center, ${text}26, transparent 65%)`,
+            }} />
+            <div style={{
+              position: "relative", fontFamily: HEAD, fontWeight: 900,
+              fontSize: "26cqh", lineHeight: 0.9, letterSpacing: "-0.01em",
+              textShadow: `0 0.6cqh 2cqh rgba(0,0,0,0.18)`,
+              animation: active
+                ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.15s both, ftRhPulse 2.6s ease-in-out 1s infinite"
+                : undefined,
+            }}>{lines[0] || "−40%"}</div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.6cqh", width: "100%", alignItems: "center" }}>
+            {lines.map((line, i) => {
+              const { label, disc } = splitDiscountLine(line);
+              return (
+                <div key={i} style={{
+                  display: "flex", alignItems: "baseline", justifyContent: "center", gap: "2.5cqh",
+                  fontFamily: HEAD, fontWeight: 900, textTransform: "uppercase", lineHeight: 1,
+                  animation: active ? `ftRhRise 0.6s ease-out ${0.2 + i * 0.18}s both` : undefined,
+                }}>
+                  <span style={{ fontSize: "8.5cqh" }}>{label}</span>
+                  {disc && (
+                    <span style={{
+                      fontSize: "12cqh", color: accent,
+                      textShadow: `0 0.4cqh 1.4cqh rgba(0,0,0,0.22)`,
+                    }}>{disc}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Subtitle (f.eks. "PÅ ALT WERA" når single bruker hele tallet) */}
+        {slide.subtitle && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 900, textTransform: "uppercase",
+            fontSize: "8cqh", lineHeight: 0.95, letterSpacing: "-0.005em",
+            animation: active ? "ftRhRise 0.7s ease-out 0.35s both" : undefined,
+          }}>{slide.subtitle}</div>
+        )}
+
+        {/* Pulserende "kun i dag"-pill */}
+        {slide.pills && slide.pills.length > 0 && (
+          <div style={{
+            marginTop: "1.5cqh",
+            display: "inline-flex", alignItems: "center", gap: "1.5cqh",
+            background: text, color: bg,
+            fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.14em",
+            fontSize: "2.3cqh", textTransform: "uppercase",
+            padding: "1.6cqh 3.4cqh", borderRadius: 999,
+            animation: active ? "ftRhBadge 2.2s ease-in-out 1.2s infinite" : undefined,
+          }}>{slide.pills.join("  ·  ")}</div>
+        )}
+
+        {/* Brand-logo nederst (svever lett) */}
+        {brand && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={brand} alt={slide.brand_name || "Merke"} style={{
+            width: "auto", height: "auto", maxWidth: "30%", maxHeight: "13cqh",
+            objectFit: "contain", marginTop: "2.5cqh",
+            animation: "ftRhFloat 5s ease-in-out infinite",
+          }} />
         )}
       </div>
     </div>
