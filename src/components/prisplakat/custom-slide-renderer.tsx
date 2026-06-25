@@ -345,25 +345,29 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
     }}>
       <style>{RABATT_HERO_KEYFRAMES}</style>
 
-      {/* Roterende sol-stråler */}
-      <div style={{
-        position: "absolute", left: "50%", top: "50%", width: "180cqh", height: "180cqh",
-        marginLeft: "-90cqh", marginTop: "-90cqh", pointerEvents: "none",
-        background: `repeating-conic-gradient(from 0deg, ${text}14 0deg 5deg, transparent 5deg 14deg)`,
-        animation: "ftRhSpin 34s linear infinite",
-        animationPlayState: active ? "running" : "paused",
-        willChange: "transform",
-        maskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
-        WebkitMaskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
-      }} />
-      {/* Diagonalt lys-sweep */}
-      <div style={{
-        position: "absolute", top: "-20%", bottom: "-20%", width: "26%", left: 0, pointerEvents: "none",
-        background: `linear-gradient(90deg, transparent, ${text}22, transparent)`,
-        animation: "ftRhSweep 6.5s ease-in-out infinite",
-        animationPlayState: active ? "running" : "paused",
-        willChange: "transform",
-      }} />
+      {/* Tunge bakgrunns-animasjoner rendres KUN på aktiv slide — sparer svake
+          spillere (UniFi Cast) for 9 paralelle conic-gradient-lag = ingen lag. */}
+      {active && (
+        <>
+          {/* Roterende sol-stråler */}
+          <div style={{
+            position: "absolute", left: "50%", top: "50%", width: "180cqh", height: "180cqh",
+            marginLeft: "-90cqh", marginTop: "-90cqh", pointerEvents: "none",
+            background: `repeating-conic-gradient(from 0deg, ${text}14 0deg 5deg, transparent 5deg 14deg)`,
+            animation: "ftRhSpin 34s linear infinite",
+            willChange: "transform",
+            maskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
+            WebkitMaskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
+          }} />
+          {/* Diagonalt lys-sweep */}
+          <div style={{
+            position: "absolute", top: "-20%", bottom: "-20%", width: "26%", left: 0, pointerEvents: "none",
+            background: `linear-gradient(90deg, transparent, ${text}22, transparent)`,
+            animation: "ftRhSweep 6.5s ease-in-out infinite",
+            willChange: "transform",
+          }} />
+        </>
+      )}
 
       {/* Innhold (key → re-mount → entré-animasjoner spiller på nytt når aktiv) */}
       <div key={animKey} style={{
@@ -451,15 +455,27 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
           }}>{slide.pills.join("  ·  ")}</div>
         )}
 
-        {/* Brand-logo nederst (svever lett) */}
-        {brand && (
+        {/* Brand-logo nederst (svever lett). Hvit chip for fargede logoer. */}
+        {brand && (slide.brand_logo_chip ? (
+          <div style={{
+            marginTop: "2.5cqh", background: "#ffffff", borderRadius: "1.6cqh",
+            padding: "2.2cqh 3.2cqh", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 1cqh 2.4cqh rgba(0,0,0,0.3)",
+            animation: "ftRhFloat 5s ease-in-out infinite",
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={brand} alt={slide.brand_name || "Merke"} style={{
+              width: "auto", height: "auto", maxWidth: "34cqh", maxHeight: "11cqh", objectFit: "contain",
+            }} />
+          </div>
+        ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={brand} alt={slide.brand_name || "Merke"} style={{
             width: "auto", height: "auto", maxWidth: "30%", maxHeight: "13cqh",
             objectFit: "contain", marginTop: "2.5cqh",
             animation: "ftRhFloat 5s ease-in-out infinite",
           }} />
-        )}
+        ))}
       </div>
     </div>
   );

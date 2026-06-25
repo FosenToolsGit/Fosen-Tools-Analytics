@@ -165,9 +165,13 @@ export interface CustomSlide {
   /** 0.5-2.0 multiplier på title-font-size */
   title_scale?: number;
 
-  // ─── For brand_spotlight ───────────────────
+  // ─── For brand_spotlight / rabatt_hero ─────
   brand_name?: string;
   brand_logo_url?: string;
+  /** rabatt_hero: legg merkelogoen på en hvit chip (for fargede logoer som
+   *  ellers ville forsvunnet mot bakgrunnen). Wera/Milwaukee bruker hvit logo
+   *  uten chip (false/utelatt). */
+  brand_logo_chip?: boolean;
 
   // ─── For jubileum_event ────────────────────
   /** Grilling-tider, f.eks. "Fra kl. 11" eller "11:00–13:00". Vises som
