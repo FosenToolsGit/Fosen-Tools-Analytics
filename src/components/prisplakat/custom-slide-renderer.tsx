@@ -420,6 +420,14 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
               animation: active ? "ftRhBadge 2.2s ease-in-out 1.2s infinite" : undefined,
             }}>{slide.pills.join("  ·  ")}</div>
           )}
+          {slide.extra_text && (
+            <div style={{
+              marginTop: "1.2cqh", fontFamily: HEAD, fontWeight: 600,
+              fontSize: "1.9cqh", lineHeight: 1.35, opacity: 0.8, maxWidth: "86%",
+              whiteSpace: "pre-line",
+              animation: active ? "ftRhRise 0.7s ease-out 0.5s both" : undefined,
+            }}>{slide.extra_text}</div>
+          )}
         </div>
       </div>
     );
@@ -430,7 +438,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
       width: "100%", height: "100%", position: "relative", overflow: "hidden",
       background: bg, color: text,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "7cqh", textAlign: "center",
+      padding: "4.5cqh", textAlign: "center",
     }}>
       <style>{RABATT_HERO_KEYFRAMES}</style>
 
@@ -461,7 +469,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
       {/* Innhold (key → re-mount → entré-animasjoner spiller på nytt når aktiv) */}
       <div key={animKey} style={{
         position: "relative", zIndex: 2, display: "flex", flexDirection: "column",
-        alignItems: "center", gap: "3cqh", width: "100%",
+        alignItems: "center", gap: "2.2cqh", width: "100%",
       }}>
         {/* Factory Store-logo */}
         {factory && (
@@ -500,7 +508,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
             }}>{lines[0] || "−40%"}</div>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.6cqh", width: "100%", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.1cqh", width: "100%", alignItems: "center" }}>
             {lines.map((line, i) => {
               const { label, disc } = splitDiscountLine(line);
               return (
@@ -509,10 +517,10 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
                   fontFamily: HEAD, fontWeight: 900, textTransform: "uppercase", lineHeight: 1,
                   animation: active ? `ftRhRise 0.6s ease-out ${0.2 + i * 0.18}s both` : undefined,
                 }}>
-                  <span style={{ fontSize: "8.5cqh" }}>{label}</span>
+                  <span style={{ fontSize: "7.4cqh" }}>{label}</span>
                   {disc && (
                     <span style={{
-                      fontSize: "12cqh", color: accent,
+                      fontSize: "10.4cqh", color: accent,
                       textShadow: `0 0.4cqh 1.4cqh rgba(0,0,0,0.22)`,
                     }}>{disc}</span>
                   )}
@@ -565,6 +573,15 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
             animation: "ftRhFloat 5s ease-in-out infinite",
           }} />
         ))}
+
+        {slide.extra_text && (
+          <div style={{
+            marginTop: "2cqh", fontFamily: HEAD, fontWeight: 600,
+            fontSize: "2cqh", lineHeight: 1.4, opacity: 0.85, maxWidth: "84%",
+            whiteSpace: "pre-line",
+            animation: active ? "ftRhRise 0.7s ease-out 0.5s both" : undefined,
+          }}>{slide.extra_text}</div>
+        )}
       </div>
     </div>
   );
@@ -758,6 +775,14 @@ function InfoHeroSlide({ slide, active, landscape }: { slide: CustomSlide; activ
             padding: "1.7cqh 3.6cqh", borderRadius: 999,
             animation: active ? "ftRhBadge 2.2s ease-in-out 1.2s infinite" : undefined,
           }}>{slide.pills.join("  ·  ")}</div>
+        )}
+        {slide.extra_text && (
+          <div style={{
+            marginTop: "1.4cqh", fontFamily: HEAD, fontWeight: 600,
+            fontSize: "2cqh", lineHeight: 1.4, opacity: 0.85, maxWidth: "86%",
+            whiteSpace: "pre-line",
+            animation: active ? "ftRhRise 0.7s ease-out 0.5s both" : undefined,
+          }}>{slide.extra_text}</div>
         )}
       </div>
     </div>
