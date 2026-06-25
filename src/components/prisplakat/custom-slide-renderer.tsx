@@ -339,6 +339,9 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
   // ── Logo-hero: STOR bar merkelogo på lys bakgrunn (logoen = kjennetegnet) ──
   if (slide.brand_logo_hero) {
     const disc = lines[0] || "";
+    // Høyde-normalisert: alle logoer samme høyde (=samme visuelle størrelse),
+    // uavhengig av bredde. Per-logo finjustering via brand_logo_scale.
+    const logoH = 19 * (slide.brand_logo_scale ?? 1);
     return (
       <div style={{
         width: "100%", height: "100%", position: "relative", overflow: "hidden",
@@ -379,7 +382,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
           {brand ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={brand} alt={slide.brand_name || "Merke"} style={{
-              width: "auto", height: "auto", maxWidth: "72%", maxHeight: "34cqh", objectFit: "contain",
+              height: `${logoH}cqh`, width: "auto", maxWidth: "94%", objectFit: "contain",
               animation: active ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.15s both" : undefined,
             }} />
           ) : (

@@ -176,6 +176,10 @@ export interface CustomSlide {
    *  bakgrunn. Logoen er kjennetegnet → vises stort. Rabatten i accent-farge
    *  under. Brukes for leverandører med fargede logoer på HDFI-skjermen. */
   brand_logo_hero?: boolean;
+  /** rabatt_hero + brand_logo_hero: per-logo høyde-multiplikator (default 1.0).
+   *  Logoer rendres høyde-normalisert (alle ~samme høyde); juster denne hvis en
+   *  enkelt logo ser for stor/liten ut visuelt. */
+  brand_logo_scale?: number;
 
   // ─── For jubileum_event ────────────────────
   /** Grilling-tider, f.eks. "Fra kl. 11" eller "11:00–13:00". Vises som
