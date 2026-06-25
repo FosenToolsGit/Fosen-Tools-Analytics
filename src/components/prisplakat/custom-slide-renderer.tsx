@@ -10,6 +10,7 @@ import type { CustomSlide, LogoKey, PricetagProduct, PricetagSettings } from "./
 import { LOGO_URLS, effective } from "./types";
 import { PriceBurst } from "@/components/brosjyre/ft-svg";
 import { formatNOK } from "@/components/brosjyre/store";
+import { QrCode } from "./qr-code";
 
 const HEAD = 'var(--ft-head-font, "Manrope", "Inter", system-ui, sans-serif)';
 const MONO = '"Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, monospace';
@@ -327,6 +328,37 @@ function splitDiscountLine(line: string): { label: string; disc: string | null }
   return { label: line, disc: null };
 }
 
+// QR-call-out: ekte QR + pil + «skann for veiledende pris». Plassert absolutt
+// nede til høyre så den ikke forstyrrer det midtstilte hovedmotivet.
+function QrCallout({ url, caption, color, light, active }: {
+  url: string; caption?: string; color: string; light: boolean; active: boolean;
+}) {
+  return (
+    <div style={{
+      position: "absolute", right: "4cqh", bottom: "4cqh", zIndex: 4,
+      display: "flex", flexDirection: "column", alignItems: "center", gap: "1cqh",
+      maxWidth: "27cqh", textAlign: "center",
+      animation: active ? "ftRhRise 0.7s ease-out 0.55s both" : undefined,
+    }}>
+      <div style={{ fontFamily: HEAD, fontWeight: 900, fontSize: "2.7cqh", lineHeight: 1.05, textTransform: "uppercase", color }}>
+        SKANN FOR VEILEDENDE PRIS
+      </div>
+      <svg viewBox="0 0 60 40" style={{ width: "5cqh", height: "3.4cqh" }} aria-hidden="true">
+        <path d="M30 3 V28 M13 15 L30 35 L47 15" fill="none" stroke={color} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <div style={{
+        background: "#fff", padding: "1.2cqh", borderRadius: "1.4cqh",
+        boxShadow: light ? "0 0.8cqh 2cqh rgba(0,0,0,0.18)" : "0 1cqh 2.6cqh rgba(0,0,0,0.35)",
+      }}>
+        <QrCode url={url} size={420} utmSource="butikkskjerm" utmMedium="qr" style={{ width: "15cqh", height: "15cqh", background: "#fff" }} />
+      </div>
+      {caption && (
+        <div style={{ fontFamily: HEAD, fontWeight: 600, fontSize: "1.55cqh", lineHeight: 1.25, opacity: 0.78, color, maxWidth: "27cqh" }}>{caption}</div>
+      )}
+    </div>
+  );
+}
+
 function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; active: boolean; landscape: boolean }) {
   void landscape;
   const bg = slide.bg_color || "#0f1115";
@@ -420,7 +452,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
               animation: active ? "ftRhBadge 2.2s ease-in-out 1.2s infinite" : undefined,
             }}>{slide.pills.join("  ·  ")}</div>
           )}
-          {slide.extra_text && (
+          {!slide.qr_url && slide.extra_text && (
             <div style={{
               marginTop: "1.2cqh", fontFamily: HEAD, fontWeight: 600,
               fontSize: "1.9cqh", lineHeight: 1.35, opacity: 0.8, maxWidth: "86%",
@@ -429,6 +461,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
             }}>{slide.extra_text}</div>
           )}
         </div>
+        {slide.qr_url && <QrCallout url={slide.qr_url} caption={slide.extra_text} color={text} light active={active} />}
       </div>
     );
   }
@@ -574,7 +607,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
           }} />
         ))}
 
-        {slide.extra_text && (
+        {!slide.qr_url && slide.extra_text && (
           <div style={{
             marginTop: "2cqh", fontFamily: HEAD, fontWeight: 600,
             fontSize: "2cqh", lineHeight: 1.4, opacity: 0.85, maxWidth: "84%",
@@ -583,6 +616,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
           }}>{slide.extra_text}</div>
         )}
       </div>
+      {slide.qr_url && <QrCallout url={slide.qr_url} caption={slide.extra_text} color={text} light={false} active={active} />}
     </div>
   );
 }

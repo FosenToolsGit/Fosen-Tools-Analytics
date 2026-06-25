@@ -12,9 +12,11 @@ interface Props {
   /** UTM-source som legges på automatisk hvis URL er fosen-tools.no */
   utmSource?: string;
   utmMedium?: string;
+  /** Overstyr ytre boks-stil (f.eks. cqh-størrelse i slideshow) */
+  style?: React.CSSProperties;
 }
 
-export function QrCode({ url, size = 80, utmSource = "prisplakat", utmMedium = "print" }: Props) {
+export function QrCode({ url, size = 80, utmSource = "prisplakat", utmMedium = "print", style }: Props) {
   const [svg, setSvg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,13 +52,14 @@ export function QrCode({ url, size = 80, utmSource = "prisplakat", utmMedium = "
         border: "1px solid #d1d5db",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "Roboto Mono, monospace", fontSize: 8, color: "#9ca3af",
+        ...style,
       }}>QR</div>
     );
   }
 
   return (
     <div
-      style={{ width: size, height: size, background: "#fff" }}
+      style={{ width: size, height: size, background: "#fff", ...style }}
       // SVG-streng fra qrcode-pakken er sikker (genererer kun path-elementer)
       dangerouslySetInnerHTML={{ __html: svg.replace(/<svg([^>]*)>/, '<svg$1 style="width:100%;height:100%;display:block">') }}
     />

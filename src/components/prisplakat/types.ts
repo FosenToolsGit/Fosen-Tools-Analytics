@@ -193,6 +193,10 @@ export interface CustomSlide {
   /** Ekstra fri tekst Brit kan legge til (under subtitle, over tids-kort).
    *  Tom = skjul. Brukes for ad-hoc-meldinger som ikke passer eyebrow/title. */
   extra_text?: string;
+  /** rabatt_hero: hvis satt vises en QR-call-out (ekte QR + pil + tekst) nede
+   *  i hjørnet — «skann for veiledende pris, som på produktene». URL-en kodes i
+   *  QR-en (f.eks. https://fosen-tools.no). Erstatter den lille extra_text-linja. */
+  qr_url?: string;
   /** Multiplier på partner-tile størrelse i grid. 0.7–2.5, default 1.0. */
   partner_size?: number;
   /** Ekstra tekst OVER dato (mellom eyebrow og hovedtittelen). Tom = skjul. */
