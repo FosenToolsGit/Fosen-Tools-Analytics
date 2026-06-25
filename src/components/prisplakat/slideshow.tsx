@@ -569,6 +569,8 @@ export function Slideshow({
             <video
               src={settings.overlay_video_url}
               autoPlay loop muted playsInline
+              // Fallback for kiosk-spillere som ikke alltid respekterer loop-attributtet
+              onEnded={(e) => { const v = e.currentTarget; v.currentTime = 0; v.play().catch(() => {}); }}
               style={{
                 position: "absolute", ...vert, ...horiz, zIndex: 4,
                 height: `${h}cqh`, width: "auto",
