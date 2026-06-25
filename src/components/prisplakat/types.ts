@@ -279,6 +279,14 @@ export interface PricetagSettings {
   show_product_qr?: boolean;
   /** Custom slides (intro/credentials/etc) — fullt redigerbar liste */
   custom_slides?: CustomSlide[];
+
+  /** Vedvarende video-overlay (spiller i loop på TVERS av slide-bytter, ligger
+   *  utenfor slide-rotasjonen). F.eks. skann-demo over QR-koden. */
+  overlay_video_url?: string;
+  /** Hjørne for video-overlay (default "bottom-right", over QR-call-out). */
+  overlay_video_pos?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
+  /** Høyde på video-overlay i cqh (default 30). */
+  overlay_video_height?: number;
 }
 
 export interface PricetagPlaylist {

@@ -551,6 +551,34 @@ export function Slideshow({
 
         {/* Klokke-overlay (vises på alle slides) */}
         {showClock && <ClockOverlay />}
+
+        {/* Vedvarende video-overlay — ligger UTENFOR slide-rotasjonen, så den
+            spiller kontinuerlig i loop mens slidene bytter under/rundt den. */}
+        {settings.overlay_video_url && (() => {
+          const h = settings.overlay_video_height ?? 30;
+          const pos = settings.overlay_video_pos ?? "bottom-right";
+          const isBottom = pos.startsWith("bottom");
+          const isRight = pos.endsWith("right");
+          // bottom-right plasseres OVER QR-call-out-en (som er ~33cqh høy nede)
+          const vert = isBottom
+            ? (isRight ? { bottom: "38cqh" } : { bottom: "4cqh" })
+            : { top: "4cqh" };
+          const horiz = isRight ? { right: "4cqh" } : { left: "4cqh" };
+          return (
+            // eslint-disable-next-line jsx-a11y/media-has-caption
+            <video
+              src={settings.overlay_video_url}
+              autoPlay loop muted playsInline
+              style={{
+                position: "absolute", ...vert, ...horiz, zIndex: 4,
+                height: `${h}cqh`, width: "auto",
+                borderRadius: "1.6cqh", background: "#000",
+                boxShadow: "0 1cqh 3cqh rgba(0,0,0,0.4)",
+                objectFit: "contain",
+              }}
+            />
+          );
+        })()}
       </div>
 
       {/* Controls overlay (vises kun når ikke i fullscreen, ikke embedded, ikke kiosk) */}
