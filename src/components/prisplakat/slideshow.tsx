@@ -555,30 +555,36 @@ export function Slideshow({
         {/* Vedvarende video-overlay — ligger UTENFOR slide-rotasjonen, så den
             spiller kontinuerlig i loop mens slidene bytter under/rundt den. */}
         {settings.overlay_video_url && (() => {
-          const h = settings.overlay_video_height ?? 30;
+          const h = settings.overlay_video_height ?? 34;
           const pos = settings.overlay_video_pos ?? "bottom-right";
           const isBottom = pos.startsWith("bottom");
           const isRight = pos.endsWith("right");
-          // bottom-right plasseres OVER QR-call-out-en (som er ~33cqh høy nede)
+          // bottom-right plasseres OVER QR-call-out-en (som er ~33cqh høy nede).
+          // Boksen er like brei som QR-call-out-en (33cqh) og sentrerer videoen,
+          // så den ligger midtstilt over QR-teksten.
           const vert = isBottom
-            ? (isRight ? { bottom: "38cqh" } : { bottom: "4cqh" })
+            ? (isRight ? { bottom: "39cqh" } : { bottom: "4cqh" })
             : { top: "4cqh" };
           const horiz = isRight ? { right: "4cqh" } : { left: "4cqh" };
           return (
-            // eslint-disable-next-line jsx-a11y/media-has-caption
-            <video
-              src={settings.overlay_video_url}
-              autoPlay loop muted playsInline
-              // Fallback for kiosk-spillere som ikke alltid respekterer loop-attributtet
-              onEnded={(e) => { const v = e.currentTarget; v.currentTime = 0; v.play().catch(() => {}); }}
-              style={{
-                position: "absolute", ...vert, ...horiz, zIndex: 4,
-                height: `${h}cqh`, width: "auto",
-                borderRadius: "1.6cqh", background: "#000",
-                boxShadow: "0 1cqh 3cqh rgba(0,0,0,0.4)",
-                objectFit: "contain",
-              }}
-            />
+            <div style={{
+              position: "absolute", ...vert, ...horiz, zIndex: 4,
+              width: "33cqh", display: "flex", justifyContent: "center", pointerEvents: "none",
+            }}>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video
+                src={settings.overlay_video_url}
+                autoPlay loop muted playsInline
+                // Fallback for kiosk-spillere som ikke alltid respekterer loop-attributtet
+                onEnded={(e) => { const v = e.currentTarget; v.currentTime = 0; v.play().catch(() => {}); }}
+                style={{
+                  height: `${h}cqh`, width: "auto", maxWidth: "100%",
+                  borderRadius: "1.6cqh", background: "#000",
+                  boxShadow: "0 1cqh 3cqh rgba(0,0,0,0.4)",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
           );
         })()}
       </div>
