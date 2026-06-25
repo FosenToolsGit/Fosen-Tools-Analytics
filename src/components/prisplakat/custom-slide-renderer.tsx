@@ -82,6 +82,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   if (slide.template === "rabatt_hero") {
     return <RabattHeroSlide slide={slide} active={active} landscape={landscape} />;
   }
+  if (slide.template === "rabatt_grid") {
+    return <RabattGridSlide slide={slide} active={active} landscape={landscape} />;
+  }
   if (slide.template === "partners_rundell") {
     return <PartnersRundellSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
   }
@@ -348,6 +351,8 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
         marginLeft: "-90cqh", marginTop: "-90cqh", pointerEvents: "none",
         background: `repeating-conic-gradient(from 0deg, ${text}14 0deg 5deg, transparent 5deg 14deg)`,
         animation: "ftRhSpin 34s linear infinite",
+        animationPlayState: active ? "running" : "paused",
+        willChange: "transform",
         maskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
         WebkitMaskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
       }} />
@@ -356,6 +361,8 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
         position: "absolute", top: "-20%", bottom: "-20%", width: "26%", left: 0, pointerEvents: "none",
         background: `linear-gradient(90deg, transparent, ${text}22, transparent)`,
         animation: "ftRhSweep 6.5s ease-in-out infinite",
+        animationPlayState: active ? "running" : "paused",
+        willChange: "transform",
       }} />
 
       {/* Innhold (key → re-mount → entré-animasjoner spiller på nytt når aktiv) */}
@@ -454,6 +461,110 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
           }} />
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Rabatt-rutenett (logoer på hvite chips) ─────────────────────────────
+// Lett, lag-fri variant for svake spillere (UniFi Cast): ÉN side, ingen
+// roterende gradient-stråler. Viser leverandør-logoer på hvite chips med
+// rabatt-badge. Bevegelse = billig stagger-entré + lett badge-puls.
+
+const RABATT_GRID_KEYFRAMES = `
+@keyframes ftRgIn { 0% { opacity: 0; transform: translateY(2.5cqh) scale(0.95); } 100% { opacity: 1; transform: none; } }
+@keyframes ftRgBadge { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+`;
+
+function RabattGridSlide({ slide, active, landscape }: { slide: CustomSlide; active: boolean; landscape: boolean }) {
+  const bg = slide.bg_color || "#0f1115";
+  const text = slide.text_color || "#ffffff";
+  const accent = slide.accent_color || "#FFD400";
+  const factory = logoUrl(slide.top_logo, slide.custom_logo_url);
+  const cells = slide.partners && slide.partners.length > 0 ? slide.partners : [];
+  const cols = landscape ? Math.min(5, Math.max(1, Math.ceil(cells.length / 2))) : 2;
+
+  return (
+    <div style={{
+      width: "100%", height: "100%", position: "relative", overflow: "hidden",
+      background: `radial-gradient(ellipse at 50% 38%, ${text}10, transparent 60%), ${bg}`,
+      color: text, display: "flex", flexDirection: "column", alignItems: "center",
+      justifyContent: "center", padding: landscape ? "5cqh 6cqh" : "5cqh",
+      gap: "3cqh", textAlign: "center",
+    }}>
+      <style>{RABATT_GRID_KEYFRAMES}</style>
+
+      {/* Header */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.6cqh" }}>
+        {factory && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={factory} alt="Factory Store by Fosen Tools" style={{
+            width: "auto", height: "auto", maxWidth: "30%", maxHeight: "9cqh", objectFit: "contain",
+          }} />
+        )}
+        {slide.eyebrow && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.32em",
+            fontSize: "2.3cqh", textTransform: "uppercase", opacity: 0.92,
+          }}>{slide.eyebrow}</div>
+        )}
+      </div>
+
+      {/* Logo-rutenett */}
+      <div style={{
+        display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gap: landscape ? "2.4cqh" : "2cqh", width: "100%",
+        maxWidth: landscape ? "92%" : "100%",
+      }}>
+        {cells.map((c, i) => {
+          const src = c.logo_url ? (proxyImage(c.logo_url) || c.logo_url) : null;
+          return (
+            <div key={i} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: "1.3cqh",
+              animation: active ? `ftRgIn 0.5s ease-out ${0.05 + i * 0.06}s both` : undefined,
+            }}>
+              {/* Hvit chip med logo (eller navn) */}
+              <div style={{
+                width: "100%", aspectRatio: "16 / 9",
+                background: "#ffffff", borderRadius: "1.4cqh",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "1.8cqh 2cqh", boxShadow: "0 0.8cqh 2cqh rgba(0,0,0,0.28)",
+                overflow: "hidden",
+              }}>
+                {src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt={c.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                ) : (
+                  <span style={{
+                    fontFamily: HEAD, fontWeight: 900, color: "#0f1115",
+                    fontSize: "3.2cqh", textTransform: "uppercase", letterSpacing: "0.01em",
+                    lineHeight: 1, textAlign: "center",
+                  }}>{c.name}</span>
+                )}
+              </div>
+              {/* Rabatt-badge */}
+              {c.badge && (
+                <div style={{
+                  fontFamily: HEAD, fontWeight: 900, color: accent,
+                  fontSize: "4.6cqh", lineHeight: 1, letterSpacing: "-0.01em",
+                  textShadow: "0 0.3cqh 1cqh rgba(0,0,0,0.3)",
+                  animation: active ? "ftRgBadge 2.4s ease-in-out infinite" : undefined,
+                }}>{c.badge}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pill */}
+      {slide.pills && slide.pills.length > 0 && (
+        <div style={{
+          display: "inline-flex", alignItems: "center",
+          background: text, color: bg,
+          fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.14em",
+          fontSize: "2.1cqh", textTransform: "uppercase",
+          padding: "1.5cqh 3.2cqh", borderRadius: 999,
+        }}>{slide.pills.join("  ·  ")}</div>
+      )}
     </div>
   );
 }
