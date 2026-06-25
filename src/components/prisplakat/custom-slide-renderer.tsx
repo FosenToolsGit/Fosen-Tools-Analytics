@@ -337,11 +337,11 @@ function QrCallout({ url, caption, color, light, active }: {
     <div style={{
       position: "absolute", right: "4cqh", bottom: "4cqh", zIndex: 4,
       display: "flex", flexDirection: "column", alignItems: "center", gap: "1cqh",
-      maxWidth: "27cqh", textAlign: "center",
+      maxWidth: "33cqh", textAlign: "center",
       animation: active ? "ftRhRise 0.7s ease-out 0.55s both" : undefined,
     }}>
-      <div style={{ fontFamily: HEAD, fontWeight: 900, fontSize: "2.7cqh", lineHeight: 1.05, textTransform: "uppercase", color }}>
-        SKANN FOR VEILEDENDE PRIS
+      <div style={{ fontFamily: HEAD, fontWeight: 900, fontSize: "2.3cqh", lineHeight: 1.1, textTransform: "uppercase", color }}>
+        SKANN QR-KODENE UNDER PRODUKTENE FOR VEILEDENDE PRIS
       </div>
       <svg viewBox="0 0 60 40" style={{ width: "5cqh", height: "3.4cqh" }} aria-hidden="true">
         <path d="M30 3 V28 M13 15 L30 35 L47 15" fill="none" stroke={color} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
