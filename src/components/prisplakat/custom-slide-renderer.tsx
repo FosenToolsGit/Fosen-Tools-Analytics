@@ -85,6 +85,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   if (slide.template === "rabatt_grid") {
     return <RabattGridSlide slide={slide} active={active} landscape={landscape} />;
   }
+  if (slide.template === "info_hero") {
+    return <InfoHeroSlide slide={slide} active={active} landscape={landscape} />;
+  }
   if (slide.template === "partners_rundell") {
     return <PartnersRundellSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
   }
@@ -667,6 +670,96 @@ function RabattGridSlide({ slide, active, landscape }: { slide: CustomSlide; act
           padding: "1.5cqh 3.2cqh", borderRadius: 999,
         }}>{slide.pills.join("  ·  ")}</div>
       )}
+    </div>
+  );
+}
+
+// ─── Info-budskap (animert, ikke rabatt) ─────────────────────────────────
+// Samme energi som rabatt-slides (roterende stråler, slam-inn) men for et
+// rent budskap: stor overskrift + undertekst + pill. Brukt på kasse-skjermen.
+
+function InfoHeroSlide({ slide, active, landscape }: { slide: CustomSlide; active: boolean; landscape: boolean }) {
+  void landscape;
+  const bg = slide.bg_color || "#ED1C24";
+  const text = slide.text_color || "#ffffff";
+  const accent = slide.accent_color || "#ffffff";
+  const factory = logoUrl(slide.top_logo, slide.custom_logo_url);
+  const ts = slide.title_scale ?? 1;
+  const animKey = active ? "on" : "off";
+  return (
+    <div style={{
+      width: "100%", height: "100%", position: "relative", overflow: "hidden",
+      background: bg, color: text,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "7cqh", textAlign: "center",
+    }}>
+      <style>{RABATT_HERO_KEYFRAMES}</style>
+      {active && (
+        <>
+          <div style={{
+            position: "absolute", left: "50%", top: "50%", width: "180cqh", height: "180cqh",
+            marginLeft: "-90cqh", marginTop: "-90cqh", pointerEvents: "none",
+            background: `repeating-conic-gradient(from 0deg, ${text}14 0deg 5deg, transparent 5deg 14deg)`,
+            animation: "ftRhSpin 34s linear infinite", willChange: "transform",
+            maskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
+            WebkitMaskImage: "radial-gradient(circle, #000 35%, transparent 72%)",
+          }} />
+          <div style={{
+            position: "absolute", top: "-20%", bottom: "-20%", width: "26%", left: 0, pointerEvents: "none",
+            background: `linear-gradient(90deg, transparent, ${text}22, transparent)`,
+            animation: "ftRhSweep 6.5s ease-in-out infinite", willChange: "transform",
+          }} />
+        </>
+      )}
+      <div key={animKey} style={{
+        position: "relative", zIndex: 2, display: "flex", flexDirection: "column",
+        alignItems: "center", gap: "3cqh", width: "100%",
+      }}>
+        {factory && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={factory} alt="Factory Store by Fosen Tools" style={{
+            width: "auto", height: "auto", maxWidth: "30%", maxHeight: "10cqh", objectFit: "contain",
+            animation: active ? "ftRhRise 0.7s ease-out both" : undefined,
+          }} />
+        )}
+        {slide.eyebrow && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.3em",
+            fontSize: "2.6cqh", textTransform: "uppercase", opacity: 0.92,
+            animation: active ? "ftRhRise 0.7s ease-out 0.1s both" : undefined,
+          }}>{slide.eyebrow}</div>
+        )}
+        {slide.divider && (
+          <div style={{
+            width: "9cqh", height: "0.5cqh", background: accent,
+            animation: active ? "ftRhRise 0.7s ease-out 0.15s both" : undefined,
+          }} />
+        )}
+        {slide.title && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 900, fontSize: `${12 * ts}cqh`, lineHeight: 0.95,
+            textTransform: "uppercase", whiteSpace: "pre-line", letterSpacing: "-0.01em",
+            animation: active ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.2s both" : undefined,
+          }}>{slide.title}</div>
+        )}
+        {slide.subtitle && (
+          <div style={{
+            fontFamily: HEAD, fontWeight: 600, fontSize: "3.6cqh", letterSpacing: "0.02em",
+            opacity: 0.95, maxWidth: "82%",
+            animation: active ? "ftRhRise 0.7s ease-out 0.4s both" : undefined,
+          }}>{slide.subtitle}</div>
+        )}
+        {slide.pills && slide.pills.length > 0 && (
+          <div style={{
+            marginTop: "1.5cqh", display: "inline-flex", alignItems: "center",
+            background: text, color: bg,
+            fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.14em",
+            fontSize: "2.4cqh", textTransform: "uppercase",
+            padding: "1.7cqh 3.6cqh", borderRadius: 999,
+            animation: active ? "ftRhBadge 2.2s ease-in-out 1.2s infinite" : undefined,
+          }}>{slide.pills.join("  ·  ")}</div>
+        )}
+      </div>
     </div>
   );
 }

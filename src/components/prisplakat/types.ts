@@ -90,6 +90,7 @@ export type SlideTemplate =
   | "brand_spotlight"  // Merke-logo + tagline + accent
   | "rabatt_hero"      // Animert rabatt-takeover: roterende stråler, pulserende tall, sweep
   | "rabatt_grid"      // Logo-rutenett: leverandør-logoer på hvite chips + rabatt-badge (lett, lag-fri)
+  | "info_hero"        // Animert info-budskap (roterende stråler, stor overskrift) — ikke rabatt
   | "partners_rundell" // Horisontalt rullende karusell av flere brand-logoer
   | "jubileum_event"   // 25-årsjubileum + butikkåpning: dato + tider + partnere
   | "multi_product"    // 2/4 produkter på én slide
@@ -413,6 +414,16 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         pills: ["DAGSTILBUD KUN I PROFF-BUTIKKEN PÅ BREKSTAD"],
         divider: false,
       };
+    case "info_hero":
+      return {
+        ...base, label: "Info-budskap", bg_color: "#ED1C24", text_color: "#ffffff", accent_color: "#ffffff",
+        top_logo: "factory-white",
+        eyebrow: "VED KJØP AV VERKTØY",
+        title: "GRATIS\nLASERMERKING",
+        subtitle: "Logo, navn eller tekst, hvis du vil ha det",
+        pills: ["Spør oss i kassen"],
+        divider: true,
+      };
     case "rabatt_grid":
       return {
         ...base, label: "Rabatt-rutenett", bg_color: "#0F1115", text_color: "#ffffff", accent_color: "#FFD400",
@@ -544,6 +555,7 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
   brand_spotlight: "Brand-spotlight",
   rabatt_hero: "💥 Rabatt-hero (animert)",
   rabatt_grid: "🏷️ Rabatt-rutenett (logoer)",
+  info_hero: "ℹ️ Info-budskap (animert)",
   partners_rundell: "Partner-rundell (horisontalt rullende)",
   jubileum_event: "🎉 Jubileum-event (26. juni)",
   multi_product: "Multi-produkt (2 / 4-up)",
