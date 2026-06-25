@@ -172,6 +172,10 @@ export interface CustomSlide {
    *  ellers ville forsvunnet mot bakgrunnen). Wera/Milwaukee bruker hvit logo
    *  uten chip (false/utelatt). */
   brand_logo_chip?: boolean;
+  /** rabatt_hero: STOR merkelogo som helt-hovedmotiv (bar, ingen boks) på lys
+   *  bakgrunn. Logoen er kjennetegnet → vises stort. Rabatten i accent-farge
+   *  under. Brukes for leverandører med fargede logoer på HDFI-skjermen. */
+  brand_logo_hero?: boolean;
 
   // ─── For jubileum_event ────────────────────
   /** Grilling-tider, f.eks. "Fra kl. 11" eller "11:00–13:00". Vises som

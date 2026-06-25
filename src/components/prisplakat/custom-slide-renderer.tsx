@@ -336,6 +336,85 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
   // animasjons-key gjør at entré-animasjonene spiller på nytt hver gang slide blir aktiv
   const animKey = active ? "on" : "off";
 
+  // ── Logo-hero: STOR bar merkelogo på lys bakgrunn (logoen = kjennetegnet) ──
+  if (slide.brand_logo_hero) {
+    const disc = lines[0] || "";
+    return (
+      <div style={{
+        width: "100%", height: "100%", position: "relative", overflow: "hidden",
+        background: bg, color: text,
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: "6cqh", textAlign: "center",
+      }}>
+        <style>{RABATT_HERO_KEYFRAMES}</style>
+        {active && (
+          <div style={{
+            position: "absolute", left: "50%", top: "50%", width: "180cqh", height: "180cqh",
+            marginLeft: "-90cqh", marginTop: "-90cqh", pointerEvents: "none",
+            background: `repeating-conic-gradient(from 0deg, ${text}0e 0deg 5deg, transparent 5deg 14deg)`,
+            animation: "ftRhSpin 40s linear infinite", willChange: "transform",
+            maskImage: "radial-gradient(circle, #000 30%, transparent 70%)",
+            WebkitMaskImage: "radial-gradient(circle, #000 30%, transparent 70%)",
+          }} />
+        )}
+        <div key={animKey} style={{
+          position: "relative", zIndex: 2, display: "flex", flexDirection: "column",
+          alignItems: "center", gap: "3.5cqh", width: "100%",
+        }}>
+          {factory && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={factory} alt="Factory Store by Fosen Tools" style={{
+              width: "auto", height: "auto", maxWidth: "26%", maxHeight: "8cqh", objectFit: "contain",
+              animation: active ? "ftRhRise 0.7s ease-out both" : undefined,
+            }} />
+          )}
+          {slide.eyebrow && (
+            <div style={{
+              fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.3em",
+              fontSize: "2.2cqh", textTransform: "uppercase", opacity: 0.7,
+              animation: active ? "ftRhRise 0.7s ease-out 0.1s both" : undefined,
+            }}>{slide.eyebrow}</div>
+          )}
+          {/* STOR merkelogo (eller navn) — hovedmotivet */}
+          {brand ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand} alt={slide.brand_name || "Merke"} style={{
+              width: "auto", height: "auto", maxWidth: "72%", maxHeight: "34cqh", objectFit: "contain",
+              animation: active ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.15s both" : undefined,
+            }} />
+          ) : (
+            <div style={{
+              fontFamily: HEAD, fontWeight: 900, fontSize: "16cqh", lineHeight: 0.95,
+              textTransform: "uppercase", letterSpacing: "-0.01em",
+              animation: active ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.15s both" : undefined,
+            }}>{slide.brand_name || slide.subtitle || ""}</div>
+          )}
+          {/* Rabatt i accent-farge */}
+          {disc && (
+            <div style={{
+              fontFamily: HEAD, fontWeight: 900, color: accent,
+              fontSize: "19cqh", lineHeight: 0.9, letterSpacing: "-0.01em",
+              textShadow: "0 0.5cqh 1.6cqh rgba(0,0,0,0.12)",
+              animation: active
+                ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.3s both, ftRhPulse 2.6s ease-in-out 1.1s infinite"
+                : undefined,
+            }}>{disc}</div>
+          )}
+          {slide.pills && slide.pills.length > 0 && (
+            <div style={{
+              marginTop: "1cqh", display: "inline-flex", alignItems: "center",
+              background: text, color: bg,
+              fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.14em",
+              fontSize: "2.1cqh", textTransform: "uppercase",
+              padding: "1.5cqh 3.2cqh", borderRadius: 999,
+              animation: active ? "ftRhBadge 2.2s ease-in-out 1.2s infinite" : undefined,
+            }}>{slide.pills.join("  ·  ")}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       width: "100%", height: "100%", position: "relative", overflow: "hidden",
