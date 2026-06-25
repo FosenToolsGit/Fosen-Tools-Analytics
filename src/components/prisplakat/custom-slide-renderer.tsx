@@ -339,12 +339,12 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
   // ── Logo-hero: STOR bar merkelogo på lys bakgrunn (logoen = kjennetegnet) ──
   if (slide.brand_logo_hero) {
     const disc = lines[0] || "";
-    // Logo-størrelse: brede ordmerker kappes til ~Trykkluft-tekstbredde (86cqh),
-    // kompakte/høye merker kappes av maks-høyde (22cqh) så de ikke blir for store.
-    // Per-logo finjustering via brand_logo_scale.
+    // Logo-størrelse: ALLE logoer settes til samme bredde = Trykkluft-tekstbredde
+    // (86cqh), uansett aspect. Høyde-tak (42cqh) hindrer at de mest kompakte
+    // merkene (rombe e.l.) blir for høye. Per-logo finjustering via brand_logo_scale.
     const logoScale = slide.brand_logo_scale ?? 1;
-    const logoMaxW = 86 * logoScale;
-    const logoMaxH = 22 * logoScale;
+    const logoW = 86 * logoScale;
+    const logoMaxH = 42 * logoScale;
     return (
       <div style={{
         width: "100%", height: "100%", position: "relative", overflow: "hidden",
@@ -365,7 +365,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
         )}
         <div key={animKey} style={{
           position: "relative", zIndex: 2, display: "flex", flexDirection: "column",
-          alignItems: "center", gap: "3.5cqh", width: "100%",
+          alignItems: "center", gap: "2.6cqh", width: "100%",
         }}>
           {factory && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -385,7 +385,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
           {brand ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={brand} alt={slide.brand_name || "Merke"} style={{
-              width: "auto", height: "auto", maxWidth: `${logoMaxW}cqh`, maxHeight: `${logoMaxH}cqh`,
+              width: `${logoW}cqh`, height: "auto", maxWidth: `${logoW}cqh`, maxHeight: `${logoMaxH}cqh`,
               objectFit: "contain",
               animation: active ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.15s both" : undefined,
             }} />
@@ -400,7 +400,7 @@ function RabattHeroSlide({ slide, active, landscape }: { slide: CustomSlide; act
           {disc && (
             <div style={{
               fontFamily: HEAD, fontWeight: 900, color: accent,
-              fontSize: "19cqh", lineHeight: 0.9, letterSpacing: "-0.01em",
+              fontSize: "15cqh", lineHeight: 0.9, letterSpacing: "-0.01em",
               textShadow: "0 0.5cqh 1.6cqh rgba(0,0,0,0.12)",
               animation: active
                 ? "ftRhPop 0.7s cubic-bezier(.2,1.4,.4,1) 0.3s both, ftRhPulse 2.6s ease-in-out 1.1s infinite"
