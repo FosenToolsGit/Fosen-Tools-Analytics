@@ -6,6 +6,7 @@
 // Alle CSS-størrelser bruker `cqh`-units, så slide-en skalerer proporsjonalt med container-høyden.
 // Container må ha `containerType: "size"` for at dette skal virke (settes i parent).
 
+import { useEffect, useRef } from "react";
 import type { CustomSlide, LogoKey, PricetagProduct, PricetagSettings } from "./types";
 import { LOGO_URLS, effective } from "./types";
 import { PriceBurst } from "@/components/brosjyre/ft-svg";
@@ -88,6 +89,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   }
   if (slide.template === "info_hero") {
     return <InfoHeroSlide slide={slide} active={active} landscape={landscape} />;
+  }
+  if (slide.template === "video_full") {
+    return <VideoFullSlide slide={slide} active={active} landscape={landscape} />;
   }
   if (slide.template === "partners_rundell") {
     return <PartnersRundellSlide slide={slide} baseStyle={baseStyle} active={active} landscape={landscape} />;
@@ -819,6 +823,65 @@ function InfoHeroSlide({ slide, active, landscape }: { slide: CustomSlide; activ
           }}>{slide.extra_text}</div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Fullskjerm-video explainer («Hvordan man finner pris») ──────────────
+// Stor video (mp4) + tittel + nummererte steg. Videoen spilles fra start hver
+// gang sliden blir aktiv (useEffect på active), pauses når den ikke vises.
+
+function VideoFullSlide({ slide, active, landscape }: { slide: CustomSlide; active: boolean; landscape: boolean }) {
+  const bg = slide.bg_color || "#0F1115";
+  const text = slide.text_color || "#ffffff";
+  const accent = slide.accent_color || "#ED1C24";
+  const factory = logoUrl(slide.top_logo, slide.custom_logo_url);
+  const steps = slide.pills ?? [];
+  const vref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = vref.current;
+    if (!v) return;
+    if (active) { v.currentTime = 0; const p = v.play(); if (p) p.catch(() => {}); }
+    else { v.pause(); }
+  }, [active]);
+  const row = landscape;
+  return (
+    <div style={{
+      width: "100%", height: "100%", background: bg, color: text,
+      display: "flex", flexDirection: row ? "row" : "column",
+      alignItems: "center", justifyContent: "center",
+      padding: row ? "6cqh 8cqh" : "5cqh", gap: row ? "7cqh" : "4cqh",
+    }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3.2cqh", alignItems: row ? "flex-start" : "center", textAlign: row ? "left" : "center" }}>
+        {factory && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={factory} alt="Factory Store by Fosen Tools" style={{ width: "auto", height: "auto", maxWidth: "40%", maxHeight: "9cqh", objectFit: "contain" }} />
+        )}
+        {slide.eyebrow && (
+          <div style={{ fontFamily: HEAD, fontWeight: 800, letterSpacing: "0.28em", fontSize: "2.2cqh", textTransform: "uppercase", opacity: 0.8 }}>{slide.eyebrow}</div>
+        )}
+        {slide.title && (
+          <div style={{ fontFamily: HEAD, fontWeight: 900, fontSize: "8.5cqh", lineHeight: 0.98, textTransform: "uppercase", whiteSpace: "pre-line", letterSpacing: "-0.01em" }}>{slide.title}</div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: "2.4cqh", marginTop: "1cqh", alignItems: row ? "flex-start" : "center" }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "2.2cqh" }}>
+              <div style={{ flexShrink: 0, width: "5.4cqh", height: "5.4cqh", borderRadius: "50%", background: accent, color: "#fff", fontFamily: HEAD, fontWeight: 900, fontSize: "3cqh", display: "flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</div>
+              <div style={{ fontFamily: HEAD, fontWeight: 600, fontSize: "3.1cqh", lineHeight: 1.2 }}>{s}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {slide.video_url && (
+        // eslint-disable-next-line jsx-a11y/media-has-caption
+        <video
+          ref={vref}
+          src={slide.video_url}
+          loop muted playsInline
+          onEnded={(e) => { const v = e.currentTarget; v.currentTime = 0; v.play().catch(() => {}); }}
+          style={{ flexShrink: 0, height: row ? "84cqh" : "50cqh", width: "auto", borderRadius: "2cqh", background: "#000", boxShadow: "0 1.4cqh 4cqh rgba(0,0,0,0.5)", objectFit: "contain" }}
+        />
+      )}
     </div>
   );
 }

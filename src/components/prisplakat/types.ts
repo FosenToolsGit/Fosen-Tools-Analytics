@@ -91,6 +91,7 @@ export type SlideTemplate =
   | "rabatt_hero"      // Animert rabatt-takeover: roterende stråler, pulserende tall, sweep
   | "rabatt_grid"      // Logo-rutenett: leverandør-logoer på hvite chips + rabatt-badge (lett, lag-fri)
   | "info_hero"        // Animert info-budskap (roterende stråler, stor overskrift) — ikke rabatt
+  | "video_full"       // Fullskjerm-explainer: stor video + tittel + steg (mp4)
   | "partners_rundell" // Horisontalt rullende karusell av flere brand-logoer
   | "jubileum_event"   // 25-årsjubileum + butikkåpning: dato + tider + partnere
   | "multi_product"    // 2/4 produkter på én slide
@@ -197,6 +198,8 @@ export interface CustomSlide {
    *  i hjørnet — «skann for veiledende pris, som på produktene». URL-en kodes i
    *  QR-en (f.eks. https://fosen-tools.no). Erstatter den lille extra_text-linja. */
   qr_url?: string;
+  /** video_full: mp4-URL som spilles stort på explainer-sliden. */
+  video_url?: string;
   /** Multiplier på partner-tile størrelse i grid. 0.7–2.5, default 1.0. */
   partner_size?: number;
   /** Ekstra tekst OVER dato (mellom eyebrow og hovedtittelen). Tom = skjul. */
@@ -436,6 +439,19 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         pills: ["Spør oss i kassen"],
         divider: true,
       };
+    case "video_full":
+      return {
+        ...base, label: "Hvordan man finner pris", bg_color: "#0F1115", text_color: "#ffffff", accent_color: "#ED1C24",
+        top_logo: "factory-white",
+        eyebrow: "FACTORY STORE BY FOSEN TOOLS",
+        title: "HVORDAN MAN\nFINNER PRIS",
+        pills: [
+          "Skann QR-koden under produktet",
+          "Se veiledende pris på fosen-tools.no",
+          "Trekk fra rabatten, eller spør oss",
+        ],
+        duration_seconds: 9,
+      };
     case "rabatt_grid":
       return {
         ...base, label: "Rabatt-rutenett", bg_color: "#0F1115", text_color: "#ffffff", accent_color: "#FFD400",
@@ -568,6 +584,7 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
   rabatt_hero: "💥 Rabatt-hero (animert)",
   rabatt_grid: "🏷️ Rabatt-rutenett (logoer)",
   info_hero: "ℹ️ Info-budskap (animert)",
+  video_full: "🎬 Fullskjerm-video (explainer)",
   partners_rundell: "Partner-rundell (horisontalt rullende)",
   jubileum_event: "🎉 Jubileum-event (26. juni)",
   multi_product: "Multi-produkt (2 / 4-up)",

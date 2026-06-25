@@ -553,8 +553,9 @@ export function Slideshow({
         {showClock && <ClockOverlay />}
 
         {/* Vedvarende video-overlay — ligger UTENFOR slide-rotasjonen, så den
-            spiller kontinuerlig i loop mens slidene bytter under/rundt den. */}
-        {settings.overlay_video_url && (() => {
+            spiller kontinuerlig i loop mens slidene bytter under/rundt den.
+            Skjules på fullskjerm-video-sliden (ellers overlapper de). */}
+        {settings.overlay_video_url && currentSlide?.custom?.template !== "video_full" && (() => {
           const h = settings.overlay_video_height ?? 34;
           const pos = settings.overlay_video_pos ?? "bottom-right";
           const isBottom = pos.startsWith("bottom");
