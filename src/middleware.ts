@@ -36,7 +36,8 @@ export async function middleware(request: NextRequest) {
   // Token-basert tilgang (uuid i URL) er eneste gate.
   const isPublicShare =
     request.nextUrl.pathname.startsWith("/prisplakat/share/") ||
-    request.nextUrl.pathname.startsWith("/skjerm/");
+    request.nextUrl.pathname.startsWith("/skjerm/") ||
+    request.nextUrl.pathname.startsWith("/jubileum-kamera");
 
   // Allow API routes through (they handle their own auth)
   if (isApiRoute) {
