@@ -18,7 +18,7 @@
   .slide.on{ opacity:1; }
   .redbar{ position:fixed; top:0; left:0; right:0; height:6px; background:var(--red); z-index:60; }
   /* FACTORY STORE-logo (nederst venstre) */
-  .fslogo{ position:fixed; right:5vh; bottom:4.6vh; z-index:58; line-height:1; text-align:right; }
+  .fslogo{ position:fixed; left:5vh; bottom:4.6vh; z-index:58; line-height:1; }
   .fslogo .big{ font-size:4vh; font-weight:800; letter-spacing:.01em; text-transform:uppercase; color:#fff; line-height:.9; }
   .fslogo .by{ font-size:1.95vh; font-weight:600; color:#fff; margin-top:.9vh; }
 
@@ -66,17 +66,6 @@
   .split-r{ flex:1; padding:6vh 7vh 16vh 3vh; }
   .chips{ display:flex; flex-wrap:wrap; gap:2vh; margin-top:4vh; }
   .chip{ font-size:3.4vh; font-weight:800; padding:1.8vh 3.4vh; border-radius:99vh; border:0.4vh solid var(--red); }
-
-  /* KONKURRANSE-varsel (nederst venstre, pil ned mot Magne) */
-  .konk{ position:fixed; left:5vh; bottom:4vh; z-index:62; text-align:center; }
-  .konk .box{ background:#FFD400; color:#0F1115; border-radius:2.2vh; padding:2.2vh 3.6vh;
-    box-shadow:0 1.6vh 4vh rgba(0,0,0,.45); }
-  .konk .k1{ font-size:3.9vh; font-weight:800; letter-spacing:.01em; text-transform:uppercase; line-height:.95; }
-  .konk .k2{ font-size:2.1vh; font-weight:700; margin-top:1vh; }
-  .konk .arrow{ width:0; height:0; margin:1.2vh auto 0;
-    border-left:5.5vh solid transparent; border-right:5.5vh solid transparent; border-top:7vh solid #FFD400;
-    filter:drop-shadow(0 1vh 1.2vh rgba(0,0,0,.4)); animation:konkbounce 1s ease-in-out infinite; }
-  @keyframes konkbounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(2.4vh); } }
 </style>
 </head>
 <body>
@@ -170,9 +159,5 @@
   var i = 0, DUR = 7000;
   setInterval(function(){ slides[i].classList.remove('on'); i=(i+1)%slides.length; slides[i].classList.add('on'); }, DUR);
 </script>
-<div class="konk">
-  <div class="box"><div class="k1">Her er det<br>konkurranse!</div><div class="k2">Bli med rett her nede</div></div>
-  <div class="arrow"></div>
-</div>
 </body>
 </html>

@@ -58,6 +58,21 @@ function ClockOverlay() {
   );
 }
 
+// ─── Konkurranse-varsel (nederst venstre, pil ned mot person under skjermen) ──
+
+function KonkurranseOverlay() {
+  return (
+    <div style={{ position: "absolute", bottom: "4cqh", left: "4cqh", zIndex: 6, textAlign: "center", pointerEvents: "none" }}>
+      <style>{`@keyframes ftKonkBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(2.4cqh)}}`}</style>
+      <div style={{ background: "#FFD400", color: FT_INK, borderRadius: "2.2cqh", padding: "2.2cqh 3.4cqh", boxShadow: "0 1.6cqh 4cqh rgba(0,0,0,0.45)", display: "inline-block" }}>
+        <div style={{ fontFamily: HEAD, fontWeight: 800, fontSize: "3.6cqh", textTransform: "uppercase", lineHeight: 0.95, letterSpacing: "0.01em" }}>Her er det<br />konkurranse!</div>
+        <div style={{ fontFamily: HEAD, fontWeight: 700, fontSize: "2cqh", marginTop: "1cqh" }}>Bli med rett her nede</div>
+      </div>
+      <div style={{ width: 0, height: 0, margin: "1.2cqh auto 0", borderLeft: "5cqh solid transparent", borderRight: "5cqh solid transparent", borderTop: "6.5cqh solid #FFD400", filter: "drop-shadow(0 1cqh 1.2cqh rgba(0,0,0,0.4))", animation: "ftKonkBounce 1s ease-in-out infinite" }} />
+    </div>
+  );
+}
+
 // ─── Produkt-slide ──────────────────────────────────────────────────────
 
 function ProductSlideContent({
@@ -551,6 +566,9 @@ export function Slideshow({
 
         {/* Klokke-overlay (vises på alle slides) */}
         {showClock && <ClockOverlay />}
+
+        {/* Konkurranse-varsel nederst venstre (kun når slått på for denne spillelisten) */}
+        {settings.konkurranse_overlay && <KonkurranseOverlay />}
 
         {/* Vedvarende video-overlay — ligger UTENFOR slide-rotasjonen, så den
             spiller kontinuerlig i loop mens slidene bytter under/rundt den.

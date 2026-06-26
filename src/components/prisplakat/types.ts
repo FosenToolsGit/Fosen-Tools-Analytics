@@ -283,6 +283,10 @@ export interface PricetagSettings {
   /** Custom slides (intro/credentials/etc) — fullt redigerbar liste */
   custom_slides?: CustomSlide[];
 
+  /** Vedvarende "Her er det konkurranse!"-varsel nederst venstre med pil ned
+   *  (peker mot personen som står under skjermen). Vises på alle slides. */
+  konkurranse_overlay?: boolean;
+
   /** Vedvarende video-overlay (spiller i loop på TVERS av slide-bytter, ligger
    *  utenfor slide-rotasjonen). F.eks. skann-demo over QR-koden. */
   overlay_video_url?: string;
