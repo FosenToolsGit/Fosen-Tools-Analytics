@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Format = "9x16" | "1x1";
-type Variant = "ramme" | "minimal" | "none";
 type Facing = "environment" | "user";
 
 const DIM: Record<Format, { w: number; h: number }> = {
@@ -11,11 +10,20 @@ const DIM: Record<Format, { w: number; h: number }> = {
   "1x1": { w: 1080, h: 1080 },
 };
 
+const SUPPLIERS = [
+  { key: "lev-milwaukee", label: "Milwaukee" },
+  { key: "lev-wera", label: "Wera" },
+  { key: "lev-zweibruder", label: "Zweibrüder" },
+  { key: "lev-picard", label: "Picard" },
+  { key: "lev-soudal", label: "Soudal" },
+  { key: "lev-halder", label: "Halder" },
+];
+
 export default function JubileumKamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [format, setFormat] = useState<Format>("9x16");
-  const [variant, setVariant] = useState<Variant>("ramme");
+  const [overlay, setOverlay] = useState<string>("ramme");
   const [facing, setFacing] = useState<Facing>("environment");
   const [active, setActive] = useState(false);
   const [captured, setCaptured] = useState<string | null>(null);
@@ -57,7 +65,7 @@ export default function JubileumKamera() {
     if (active) startCamera(next);
   }, [facing, active, startCamera]);
 
-  const overlaySrc = variant === "none" ? null : `/jubileum-kamera/${variant}-${format}.png`;
+  const overlaySrc = overlay === "none" ? null : `/jubileum-kamera/${overlay}-${format}.png`;
 
   const capture = useCallback(async () => {
     const video = videoRef.current;
@@ -207,9 +215,15 @@ export default function JubileumKamera() {
               <Seg label="Kvadrat 1:1" on={format === "1x1"} onClick={() => setFormat("1x1")} />
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-              <Seg label="Ramme" on={variant === "ramme"} onClick={() => setVariant("ramme")} />
-              <Seg label="Minimal" on={variant === "minimal"} onClick={() => setVariant("minimal")} />
-              <Seg label="Uten" on={variant === "none"} onClick={() => setVariant("none")} />
+              <Seg label="Ramme" on={overlay === "ramme"} onClick={() => setOverlay("ramme")} />
+              <Seg label="Minimal" on={overlay === "minimal"} onClick={() => setOverlay("minimal")} />
+              <Seg label="Uten" on={overlay === "none"} onClick={() => setOverlay("none")} />
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2, letterSpacing: "0.1em" }}>LEVERANDØR</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              {SUPPLIERS.map((s) => (
+                <Seg key={s.key} label={s.label} on={overlay === s.key} onClick={() => setOverlay(s.key)} />
+              ))}
             </div>
 
             {active && (
