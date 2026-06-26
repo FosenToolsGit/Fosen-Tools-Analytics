@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HDFI — Verktøykontroll · Factory Store by Fosen Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --red:#ED1C24; --ink:#0F1115; --paper:#f5f7fa; --white:#fff;
+    --head:'Manrope',-apple-system,sans-serif; --mono:'Roboto Mono',ui-monospace,monospace; }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ width:100%; height:100%; overflow:hidden; background:var(--ink); }
+  body{ font-family:var(--head); color:var(--white); }
+  .stage{ position:fixed; inset:0; }
+  .slide{ position:absolute; inset:0; opacity:0; transition:opacity 1s ease; }
+  .slide.on{ opacity:1; }
+  .redbar{ position:fixed; top:0; left:0; right:0; height:6px; background:var(--red); z-index:60; }
+  /* FACTORY STORE-logo (nederst venstre) */
+  .fslogo{ position:fixed; left:5vh; bottom:4.6vh; z-index:58; line-height:1; }
+  .fslogo .big{ font-size:4vh; font-weight:800; letter-spacing:.01em; text-transform:uppercase; color:#fff; line-height:.9; }
+  .fslogo .by{ font-size:1.95vh; font-weight:600; color:#fff; margin-top:.9vh; }
+
+  .bg{ position:absolute; inset:0; background:#15171b center center / cover no-repeat; }
+  .scrim{ position:absolute; inset:0; background:linear-gradient(140deg, rgba(13,15,18,.96) 0%, rgba(13,15,18,.74) 28%, rgba(13,15,18,.30) 52%, rgba(13,15,18,.06) 74%); }
+  .content{ position:absolute; left:6vh; top:15vh; max-width:62vw; padding-left:3vh; border-left:0.7vh solid var(--red); }
+  .eyebrow{ font-family:var(--mono); font-size:2.3vh; font-weight:700; letter-spacing:.26em; text-transform:uppercase; color:var(--red); margin-bottom:2.2vh; }
+  .h{ font-size:9.6vh; font-weight:800; letter-spacing:-.03em; line-height:.96; color:var(--white); }
+  .red{ color:var(--red); }
+  .lead{ font-size:3.5vh; font-weight:600; line-height:1.4; color:#dfe3e9; margin-top:3vh; max-width:52vw; }
+
+  /* full-ink slides */
+  .ink{ position:absolute; inset:0; background:radial-gradient(120% 120% at 50% 0%, #1c212b 0%, var(--ink) 60%); display:flex; flex-direction:column; }
+  .ink-head{ padding:7vh 6vh 1.5vh; }
+  .ink-eye{ font-family:var(--mono); font-size:2.3vh; font-weight:700; letter-spacing:.26em; text-transform:uppercase; color:var(--red); }
+  .ink-h{ font-size:7vh; font-weight:800; letter-spacing:-.025em; line-height:1; margin-top:1.6vh; }
+  .ink-note{ font-size:2.3vh; font-weight:600; color:#aeb4bd; margin-top:1.8vh; }
+
+  /* før/etter — side om side */
+  .ba{ flex:1; display:flex; gap:3vh; padding:1vh 6vh 16vh; }
+  .ba-card{ flex:1; position:relative; border-radius:1.6vh; overflow:hidden; box-shadow:0 2vh 5vh rgba(0,0,0,.5); border:2px solid rgba(255,255,255,.08); }
+  .ba-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .ba-tag{ position:absolute; left:2.2vh; top:2.2vh; font-size:3vh; font-weight:800; letter-spacing:.03em; text-transform:uppercase; padding:1.1vh 2.4vh; border-radius:1vh; }
+  .ba-tag.bad{ background:rgba(13,15,18,.86); color:#fff; }
+  .ba-tag.good{ background:var(--red); color:#fff; }
+
+  /* farger */
+  .sw-grid{ flex:1; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr); gap:3vh; padding:1vh 6vh 16vh; }
+  .sw{ border-radius:1.4vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 1.5vh 4vh rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.1); }
+  .sw .top{ flex:1; background:#15171b center center / cover no-repeat; }
+  .sw .lab{ height:7vh; display:flex; align-items:center; justify-content:center; gap:1.4vh; font-size:2.5vh; font-weight:800; background:#fff; color:#15171b; }
+  .sw .lab .ch{ display:inline-flex; gap:.6vh; }
+  .sw .lab .ch i{ width:2vh; height:2vh; border-radius:.4vh; border:1px solid rgba(0,0,0,.3); display:block; }
+
+  /* fordeler-punkter (2x2) */
+  .pts{ display:grid; grid-template-columns:1fr 1fr; gap:1.8vh 4vh; margin-top:3.4vh; }
+  .pt{ display:flex; align-items:center; gap:1.8vh; font-size:3.1vh; font-weight:700; }
+  .pt .dot{ flex-shrink:0; width:1.5vh; height:1.5vh; border-radius:50%; background:var(--red); box-shadow:0 0 0 .7vh rgba(237,28,36,.2); }
+
+  /* tilpasses — split */
+  .split{ position:absolute; inset:0; display:flex; align-items:center; }
+  .split-l{ flex:1; display:flex; align-items:center; justify-content:center; padding:6vh 3vh 16vh 7vh; }
+  .vogncard{ background:#fff; border-radius:2.4vh; padding:3vh 4vh; box-shadow:0 3vh 6vh rgba(0,0,0,.5); }
+  .vogncard img{ height:58vh; width:auto; display:block; }
+  .split-r{ flex:1; padding:6vh 7vh 16vh 3vh; }
+  .chips{ display:flex; flex-wrap:wrap; gap:2vh; margin-top:4vh; }
+  .chip{ font-size:3.4vh; font-weight:800; padding:1.8vh 3.4vh; border-radius:99vh; border:0.4vh solid var(--red); }
+
+  /* KONKURRANSE-pille (nederst høyre, pulserende) */
+  .konk{ position:fixed; right:5vh; bottom:4.6vh; z-index:62; background:#FFD400; color:#0F1115;
+    border-radius:2.2vh; padding:2.4vh 3.8vh; text-align:right; transform-origin:bottom right;
+    animation:konkpulse 1.5s ease-in-out infinite; }
+  .konk .k1{ font-size:4vh; font-weight:800; letter-spacing:.01em; text-transform:uppercase; line-height:.95; }
+  .konk .k2{ font-size:2.1vh; font-weight:700; margin-top:1.1vh; }
+  @keyframes konkpulse{
+    0%,100%{ transform:scale(1); box-shadow:0 1.6vh 4vh rgba(0,0,0,.45), 0 0 0 0 rgba(255,212,0,.55); }
+    50%{ transform:scale(1.04); box-shadow:0 1.6vh 4vh rgba(0,0,0,.45), 0 0 0 2.6vh rgba(255,212,0,0); }
+  }
+</style>
+</head>
+<body>
+<div class="redbar"></div>
+<div class="fslogo"><div class="big">Factory<br>Store</div><div class="by">by Fosen Tools</div></div>
+<div class="stage">
+
+  <!-- 1 · HVA ER HDFI -->
+  <section class="slide on">
+    <div class="bg" style="background-image:url('https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/heromerke.jpg');"></div>
+    <div class="scrim"></div>
+    <div class="content">
+      <div class="eyebrow">Egen produksjon · Fosen Tools</div>
+      <div class="h">Verktøykontroll</div>
+      <div class="lead">High Density Foam Insert — skreddersydde verktøyinnlegg med eksakt passform og gravert merking.</div>
+    </div>
+  </section>
+
+  <!-- 2 · FØR / ETTER -->
+  <section class="slide">
+    <div class="ink">
+      <div class="ink-head"><div class="ink-eye">Før og etter</div><div class="ink-h">Fra kaos til <span class="red">kontroll</span></div></div>
+      <div class="ba">
+        <div class="ba-card"><img src="https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/for.jpg" alt="Før"><div class="ba-tag bad">Unngå dette</div></div>
+        <div class="ba-card"><img src="https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/etter.jpg" alt="Etter"><div class="ba-tag good">Med HDFI</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · FARGEUTVALG -->
+  <section class="slide">
+    <div class="ink">
+      <div class="ink-head"><div class="ink-eye">Fargeutvalg</div><div class="ink-h">Velg din <span class="red">farge</span></div><div class="ink-note">ESD-kompatible og brannhemmende innlegg på forespørsel</div></div>
+      <div class="sw-grid">
+        <div class="sw"><div class="top" style="background-color:#C8202A;"></div><div class="lab"><span class="ch"><i style="background:#C8202A"></i><i style="background:#fff"></i></span>Rød / Hvit</div></div>
+        <div class="sw"><div class="top" style="background-color:#15171b;"></div><div class="lab"><span class="ch"><i style="background:#15171b"></i><i style="background:#fff"></i></span>Svart / Hvit</div></div>
+        <div class="sw"><div class="top" style="background-color:#f2f2f2;"></div><div class="lab"><span class="ch"><i style="background:#f2f2f2"></i><i style="background:#15171b"></i></span>Hvit / Svart</div></div>
+        <div class="sw"><div class="top" style="background-color:#2a5db0;"></div><div class="lab"><span class="ch"><i style="background:#2a5db0"></i><i style="background:#fff"></i></span>Blå / Hvit</div></div>
+        <div class="sw"><div class="top" style="background-color:#f2c200;"></div><div class="lab"><span class="ch"><i style="background:#f2c200"></i><i style="background:#15171b"></i></span>Gul / Svart</div></div>
+        <div class="sw"><div class="top" style="background-color:#d3d6da;"></div><div class="lab"><span class="ch"><i style="background:#d3d6da"></i><i style="background:#15171b"></i></span>Lys grå / Svart</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · FORDELER -->
+  <section class="slide">
+    <div class="bg" style="background-image:url('https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/insert.jpg');"></div>
+    <div class="scrim"></div>
+    <div class="content" style="max-width:72vw;">
+      <div class="eyebrow">Fordeler</div>
+      <div class="h">Hvorfor <span class="red">HDFI</span></div>
+      <div class="pts">
+        <div class="pt"><span class="dot"></span>Umiddelbar visuell kontroll</div>
+        <div class="pt"><span class="dot"></span>Forebygger FOD og tap av verktøy</div>
+        <div class="pt"><span class="dot"></span>Eksakt passform, merkeuavhengig</div>
+        <div class="pt"><span class="dot"></span>Lasermerking og lang levetid</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · TILPASSES ALT -->
+  <section class="slide">
+    <div class="ink">
+      <div class="split">
+        <div class="split-l"><div class="vogncard"><img src="https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/vogn.jpg" alt="HDFI i verktøyvogn"></div></div>
+        <div class="split-r">
+          <div class="eyebrow" style="margin-bottom:2.2vh;">Passer overalt</div>
+          <div class="h" style="font-size:8vh;">Tilpasses<br>ethvert system</div>
+          <div class="chips">
+            <div class="chip">Koffert</div><div class="chip">Vogn</div><div class="chip">Skap</div><div class="chip">Veggsystem</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · CADLAB -->
+  <section class="slide">
+    <div class="bg" style="background-image:url('https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/cadlab.jpg?v=2');"></div>
+    <div class="scrim"></div>
+    <div class="content">
+      <div class="eyebrow">CADLAB</div>
+      <div class="h">Fra idé til <span class="red">ferdig løsning</span></div>
+      <div class="lead">CAD-tegnet og CNC-maskinert med ekstrem presisjon. Norsk produksjon med 100 % fornybar energi.</div>
+    </div>
+  </section>
+
+</div>
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0, DUR = 7000;
+  setInterval(function(){ slides[i].classList.remove('on'); i=(i+1)%slides.length; slides[i].classList.add('on'); }, DUR);
+</script>
+<div class="konk"><div class="k1">Her er det<br>konkurranse!</div><div class="k2">Fyll innlegget på tid og vinn premie</div></div>
+</body>
+</html>
