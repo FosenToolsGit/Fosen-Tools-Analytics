@@ -220,6 +220,7 @@ export default function JubileumKamera() {
               <Seg label="Kvadrat 1:1" on={format === "1x1"} onClick={() => setFormat("1x1")} />
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              <Seg label="Vi er åpne!" on={overlay === "apen"} onClick={() => setOverlay("apen")} />
               <Seg label="Ramme" on={overlay === "ramme"} onClick={() => setOverlay("ramme")} />
               <Seg label="Minimal" on={overlay === "minimal"} onClick={() => setOverlay("minimal")} />
               <Seg label="Uten" on={overlay === "none"} onClick={() => setOverlay("none")} />
