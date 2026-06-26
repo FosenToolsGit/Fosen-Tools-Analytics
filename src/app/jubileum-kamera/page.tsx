@@ -19,6 +19,11 @@ const SUPPLIERS = [
   { key: "lev-halder", label: "Halder" },
 ];
 
+const GUESTS = [
+  { key: "gjest-redbull", label: "Red Bull" },
+  { key: "gjest-tesla", label: "Tesla" },
+];
+
 export default function JubileumKamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -223,6 +228,12 @@ export default function JubileumKamera() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
               {SUPPLIERS.map((s) => (
                 <Seg key={s.key} label={s.label} on={overlay === s.key} onClick={() => setOverlay(s.key)} />
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2, letterSpacing: "0.1em" }}>GJESTER</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              {GUESTS.map((g) => (
+                <Seg key={g.key} label={g.label} on={overlay === g.key} onClick={() => setOverlay(g.key)} />
               ))}
             </div>
 
