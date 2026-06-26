@@ -14,9 +14,8 @@ const SUPPLIERS = [
   { key: "lev-milwaukee", label: "Milwaukee" },
   { key: "lev-wera", label: "Wera" },
   { key: "lev-zweibruder", label: "Zweibrüder" },
-  { key: "lev-picard", label: "Picard" },
   { key: "lev-soudal", label: "Soudal" },
-  { key: "lev-halder", label: "Halder" },
+  { key: "lev-picard-halder", label: "Picard + Halder" },
 ];
 
 const GUESTS = [
