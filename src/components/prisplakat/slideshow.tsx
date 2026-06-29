@@ -412,6 +412,15 @@ export function Slideshow({
       ? Math.max(0, Math.min(pinIdx, slides.length - 1))
       : rawIdx % slides.length;
 
+  // Loop-teller: øker hver gang loopen wrapper fra siste slide tilbake til 0.
+  // Brukes til variant-rotasjon (produkt-slots med `variants` bytter variant per runde).
+  const [loopCount, setLoopCount] = useState(0);
+  const prevIdxRef = useRef(idx);
+  useEffect(() => {
+    if (prevIdxRef.current > idx && idx === 0) setLoopCount((c) => c + 1);
+    prevIdxRef.current = idx;
+  }, [idx]);
+
   // Effektiv pause-state: enten internt eller eksternt.
   const effectivePaused = paused || (pausedOverride ?? false) || pinned;
 
@@ -537,7 +546,12 @@ export function Slideshow({
       return <CustomSlideRenderer slide={slide.custom} allProducts={products} settings={settings} landscape={landscape} active={isActive} />;
     }
     if (slide.kind === "product" && slide.product) {
-      return <ProductSlideContent product={slide.product} settings={settings} landscape={landscape} active={isActive} durationMs={durationMs} animatePrice={animatePrice} />;
+      // Variant-rotasjon: hvis produktet har `variants`, vis én variant per runde i loopen.
+      const base = slide.product;
+      const display = base.variants && base.variants.length > 0
+        ? { ...base, ...base.variants[loopCount % base.variants.length] }
+        : base;
+      return <ProductSlideContent product={display} settings={settings} landscape={landscape} active={isActive} durationMs={durationMs} animatePrice={animatePrice} />;
     }
     return null;
   };

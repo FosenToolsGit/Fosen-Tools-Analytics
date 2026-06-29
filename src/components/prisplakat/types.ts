@@ -30,6 +30,9 @@ export interface PricetagProduct {
   in_stock?: boolean;
   sku?: string | null;
   bullets?: string[];
+  /** Varianter — hvis satt roterer denne slotten gjennom variantene, én per runde i loopen
+   *  (f.eks. gavekoffert som bytter mellom Ratze/Bastards/Jegerbar per gang loopen går rundt). */
+  variants?: PricetagProduct[];
 }
 
 /** Hent effektiv verdi (override hvis satt, ellers default fra scraping) */
