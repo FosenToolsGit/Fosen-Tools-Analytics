@@ -1873,11 +1873,15 @@ function IframeSlide({ slide, active }: { slide: CustomSlide; active: boolean })
   return (
     <div style={{ position: "absolute", inset: 0, background: slide.bg_color || "#0f1115" }}>
       {active && (
-        <iframe
-          src={url}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
-          title="Innebygd side"
-        />
+        <>
+          <iframe
+            src={url}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
+            title="Innebygd side"
+          />
+          {/* Skjul musepeker over iframen (kiosk) */}
+          <div style={{ position: "absolute", inset: 0, cursor: "none" }} />
+        </>
       )}
     </div>
   );
@@ -1950,6 +1954,10 @@ function YouTubeSlide({
         allowFullScreen
         title="YouTube video"
       />
+      {/* Gjennomsiktig lag oppå iframen som fanger musa → skjuler cursoren
+          (kiosk; YouTube-iframen er cross-origin så skjermens cursor:none når
+          ikke inn). Videoen spiller uforstyrret under. */}
+      <div style={{ position: "absolute", inset: 0, cursor: "none" }} />
     </div>
   );
 }
