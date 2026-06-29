@@ -33,6 +33,33 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   return NextResponse.json({ screen: data });
 }
 
+// Force-refresh: bumper updated_at på skjermens spilleliste. Live-skjermer som
+// poller /version (hvert 30s) oppdager endringen og reloader seg selv — så man
+// slipper å gå inn på UniFi.
+export async function POST(_req: NextRequest, ctx: RouteContext) {
+  const { id } = await ctx.params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: screen, error: sErr } = await supabase
+    .from("pricetag_screens")
+    .select("playlist_id")
+    .eq("id", id)
+    .single();
+  if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
+  if (!screen?.playlist_id) {
+    return NextResponse.json({ error: "Skjermen har ingen spilleliste" }, { status: 400 });
+  }
+
+  const { error } = await supabase
+    .from("pricetag_playlists")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", screen.playlist_id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
   const supabase = await createClient();

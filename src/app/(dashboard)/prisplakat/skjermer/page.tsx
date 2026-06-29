@@ -27,6 +27,8 @@ export default function SkjermerPage() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
+  const [refreshing, setRefreshing] = useState<string | null>(null);
+  const [refreshed, setRefreshed] = useState<string | null>(null);
 
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -85,11 +87,43 @@ export default function SkjermerPage() {
     });
   }
 
+  // Force-refresh: bumper spillelista → live-skjermer reloader seg selv innen 30s.
+  async function refreshScreen(id: string) {
+    setRefreshing(id);
+    const r = await fetch(`/api/prisplakat/screens/${id}`, { method: "POST" });
+    setRefreshing(null);
+    if (r.ok) {
+      setRefreshed(id);
+      setTimeout(() => setRefreshed((x) => (x === id ? null : x)), 4000);
+    } else {
+      const d = await r.json().catch(() => ({}));
+      alert(d.error || "Kunne ikke refreshe skjermen");
+    }
+  }
+
+  async function refreshAll() {
+    setRefreshing("ALL");
+    for (const s of screens) {
+      if (s.playlist_id) await fetch(`/api/prisplakat/screens/${s.id}`, { method: "POST" });
+    }
+    setRefreshing(null);
+    setRefreshed("ALL");
+    setTimeout(() => setRefreshed((x) => (x === "ALL" ? null : x)), 4000);
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-8 text-zinc-100">
       <div className="mb-1 flex items-center gap-3">
         <h1 className="text-2xl font-bold">Skjermer</h1>
         <a href="/prisplakat" className="text-sm text-zinc-400 hover:text-zinc-200">← Prisplakat</a>
+        <button
+          onClick={refreshAll}
+          disabled={refreshing === "ALL" || screens.length === 0}
+          title="Tving alle skjermer til å laste på nytt"
+          className="ml-auto rounded-lg bg-zinc-700 px-3 py-1.5 text-sm font-semibold hover:bg-zinc-600 disabled:opacity-40"
+        >
+          {refreshed === "ALL" ? "✓ Alle oppdateres" : refreshing === "ALL" ? "Oppdaterer…" : "↻ Refresh alle"}
+        </button>
       </div>
       <p className="mb-6 text-sm text-zinc-400">
         Hver skjerm har én fast URL du legger inn på enheten én gang. Bytt hvilken
@@ -173,7 +207,20 @@ export default function SkjermerPage() {
                 >
                   Åpne
                 </a>
+                <button
+                  onClick={() => refreshScreen(s.id)}
+                  disabled={!s.playlist_id || refreshing === s.id}
+                  title="Tving skjermen til å laste på nytt (innen 30 sek)"
+                  className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold hover:bg-red-500 disabled:opacity-40"
+                >
+                  {refreshed === s.id ? "✓ Oppdateres" : refreshing === s.id ? "…" : "↻ Refresh"}
+                </button>
               </div>
+              {refreshed === s.id && (
+                <div className="mt-2 text-xs text-green-400/80">
+                  Sendt — skjermen laster seg selv på nytt innen 30 sekunder (hvis den er på og kjører).
+                </div>
+              )}
               {!s.playlist_id && (
                 <div className="mt-2 text-xs text-amber-400/80">
                   Velg en spilleliste over for at skjermen skal vise noe.
