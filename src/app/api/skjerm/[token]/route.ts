@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
   const { data: pl, error: plErr } = await supabase
     .from("pricetag_playlists")
-    .select("id, title, format, products, settings")
+    .select("id, title, format, products, settings, updated_at")
     .eq("id", screen.playlist_id)
     .maybeSingle();
 

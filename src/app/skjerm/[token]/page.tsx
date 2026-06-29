@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { PricetagPlaylist } from "@/components/prisplakat/types";
@@ -23,6 +23,9 @@ export default function SkjermPlayPage() {
   const [screenName, setScreenName] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
+  // Innholds-signatur (playlist-id + updated_at) ved innlasting — pollet mot
+  // /version for å oppdage bytte/redigering og reloade automatisk.
+  const versionRef = useRef<string | null>(null);
 
   // Kiosk-styling: skjul cursor, ingen scroll
   useEffect(() => {
@@ -38,11 +41,28 @@ export default function SkjermPlayPage() {
     };
   }, []);
 
-  // Auto-refresh hvert 5. min: plukker opp bytte av spilleliste / nytt innhold
+  // Auto-refresh hvert 5. min: sikkerhetsnett som plukker opp ny kode/deploy.
   useEffect(() => {
     const id = setInterval(() => window.location.reload(), 5 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Innholds-poll hvert 30. sek: reloader skjermen automatisk når spillelista
+  // byttes eller innholdet redigeres — så man slipper å refreshe på enheten.
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/skjerm/${token}/version`, { cache: "no-store" });
+        if (!r.ok) return;
+        const d = await r.json();
+        const sig = d.playlist_id ? `${d.playlist_id}:${d.updated_at ?? ""}` : "none";
+        if (versionRef.current !== null && sig !== versionRef.current) {
+          window.location.reload();
+        }
+      } catch { /* nettverksglipp — prøv igjen neste runde */ }
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [token]);
 
   // Auto-gjenoppretting ved chunk-/lastefeil (skjer typisk etter en deploy:
   // gammel HTML peker på JS-filer som er byttet ut → hvit skjerm). Da tvinger
@@ -75,6 +95,7 @@ export default function SkjermPlayPage() {
         if (!r.ok) throw new Error(d.error || "Kunne ikke laste");
         if (cancelled) return;
         setScreenName(d.screen?.name ?? null);
+        versionRef.current = d.playlist ? `${d.playlist.id}:${d.playlist.updated_at ?? ""}` : "none";
         if (!d.playlist) {
           setStatus("empty");
           return;
