@@ -162,7 +162,7 @@ function ProductSlideContent({
             <div style={{
               fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.28em",
               fontSize: "1.4cqh", color: "rgba(255,255,255,0.6)", textTransform: "uppercase",
-            }}>BREKSTAD · 25 ÅR</div>
+            }}>BREKSTAD</div>
             {StockPill && <div style={{ marginLeft: "auto" }}>{StockPill}</div>}
           </div>
 
@@ -281,7 +281,7 @@ function ProductSlideContent({
           <div style={{
             fontFamily: HEAD, fontWeight: 700, letterSpacing: "0.28em",
             fontSize: "1.1cqh", color: "rgba(255,255,255,0.6)", textTransform: "uppercase",
-          }}>BREKSTAD · 25 ÅR</div>
+          }}>BREKSTAD</div>
           {StockPill && <div style={{ marginLeft: "auto" }}>{StockPill}</div>}
         </div>
 
