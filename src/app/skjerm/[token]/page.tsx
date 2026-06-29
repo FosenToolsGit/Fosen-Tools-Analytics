@@ -44,6 +44,28 @@ export default function SkjermPlayPage() {
     return () => clearInterval(id);
   }, []);
 
+  // Auto-gjenoppretting ved chunk-/lastefeil (skjer typisk etter en deploy:
+  // gammel HTML peker på JS-filer som er byttet ut → hvit skjerm). Da tvinger
+  // vi en reload som henter fersk HTML + nye filer, så TVen aldri blir stående.
+  useEffect(() => {
+    let reloading = false;
+    const recover = (msg: string) => {
+      if (reloading) return;
+      if (/ChunkLoadError|Loading chunk|dynamically imported module|importing a module script failed/i.test(msg)) {
+        reloading = true;
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    };
+    const onErr = (e: ErrorEvent) => recover(e.message || "");
+    const onRej = (e: PromiseRejectionEvent) => recover((e.reason && (e.reason.message || String(e.reason))) || "");
+    window.addEventListener("error", onErr);
+    window.addEventListener("unhandledrejection", onRej);
+    return () => {
+      window.removeEventListener("error", onErr);
+      window.removeEventListener("unhandledrejection", onRej);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
