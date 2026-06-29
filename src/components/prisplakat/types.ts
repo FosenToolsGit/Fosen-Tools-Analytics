@@ -100,7 +100,8 @@ export type SlideTemplate =
   | "multi_product"    // 2/4 produkter på én slide
   | "combo"            // 2 produkter med kombi-pris
   | "blank"            // Fri layout
-  | "youtube";         // YouTube-video (autoplay + muted)
+  | "youtube"          // YouTube-video (autoplay + muted)
+  | "iframe";          // Innebygd side (f.eks. /skjerm/hdfi.html — viser hele HDFI-verktøykontroll-showcasen)
 
 /** Hvilken logo som vises i topp/bunn av en custom slide */
 export type LogoKey =
@@ -258,6 +259,10 @@ export interface CustomSlide {
   youtube_muted?: boolean;
   /** Start-tid i sekunder (default 0) */
   youtube_start?: number;
+
+  // ─── For iframe (innebygd side) ───────────────
+  /** URL som vises i fullskjerm-iframe (f.eks. /skjerm/hdfi.html). Bruk duration_seconds for visningstid. */
+  iframe_url?: string;
 }
 
 export interface PricetagSettings {
@@ -532,6 +537,8 @@ export function makeNewSlide(template: SlideTemplate): CustomSlide {
         youtube_muted: true,
         youtube_start: 0,
       };
+    case "iframe":
+      return { ...base, label: "Innebygd side", bg_color: "#0f1115", iframe_url: "/skjerm/hdfi.html", duration_seconds: 42 };
   }
 }
 
@@ -598,6 +605,7 @@ export const SLIDE_TEMPLATE_LABELS: Record<SlideTemplate, string> = {
   combo: "Kombi-tilbud (2 produkter)",
   blank: "Tom — fri redigering",
   youtube: "📺 YouTube-video",
+  iframe: "🌐 Innebygd side (HDFI-showcase)",
 };
 
 export const LOGO_LABELS: Record<NonNullable<LogoKey>, string> = {

@@ -102,6 +102,9 @@ export function CustomSlideRenderer({ slide, allProducts, settings, landscape, a
   if (slide.template === "youtube") {
     return <YouTubeSlide slide={slide} active={active} />;
   }
+  if (slide.template === "iframe") {
+    return <IframeSlide slide={slide} active={active} />;
+  }
 
   // ─── Standard fri-form layout (intro / credentials / certified / outro / blank) ──
   return (
@@ -1853,6 +1856,32 @@ function ComboProductTile({ product, eff, img, accent, settings }: {
 // Slideshow-container reagerer på 'youtube-ended'-postMessage og går
 // til neste slide.
 // ────────────────────────────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────────────────
+// IFRAME-SLIDE — innebygd side i fullskjerm (f.eks. /skjerm/hdfi.html).
+// Viser hele den eksterne showcasen uendret. Rendres bare når active.
+// ────────────────────────────────────────────────────────────────────────
+function IframeSlide({ slide, active }: { slide: CustomSlide; active: boolean }) {
+  const url = slide.iframe_url;
+  if (!url) {
+    return (
+      <div style={{ position: "absolute", inset: 0, background: slide.bg_color || "#0f1115", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontFamily: HEAD, fontSize: "2cqh" }}>
+        Innebygd side mangler URL
+      </div>
+    );
+  }
+  return (
+    <div style={{ position: "absolute", inset: 0, background: slide.bg_color || "#0f1115" }}>
+      {active && (
+        <iframe
+          src={url}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
+          title="Innebygd side"
+        />
+      )}
+    </div>
+  );
+}
 
 function YouTubeSlide({
   slide,
