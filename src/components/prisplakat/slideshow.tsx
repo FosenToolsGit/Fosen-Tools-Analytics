@@ -90,6 +90,7 @@ function ProductSlideContent({
   const showQr = settings.show_product_qr && !eff.hideQr;
   const showStock = settings.show_stock_status && product.in_stock != null;
   const stockOnStock = product.in_stock === true;
+  const bullets = (product.bullets || []).slice(0, 3);
 
   // Burst-size — fixed px så PriceBurst SVG ikke trenger å re-rendre
   const burstSize = landscape ? 180 : 140;
@@ -182,6 +183,20 @@ function ProductSlideContent({
               fontFamily: MONO, fontSize: "1.6cqh",
               color: "rgba(255,255,255,0.55)", marginTop: "2cqh", letterSpacing: "0.04em",
             }}>Art.nr {product.sku || "—"}</div>
+            {bullets.length > 0 && (
+              <div style={{ marginTop: "3cqh", display: "flex", flexDirection: "column", gap: "1.4cqh" }}>
+                {bullets.map((b, i) => (
+                  <div key={i} style={{ display: "flex", gap: "1.6cqh", alignItems: "flex-start" }}>
+                    <div style={{ width: "1cqh", height: "1cqh", borderRadius: "50%", background: accent, marginTop: "1cqh", flexShrink: 0 }} />
+                    <div style={{
+                      fontFamily: HEAD, fontWeight: 600, fontSize: "2.2cqh", lineHeight: 1.25,
+                      color: "rgba(255,255,255,0.82)",
+                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+                    }}>{b}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Pris */}
