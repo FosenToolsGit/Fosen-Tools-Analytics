@@ -29,10 +29,14 @@ export default function PrisplakatSharePlayPage() {
     document.body.style.overflow = "hidden";
     document.body.style.cursor = "none";
     document.documentElement.style.overflow = "hidden";
+    const style = document.createElement("style");
+    style.textContent = "*,*::before,*::after{cursor:none !important}";
+    document.head.appendChild(style);
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.cursor = prevCursor;
       document.documentElement.style.overflow = "";
+      style.remove();
     };
   }, []);
 

@@ -126,7 +126,8 @@ function ProductSlideContent({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={imgSrc} alt={product.name || "Produkt"} style={{
               position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain",
-              transform: active ? "scale(1.06)" : "scale(1.0)",
+              padding: "6cqh 7cqh", boxSizing: "border-box",
+              transform: active ? "scale(1.03)" : "scale(1.0)",
               transition: `transform ${durationMs}ms ease-out`,
             }} />
           ) : (
@@ -263,7 +264,8 @@ function ProductSlideContent({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imgSrc} alt={product.name || "Produkt"} style={{
             position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain",
-            transform: active ? "scale(1.06)" : "scale(1.0)",
+            padding: "5cqh 6cqh", boxSizing: "border-box",
+            transform: active ? "scale(1.03)" : "scale(1.0)",
             transition: `transform ${durationMs}ms ease-out`,
           }} />
         ) : (

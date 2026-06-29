@@ -34,10 +34,16 @@ export default function SkjermPlayPage() {
     document.body.style.overflow = "hidden";
     document.body.style.cursor = "none";
     document.documentElement.style.overflow = "hidden";
+    // Global cursor:none på ALLE elementer (knapper m/ cursor:pointer, osv).
+    // Cross-origin iframes (YouTube) håndteres separat av et overlay i slideshowen.
+    const style = document.createElement("style");
+    style.textContent = "*,*::before,*::after{cursor:none !important}";
+    document.head.appendChild(style);
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.cursor = prevCursor;
       document.documentElement.style.overflow = "";
+      style.remove();
     };
   }, []);
 

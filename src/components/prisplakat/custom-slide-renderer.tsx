@@ -1880,7 +1880,7 @@ function IframeSlide({ slide, active }: { slide: CustomSlide; active: boolean })
             title="Innebygd side"
           />
           {/* Skjul musepeker over iframen (kiosk) */}
-          <div style={{ position: "absolute", inset: 0, cursor: "none" }} />
+          <div style={{ position: "absolute", inset: 0, cursor: "none", zIndex: 5 }} />
         </>
       )}
     </div>
@@ -1957,7 +1957,7 @@ function YouTubeSlide({
       {/* Gjennomsiktig lag oppå iframen som fanger musa → skjuler cursoren
           (kiosk; YouTube-iframen er cross-origin så skjermens cursor:none når
           ikke inn). Videoen spiller uforstyrret under. */}
-      <div style={{ position: "absolute", inset: 0, cursor: "none" }} />
+      <div style={{ position: "absolute", inset: 0, cursor: "none", zIndex: 5 }} />
     </div>
   );
 }
