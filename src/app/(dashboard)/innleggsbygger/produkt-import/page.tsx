@@ -856,6 +856,7 @@ export default function ProduktImportPage() {
         items: Array<{
           code: string;
           ean: string;
+          compactedName: string;
           produktinformasjonHtml: string;
           opprinnelsesland: string;
           bildeFilnavn: string;
@@ -889,6 +890,8 @@ export default function ProduktImportPage() {
             const hasGrupper = Boolean(p.produktgruppe1 || p.produktgruppe2 || p.produktgruppe3);
             return {
               ...p,
+              // EK1s offisielle navn er autoritativt — kompakteres til Produktbeskrivelse 1
+              name: it.compactedName || p.name,
               // EK1s rike HTML-beskrivelse er autoritativ — overstyrer marketing-teksten
               produktinformasjon: it.produktinformasjonHtml || p.produktinformasjon,
               opprinnelsesland: it.opprinnelsesland || p.opprinnelsesland,
@@ -905,7 +908,7 @@ export default function ProduktImportPage() {
 
       setSupplierStatus({
         kind: merged > 0 ? "success" : "info",
-        msg: `EK1: ${data.count} produkter i fila — ${merged} matchet og beriket (HTML-beskrivelse, opprinnelsesland, bilde).${
+        msg: `EK1: ${data.count} produkter i fila — ${merged} matchet og beriket (navn, HTML-beskrivelse, opprinnelsesland, bilde).${
           merged === 0 ? " Importer produkter fra prislisten først." : ""
         }`,
       });
@@ -1316,7 +1319,7 @@ export default function ProduktImportPage() {
         {/* EK1 produktdata-opplaster */}
         <div className="mt-3 pt-3 border-t border-purple-800/40 flex items-center justify-between gap-3">
           <div className="text-xs text-purple-200/80">
-            <strong>EK1 produktdata:</strong> Last opp <code>EK1_product_data_no_*.xlsx</code> fra Wera media-eksport. Beriker importerte produkter med ferdig HTML-beskrivelse, opprinnelsesland og bildenavn — matches på produktnummer. Importer fra prislisten først.
+            <strong>EK1 produktdata:</strong> Last opp <code>EK1_product_data_no_*.xlsx</code> fra Wera media-eksport. Beriker importerte produkter med kompaktert navn, ferdig HTML-beskrivelse, opprinnelsesland og bildenavn — matches på produktnummer. Importer fra prislisten først.
           </div>
           <div className="flex items-center gap-2">
             <input

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
 import * as XLSX from "xlsx";
 import { classify } from "@/lib/services/produktgruppe-classifier";
+import { compactName } from "@/lib/services/name-compactor";
 import { generateProductInfoHtml } from "@/lib/services/wera-seo-html";
 import type { WeraScrapeResult } from "@/lib/services/wera-deep-scrape";
 
@@ -21,6 +22,8 @@ export interface Ek1Item {
   code: string;
   ean: string;
   name: string;
+  /** Kompaktert navn (UPPERCASE, maks 40 tegn) til Produktbeskrivelse 1 — samme kompaktor som prisliste-importen. */
+  compactedName: string;
   /** Opprinnelsesland per produkt (CZ/DE/TW/...). */
   opprinnelsesland: string;
   /** UNC-sti til produktbildet. */
@@ -206,6 +209,7 @@ export function parseEk1Rows(rows: unknown[][]): Ek1Item[] {
       code,
       ean: str(at(row, cEan)),
       name,
+      compactedName: compactName(name, "", str(at(row, cText))).name,
       opprinnelsesland: str(at(row, cCoo)),
       bildeFilnavn: img ? `${MULTICASE_BILDE_PREFIX}${img}` : "",
       category,

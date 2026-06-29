@@ -307,7 +307,7 @@ export class MailchimpBuilderService {
    */
   buildNewsletterHtml(input: NewsletterInput): string {
     const utm = (url: string, content?: string) => withUtm(url, input.themeSlug, content, input.utmTerm);
-    const products = input.products.slice(0, 5);
+    const products = input.products.slice(0, 6);
 
     const rootSections: string[] = [];
 
@@ -977,14 +977,15 @@ function renderColgroup(): string {
  */
 function renderProductGrid(products: NewsletterProduct[], themeSlug: string): string {
   const row1 = products.slice(0, 3);
-  const row2 = products.slice(3, 5);
+  const row2 = products.slice(3, 6);
 
   // Block IDs for product images/text
   const imgIds1 = ["b7", "b10", "b13"];
   const txtIds1 = ["b8", "b11", "b14"];
   const gutterIds1 = ["gutterContainerId-8", "gutterContainerId-11", "gutterContainerId-14"];
-  const imgIds2 = ["b207", "b210"];
-  const txtIds2 = ["b208", "b211"];
+  const imgIds2 = ["b207", "b210", "b213"];
+  const txtIds2 = ["b208", "b211", "b214"];
+  const gutterIds2 = ["gutterContainerId-208", "gutterContainerId-211", "gutterContainerId-214"];
 
   // Build row 1 columns
   const row1Cols = row1.map((p, i) => {
@@ -1001,18 +1002,21 @@ function renderProductGrid(products: NewsletterProduct[], themeSlug: string): st
     );
   }).join("");
 
-  // Build row 2 columns (2 produkter à 50% bredde — Adrian foretrekker dette)
+  // Build row 2 columns: 3 produkter à 33% (3+3-grid), ellers 2 à 50% (3+2-grid)
+  const r2three = row2.length >= 3;
   const row2Cols = row2.map((p, i) => {
     const productUtm = withUtm(p.url, themeSlug, slugFromUrl(p.url));
     return renderProductColumn(
       p,
       productUtm,
-      6,
-      "50%",
+      r2three ? 4 : 6,
+      r2three ? "33.33333333333333%" : "50%",
       imgIds2[i],
       txtIds2[i],
-      i === 0 ? "gutterContainerId-8" : "gutterContainerId-11",
-      "padding-left:8px;padding-right:8px;padding-top:12px;padding-bottom:12px"
+      gutterIds2[i],
+      r2three && i === 0
+        ? "padding-left:0;padding-right:0;padding-top:12px;padding-bottom:12px"
+        : "padding-left:8px;padding-right:8px;padding-top:12px;padding-bottom:12px"
     );
   }).join("");
 

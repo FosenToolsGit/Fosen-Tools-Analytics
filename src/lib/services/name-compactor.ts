@@ -79,6 +79,29 @@ const PROFILE_PATTERN = /\b(?:PH\s?\d{1,2}|PZ\s?\d{1,2}|TX\s?\d{1,3}|TIP\s?\d{1,
 const VDE_PATTERN = /\bVDE\b/i;
 const MODEL_PATTERN = /^\s*(\d{3,5}|\d{1,2}\.\d{1,3})\b/; // Wera 3334, 3335, 8000A osv. ved start
 
+/**
+ * Passform / drev — det viktigste søkekriteriet på skrutrekkere, bits og nøkler.
+ * Norsk drive-vokabular i prioritetsrekkefølge (mest spesifikke først).
+ * Brukes når navnet IKKE har en forkortet profil (PH2/TX10/HEX5) som allerede
+ * forteller passformen. Søker i både navn og marketing-tekst.
+ */
+const DRIVE_KEYWORDS: Array<[RegExp, string]> = [
+  [/\btorx[\s-]*plus\b|\bIP\d+\b/i, "TORX PLUS"],
+  [/\btorx\b|\bTX\d+\b/i, "TORX"],
+  [/\bpozidri[vw]\b|\bPZ\d+\b/i, "POZIDRIV"],
+  [/\b(?:phillips|stjerne|kryssspor|kryss-spor)\b|\bPH\d+\b/i, "STJERNE"],
+  [/\b(?:innvendig\s+sekskant|sekskant|sechskant|unbrako|hex[\s-]*plus|umbraco)\b|\bHEX\b/i, "SEKSKANT"],
+  [/\b(?:firkant|vierkant|square\s*drive)\b/i, "FIRKANT"],
+  [/\b(?:sporskrue|spor|slisset|slotted|rett\s*kjerv|schlitz)\b/i, "SPOR"],
+];
+
+/** Finner passform/drev fra tekst. Returnerer kort UPPERCASE-token, "" hvis ukjent. */
+function detectDrive(text: string): string {
+  if (!text) return "";
+  for (const [re, label] of DRIVE_KEYWORDS) if (re.test(text)) return label;
+  return "";
+}
+
 // Materialer / fyllord som strykes ved trang plass
 const FILLER_PATTERNS: RegExp[] = [
   /\brustfritt\s+stål\b/gi,
@@ -102,6 +125,16 @@ export function compactName(rawName: string, sizeContent?: string, marketingDesc
   // 2. Type-keyword (søk i navn OG marketing description — viktig for klinge/blad-produkter
   //    der navnet ikke nevner type)
   const typeKeyword = detectType(raw) || detectType(marketing);
+
+  // 2b. Passform / drev (SEKSKANT, TORX, SPOR ...) — det viktigste søkekriteriet.
+  //     Hopp over hvis typen allerede inneholder passformen (f.eks. «Sporskrutrekker»).
+  let drive = detectDrive(raw) || detectDrive(marketing);
+  if (drive && typeKeyword && typeKeyword.toUpperCase().includes(drive.split(" ")[0])) drive = "";
+
+  // 2c. Kulehode (ball end) → «M/KULE». Lav prioritet: vises bare hvis det er plass (droppes
+  //     først ved 40-tegns-trimming). NB: Wera-prislisten har skrivefeilen «kulekode».
+  const BALL_PATTERN = /\bkuleh?ode\b|\bkulekode\b|\bball[\s-]*end\b/i;
+  const ball = BALL_PATTERN.test(raw) || BALL_PATTERN.test(marketing) ? "M/KULE" : "";
 
   // 3. Profile (PH2, TX10 etc.) — sjekk også «PZ 0 x 157mm»-mønsteret der profil og lengde står sammen
   let profile = "";
@@ -159,6 +192,15 @@ export function compactName(rawName: string, sizeContent?: string, marketingDesc
     if (!cleaned.endsWith("MM") && /\d/.test(cleaned)) return cleaned + "MM";
     return cleaned;
   };
+  // Tomme-brøk (hex-bits/imperiale skrutrekkere): «7/64"» er selve passform-målet og
+  //  MÅ bevares — ellers kolliderer 7/64", 9/64", 5/32" til samme navn. Beholder også lengden.
+  if (!size) {
+    const inch = `${rawForSize} ${sizeContent ?? ""}`.match(/\b(\d{1,2}\/\d{1,2})\s*["”]/);
+    if (inch) {
+      const lenM = rawForSize.match(/[xX×]\s*(\d+[.,]?\d*)\s*MM/i);
+      size = `${inch[1]}"` + (lenM ? ` ${lenM[1].replace(",", ".")}MM` : "");
+    }
+  }
   if (!size) {
     const sizeFromName = normalize(rawForSize).match(SIZE_PATTERN);
     if (sizeFromName) {
@@ -181,9 +223,15 @@ export function compactName(rawName: string, sizeContent?: string, marketingDesc
   // Hent serie-hint (Kompakt, Micro, Stubby osv.)
   const seriesHints = SERIES_HINTS.filter((h) => new RegExp(`\\b${escapeReg(h)}\\b`, "i").test(raw));
 
-  // Bygg første-utkast: TYPE → PROFIL → STR → MODELL → VDE → SERIE
+  // En forkortet profil (PH2/TX10/HEX5) forteller allerede passformen → da er drive-ordet overflødig
+  if (profile) drive = "";
+
+  // Bygg første-utkast: TYPE → PASSFORM → M/KULE → PROFIL → STR → MODELL → VDE → SERIE
+  // (M/KULE + serie er lav prioritet og droppes først ved trang plass)
   const parts: string[] = [];
   if (typeKeyword) parts.push(typeKeyword);
+  if (drive) parts.push(drive);
+  if (ball) parts.push(ball);
   if (profile) parts.push(profile);
   if (size) parts.push(size);
   if (model) parts.push(model);
@@ -206,15 +254,15 @@ export function compactName(rawName: string, sizeContent?: string, marketingDesc
     return { name: candidate, tags };
   }
 
-  // Over 40 tegn — fjern serie-hint, så modell, så VDE i prioritetsrekkefølge
+  // Over 40 tegn — fjern serie-hint, så modell, så VDE i prioritetsrekkefølge (passform beholdes)
   if (candidate.length > 40) {
-    candidate = [typeKeyword, profile, size, model, isVde ? "VDE" : ""].filter(Boolean).join(" ").toUpperCase();
+    candidate = [typeKeyword, drive, profile, size, model, isVde ? "VDE" : ""].filter(Boolean).join(" ").toUpperCase();
   }
   if (candidate.length > 40 && model) {
-    candidate = [typeKeyword, profile, size, isVde ? "VDE" : ""].filter(Boolean).join(" ").toUpperCase();
+    candidate = [typeKeyword, drive, profile, size, isVde ? "VDE" : ""].filter(Boolean).join(" ").toUpperCase();
   }
   if (candidate.length > 40 && isVde) {
-    candidate = [typeKeyword, profile, size].filter(Boolean).join(" ").toUpperCase();
+    candidate = [typeKeyword, drive, profile, size].filter(Boolean).join(" ").toUpperCase();
   }
   return { name: candidate.slice(0, 40).trim(), tags };
 }
