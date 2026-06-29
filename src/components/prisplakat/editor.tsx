@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PricetagProduct, PricetagPlaylist, PricetagFormat, PricetagSettings, ProductMode, CustomSlide } from "./types";
 import { DEFAULT_SETTINGS, FORMAT_LABELS, defaultCustomSlides, PRODUCT_MODE_LABELS, buildSlideList, SLIDE_TEMPLATE_LABELS, makeNewSlide } from "./types";
-import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up } from "./a4-renderer";
+import { PricetagA4Single, PricetagA4_2Up, PricetagA4_4Up, PricetagA4Variants } from "./a4-renderer";
 import { PricetagA5Kundeark } from "./a5-kundeark-renderer";
 import { A5KundearkEditor } from "./a5-kundeark-editor";
 import { Slideshow } from "./slideshow";
@@ -294,9 +294,12 @@ export function PrisplakatEditor() {
   };
 
   // Telle pages basert på format og antall produkter
-  const productsPerPage = format === "a4_single" ? 1 : format === "a4_2up" ? 2 : 4;
+  const productsPerPage = format === "a4_single" ? 1 : format === "a4_2up" ? 2 : format === "a4_4up" ? 4 : (products.length || 1);
   const pageGroups: PricetagProduct[][] = [];
-  if (format.startsWith("a4_")) {
+  if (format === "a4_variants") {
+    // Variant-plakat: alle produkter på ett ark (produkt 1 = hero, alle = type-kort)
+    pageGroups.push(products);
+  } else if (format.startsWith("a4_")) {
     for (let i = 0; i < products.length; i += productsPerPage) {
       pageGroups.push(products.slice(i, i + productsPerPage));
     }
@@ -685,6 +688,7 @@ export function PrisplakatEditor() {
               {format === "a4_single" && grp[0] && <PricetagA4Single product={grp[0]} settings={settings} />}
               {format === "a4_2up" && <PricetagA4_2Up products={grp} settings={settings} />}
               {format === "a4_4up" && <PricetagA4_4Up products={grp} settings={settings} />}
+              {format === "a4_variants" && <PricetagA4Variants products={grp} settings={settings} heroTitle={title} />}
               {showGuides && <CenterGuides />}
             </div>
           ))}

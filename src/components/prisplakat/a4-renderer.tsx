@@ -62,6 +62,99 @@ function ProductImage({ src, label }: { src?: string | null; label: string }) {
   return <PlaceholderImage label={label} tone="light" />;
 }
 
+const HEAD_FONT = 'var(--ft-head-font, "Manrope", system-ui, sans-serif)';
+const MONO = "Roboto Mono, monospace";
+
+// Felles Factory Store-toppbånd: FS-logo venstre + jubileumslogoer (100/25) høyre.
+function FactoryTopBand({ h = 34, accent }: { h?: number; accent: string }) {
+  return (
+    <div style={{
+      position: "absolute", left: 0, right: 0, top: 0, height: `${h}mm`,
+      background: FT_INK, display: "flex", alignItems: "center", padding: "0 14mm",
+    }}>
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "1.6mm", background: accent }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brosjyre/factory-store-stacked-white.png" alt="Factory Store by Fosen Tools"
+        style={{ height: `${h * 0.6}mm`, width: "auto" }} />
+      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "6mm" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brosjyre/Jubileumslogo-100aar.svg" alt="100 år" style={{ height: `${h * 0.36}mm`, width: "auto" }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brosjyre/Jubileumslogo-25aar.svg" alt="25 år" style={{ height: `${h * 0.46}mm`, width: "auto" }} />
+      </div>
+    </div>
+  );
+}
+
+// Felles footer-bånd.
+function FtFooter({ h = 17 }: { h?: number }) {
+  return (
+    <div style={{
+      position: "absolute", left: 0, right: 0, bottom: 0, height: `${h}mm`,
+      background: FT_INK, color: "#fff", padding: "0 14mm",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+    }}>
+      <div style={{ fontFamily: HEAD_FONT, fontWeight: 800, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+        FOSEN-TOOLS.NO  ·  72 51 51 20
+      </div>
+      <div style={{ fontFamily: MONO, fontSize: 9, color: "rgba(255,255,255,0.6)", letterSpacing: "0.06em" }}>
+        INDUSTRIGATA 1, 7130 BREKSTAD
+      </div>
+    </div>
+  );
+}
+
+// Rund rabatt-burst (flat sirkel + myk skygge). border-radius+box-shadow rendrer
+// riktig i modern-screenshot (i motsetning til Playwright print).
+function DiscBurst({ text, sizeMm, accent }: { text: string; sizeMm: number; accent: string }) {
+  return (
+    <div style={{
+      width: `${sizeMm}mm`, height: `${sizeMm}mm`, borderRadius: "50%",
+      background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: HEAD_FONT, fontWeight: 900, fontSize: sizeMm * 3.0, lineHeight: 0.9,
+      transform: "rotate(-8deg)", boxShadow: "0 1.5mm 4mm rgba(15,17,21,0.25)",
+    }}>{text}</div>
+  );
+}
+
+// Pris-blokk gjenbrukt av single + variant-kort: Veil.-strek + stor pris + Eks. mva + Spar-boks.
+function PriceBlock({
+  priceNow, priceBefore, showSavings, savings, accent,
+  priceSize = 76, custom,
+}: {
+  priceNow: number; priceBefore: number; showSavings: boolean; savings: number;
+  accent: string; priceSize?: number; custom?: { title: string; body: string };
+}) {
+  if (custom) {
+    return (
+      <div>
+        <div style={{ fontFamily: HEAD_FONT, fontWeight: 900, fontSize: priceSize * 0.34, color: accent, lineHeight: 1.05, textTransform: "uppercase" }}>{custom.title}</div>
+        {custom.body && <div style={{ fontSize: priceSize * 0.21, color: "#6b7280", marginTop: "2.5mm", lineHeight: 1.4, maxWidth: "88%" }}>{custom.body}</div>}
+      </div>
+    );
+  }
+  return (
+    <div>
+      {showSavings && (
+        <div style={{ fontFamily: MONO, fontSize: priceSize * 0.22, color: "#9ca3af", marginBottom: "1mm" }}>
+          Veil. <span style={{ textDecorationLine: "line-through", textDecorationColor: accent }}>{formatNOK(priceBefore)}</span>
+        </div>
+      )}
+      <div style={{ fontFamily: HEAD_FONT, fontWeight: 900, fontSize: priceSize, color: accent, lineHeight: 0.9, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>
+        {formatNOK(priceNow)}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "4mm", marginTop: "2.5mm", flexWrap: "wrap" }}>
+        <span style={{ fontFamily: MONO, fontSize: priceSize * 0.17, color: "#6b7280" }}>Eks. mva</span>
+        {savings > 0 && (
+          <span style={{ fontFamily: HEAD_FONT, fontWeight: 800, fontSize: priceSize * 0.22, color: "#fff", background: accent, padding: "1.5mm 4mm", borderRadius: "2mm" }}>
+            Spar {formatNOK(savings)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // SINGLE — 1 produkt per A4
 // ──────────────────────────────────────────────────────────────────────
@@ -82,155 +175,63 @@ export function PricetagA4Single({
       fontFamily: 'var(--ft-body-font, "Manrope", system-ui, sans-serif)',
       overflow: "hidden",
     }}>
-      {/* Topp-band — svart med rød accent */}
-      <div style={{
-        position: "absolute", left: 0, right: 0, top: 0, height: "40mm",
-        background: FT_INK, display: "flex", alignItems: "center", padding: "0 14mm",
-      }}>
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "1.5mm", background: accent }} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brosjyre/Fosen-Tools_white.svg" alt="Fosen Tools"
-          style={{ height: "8mm", width: "auto" }} />
-        <div style={{ marginLeft: "auto", textAlign: "right", color: "#fff" }}>
-          <div style={{
-            fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-            fontWeight: 700, letterSpacing: "0.3em", fontSize: 11,
-            color: "rgba(255,255,255,0.85)", textTransform: "uppercase",
-          }}>KAMPANJE · VÅR 2026</div>
-          <div style={{
-            fontFamily: "Roboto Mono, monospace", fontSize: 9,
-            color: "rgba(255,255,255,0.5)", marginTop: 3, letterSpacing: "0.08em",
-          }}>BREKSTAD · 25 ÅR</div>
-        </div>
-      </div>
+      {/* Factory Store-toppbånd */}
+      <FactoryTopBand h={34} accent={accent} />
 
       {/* Bilde-sone */}
       <div style={{
-        position: "absolute", left: 0, right: 0, top: "40mm", height: "140mm",
-        overflow: "hidden",
+        position: "absolute", left: 0, right: 0, top: "34mm", height: "116mm",
+        background: "#f5f7fa", overflow: "hidden",
       }}>
         <ProductImage src={product.image_url} label={product.name || "Produkt"} />
         {/* Gradient nederst */}
         <div style={{
-          position: "absolute", left: 0, right: 0, bottom: 0, height: "40mm",
+          position: "absolute", left: 0, right: 0, bottom: 0, height: "24mm",
           background: "linear-gradient(180deg, rgba(245,247,250,0) 0%, rgba(245,247,250,1) 100%)",
         }} />
         {/* Burst */}
         {burstText && (
-          <div style={{ position: "absolute", top: "8mm", right: "10mm" }}>
-            <PriceBurst variant="bullseye" size={110} primary={burstText} secondary="SPAR" primarySize={28} />
+          <div style={{ position: "absolute", top: "9mm", right: "14mm" }}>
+            <DiscBurst text={burstText} sizeMm={40} accent={accent} />
           </div>
         )}
       </div>
 
       {/* Info-blokk */}
       <div style={{
-        position: "absolute", left: 0, right: 0, top: "180mm", height: "92mm",
-        padding: "8mm 14mm 0",
+        position: "absolute", left: 0, right: 0, top: "150mm", bottom: "14mm",
+        padding: "10mm 14mm 0",
         display: "flex", flexDirection: "column",
         overflow: "hidden",
       }}>
-        <div style={{ flexShrink: 0 }}>
-          <Eyebrow tracking={0.18} size={10}>{product.manufacturer || "PRODUKT"}</Eyebrow>
+        <div style={{ fontFamily: HEAD_FONT, fontWeight: 800, letterSpacing: "0.18em", fontSize: 13, textTransform: "uppercase", color: accent, flexShrink: 0 }}>
+          {product.manufacturer || "PRODUKT"}
         </div>
         <div style={{
-          fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-          fontWeight: 900, fontSize: 28, lineHeight: 1.05,
-          textTransform: "uppercase", marginTop: "3mm", color: "#111",
-          flexShrink: 0,
+          fontFamily: HEAD_FONT, fontWeight: 900, fontSize: 34, lineHeight: 1.0,
+          textTransform: "uppercase", marginTop: "3mm", color: "#111", flexShrink: 0,
           display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
         }}>{productName}</div>
-        <div style={{
-          fontFamily: "Roboto Mono, monospace", fontSize: 11,
-          color: "#6b7280", marginTop: "2mm",
-          flexShrink: 0,
-        }}>Art.nr {product.sku || "—"}</div>
+        <div style={{ fontFamily: MONO, fontSize: 13, color: "#6b7280", marginTop: "2mm", flexShrink: 0 }}>
+          Art.nr {product.sku || "—"}
+        </div>
 
-        {/* Pris-blokk — flexShrink:0 så den ALDRI klippes */}
-        <div style={{
-          display: "flex", alignItems: "stretch", gap: "5mm", marginTop: "6mm",
-          flexShrink: 0,
-        }}>
-          <div style={{ width: "4mm", background: accent, alignSelf: "stretch" }} />
+        {/* Pris-blokk — marginTop:auto dytter den ned, flexShrink:0 så den aldri klippes */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "6mm", marginTop: "auto", paddingBottom: "4mm", flexShrink: 0 }}>
+          <div style={{ width: "7mm", background: accent, alignSelf: "stretch" }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            {showSavings && (
-              <div style={{
-                fontFamily: "Roboto Mono, monospace", fontSize: 13,
-                color: "#9ca3af", textDecorationLine: "line-through",
-                textDecorationColor: accent, textDecorationThickness: 1.5, lineHeight: 1,
-              }}>FØR {formatNOK(priceBefore)}</div>
-            )}
-            <div style={{
-              fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-              fontWeight: 900, fontSize: 76, color: accent,
-              lineHeight: 0.95, marginTop: "2mm",
-            }}>{formatNOK(priceNow)}</div>
-            <div style={{
-              display: "flex", alignItems: "center", gap: "3mm", marginTop: "3mm",
-            }}>
-              <span style={{ fontFamily: "Roboto Mono, monospace", fontSize: 11, color: "#6b7280" }}>Eks. mva</span>
-              {savings > 0 && (
-                <span style={{
-                  fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-                  fontWeight: 800, fontSize: 11, color: "#fff",
-                  background: accent, padding: "2mm 4mm", borderRadius: 999,
-                  letterSpacing: "0.08em", textTransform: "uppercase",
-                }}>SPAR {formatNOK(savings)}</span>
-              )}
-            </div>
+            <PriceBlock priceNow={priceNow} priceBefore={priceBefore} showSavings={showSavings} savings={savings} accent={accent} priceSize={92} />
           </div>
           {showQr && (
-            <div style={{ textAlign: "center", marginLeft: "auto", alignSelf: "flex-start" }}>
-              <QrCode url={product.source_url} size={70} />
-              <div style={{
-                fontFamily: "Roboto Mono, monospace", fontSize: 7,
-                color: "#6b7280", marginTop: "1mm", letterSpacing: "0.04em",
-              }}>SCAN FOR MER</div>
+            <div style={{ flexShrink: 0, textAlign: "center" }}>
+              <QrCode url={product.source_url} size={80} />
+              <div style={{ fontFamily: MONO, fontSize: 8, color: "#6b7280", marginTop: "1mm", letterSpacing: "0.06em" }}>SE PRODUKTET</div>
             </div>
           )}
         </div>
-
-        {/* USP bullets — flex-grow så de tar resterende plass, men overflow:hidden klipper */}
-        {(product.bullets || []).slice(0, 3).length > 0 && (
-          <ul style={{
-            listStyle: "none", padding: 0, margin: "8mm 0 0",
-            display: "flex", flexDirection: "column", gap: "2mm",
-            flex: "1 1 0", minHeight: 0, overflow: "hidden",
-          }}>
-            {(product.bullets || []).slice(0, 3).map((b, i) => (
-              <li key={i} style={{
-                display: "flex", gap: "3mm", alignItems: "flex-start",
-                fontSize: 12, lineHeight: 1.45, color: "#374151",
-                overflow: "hidden",
-              }}>
-                <span style={{
-                  width: "1mm", alignSelf: "stretch", background: accent, flex: "0 0 auto",
-                  marginTop: "1mm", marginBottom: "1mm",
-                }} />
-                <span style={{
-                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-                }}>{b}</span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
-      {/* Footer-bånd */}
-      <div style={{
-        position: "absolute", left: 0, right: 0, bottom: 0, height: "17mm",
-        background: FT_INK, color: "#fff", padding: "5mm 14mm",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{
-          fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-          fontWeight: 800, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase",
-        }}>FOSEN-TOOLS.NO  ·  72 51 51 20</div>
-        <div style={{
-          fontFamily: "Roboto Mono, monospace", fontSize: 9,
-          color: "rgba(255,255,255,0.6)", letterSpacing: "0.06em",
-        }}>INDUSTRIGATA 1, 7130 BREKSTAD  ·  MILJØFYRTÅRN · 25 ÅR</div>
-      </div>
+      <FtFooter h={14} />
     </div>
   );
 }
@@ -251,22 +252,7 @@ export function PricetagA4_2Up({
       fontFamily: 'var(--ft-body-font, "Manrope", system-ui, sans-serif)',
     }}>
       {/* Topp-band */}
-      <div style={{
-        position: "absolute", left: 0, right: 0, top: 0, height: "32mm",
-        background: FT_INK, display: "flex", alignItems: "center", padding: "0 14mm",
-      }}>
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "1.5mm", background: accent }} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brosjyre/Fosen-Tools_white.svg" alt="Fosen Tools"
-          style={{ height: "7mm", width: "auto" }} />
-        <div style={{ marginLeft: "auto", color: "#fff" }}>
-          <div style={{
-            fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-            fontWeight: 800, letterSpacing: "0.3em", fontSize: 10,
-            textTransform: "uppercase",
-          }}>SAMMENLIGN  ·  VÅR 2026</div>
-        </div>
-      </div>
+      <FactoryTopBand h={32} accent={accent} />
 
       {/* 2 produkt-sone, vertikalt delt med rød divider — flexbox */}
       <div style={{
@@ -367,21 +353,7 @@ export function PricetagA4_4Up({
       fontFamily: 'var(--ft-body-font, "Manrope", system-ui, sans-serif)',
     }}>
       {/* Topp-band */}
-      <div style={{
-        position: "absolute", left: 0, right: 0, top: 0, height: "22mm",
-        background: FT_INK, display: "flex", alignItems: "center", padding: "0 12mm",
-      }}>
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "1.5mm", background: accent }} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brosjyre/Fosen-Tools_white.svg" alt="Fosen Tools" style={{ height: "6mm", width: "auto" }} />
-        <div style={{ marginLeft: "auto", color: "#fff" }}>
-          <div style={{
-            fontFamily: 'var(--ft-head-font, "Manrope", system-ui, sans-serif)',
-            fontWeight: 800, letterSpacing: "0.3em", fontSize: 9,
-            textTransform: "uppercase",
-          }}>HYLLEKANT-PLAKATER  ·  VÅR 2026</div>
-        </div>
-      </div>
+      <FactoryTopBand h={22} accent={accent} />
 
       {/* 2×2 grid */}
       <div style={{
@@ -475,6 +447,99 @@ function PricetagQuarterCell({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// VARIANTER — 1 hero-bilde + grid av "typer" (alle produkter = type-kort).
+// Brukes for produkter med flere varianter (f.eks. Milwaukee Custom-vogn):
+// produkt 1 gir hero-bildet, og hvert produkt blir et type-kort med pris.
+// ──────────────────────────────────────────────────────────────────────
+export function PricetagA4Variants({
+  products, settings, heroTitle, heroSubtitle, pageW = A4_W_MM, pageH = A4_H_MM,
+}: {
+  products: PricetagProduct[]; settings: PricetagSettings;
+  heroTitle?: string; heroSubtitle?: string; pageW?: number; pageH?: number;
+}) {
+  const accent = settings.accent_color || FT_RED;
+  const hero = products[0];
+  const cards = products.slice(0, 6);
+  const manufacturer = hero?.manufacturer || "";
+  const title = (heroTitle || hero?.name || "Produkt").toUpperCase();
+  const showQr = settings.show_qr && hero && !effective(hero).hideQr;
+
+  return (
+    <div className="page-paper a4-pricetag" style={{
+      width: `${pageW}mm`, height: `${pageH}mm`, position: "relative",
+      background: "#fff", color: "#111", fontFamily: HEAD_FONT, overflow: "hidden",
+    }}>
+      <FactoryTopBand h={34} accent={accent} />
+
+      {/* Hero: tekst venstre, bilde høyre */}
+      <div style={{ position: "absolute", left: 0, right: 0, top: "34mm", height: "84mm", background: "#f5f7fa", display: "flex", alignItems: "stretch" }}>
+        <div style={{ width: "48%", padding: "8mm 6mm 8mm 14mm", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          {manufacturer && (
+            <div style={{ fontFamily: HEAD_FONT, fontWeight: 800, letterSpacing: "0.16em", fontSize: 14, textTransform: "uppercase", color: accent }}>{manufacturer}</div>
+          )}
+          <div style={{ fontFamily: HEAD_FONT, fontWeight: 900, fontSize: 30, lineHeight: 0.98, textTransform: "uppercase", color: "#111", marginTop: "3mm" }}>{title}</div>
+          {heroSubtitle && (
+            <div style={{ fontFamily: MONO, fontSize: 14, color: "#6b7280", marginTop: "4mm" }}>{heroSubtitle}</div>
+          )}
+          {showQr && hero && (
+            <div style={{ display: "flex", alignItems: "center", gap: "4mm", marginTop: "6mm" }}>
+              <QrCode url={hero.source_url} size={64} />
+              <div style={{ fontFamily: MONO, fontSize: 10, color: "#6b7280", letterSpacing: "0.06em", lineHeight: 1.4 }}>Skann for<br />å se<br />produktet</div>
+            </div>
+          )}
+        </div>
+        <div style={{ width: "52%", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", padding: "4mm 8mm 4mm 0" }}>
+          {hero?.image_url
+            ? <ProductImage src={hero.image_url} label={hero?.name || "Produkt"} />
+            : <PlaceholderImage label="HERO-BILDE" />}
+        </div>
+      </div>
+
+      {/* "VELG DIN TYPE" */}
+      <div style={{ position: "absolute", left: "14mm", right: "14mm", top: "122mm", display: "flex", alignItems: "center", gap: "5mm" }}>
+        <div style={{ fontFamily: HEAD_FONT, fontWeight: 900, fontSize: 24, textTransform: "uppercase", letterSpacing: "0.04em", color: "#111" }}>Velg din type</div>
+        <div style={{ flex: 1, height: "0.7mm", background: accent }} />
+      </div>
+
+      {/* Type-grid */}
+      <div style={{
+        position: "absolute", left: "14mm", right: "14mm", top: "130mm", bottom: "14mm",
+        display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: "6mm",
+      }}>
+        {cards.map((p, i) => {
+          const eff = effective(p);
+          const { priceNow, priceBefore, showSavings, savings } = eff;
+          const burstText = settings.show_burst && !eff.hideBurst ? eff.burstText : null;
+          const noPrice = priceNow <= 0;
+          return (
+            <div key={i} style={{
+              background: "#fff", border: "1px solid #e5e8ec", borderRadius: "3mm",
+              filter: "drop-shadow(0 1mm 2mm rgba(15,17,21,0.10))",
+              position: "relative", padding: "7mm 7mm", display: "flex", flexDirection: "column",
+            }}>
+              {burstText && !noPrice && (
+                <div style={{ position: "absolute", right: "6mm", top: "6mm" }}>
+                  <DiscBurst text={burstText} sizeMm={23} accent={accent} />
+                </div>
+              )}
+              <div style={{ fontFamily: HEAD_FONT, fontWeight: 900, fontSize: 30, textTransform: "uppercase", color: "#111", lineHeight: 0.98, maxWidth: "72%" }}>{eff.name}</div>
+              <div style={{ fontFamily: MONO, fontSize: 12, color: "#6b7280", marginTop: "2mm" }}>Art.nr {p.sku || "—"}</div>
+              <div style={{ marginTop: "auto", paddingTop: "5mm" }}>
+                {noPrice
+                  ? <PriceBlock priceNow={0} priceBefore={0} showSavings={false} savings={0} accent={accent} priceSize={66} custom={{ title: "Pris på forespørsel", body: "Skreddersydd etter dine behov. Velg verktøy og innhold selv." }} />
+                  : <PriceBlock priceNow={priceNow} priceBefore={priceBefore} showSavings={showSavings} savings={savings} accent={accent} priceSize={56} />}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <FtFooter h={14} />
     </div>
   );
 }

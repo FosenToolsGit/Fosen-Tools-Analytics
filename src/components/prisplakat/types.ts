@@ -80,6 +80,7 @@ export type PricetagFormat =
   | "a4_single"
   | "a4_2up"
   | "a4_4up"
+  | "a4_variants"
   | "a5_kundeark"
   | "slideshow_landscape"
   | "slideshow_portrait";
@@ -584,6 +585,7 @@ export const FORMAT_LABELS: Record<PricetagFormat, string> = {
   a4_single: "A4 — 1 produkt per ark",
   a4_2up: "A4 — 2 produkter per ark",
   a4_4up: "A4 — 4 produkter per ark",
+  a4_variants: "A4 — varianter (hero + typer på ett ark)",
   a5_kundeark: "A5 — kundeark (jubileum/event-mal)",
   slideshow_landscape: "Slideshow — landskap 16:9",
   slideshow_portrait: "Slideshow — portrett 9:16",
