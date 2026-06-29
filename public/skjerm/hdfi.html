@@ -44,6 +44,15 @@
   .ba-tag.bad{ background:rgba(13,15,18,.86); color:#fff; }
   .ba-tag.good{ background:var(--red); color:#fff; }
 
+  /* oppbygning — to lag side om side */
+  .konstr{ flex:1; display:flex; gap:3vh; padding:1vh 6vh 16vh; }
+  .konstr-card{ flex:1; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.1); border-left:0.7vh solid var(--red); border-radius:1.6vh; padding:4.5vh 5vh; }
+  .konstr-tag{ font-family:var(--mono); font-size:2.2vh; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--red); margin-bottom:3.2vh; }
+  .konstr-list{ list-style:none; }
+  .konstr-list li{ position:relative; font-size:3vh; font-weight:700; color:#eef1f4; padding-left:3.6vh; margin-bottom:2.6vh; line-height:1.25; }
+  .konstr-list li:last-child{ margin-bottom:0; }
+  .konstr-list li::before{ content:""; position:absolute; left:0; top:1vh; width:1.4vh; height:1.4vh; border-radius:50%; background:var(--red); box-shadow:0 0 0 .6vh rgba(237,28,36,.2); }
+
   /* farger */
   .sw-grid{ flex:1; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr); gap:3vh; padding:1vh 6vh 16vh; }
   .sw{ border-radius:1.4vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 1.5vh 4vh rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.1); }
@@ -52,9 +61,9 @@
   .sw .lab .ch{ display:inline-flex; gap:.6vh; }
   .sw .lab .ch i{ width:2vh; height:2vh; border-radius:.4vh; border:1px solid rgba(0,0,0,.3); display:block; }
 
-  /* fordeler-punkter (2x2) */
-  .pts{ display:grid; grid-template-columns:1fr 1fr; gap:1.8vh 4vh; margin-top:3.4vh; }
-  .pt{ display:flex; align-items:center; gap:1.8vh; font-size:3.1vh; font-weight:700; }
+  /* fordeler-punkter (2-kol) */
+  .pts{ display:grid; grid-template-columns:1fr 1fr; gap:2.2vh 4vh; margin-top:3.4vh; }
+  .pt{ display:flex; align-items:center; gap:1.8vh; font-size:2.9vh; font-weight:700; }
   .pt .dot{ flex-shrink:0; width:1.5vh; height:1.5vh; border-radius:50%; background:var(--red); box-shadow:0 0 0 .7vh rgba(237,28,36,.2); }
 
   /* tilpasses — split */
@@ -79,7 +88,7 @@
     <div class="content">
       <div class="eyebrow">Egen produksjon · Fosen Tools</div>
       <div class="h">Verktøykontroll</div>
-      <div class="lead">High Density Foam Insert — skreddersydde verktøyinnlegg med eksakt passform og gravert merking.</div>
+      <div class="lead">HDFI — High Density Foam Insert. Skreddersydde verktøyløsninger tilpasset Lean-vedlikehold og 5S, med eksakt passform og gravert merking.</div>
     </div>
   </section>
 
@@ -94,10 +103,54 @@
     </div>
   </section>
 
-  <!-- 3 · FARGEUTVALG -->
+  <!-- 3 · OPPBYGNING -->
   <section class="slide">
     <div class="ink">
-      <div class="ink-head"><div class="ink-eye">Fargeutvalg</div><div class="ink-h">Velg din <span class="red">farge</span></div><div class="ink-note">ESD-kompatible og brannhemmende innlegg på forespørsel</div></div>
+      <div class="ink-head"><div class="ink-eye">Oppbygning</div><div class="ink-h">Bygd for <span class="red">kontroll</span></div></div>
+      <div class="konstr">
+        <div class="konstr-card">
+          <div class="konstr-tag">Topp · to-farget plastplate</div>
+          <ul class="konstr-list">
+            <li>Silhuett rundt hvert produkt for økt synlighet</li>
+            <li>Gravert art.nr, tekst og logo</li>
+            <li>Innfelt gripefelt</li>
+            <li>Flere fargevalg</li>
+          </ul>
+        </div>
+        <div class="konstr-card">
+          <div class="konstr-tag">Bunn · null-absorbent skum</div>
+          <ul class="konstr-list">
+            <li>Ikke-absorberende</li>
+            <li>Løsemiddelbestandig</li>
+            <li>Lang holdbarhet vs. vanlig skum</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · FORDELER -->
+  <section class="slide">
+    <div class="bg" style="background-image:url('https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/insert.jpg');"></div>
+    <div class="scrim"></div>
+    <div class="content" style="max-width:78vw;">
+      <div class="eyebrow">Fordeler</div>
+      <div class="h">Hvorfor <span class="red">HDFI</span></div>
+      <div class="pts">
+        <div class="pt"><span class="dot"></span>Umiddelbar visuell kontroll</div>
+        <div class="pt"><span class="dot"></span>Merkeuavhengig — passer alle verktøy</div>
+        <div class="pt"><span class="dot"></span>Forebygger FOD og verktøytap</div>
+        <div class="pt"><span class="dot"></span>Forenklet lagerstyring og telling</div>
+        <div class="pt"><span class="dot"></span>Enklere bestilling via gravert merking</div>
+        <div class="pt"><span class="dot"></span>Standardisering på tvers av avdelinger</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · FARGEUTVALG -->
+  <section class="slide">
+    <div class="ink">
+      <div class="ink-head"><div class="ink-eye">Fargeutvalg</div><div class="ink-h">Velg din <span class="red">farge</span></div><div class="ink-note">Andre farger, ESD-kompatible og brannhemmende innlegg på forespørsel</div></div>
       <div class="sw-grid">
         <div class="sw"><div class="top" style="background-color:#C8202A;"></div><div class="lab"><span class="ch"><i style="background:#C8202A"></i><i style="background:#fff"></i></span>Rød / Hvit</div></div>
         <div class="sw"><div class="top" style="background-color:#15171b;"></div><div class="lab"><span class="ch"><i style="background:#15171b"></i><i style="background:#fff"></i></span>Svart / Hvit</div></div>
@@ -109,23 +162,7 @@
     </div>
   </section>
 
-  <!-- 4 · FORDELER -->
-  <section class="slide">
-    <div class="bg" style="background-image:url('https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/insert.jpg');"></div>
-    <div class="scrim"></div>
-    <div class="content" style="max-width:72vw;">
-      <div class="eyebrow">Fordeler</div>
-      <div class="h">Hvorfor <span class="red">HDFI</span></div>
-      <div class="pts">
-        <div class="pt"><span class="dot"></span>Umiddelbar visuell kontroll</div>
-        <div class="pt"><span class="dot"></span>Forebygger FOD og tap av verktøy</div>
-        <div class="pt"><span class="dot"></span>Eksakt passform, merkeuavhengig</div>
-        <div class="pt"><span class="dot"></span>Lasermerking og lang levetid</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 5 · TILPASSES ALT -->
+  <!-- 6 · TILPASSES ALT -->
   <section class="slide">
     <div class="ink">
       <div class="split">
@@ -141,14 +178,14 @@
     </div>
   </section>
 
-  <!-- 6 · CADLAB -->
+  <!-- 7 · CADLAB -->
   <section class="slide">
     <div class="bg" style="background-image:url('https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/hdfi-skjerm/cadlab.jpg?v=2');"></div>
     <div class="scrim"></div>
     <div class="content">
-      <div class="eyebrow">CADLAB</div>
+      <div class="eyebrow">CADLAB · egen utviklingsavdeling</div>
       <div class="h">Fra idé til <span class="red">ferdig løsning</span></div>
-      <div class="lead">CAD-tegnet og CNC-maskinert med ekstrem presisjon. Norsk produksjon med 100 % fornybar energi.</div>
+      <div class="lead">CAD-tegnet og CNC-maskinert med ekstrem presisjon. Markedsledende leverandør med erfaring siden 2004, og norsk produksjon på 100 % egenprodusert fornybar energi.</div>
     </div>
   </section>
 
