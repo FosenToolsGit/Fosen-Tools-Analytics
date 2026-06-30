@@ -20,6 +20,8 @@ export interface AutoConfig {
   in_stock_only?: boolean;
   /** Minste eks-mva-pris for å bli vist (filtrerer bort billig tilbehør). Default 0. */
   min_price?: number;
+  /** Ekskluder produkter — match mot artikkelnummer/URL-token eller SKU. */
+  exclude?: string[];
 }
 
 interface Candidate { url: string; views: number; created: string }
@@ -111,6 +113,11 @@ export async function refreshAutoScreens(admin: SupabaseClient): Promise<Refresh
         const absUrl = absoluteUrl(cand.url);
         const p = await scrapeProductByUrl(absUrl);
         if (!p || p.price_now <= 0) { skipped++; continue; }
+        // "Design selv"/skreddersøm-produkter har ingen fast pris → aldri på skjerm
+        if (/design\s*selv/i.test(p.name || "")) { skipped++; continue; }
+        // Manuell ekskluder-liste (artikkelnummer/URL-token eller SKU)
+        const tok = productToken(absUrl);
+        if (cfg.exclude?.some((x) => x === tok || x === p.sku || absUrl.includes(x))) { skipped++; continue; }
         if (p.price_now < (cfg.min_price ?? 0)) { skipped++; continue; }
         if (inStockOnly && !p.in_stock) { skipped++; continue; }
         const sku = p.sku || absUrl;
