@@ -167,6 +167,10 @@ export interface NewsletterInput {
   /** Én-linjes jubileums-tekst som rendres rett over svart bunn-footer
    *  (typisk «Fosen Tools fyller 25 år i 2026»). Skjules hvis tom. */
   jubileumFooterText?: string;
+  /** Enkel info-/ferie-utgave: rendrer midtImageUrl ØVERST (rett under header),
+   *  hopper over divider/midt-bilde lenger nede. Tomme heading/ingress/midt-
+   *  felt rendres ikke. Footer + header er uendret (vanlig nyhetsbrev). */
+  imageTop?: boolean;
 }
 
 export interface NewsletterProduct {
@@ -846,18 +850,25 @@ function renderContentSection(
 ): string {
   const rows: string[] = [];
 
-  // --- Heading (h1 + h2 subtitle) ---
-  rows.push(`<tr>${renderTextBlock(
-    "gutterContainerId-5",
-    "b5",
-    "d5",
-    "padding-left:30px;padding-right:30px;padding-top:0;padding-bottom:0",
-    CONTENT_BG,
-    `<h1 style="line-height: 1; mso-line-height-alt: 100%;"><span style="font-size: 16px">${esc(input.headingMain)}</span></h1><h2 class="mcePastedContent last-child" style="line-height: 1; mso-line-height-alt: 100%; text-align: center;"><strong>${esc(input.headingSub)}</strong></h2>`
-  )}</tr>`);
+  // --- Bilde øverst (ferie-/info-utgaver): bildet rett under header ---
+  if (input.imageTop && input.midtImageUrl) {
+    rows.push(renderMidtImageBlock(input.midtImageUrl, utm(input.midtCtaUrl || "https://fosen-tools.no", "topp-bilde")));
+  }
 
-  // --- Ingress + brand logo ---
-  {
+  // --- Heading (h1 + h2 subtitle) — hoppes over hvis tom ---
+  if (input.headingMain || input.headingSub) {
+    rows.push(`<tr>${renderTextBlock(
+      "gutterContainerId-5",
+      "b5",
+      "d5",
+      "padding-left:30px;padding-right:30px;padding-top:0;padding-bottom:0",
+      CONTENT_BG,
+      `<h1 style="line-height: 1; mso-line-height-alt: 100%;"><span style="font-size: 16px">${esc(input.headingMain)}</span></h1><h2 class="mcePastedContent last-child" style="line-height: 1; mso-line-height-alt: 100%; text-align: center;"><strong>${esc(input.headingSub)}</strong></h2>`
+    )}</tr>`);
+  }
+
+  // --- Ingress + brand logo — hoppes over hvis begge tomme ---
+  if (input.ingress || (!input.hideBrandLogo && Boolean(input.brandLogoUrl))) {
     // Ingressen rendres som den er, uten auto-prepend av «Hei *|FNAME|*,»-hilsen.
     // Brukeren legger inn egen åpning i ingress-teksten hvis ønskelig.
     // *|FNAME|* og andre Mailchimp merge-tags fungerer fortsatt — esc() bevarer
@@ -900,39 +911,45 @@ function renderContentSection(
     rows.push(`<tr><td style="background-color:transparent;padding-top:10px;padding-bottom:20px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b40">${renderButton("40", "SE ALLE PRODUKTENE VÅRE", utm("https://fosen-tools.no/produkter", "alle-produkter"))}</td></tr>`);
   }
 
-  // --- Divider ---
-  rows.push(`<tr>${renderDivider("b100")}</tr>`);
+  // --- Divider (hoppes over i bilde-øverst-utgaver) ---
+  if (!input.imageTop) {
+    rows.push(`<tr>${renderDivider("b100")}</tr>`);
+  }
 
-  // --- Midt image ---
-  if (input.midtImageUrl) {
+  // --- Midt image (skip hvis allerede vist øverst) ---
+  if (input.midtImageUrl && !input.imageTop) {
     rows.push(renderMidtImageBlock(input.midtImageUrl, utm(input.midtCtaUrl, "midt-bilde")));
   }
 
-  // --- Midt title ---
-  rows.push(`<tr>${renderTextBlock(
-    "gutterContainerId-91",
-    "b91",
-    "d91",
-    "padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px",
-    "transparent",
-    `<h1 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="font-size: 17px">${esc(input.midtTitle)}</span></h1>`
-  )}</tr>`);
+  // --- Midt title — hoppes over hvis tom ---
+  if (input.midtTitle) {
+    rows.push(`<tr>${renderTextBlock(
+      "gutterContainerId-91",
+      "b91",
+      "d91",
+      "padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px",
+      "transparent",
+      `<h1 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="font-size: 17px">${esc(input.midtTitle)}</span></h1>`
+    )}</tr>`);
+  }
 
   // --- Midt body ---
   //   Konverter nylinjer til <br>: dobbelt-nylinje (\n\n) = avsnitt (<br><br>),
   //   enkel-nylinje (\n) = linjebrudd (<br>). Uten dette ramler alle linjer
   //   sammen i en lang setning siden HTML kollapser whitespace.
-  const midtBodyHtml = esc(input.midtBody)
-    .replace(/\n{2,}/g, "<br><br>")
-    .replace(/\n/g, "<br>");
-  rows.push(`<tr>${renderTextBlock(
-    "gutterContainerId-92",
-    "b92",
-    "d92",
-    "padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px",
-    "transparent",
-    `<p class="last-child" style="line-height:1.5;mso-line-height-alt:150%;text-align:center"><span style="font-size: 14px">${midtBodyHtml}</span></p>`
-  )}</tr>`);
+  if (input.midtBody) {
+    const midtBodyHtml = esc(input.midtBody)
+      .replace(/\n{2,}/g, "<br><br>")
+      .replace(/\n/g, "<br>");
+    rows.push(`<tr>${renderTextBlock(
+      "gutterContainerId-92",
+      "b92",
+      "d92",
+      "padding-left:24px;padding-right:24px;padding-top:0;padding-bottom:12px",
+      "transparent",
+      `<p class="last-child" style="line-height:1.5;mso-line-height-alt:150%;text-align:center"><span style="font-size: 14px">${midtBodyHtml}</span></p>`
+    )}</tr>`);
+  }
 
   // --- Midt CTA button (kan skrus av med showMidtCta: false) ---
   if (input.showMidtCta !== false) {
