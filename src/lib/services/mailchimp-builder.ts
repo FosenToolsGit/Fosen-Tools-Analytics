@@ -894,8 +894,9 @@ function renderContentSection(
     rows.push(`<tr><td style="padding-top:0;padding-bottom:0;padding-right:32px;padding-left:32px" valign="top" class="mceGutterContainer" id="gutterContainerId-17"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:24px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b17">${renderProductGrid(products, input.themeSlug)}</td></tr></tbody></table></td></tr>`);
   }
 
-  // --- "SE ALLE PRODUKTENE VÅRE" button (skjules i leverandør-utgaver) ---
-  if (!useSupplierLayout) {
+  // --- "SE ALLE PRODUKTENE VÅRE" button (skjules i leverandør-utgaver
+  //     og i info-utgaver uten produkter, f.eks. ferie-meldinger) ---
+  if (!useSupplierLayout && products.length > 0) {
     rows.push(`<tr><td style="background-color:transparent;padding-top:10px;padding-bottom:20px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b40">${renderButton("40", "SE ALLE PRODUKTENE VÅRE", utm("https://fosen-tools.no/produkter", "alle-produkter"))}</td></tr>`);
   }
 
