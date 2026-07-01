@@ -64,7 +64,7 @@ export const HookLeverandorTagIn: React.FC<HookProps> = ({
   });
 
   // Logo-størrelse — leverandør-logo skal være stor (større enn FT)
-  const logoMaxSize = width > 1600 ? 720 : 660;
+  const logoMaxSize = width > 1600 ? 780 : 740;
 
   // FT-merket nederst — sentralisert spec
   const ftMarkWidth = FT_BRAND_MARK.widthFor(width) * 0.55;
@@ -129,7 +129,7 @@ export const HookLeverandorTagIn: React.FC<HookProps> = ({
             src={logoUrl}
             style={{
               maxWidth: logoMaxSize,
-              maxHeight: logoMaxSize * 0.6,
+              maxHeight: logoMaxSize * 0.72,
               objectFit: "contain",
               filter: "brightness(1.05) drop-shadow(0 0 24px rgba(255,255,255,0.18))",
             }}

@@ -153,8 +153,8 @@ const LeverandorScene2: React.FC<{
           <Img
             src={supplierLogoUrl}
             style={{
-              height: 150,
-              maxWidth: width * 0.75,
+              height: 195,
+              maxWidth: width * 0.82,
               objectFit: "contain",
               filter: "brightness(1.1)",
             }}
