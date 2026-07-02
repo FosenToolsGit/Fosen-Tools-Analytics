@@ -54,14 +54,24 @@ export default function SkjermPlayPage() {
     };
   }, []);
 
-  // Auto-refresh hvert 5. min: sikkerhetsnett som plukker opp ny kode/deploy.
+  // Full reload én gang i døgnet kl ~07:30 (henter ny kode/deploy). Reduserer
+  // egress kraftig vs. tidligere 5-min-reload. Playlist-endringer plukkes
+  // fortsatt opp løpende via innholds-pollen under.
   useEffect(() => {
-    const id = setInterval(() => window.location.reload(), 5 * 60 * 1000);
-    return () => clearInterval(id);
+    function msUntilNext0730(): number {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(7, 30, 0, 0);
+      if (next.getTime() <= now.getTime()) next.setDate(next.getDate() + 1);
+      return next.getTime() - now.getTime();
+    }
+    const id = setTimeout(() => window.location.reload(), msUntilNext0730());
+    return () => clearTimeout(id);
   }, []);
 
-  // Innholds-poll hvert 30. sek: reloader skjermen automatisk når spillelista
+  // Innholds-poll hvert 5. min: reloader skjermen automatisk når spillelista
   // byttes eller innholdet redigeres — så man slipper å refreshe på enheten.
+  // (Var 30 sek — hevet til 5 min for å redusere Supabase-kall.)
   useEffect(() => {
     const id = setInterval(async () => {
       try {
@@ -73,7 +83,7 @@ export default function SkjermPlayPage() {
           window.location.reload();
         }
       } catch { /* nettverksglipp — prøv igjen neste runde */ }
-    }, 30_000);
+    }, 5 * 60_000);
     return () => clearInterval(id);
   }, [token]);
 
