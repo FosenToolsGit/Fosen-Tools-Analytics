@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import { classify } from "@/lib/services/produktgruppe-classifier";
 import { generateSeoHtml } from "@/lib/services/wera-seo-html";
 import type { WeraScrapeResult } from "@/lib/services/wera-deep-scrape";
@@ -39,9 +39,9 @@ interface CachedRow {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   let bodyCodes: string[] | null = null;
   try {

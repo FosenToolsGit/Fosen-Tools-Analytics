@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import {
   COMPOSITION_ID,
   DIMENSIONS,
@@ -31,13 +31,9 @@ const VIDEO_TYPES = Object.keys(COMPOSITION_ID) as VideoType[];
 const VIDEO_FORMATS = Object.keys(DIMENSIONS) as VideoFormat[];
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { user, supabase } = auth;
 
   let body: { type?: string; format?: string; data?: Record<string, unknown> };
   try {

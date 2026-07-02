@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import * as XLSX from "xlsx";
 import { classify } from "@/lib/services/produktgruppe-classifier";
 import { compactName } from "@/lib/services/name-compactor";
@@ -64,9 +64,9 @@ interface WeraCacheRow {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const formData = await request.formData();
   const file = formData.get("file");

@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import { scrapeFromPdfText } from "@/lib/services/enkelprodukt-scraper";
 import { destillProduct } from "@/lib/services/enkelprodukt-destillery";
 
@@ -32,9 +32,8 @@ interface BatchedPdfInfo {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   let formData: FormData;
   try {

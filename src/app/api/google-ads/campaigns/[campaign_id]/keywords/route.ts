@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import type { GoogleAdsKeywordAggregate } from "@/app/api/google-ads/keywords/route";
 
 interface Row {
@@ -23,13 +23,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ campaign_id: string }> }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const { campaign_id } = await params;
   const searchParams = request.nextUrl.searchParams;

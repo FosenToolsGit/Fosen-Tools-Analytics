@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { GoogleAuth } from "google-auth-library";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 type Category = "quick_win" | "almost_page_one" | "low_ctr" | "declining" | "rising";
 
@@ -131,9 +132,9 @@ async function fetchQueryPages(from: string, to: string): Promise<Map<string, st
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const sp = request.nextUrl.searchParams;
   const from = sp.get("from");

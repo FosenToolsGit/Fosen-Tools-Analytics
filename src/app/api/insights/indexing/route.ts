@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { GoogleAuth } from "google-auth-library";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 const SITE_ORIGIN = "https://fosen-tools.no";
 const SITEMAP_URL = `${SITE_ORIGIN}/sitemap.xml`;
@@ -262,11 +262,8 @@ function legacyAlternativePath(categoriesUrl: string): string | null {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const sp = request.nextUrl.searchParams;
   const from = sp.get("from");

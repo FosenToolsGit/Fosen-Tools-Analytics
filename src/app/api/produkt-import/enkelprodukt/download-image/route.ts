@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import sharp from "sharp";
 
 /**
@@ -11,9 +11,8 @@ import sharp from "sharp";
  * Returnerer fil med Content-Disposition: attachment så browseren laster den ned.
  */
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const url = request.nextUrl.searchParams.get("url");
   const format = (request.nextUrl.searchParams.get("format") || "jpg").toLowerCase();

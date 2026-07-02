@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import {
   MailchimpBuilderService,
   type NewsletterInput,
@@ -8,9 +8,9 @@ import {
 import { scrapeProductByUrl } from "@/lib/services/scrape-product";
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { user, supabase } = auth;
 
   let body: Partial<NewsletterInput> & {
     products?: Array<{ url: string; name?: string; brandSku?: string; priceText?: string; imageUrl?: string }>;
@@ -113,9 +113,9 @@ export async function POST(request: NextRequest) {
     ? `Preheader er lang (${preheaderLen} tegn) — vil bli kuttet i de fleste innbokser. Anbefalt 80–110.`
     : null;
 
-  const builder = new MailchimpBuilderService();
   let draft;
   try {
+    const builder = new MailchimpBuilderService();
     draft = await builder.createNewsletter(input);
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Mailchimp-feil" }, { status: 500 });

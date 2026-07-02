@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import { generateIdeFeed } from "@/lib/services/ide-engine";
 
 /**
@@ -13,13 +13,8 @@ import { generateIdeFeed } from "@/lib/services/ide-engine";
  * mye siste 30 dager (TODO — kan utvides).
  */
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const date = request.nextUrl.searchParams.get("date") ?? undefined;
   const countParam = request.nextUrl.searchParams.get("count");

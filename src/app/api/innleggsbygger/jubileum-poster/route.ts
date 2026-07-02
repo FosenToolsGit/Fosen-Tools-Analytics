@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import {
   DEFAULT_JUB_POSTER,
   JUB_POSTER_DIMS,
@@ -27,13 +27,8 @@ interface Body extends Partial<Omit<JubPosterInput, "format">> {
 const FORMATS = Object.keys(JUB_POSTER_DIMS) as JubPosterFormat[];
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   let body: Body = {};
   try {

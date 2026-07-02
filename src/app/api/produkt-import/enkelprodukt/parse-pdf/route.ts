@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import { scrapeFromHtml, scrapeFromPdfText } from "@/lib/services/enkelprodukt-scraper";
 import { destillProduct } from "@/lib/services/enkelprodukt-destillery";
 import { detectPdfVariants, buildFocusedTextForVariant, type PdfVariant } from "@/lib/services/pdf-variants";
@@ -11,9 +11,8 @@ import { detectPdfVariants, buildFocusedTextForVariant, type PdfVariant } from "
  * FormData: file (PDF), source_url (valgfri), scrape_b2b_prices (valgfri "true"/"false")
  */
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   let formData: FormData;
   try {

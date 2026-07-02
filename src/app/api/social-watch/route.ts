@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runSocialWatch, warnIfTokenExpiringSoon } from "@/lib/services/social-watch";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 // Overvåker eksterne sosiale kontoer (IG Business Discovery) og pusher varsel
 // (ntfy) ved nytt innlegg. Trigges av GitHub Actions hvert ~30. min med
@@ -24,11 +24,8 @@ export async function POST(request: NextRequest) {
     (cronSecret && authHeader === `Bearer ${cronSecret}`);
 
   if (!isSecret) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAuth();
+    if (auth instanceof NextResponse) return auth;
   }
 
   try {
