@@ -520,7 +520,7 @@ LINKEDIN_ACCESS_TOKEN=
 LINKEDIN_ORGANIZATION_ID=
 
 # Sync
-SYNC_SECRET_KEY=fosen-sync-2026
+SYNC_SECRET_KEY=<sett-tilfeldig-secret>        (ALDRI commit den ekte verdien — kun i .env.local + Vercel)
 SYNC_DAYS=90                   (konfigurerbart sync-vindu, default 90)
 
 # Gemini (Innholdsmotor)
@@ -1989,7 +1989,7 @@ Etter 3 ukers pause siden 21. april:
 3. **TS-feil under første build:** `KeywordPlannerService` ble kalt med feil method-navn (`checkStatus` → `checkAccess`, `generateKeywordIdeas` → `getIdeas`). Lokal `npm run dev` (Turbopack) fanger ikke type-feil ved build, kun Vercel sin `next build`. Fikset i commit `0d93f49`.
 4. **Static prerender-feil:** `/innsikt/indeksering` brukte `useSearchParams()` (via `useDateRange`-hook) uten Suspense-boundary. Wrapped `{children}` i `Suspense` i `(dashboard)/layout.tsx`. Fanger alle 24 dashboard-sider som bruker hooken. Commit `f615a3c`.
 5. **Cron-jobb satt opp:** `vercel.json` med `{ "path": "/api/sync", "schedule": "0 5 * * *" }` = 5 UTC = 7 norsk sommertid. `/api/sync` fikk GET-handler (Vercel cron bruker GET) + aksepterer både `Bearer SYNC_SECRET_KEY` (manuell curl) og `Bearer CRON_SECRET` (Vercel auto-injected). Commit `16ce008`.
-6. **Brukere lagt til i Supabase Auth** via Auth Admin API: `erik@fosen-tools.no` + `torstein@fosen-tools.no` (begge passord `Toolrebel2026`, e-post pre-bekreftet).
+6. **Brukere lagt til i Supabase Auth** via Auth Admin API: `erik@fosen-tools.no` + `torstein@fosen-tools.no` (passord satt i Supabase-konsollen — ALDRI skriv passord i dette dokumentet; repoet er offentlig).
 7. **«Lokal»-tag i sidebar:** Markert `/innsikt/seo-innhold` med en amber «Lokal»-badge siden den krever Claude Code lokalt. Resten av appen funker likt på Vercel og lokalt. Commit `b0bb44f`.
 
 ### Brosjyre-editor: Combo-card-feature (NY)
@@ -2160,7 +2160,7 @@ Accordion-UI i editor per produkt med alle 6 felter. Rød ramme + rød prikk vis
 - **text-decoration React warning** — bytte fra shorthand til separate properties (textDecorationLine + textDecorationColor + textDecorationThickness)
 
 **13. Bruker opprettet**
-- `brit@fosen-tools.no` med passord `Toolrebel26` (pre-bekreftet i Supabase Auth)
+- `brit@fosen-tools.no` (passord satt i Supabase-konsollen — ALDRI skriv passord i dette dokumentet; repoet er offentlig)
 
 **14. Pushet til Vercel main**
 Alle 27+ commits gikk til `main` via fast-forward — Vercel auto-deployer til production.

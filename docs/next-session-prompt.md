@@ -14,7 +14,7 @@ Vi avsluttet en lang økt med fire hovedstrømmer ferdig:
 2. **Vercel reaktivert** etter 3 ukers pause:
    - Repo `FosenToolsGit/Fosen-Tools-Analytics` recovered (ble slettet ved et uhell, gjenopprettet via github.com)
    - Cron-jobb satt opp: daglig sync kl 7 norsk tid (5 UTC) via `vercel.json`
-   - Erik (`erik@fosen-tools.no`) + Torstein (`torstein@fosen-tools.no`) lagt til i Supabase Auth, passord `Toolrebel2026`
+   - Erik (`erik@fosen-tools.no`) + Torstein (`torstein@fosen-tools.no`) lagt til i Supabase Auth (passord satt i konsollen — ikke dokumentert her; repoet er offentlig)
    - «Lokal»-tag i sidebar markerer `/innsikt/seo-innhold` siden den krever Claude Code lokalt
 
 3. **Combo-card-feature** (ny PageObject-type i brosjyre-editor): 2 produkter med kombi-pris + auto-utregnet spar-stempel. Standard 140×100 mm.
@@ -27,7 +27,7 @@ I tillegg: CenterContentArticleSearch-sonen på `/search` ble skjult via SCSS, C
 
 | Når | Hva |
 |---|---|
-| **Mandag 11. mai** | Pmax brand-andel etter helgen — er den under 50% nå? Mål: retning 5-15%. Trigge sync først (`curl -X POST $URL/api/sync -H "Authorization: Bearer fosen-sync-2026"`), deretter samme analyse som 8. mai (sjekk `google_ads_search_terms` med `source=eq.pmax_insight`, beregn brand-share fra termer som matcher `/fosen[\s-]?tools|fosentools/i`). |
+| **Mandag 11. mai** | Pmax brand-andel etter helgen — er den under 50% nå? Mål: retning 5-15%. Trigge sync først (`curl -X POST $URL/api/sync -H "Authorization: Bearer $SYNC_SECRET_KEY"`), deretter samme analyse som 8. mai (sjekk `google_ads_search_terms` med `source=eq.pmax_insight`, beregn brand-share fra termer som matcher `/fosen[\s-]?tools|fosentools/i`). |
 | **12. mai** | Engagement-sjekk på Skreddersydd-innlegg + Kraftpipe TESS VEST-innlegg vs +144%-mønsteret. Begge ble publisert torsdag/fredag kl 11:30 (peak-vindu). Sjekk likes + comments + shares + clicks i `platform_posts`. |
 | **14. mai** | SEO-rangeringer for `/leatherman` og pipesett-primær (`/produkter/piper-og-skraller/pipesett`). Mål: posisjon < 10 (var 18.9 og 13.6 hhv. 30. april). |
 | **5. juni** | Bransjer-pause re-evaluering (kampanjen pauset 5. mai pga 0 konverteringer på 90d/7 742 kr). |
