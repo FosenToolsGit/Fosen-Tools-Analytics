@@ -1876,7 +1876,7 @@ function IframeSlide({ slide, active }: { slide: CustomSlide; active: boolean })
         <>
           <iframe
             src={url}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block", pointerEvents: "none" }}
             title="Innebygd side"
           />
           {/* Skjul musepeker over iframen (kiosk) */}
@@ -1949,6 +1949,11 @@ function YouTubeSlide({
           width: "max(100%, 177.78vh)",   // 16:9 i landscape
           height: "max(100%, 56.25vw)",
           border: 0,
+          // Kiosk: gjør iframen «gjennomsiktig» for musa. På TV-nettlesere
+          // paint-er en cross-origin YouTube-iframe ofte over overlay-lag
+          // uansett z-index, så cursor:none når ikke inn. Med pointer-events:none
+          // blir hover-målet det underliggende same-origin-elementet (cursor:none).
+          pointerEvents: "none",
         }}
         allow="autoplay; encrypted-media; picture-in-picture"
         allowFullScreen

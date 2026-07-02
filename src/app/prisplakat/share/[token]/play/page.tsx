@@ -22,20 +22,28 @@ export default function PrisplakatSharePlayPage() {
   const [playlist, setPlaylist] = useState<PricetagPlaylist | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Kiosk-mode body-styling: skjul cursor, prevent scroll, fyll viewport
+  // Kiosk-mode body-styling: skjul cursor, prevent scroll, fyll viewport.
+  // Musepekeren skjules så aggressivt som mulig: cursor:none PLUSS et
+  // gjennomsiktig 1x1 markør-bilde som fallback — enkelte info-skjerm-
+  // nettlesere (f.eks. infoskjermen.no-spillere) ignorerer `none`, men
+  // respekterer et blankt cursor-bilde.
   useEffect(() => {
+    const BLANK =
+      'url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") 0 0, none';
     const prevOverflow = document.body.style.overflow;
     const prevCursor = document.body.style.cursor;
     document.body.style.overflow = "hidden";
-    document.body.style.cursor = "none";
+    document.body.style.cursor = BLANK;
     document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.cursor = BLANK;
     const style = document.createElement("style");
-    style.textContent = "*,*::before,*::after{cursor:none !important}";
+    style.textContent = `html,body,*,*::before,*::after{cursor:${BLANK} !important}`;
     document.head.appendChild(style);
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.cursor = prevCursor;
       document.documentElement.style.overflow = "";
+      document.documentElement.style.cursor = "";
       style.remove();
     };
   }, []);

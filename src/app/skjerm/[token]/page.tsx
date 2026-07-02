@@ -27,22 +27,29 @@ export default function SkjermPlayPage() {
   // /version for å oppdage bytte/redigering og reloade automatisk.
   const versionRef = useRef<string | null>(null);
 
-  // Kiosk-styling: skjul cursor, ingen scroll
+  // Kiosk-styling: skjul cursor, ingen scroll.
+  // Musepekeren skjules så aggressivt som mulig: cursor:none PLUSS et
+  // gjennomsiktig 1x1 markør-bilde som fallback — enkelte info-skjerm-
+  // nettlesere (f.eks. infoskjermen.no-spillere) ignorerer `none`, men
+  // respekterer et blankt cursor-bilde. Cross-origin iframes (YouTube)
+  // håndteres i tillegg med pointer-events:none i slideshowen.
   useEffect(() => {
+    const BLANK =
+      'url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") 0 0, none';
     const prevOverflow = document.body.style.overflow;
     const prevCursor = document.body.style.cursor;
     document.body.style.overflow = "hidden";
-    document.body.style.cursor = "none";
+    document.body.style.cursor = BLANK;
     document.documentElement.style.overflow = "hidden";
-    // Global cursor:none på ALLE elementer (knapper m/ cursor:pointer, osv).
-    // Cross-origin iframes (YouTube) håndteres separat av et overlay i slideshowen.
+    document.documentElement.style.cursor = BLANK;
     const style = document.createElement("style");
-    style.textContent = "*,*::before,*::after{cursor:none !important}";
+    style.textContent = `html,body,*,*::before,*::after{cursor:${BLANK} !important}`;
     document.head.appendChild(style);
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.cursor = prevCursor;
       document.documentElement.style.overflow = "";
+      document.documentElement.style.cursor = "";
       style.remove();
     };
   }, []);
