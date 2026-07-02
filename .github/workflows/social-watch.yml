@@ -1,0 +1,23 @@
+name: social-watch
+
+# Pinger /api/social-watch jevnlig så FT får push-varsel når overvåkede
+# sosiale kontoer (Wera Norway o.l.) legger ut nytt innlegg. Vercel Hobby-cron
+# kan ikke polle så ofte, derfor GitHub Actions.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # hvert 30. min (UTC). GitHub kan forsinke litt under last.
+  workflow_dispatch: {} # lar deg kjøre manuelt fra Actions-fanen
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigg social-watch
+        run: |
+          # -sS uten -f: jobben skal ikke feile (og spamme feil-e-post) selv om
+          # endepunktet ennå ikke er konfigurert. Selve logikken/feil logges i
+          # Vercel-funksjonen. Vi skriver ut svaret for innsyn i Actions-loggen.
+          curl -sS --max-time 60 -X POST \
+            "https://fosen-tools-analytics.vercel.app/api/social-watch" \
+            -H "Authorization: Bearer ${{ secrets.SYNC_SECRET_KEY }}" || true
