@@ -14,7 +14,7 @@
 #   SYNC_SECRET_KEY  — samme secret som /api/sync bruker
 
 APP_URL="${APP_URL:-http://localhost:3000}"
-SECRET="${SYNC_SECRET_KEY:-fosen-sync-2026}"
+SECRET="${SYNC_SECRET_KEY:?SYNC_SECRET_KEY må settes (f.eks. i .env.local eller via export) — ingen hardkodet default}"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Trigger weekly keyword report..."
 

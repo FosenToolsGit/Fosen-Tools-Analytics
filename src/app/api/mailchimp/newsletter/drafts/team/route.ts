@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 /**
  * GET /api/mailchimp/newsletter/drafts/team — team-bred oversikt over alle
@@ -45,13 +45,9 @@ interface DraftRow {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { user } = auth;
 
   const showAll = request.nextUrl.searchParams.get("all") === "1";
   const adminUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

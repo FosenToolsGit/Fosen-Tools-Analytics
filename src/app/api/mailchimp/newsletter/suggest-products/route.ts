@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import {
   findProductCategory,
   generateContent,
@@ -16,9 +16,9 @@ interface SuggestionRow {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const count = Math.min(parseInt(request.nextUrl.searchParams.get("count") || "12", 10) || 12, 30);
   const days = Math.min(parseInt(request.nextUrl.searchParams.get("days") || "60", 10) || 60, 180);

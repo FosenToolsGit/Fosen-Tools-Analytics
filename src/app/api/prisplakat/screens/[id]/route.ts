@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 // Oppdater (navn / tilordnet spilleliste) + slett en skjerm (auth).
 
@@ -9,9 +9,9 @@ interface RouteContext {
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const body = await req.json().catch(() => ({}));
   const patch: { name?: string; playlist_id?: string | null } = {};
@@ -38,9 +38,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 // slipper å gå inn på UniFi.
 export async function POST(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const { data: screen, error: sErr } = await supabase
     .from("pricetag_screens")
@@ -62,9 +62,9 @@ export async function POST(_req: NextRequest, ctx: RouteContext) {
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const { error } = await supabase.from("pricetag_screens").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

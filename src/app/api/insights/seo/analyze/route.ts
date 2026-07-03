@@ -1,5 +1,21 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
+
+// SSRF-vern: analyzer-ruten henter en bruker-oppgitt URL server-side. Uten
+// dette kan en innlogget bruker tvinge serveren til å treffe interne tjenester
+// eller sky-metadata (169.254.169.254). Vi låser til fosen-tools.no-hosten.
+const SEO_ALLOWED_HOSTS = ["fosen-tools.no", "www.fosen-tools.no"];
+
+function isAllowedSeoUrl(raw: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+  return SEO_ALLOWED_HOSTS.includes(parsed.hostname.toLowerCase());
+}
 
 interface SEOElement {
   title: string | null;
@@ -278,20 +294,23 @@ function analyze(
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const sp = request.nextUrl.searchParams;
   const url = sp.get("url");
   const query = sp.get("query") || "";
   const position = Number(sp.get("position")) || 0;
   if (!url) return NextResponse.json({ error: "Missing url" }, { status: 400 });
+  if (!isAllowedSeoUrl(url)) {
+    return NextResponse.json({ error: "URL ikke tillatt — kun fosen-tools.no" }, { status: 403 });
+  }
 
   try {
     const response = await fetch(url, {
       headers: { "User-Agent": "FosenToolsAnalytics/1.0 SEO-Analyzer" },
       signal: AbortSignal.timeout(10000),
+      redirect: "error",
     });
     if (!response.ok) {
       return NextResponse.json({ error: `Kunne ikke hente ${url}: ${response.status}` }, { status: 502 });

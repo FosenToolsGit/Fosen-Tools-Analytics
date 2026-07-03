@@ -1,13 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 interface RouteContext { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   // Alle innloggede team-medlemmer kan lese hvilken som helst playlist
   // (RLS i migrasjon 013 håndhever dette). Ingen user_id-filter her,
@@ -25,9 +25,9 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { user, supabase } = auth;
 
   const { error } = await supabase
     .from("pricetag_playlists")

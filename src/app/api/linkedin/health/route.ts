@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 /**
  * Sanity-sjekk for LinkedIn-integrasjonen. Tester:
@@ -46,13 +46,8 @@ async function callLinkedIn(
 }
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const token = process.env.LINKEDIN_ACCESS_TOKEN;
   const orgId = process.env.LINKEDIN_ORGANIZATION_ID;

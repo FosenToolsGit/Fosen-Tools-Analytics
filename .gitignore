@@ -69,3 +69,16 @@ fosen-tools-analytics-*.json
 # Vim swap-filer
 *.swp
 *.swo
+
+# Engangs-/utforsknings-scripts (skal ikke i repo — slett før commit)
+scripts/_tmp-*.mjs
+scripts/_tmp-*.ts
+scripts/_tmp-*.cjs
+
+# Midlertidige media-arbeidsmapper (skal i Supabase Storage, ikke Git)
+/Jubileum-teaser/
+/Milwaukee-Q2-bilder/
+/Petter/
+/Wera-logo/
+/public/sfx/*.wav
+/public/sfx/*.mp3

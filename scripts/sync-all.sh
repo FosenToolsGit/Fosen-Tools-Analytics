@@ -3,8 +3,8 @@
 # Kjøres via cron eller launchd
 # Forutsetter at dev-server kjører på localhost:3000
 
-SYNC_URL="http://localhost:3000/api/sync"
-SYNC_SECRET="fosen-sync-2026"
+SYNC_URL="${SYNC_URL:-http://localhost:3000/api/sync}"
+SYNC_SECRET="${SYNC_SECRET_KEY:?SYNC_SECRET_KEY må settes (f.eks. i .env.local eller via export) — ingen hardkodet default}"
 
 echo "[$(date)] Synkroniserer alle plattformer..."
 

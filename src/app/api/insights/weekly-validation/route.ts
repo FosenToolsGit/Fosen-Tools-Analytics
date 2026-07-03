@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { GoogleAdsService } from "@/lib/services/google-ads";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 
 /**
  * Validering av forrige uke: sammenligner Pmax brand_share, Brand Search-status
@@ -199,9 +200,9 @@ function buildStory(role: CampaignValidation["role"], curr: CampaignValidation["
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
   const sp = request.nextUrl.searchParams;
   const to = sp.get("to") ?? new Date().toISOString().slice(0, 10);

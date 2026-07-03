@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse, type NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api/auth";
 import { PLATFORM_KEYS } from "@/lib/utils/platforms";
 import { syncPlatform } from "./sync-utils";
 import { syncGoogleAds } from "./google-ads-sync";
@@ -21,13 +21,8 @@ export async function POST(request: NextRequest) {
   if (isCronOrSecret) {
     // Cron-triggered or secret-token sync
   } else {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (auth instanceof NextResponse) return auth;
   }
 
   const admin = createAdminClient();
