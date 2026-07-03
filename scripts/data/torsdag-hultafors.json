@@ -1,0 +1,17 @@
+{
+  "format": "reel",
+  "supplierSlug": "hultafors",
+  "supplierName": "HULTAFORS",
+  "supplierLogoUrl": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/hultafors-white.png?v=1",
+  "productName": "HÅNDVERKSKNIV HVK-E MED DOBBELTSLIRE",
+  "productTagline": "Robust håndverkskniv med slire i slagfast plast",
+  "bullets": [
+    "Håndverkskniven HVK er tilpasset håndverkerens ulike behov",
+    "Sliren er produsert i slagfast PP-plast, naglet og med elastisk hempe",
+    "Beholder sliren og bytter kun knivene når de er slitt"
+  ],
+  "productImageUrl": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/42234/image/70ab62aa-7ce5-41d1-9087-496f797f95bc/381030%2B(1).w900.jpg",
+  "eyebrowOverride": "Ukens tips",
+  "badgeLabel": "TIPS",
+  "ctaUrl": "fosen-tools.no/hultafors/109988"
+}

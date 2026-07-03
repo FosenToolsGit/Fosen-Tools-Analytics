@@ -1,0 +1,25 @@
+{
+  "format": "reel",
+  "eyebrow": "Skreddersydd verktøyvogn",
+  "headline": "FT MEGA KIT AF&MM",
+  "imageUrls": [
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08044-1175x783.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08047-1175x783.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08050-1175x783.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08052-1175x783.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08054-1175x783.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08056-1175x783.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08058-1175x783.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FT%20Mega/dsc08061-1175x783.jpg"
+  ],
+  "tags": [
+    "HDFI",
+    "AF & MM",
+    "CADLAB"
+  ],
+  "bannerHeadline": "FT MEGA KIT AF&MM",
+  "bannerSubline": "AF- og MM-verktøy i HDFI",
+  "tagline": "Skreddersydd på Brekstad",
+  "customerLogoUrl": null,
+  "hook": "eyebrow-slam"
+}

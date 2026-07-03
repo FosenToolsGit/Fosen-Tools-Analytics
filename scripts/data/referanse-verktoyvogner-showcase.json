@@ -1,0 +1,33 @@
+{
+  "format": "reel",
+  "eyebrow": "Skreddersydd verktøyvogn",
+  "headline": "FT MEGA KIT AF&MM",
+  "imageUrls": [
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/Verkt%C3%B8yvogner/FT%20Mega%20kit%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/Verkt%C3%B8yvogner/Coca%20cola%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/Verkt%C3%B8yvogner/KC%20Mega%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/Verkt%C3%B8yvogner/Norsk%20kylling%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Kassel%C3%B8sninger/Verkt%C3%B8yvogner/Syrefast%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Aviation%20vogn%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Dragster%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FTL10mega%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FTL7%20auto%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Heidrun%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/FTAVI001%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/GS%20Performance%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Leopard%202%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/LVT%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Forsvaret%20rektangel.png",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Rock%20N%20Roll%20rektangel.png"
+  ],
+  "tags": [
+    "HDFI",
+    "AF & MM",
+    "CADLAB"
+  ],
+  "bannerHeadline": "FT MEGA KIT AF&MM",
+  "bannerSubline": "AF- og MM-verktøy i HDFI",
+  "tagline": "Skreddersydd på Brekstad",
+  "customerLogoUrl": null,
+  "hook": "eyebrow-slam"
+}

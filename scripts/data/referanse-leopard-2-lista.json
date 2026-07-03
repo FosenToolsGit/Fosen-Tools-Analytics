@@ -1,0 +1,20 @@
+{
+  "format": "reel",
+  "eyebrow": "Skreddersydd verktøyvogn",
+  "headline": "LEOPARD 2",
+  "bannerHeadline": "LEOPARD 2",
+  "bannerSubline": "Verktøyvogn for forsvaret",
+  "tagline": "Skreddersydd på Brekstad",
+  "customerLogoUrl": null,
+  "hook": "eyebrow-slam",
+  "tags": [
+    "HDFI",
+    "Forsvar",
+    "CADLAB"
+  ],
+  "imageUrls": [
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Leopard%201.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Leopard%202.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/Leopard%203.jpeg"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "format": "reel",
+  "supplierSlug": "milwaukee",
+  "supplierName": "MILWAUKEE",
+  "supplierLogoUrl": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/milwaukee.png",
+  "productName": "BAJONETTSAG M18 FHZ-0",
+  "productTagline": "Énhånds bajonettsag på M18-batteri",
+  "bullets": [
+    "REDLITHIUM™ batteriteknologi gir lang driftstid og stabil ytelse",
+    "Quik-Lok™ bladfeste for raskt og enkelt bladbytte uten verktøy",
+    "Patented FIXTEC™ bladklemme for enda mer effektivt bytte av sagblad"
+  ],
+  "productImageUrl": "https://mc10256fosentools.blob.core.windows.net/mc10256no-fosentools-public/documents/67118/image/85c23301-0eea-47a1-8681-15d786094cfa/m18_fhz-0--hero_1.w900.jpg",
+  "eyebrowOverride": "Ukens tips",
+  "badgeLabel": "TIPS",
+  "ctaUrl": "fosen-tools.no/milwaukee/125608"
+}
