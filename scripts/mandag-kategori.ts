@@ -202,7 +202,24 @@ console.log(
     : `📊 Ingen GA4-trafikk i kategorien — rangerer på pris`,
 );
 
-const topp3 = rangert.slice(0, 3);
+// Dedupliser på visningsnavn: kategorisiden trunkerer ofte navnet slik at
+// ulike varianter (f.eks. FACOM- og AOK-utgaven av samme sett) framstår
+// identiske. Tre like kort i en «topp 3» sier ingenting til seeren —
+// vi beholder den best rangerte og går videre nedover lista.
+const settNavn = new Set<string>();
+const topp3: typeof rangert = [];
+for (const p of rangert) {
+  const nøkkel = p.navn.toLowerCase().replace(/[^a-z0-9æøå]+/g, " ").trim();
+  if (settNavn.has(nøkkel)) continue;
+  settNavn.add(nøkkel);
+  topp3.push(p);
+  if (topp3.length === 3) break;
+}
+
+if (topp3.length < 3) {
+  console.error(`❌ Fant bare ${topp3.length} unike produkter etter dedup.`);
+  process.exit(1);
+}
 
 console.log("Valgte produkter:");
 for (const [i, p] of topp3.entries()) {
