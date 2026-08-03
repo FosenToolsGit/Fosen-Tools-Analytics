@@ -3,7 +3,7 @@
   "eyebrow": "Skreddersydd verktøyvogn",
   "headline": "KC MEGA",
   "bannerHeadline": "KC MEGA",
-  "bannerSubline": "KC Tools-verktøy i HDFI",
+  "bannerSubline": "Verktøy i skreddersydd HDFI",
   "tagline": "Skreddersydd på Brekstad",
   "customerLogoUrl": null,
   "hook": "eyebrow-slam",
@@ -14,10 +14,13 @@
   ],
   "imageUrls": [
     "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/kcmega_skap-1175x1175.jpg",
-    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/nyekcmegaskap_3-1175x780%20(1).jpg",
-    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/nyekcmetricpip_koln-1175x950.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/skuff10-1175x611.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/skuff8-1175x611.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/skuff13-1175x611.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/skuff6-1175x611.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/skuff14-1175x611.jpg",
     "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/skuff4-1175x611.jpg",
-    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/fronter-1175x976.jpg",
-    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/lock-1175x998.jpg"
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/skuff12-1175x611.jpg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Vogn/KC%20mega%20roller%20wagon/nyekcmetricpip_koln-1175x950.jpg"
   ]
 }
