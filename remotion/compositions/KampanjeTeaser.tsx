@@ -245,6 +245,18 @@ const ProductSlide: React.FC<{
         >
           {formatNOK(p.priceNow)}
         </div>
+        {/* FT oppgir alltid priser eks. mva */}
+        <div
+          style={{
+            fontFamily: SANS_FONT,
+            fontWeight: 600,
+            fontSize: 34,
+            letterSpacing: 1,
+            color: FT.inkMute,
+          }}
+        >
+          eks. mva
+        </div>
       </div>
     </AbsoluteFill>
   );

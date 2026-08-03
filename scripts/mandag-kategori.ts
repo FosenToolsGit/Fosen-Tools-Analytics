@@ -298,7 +298,7 @@ const fbBlock = [
   ...topp3.flatMap((p, i) => {
     const navn = shortNavn(p.navn);
     const produsent = p.produsent ? p.produsent + " " : "";
-    const pris = `${p.pris.toFixed(0)} kr`;
+    const pris = `${p.pris.toFixed(0)} kr eks. mva`;
     const url = `${p.url}?utm_source=facebook&utm_medium=social&utm_campaign=${utmCampaign}&utm_content=${utmContent(navn)}`;
     return [
       `${i + 1}. ${produsent}${navn} — ${pris}`,
@@ -317,7 +317,7 @@ const igBlock = [
     const navn = shortNavn(p.navn);
     const produsent = p.produsent ? p.produsent + " " : "";
     const sku = p.sku ?? "";
-    const pris = `${p.pris.toFixed(0)} kr`;
+    const pris = `${p.pris.toFixed(0)} kr eks. mva`;
     return [
       `${i + 1}. ${produsent}${navn}`,
       `   Varenr. ${sku} · ${pris}`,
