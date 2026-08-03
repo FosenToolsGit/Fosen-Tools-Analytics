@@ -13,7 +13,7 @@
     "uke": "tsx scripts/uke-batch.ts",
     "leverandor": "tsx scripts/leverandor-fra-pdf.ts",
     "torsdag": "tsx scripts/torsdag-tipset.ts",
-    "mandag": "tsx scripts/mandag-kategori.ts",
+    "mandag": "tsx --env-file-if-exists=.env.local scripts/mandag-kategori.ts",
     "produktbilde": "tsx scripts/hent-produktbilde.ts",
     "thumbnail": "tsx scripts/render-thumbnail.ts",
     "produsent-banner": "tsx scripts/render-produsent-banner.ts"

@@ -215,7 +215,10 @@ const ProductSlide: React.FC<{
           gap: 22,
         }}
       >
-        {p.priceBefore ? (
+        {/* Vis KUN overstreket førpris når det er en reell rabatt.
+            Scrapere returnerer ofte prisFør === pris når varen ikke er nedsatt,
+            og da blir «16 123,- → 16 123,-» villedende prismarkedsføring. */}
+        {p.priceBefore && p.priceBefore > p.priceNow ? (
           <div
             style={{
               fontFamily: SANS_FONT,

@@ -225,7 +225,8 @@ const ProductScene: React.FC<ProduktSpotlightProps> = (p) => {
               opacity: fade(frame, 50, 64, 174, 175),
             }}
           >
-            {p.priceBefore ? (
+            {/* Kun reell rabatt — se samme fiks i KampanjeTeaser */}
+            {p.priceBefore && p.priceBefore > p.priceNow ? (
               <div
                 style={{
                   fontFamily: SANS_FONT,

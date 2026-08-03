@@ -140,7 +140,7 @@ console.log();
 // Filter: på lager + har pris + har bilde + pris >= 200 (kvalitets-cutoff)
 const valgbare = produkter
   .filter((p) => p.lager && p.pris >= 200 && p.bilde)
-  .sort((a, b) => b.pris - a.pris); // høyest pris først (premium-utvalg)
+  .sort((a, b) => b.pris - a.pris);
 
 console.log(`✅ ${valgbare.length} produkter på lager med pris + bilde\n`);
 
@@ -149,17 +149,65 @@ if (valgbare.length < 3) {
   process.exit(1);
 }
 
-// Plukker topp 3 fra midten av prisfeltet (ikke ekstreme outliere)
-const midten = Math.floor(valgbare.length / 2);
-const topp3 = [
-  valgbare[0], // dyreste
-  valgbare[midten], // medium
-  valgbare[valgbare.length - 1], // billigste over cutoff
-].slice(0, 3);
+// ── Rangér på faktisk interesse (GA4-sidevisninger siste 60d) ───────
+// Tidligere plukket vi dyreste/median/billigste, som ga rare miks
+// (16 000 kr blindmuttertang + 224 kr adapter i «topp 3 batteriverktøy»).
+// Sidevisninger er en langt bedre proxy for relevans: tilbehør som
+// adaptere har ~0 visninger, mens ekte verktøy i kategorien har mange.
+const visningerPerUrl = new Map<string, number>();
+try {
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+  const since = new Date(Date.now() - 60 * 864e5).toISOString();
+  let from = 0;
+  for (;;) {
+    const { data } = await sb
+      .from("platform_posts")
+      .select("post_url,impressions")
+      .eq("platform", "ga4")
+      .gte("published_at", since)
+      .range(from, from + 999);
+    if (!data?.length) break;
+    for (const row of data) {
+      const path = (row.post_url || "").split("?")[0];
+      const id = path.match(/\/(\d{5,6})(?:\/|$)/)?.[1];
+      if (!id) continue;
+      visningerPerUrl.set(id, (visningerPerUrl.get(id) ?? 0) + (row.impressions || 0));
+    }
+    if (data.length < 1000) break;
+    from += 1000;
+  }
+} catch (e) {
+  console.warn("⚠️  Kunne ikke hente GA4-visninger, faller tilbake til pris-rangering.");
+}
+
+const visningerFor = (url: string) => {
+  const id = url.match(/\/(\d{5,6})(?:\/|$)/)?.[1];
+  return id ? (visningerPerUrl.get(id) ?? 0) : 0;
+};
+
+const rangert = [...valgbare].sort((a, b) => {
+  const dv = visningerFor(b.url) - visningerFor(a.url);
+  if (dv !== 0) return dv;
+  return b.pris - a.pris; // uavgjort → dyrest først
+});
+
+const medVisninger = rangert.filter((p) => visningerFor(p.url) > 0).length;
+console.log(
+  medVisninger > 0
+    ? `📊 ${medVisninger} av dem har GA4-trafikk siste 60d — rangerer på faktisk interesse`
+    : `📊 Ingen GA4-trafikk i kategorien — rangerer på pris`,
+);
+
+const topp3 = rangert.slice(0, 3);
 
 console.log("Valgte produkter:");
 for (const [i, p] of topp3.entries()) {
-  console.log(`  ${i + 1}. ${p.navn} (${p.produsent}) – ${p.pris.toFixed(0)} kr`);
+  const v = visningerFor(p.url);
+  console.log(`  ${i + 1}. ${p.navn} (${p.produsent}) – ${p.pris.toFixed(0)} kr${v ? `  · ${v} sidevisninger 60d` : ""}`);
   console.log(`     ${p.url}`);
 }
 
@@ -183,7 +231,8 @@ const kampanjeProdukter: KampanjeProdukt[] = topp3.map((p) => ({
   name: renseNavn(p.navn),
   manufacturer: p.produsent,
   imageUrl: p.bilde,
-  priceBefore: p.prisFør,
+  // Kun reell rabatt teller som førpris (scraperen setter prisFør === pris når varen ikke er nedsatt)
+  priceBefore: p.prisFør && p.prisFør > p.pris ? p.prisFør : null,
   priceNow: p.pris,
   discountPct: p.prisFør && p.prisFør > p.pris ? Math.round(((p.prisFør - p.pris) / p.prisFør) * 100) : null,
 }));
