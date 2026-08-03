@@ -1,0 +1,25 @@
+{
+  "format": "reel",
+  "eyebrow": "Skreddersydd verksted",
+  "headline": "FT SYSTEMVEGG",
+  "bannerHeadline": "FT SYSTEMVEGG",
+  "bannerSubline": "Verkstedinnredning fra Fosen Tools",
+  "tagline": "Skreddersydd på Brekstad",
+  "customerLogoUrl": null,
+  "hook": "eyebrow-slam",
+  "tags": [
+    "Systemvegg",
+    "Verksted",
+    "CADLAB"
+  ],
+  "imageUrls": [
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%206.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%205.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%201.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%202.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%208.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%207.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%2012.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Systemvegg%2010.jpeg"
+  ]
+}
