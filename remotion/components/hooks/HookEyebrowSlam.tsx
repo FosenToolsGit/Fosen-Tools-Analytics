@@ -357,7 +357,14 @@ export const HookEyebrowSlam: React.FC<HookProps> = ({
             <div
               style={{
                 fontFamily: SANS_FONT,
-                fontSize: width > 1600 ? 172 : 140,
+                // Skaler ned lange ord så de ikke flyter utenfor kanten.
+                // «VERKTØYVOGN» (11) passer på full størrelse; «VERKTØYKASSER» (13)
+                // ble kuttet før denne justeringen.
+                fontSize: (() => {
+                  const base = width > 1600 ? 172 : 140;
+                  const lengde = (primaryText ?? "").trim().length;
+                  return lengde > 11 ? Math.round(base * (11 / lengde)) : base;
+                })(),
                 color: FT.white,
                 fontWeight: 800,
                 letterSpacing: "-0.025em",
