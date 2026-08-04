@@ -1241,6 +1241,56 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 19. juni | **Tirsdags-nyhetsbrev (jubileum-leverandører) + Historien-siden utvidet til full langversjon.** Nyhetsbrev (`~/Desktop/nyhetsbrev-jubileum-leverandorer/`): standard topp (NYHETSBREV-badge, ingen jub-banner), 6 leverandører som stiller på jubileet med 1 bestselger hver (Milwaukee M18 ONEDD3-502X, Wera Tool-Check Plus, Zweibrüder ZB9H, Soudal Soudabond, Picard AluTec-hammer, Halder Simplex) — bestselgere fra `Salgsrapport 1 år.xls`; midt = `/historien`-banner (egendesignet, Supabase); bunn = publisert Arne Frode-post (IG/FB-foto-post/LinkedIn permalinks). `mailchimp-builder.ts` utvidet til 6-produktgrid (3+3, bakoverkompatibel med 5). Bygges via `MailchimpBuilderService.buildNewsletterHtml` (dummy MAILCHIMP_API_KEY for å unngå constructor-throw). **Historien-siden (`/historien`)** innholdsutvidet til FULL docx-langversjon (pappa ville ha med alt): de seks selskapene, taksering til 2005, 1980-utvidelse, kampflybase-beslutning juni 2012, FT Aviation Sola/Oslo, aldrene Oddvar 92/Randi 82, «Kulturen»- + «Hundre år senere»-seksjoner, «Resonnementer»-poeng foldet inn. **Tante-bildet (`familien-pettersen.jpg`) fjernet** (var ikke Randi). Tidslinje: +1967, 2012-superlativ dempet. «Sist oppdatert 19. juni 2026» i signoff. Docx lagret `~/Desktop/100-aar-historie-mandagsmote.docx`. Memory: `project_historien_landingsside`. |
 | 1. juli | **Milwaukee video-register komplett + «Brukt»-markering + ferie-innhold (onsdags-captions + fredags-tulle-poster).** Milwaukee-registeret (`~/Desktop/Milwaukee-video-register/`) fullført med **hele 2024 (Q1–Q4) + 2025 (Q1–Q4) + 2026 (Q1–Q2) = 567 asseter**; kun 2026 Q3–Q4 gjenstår. La til **«Brukt»-kolonne + filter** i `build.mjs` (USED_SEED/USED_UNSEED → localStorage, overlever nye kvartaler). Full **GJØR-SLIK-arbeidsflyt** (legg inn kvartal → FT-status via sitemap+Googlebot-UA → captions → brukt-markering → anbefal neste) skrevet inn i memory `project_leverandor_video_mediebank`. **Onsdags-captions** laget for M12 FIR38G2-skralle (125875) + M12 BLIDRC-slagskrutrekker (125422) — verifiserte spec fra Milwaukees offisielle side, markert brukt. **Fredags-tulle-poster:** 4 nye Nano Banana-kits (grillfest, fisketur, hengekøye, Spania) + **Spania-post med Arne Frode** (AI-cartoon av ekte person fra 2 ansiktsfoto, to-trinns for likhet, dempet smil, cartoon ikke Ghibli). Bygget **gjenbrukbar «bildet-som-helt» Playwright-mal** (`_tmp-ferie-enkel.mjs`) som sampler bg-farge fra bildet → sømløs lys post; også en jubileums-premium-variant (`_tmp-ferie-premium.mjs`) men Adrian foretrakk den enkle. FT-logoer samlet i `~/Desktop/FT-logo/`. Memory: `project_fredags_tulle_poster`. |
 | 2. juli | **Stor SEO/indeksering-dag + kiosk-fikser + Wera-varsling + Supabase-egress-fiks.** Detaljert sammendrag nedenfor. Hovedpunkter: **Indekserings-gjennomgang** — robots.txt Googlebot-hullet bekreftet FIKSET live (parameter-URLer i GSC nå 0), sitemap 4970 URLer 100% sunn, /manufacturers/+/categories/-kannibalisering=0, site-total klikk +4.5%/visn +5.6%, Facom recovered (pos 16.7→8.9), video-hero-sjekk lukket. Funn: **alle 30+ produsent-landingssider mangler i sitemap** (indeksert via intern-lenking, bekreftet /wera PASS) + 60 begravde kategorisider (fallsikring 1798v@pos60). Deliverable: `~/Desktop/FT-indeksering-gjennomgang-2026-07-01.html`. **Merke-vegg på `/produsent`** — auto-generert fra `.ProductMenu` (55 merker), logo-match på navn (`/userfiles/image/Logo/{Navn}.svg`) + tekst-fallback, søk via delegering, stiler i `FosenTools.scss`. Full produsent-side-SEO: title/meta + inline BreadcrumbList + FAQPage + JS CollectionPage/ItemList + FAQ-seksjon + kontakt-CTA (verifisert live). **Produktbeskrivelse-rydder** (`~/Desktop/FT-beskrivelse-rydder.html`) — fjerner Multicase WYSIWYG-cruft (tomme div-er/`style=""`/`&nbsp;`) som nøstet Teknisk info + Lignende produkter inn i Beskrivelse-fanen. **Kiosk-musepeker fikset** — `pointer-events:none` på YouTube/iframe-slides + transparent 1×1 cursor-bilde-fallback på `/skjerm/[token]` (Wera ✅; Milwaukee = infoskjermen.no sin OS-peker → deres innstilling). **Skrivebord ryddet** 205→2 mapper («Fosen Tools» + «Andre prosjekter»). **Wera-IG-varsling bygget** — IG Business Discovery mot `weratoolrebelsnorway` + ntfy-push + GitHub Actions-cron hvert 30. min + innebygd token-utløp-varsel (migrasjon 024 `social_watch`, `/api/social-watch`, `src/lib/services/social-watch.ts`). Meta-token oppdatert (var utløpt siden 25. juni → fikset også Meta-synken). **Supabase Cached Egress-fiks** — var 155%/7.7GB (99MB filer servert tusenvis av ganger av butikk-skjermer); reload 5min→daglig 07:30 + poll 30s→5min. Memory: `feature_social_watch`, `feedback_supabase_egress_kiosk`, `feature_merkevegg_produsent`, `feedback_multicase_produkttab_cruft`. |
+| 3. aug | **Ukestart uke 32 + innholdsproduksjon for hele august.** Systemhelse verifisert (daglig sync feilfri gjennom ferien, robots.txt-fiksen bekreftet live, 0 parameter-URLer i GSC). **Sikkerhet:** Supabase-varsel om RLS — testet alle 31 tabeller med anon-nøkkelen, fant `tags`/`tag_rules`/`tag_assignments` helt åpne (1621 rader lesbare, DELETE ikke blokkert). Migrasjon `025_tag_tables_rls.sql` skrevet, **ikke kjørt ennå**. **Fire reelle bugs fikset:** falsk overstreket førpris i reels (villedende prismarkedsføring — scraperen setter prisFør === pris uten rabatt; fikset i KampanjeTeaser + ProduktSpotlight + mandag-kategori), mandagspostens produktvalg plukket tilbehør (dyreste/median/billigste → GA4-rangering på sidevisninger blant varer på lager), manglende «eks. mva», og duplikate produktnavn i topp-3. **Eyebrow-slam-hooken** skalerer nå ned lange ord (VERKTØYKASSER ble kuttet). **Produsert:** 4 mandager, 3 tirsdager (Offshore Kit, KC Mega, FT Systemvegg), 3 torsdager (Snap-on, Bahco, PB Swiss), nyhetsbrev Milwaukee M18/M12 som Mailchimp-utkast, onsdagsplan fra Milwaukee-registeret. **Sikorsky-casen droppet** (alkohol sentralt i 6 av 9 bilder — norsk alkoholreklame rammer eksponering, ikke bare salg). Bahco-logo fikset fra Adrians rettede vektor-SVG. D-U-N-S-nummer lagt til i footer. |
+
+---
+
+## Siste sesjons-sammendrag (3. august 2026 — ukestart uke 32)
+
+Første arbeidsdag etter ferien. Startet som ukestart-brief, ble en full produksjonsdag: hele augusts innholdskalender laget, fire reelle bugs fikset og et sikkerhetshull funnet.
+
+### Systemhelse — alt grønt
+Daglig sync kl. 07:22 kjørte feilfritt gjennom hele ferien (GA4, Meta, Mailchimp, Google Ads). **robots.txt-fiksen er bekreftet live** — Googlebot-hullet borte, `/search`, `?Filter=` og `?deviceSize=` blokkert, 0 parameter-URLer i GSC. Den saken kan strykes fra oppfølgingslista.
+
+Tall gjennom ferien: GA4 −3 %, sidevisninger +14 %, Google Ads 0 kjøp på 14 dager men 13 skjemainnsendinger og 9 124 kr i påbegynte kasser. Snap-on drar 23 % av all organisk trafikk.
+
+### Sikkerhet: RLS manglet på tre tabeller (IKKE FIKSET ENNÅ)
+Supabase varslet om `rls_disabled_in_public`. Jeg testet **alle 31 tabeller med anon-nøkkelen** (den som ligger offentlig i klientkoden):
+- 28 tabeller korrekt beskyttet — inkludert `search_keywords` (99 763 rader), `wera_product_cache`, `google_ads_*`, `brochures`
+- **`tags`, `tag_rules`, `tag_assignments` helt åpne** — alle 1621 tag_assignments lesbare, og DELETE ble ikke blokkert av noen policy
+
+Dataene er ikke sensitive (tag-navn og mønstre), men sletting er destruktivt. Migrasjon `docs/migrations/025_tag_tables_rls.sql` er skrevet — **må kjøres manuelt i SQL editor**. Trygg fordi tabellene kun brukes server-side via `requireAuth` + service role, som bypasser RLS.
+
+### Fire bugs fikset
+1. **Falsk førpris i reels** — scraperen setter `prisFør === pris` når varen ikke er nedsatt, og komposisjonene viste overstreket «førpris» lik nåprisen («16 123,- → 16 123,-»). Villedende prismarkedsføring. Krever nå `priceBefore > priceNow`. Fikset i `KampanjeTeaser`, `ProduktSpotlight` og `mandag-kategori`.
+2. **Mandagspostens produktvalg** — plukket dyreste/median/billigste, som ga en 224 kr adapter i «topp 3 batteriverktøy». Rangerer nå på **GA4-sidevisninger siste 60d** blant varer på lager; tilbehør har ~0 visninger og faller ut. `npm run mandag` lastet heller ikke `.env.local`, så Supabase-oppslaget feilet stille.
+3. **Manglende «eks. mva»** — `ProduktSpotlight` hadde det, `KampanjeTeaser` ikke. Nå i både video og captions.
+4. **Duplikate produktnavn** — kategorisiden trunkerer navn, så FACOM- og AOK-utgaven av samme sett framsto identiske. Dedupliserer nå på visningsnavn.
+
+Dessuten: **eyebrow-slam-hooken** hadde fast `fontSize: 140`, så ord lengre enn ~11 tegn ble kuttet («VERKTØYKASSER» mistet R-en). Skalerer nå proporsjonalt.
+
+### Produsert innhold (se `project_innhold_produsert_august_2026`)
+- **4 mandager:** batteriverktøy, nøkler, hammere, momentverktøy
+- **3 tirsdager:** Offshore Kit, KC Mega, FT Systemvegg — alle nye referanse-cases siden de seks gamle var brukt opp
+- **3 torsdager:** Snap-on skralle, Bahco leddnøkkel, PB Swiss bitsskrutrekker
+- **Nyhetsbrev** Milwaukee M18/M12 pushet som Mailchimp-utkast (`9a2fb7f543`, 1 660 mottakere). Alle seks produktbilder viste seg å være **WebP med transparent bakgrunn** uansett filendelse — konvertert til JPG med hvit bunn og speilet til Supabase, ellers ville de fått svart bakgrunn i Apple Mail.
+- **Onsdagsplan** fra Milwaukee-registeret: sirkelsag (video lastet ned, 3 caption-varianter), deretter bor/skrutrekker og to vinkelslipere. Registeret har 567 asseter men bare 16 med ft-status `stock`.
+
+### Beslutninger
+- **Sikorsky Blackhawk droppet permanent** — presentasjonskoffert med whiskyflaske sentralt i 6 av 9 bilder. Norsk alkoholreklame-regelverk rammer eksponering i markedsføring, ikke bare salg. Kunne ikke reddes med annet bildeutvalg.
+- **Captions skrives alltid manuelt** — de auto-genererte har LinkedIn-seksjon (reels = kun IG+FB), påfunn som «Førsteklasses kvalitet», og generisk fyll. Renderen overskriver `captions.html`, så den må skrives etter siste render.
+- **Lagersjekk før produktvalg** — scraperens `in_stock` skiller ikke på antall eller lokasjon. «Fosen» = Brekstad, «Sør» = annen avdeling. Nyhetsbrevet måtte endres til «Brekstad eller i Trondheim» fordi arbeidslampen bare sto i Trondheim.
+- **Bahco-logo** — SVG-masteren var en bitmap-wrapper med hvit boks. Adrian leverte rettet vektor-SVG (riktig viewBox + hvit tekst), lagret som `Bahco-white.svg`.
+- **D-U-N-S®-No: 671093366** lagt til under NCAGE i nettside-footeren.
+
+### Åpent til neste økt
+1. **RLS-migrasjon 025** — ikke kjørt, tabellene ligger åpne
+2. **Meta-token utløper 31. august** — trenger permanent System User-token
+3. **Leieavtale Øvre Flatåsveg** — oppsigelsesvinduet åpnet 1. august (3 mnd varsel, § 31.2)
+4. Onsdag 5. aug: velg caption-variant A/B/C
+5. Snap-on 6. aug: behold tross 1 stk på Sør-lager, eller bytt
+6. Fredagssporet: ligger dødt siden før ferien, Adrian tar det senere
+7. 60 begravde kategorisider (fra 2. juli) — største selvbetjente SEO-gevinst, ikke startet
 
 ---
 
