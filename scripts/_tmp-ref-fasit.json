@@ -1,0 +1,732 @@
+[
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/verkt%C3%B8yvogn-til-fjord-helikopter",
+  "navn": "Verktøyvogn til Fjord Helikopter",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/skreddersydd-verktoyvogn-for-coca-cola",
+  "navn": "Verktøyvogn til Coca-Cola",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/custom-verktoyvogner-norsk-kylling",
+  "navn": "Verktøyvogner til Norsk Kylling",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/verktoyskap-syrefast",
+  "navn": "Verktøyskap i syrefast stål",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/aviation-custom-kit",
+  "navn": "Verktøyvogn til luftfart",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/ft-mega-kit-af-mm",
+  "navn": "FT Mega Kit med AF og metrisk verktøy",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/ftl7-custom-imperial-offshore",
+  "navn": "Verktøyvogn til offshore",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/dragster-verktoyvogn-med-hjul",
+  "navn": "Verktøyvogn til dragracing",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/ftl10-mega-verkt%C3%B8yvogn",
+  "navn": "FTL10 Mega verktøyvogn",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/ftl7-auto-verktoyvogn",
+  "navn": "FTL7 Auto verktøyvogn",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/verkstedinnredning-til-leopard-2",
+  "navn": "Verkstedinnredning til Leopard 2",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/verkt%C3%B8yvogner-til-forsvaret",
+  "navn": "Verktøyvogner til forsvaret",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/verkt%C3%B8yvogn-til-jagerflyvedlikehold",
+  "navn": "Verktøyvogn til jagerflyvedlikehold",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/verkt%C3%B8yvogn-til-forsvaret",
+  "navn": "Verktøyvogn til Forsvaret",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/verkt%C3%B8yvogn-til-gs-performance",
+  "navn": "Verktøyvogn til GS Performance",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/rock-n-roll-%E2%80%94-spesialbygget-verkt%C3%B8yvogn",
+  "navn": "Rock N Roll — spesialbygget verktøyvogn",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8yvogner/kc-mega-roller-wagon",
+  "navn": "KC Mega Roller Wagon",
+  "kat": "verktøyvogner",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/eor-kit-til-luftfart",
+  "navn": "EOR-kit til luftfart",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/vinkelsliper-i-koffert",
+  "navn": "Vinkelsliper i koffert",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%25C3%25B8ykofferter/koffert-til-m%C3%A5leutstyr",
+  "navn": "Koffert til måleutstyr",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/transportkasser-til-lyssats",
+  "navn": "Transportkasser til lyssats",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/salgskoffert-til-verneutstyr",
+  "navn": "Salgskoffert til verneutstyr",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/kamerakoffert-med-hdfi",
+  "navn": "Kamerakoffert med HDFI",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/mobiloppbevaring",
+  "navn": "Mobilhotell for oppbevaring av mobiler",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/verkt%C3%B8ykoffert-til-flyvedlikehold",
+  "navn": "Verktøykoffert til flyvedlikehold",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/akuttskrin-med-hdfi",
+  "navn": "Akuttskrin med HDFI",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/koffert-til-ordf%C3%B8rerkjede",
+  "navn": "Koffert til ordførerkjede",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/koffert-til-kalibreringsutstyr",
+  "navn": "Koffert til kalibreringsutstyr",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/liten-utstyrskoffert-med-hdfi",
+  "navn": "Liten utstyrskoffert med HDFI",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/liten-koffert-til-inspeksjonsverkt%C3%B8y",
+  "navn": "Liten koffert til inspeksjonsverktøy",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/verkt%C3%B8ykoffert-med-sm%C3%A5deler",
+  "navn": "Verktøykoffert med smådeler",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/koffert-til-termometer",
+  "navn": "Koffert til termometer",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/transportkasser-til-offshore",
+  "navn": "Transportkasser til offshore",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/koffert-til-inspeksjonsutstyr",
+  "navn": "Koffert til inspeksjonsutstyr",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/verkt%C3%B8ykoffert-til-avionikk",
+  "navn": "Verktøykoffert til avionikk",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/verkt%C3%B8ykoffert-til-h%C3%A5ndverker",
+  "navn": "Verktøykoffert til håndverker",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/kamerakoffert-til-actionkamera",
+  "navn": "Kamerakoffert til actionkamera",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/verkt%C3%B8ykoffert-med-hjul-til-avionikk",
+  "navn": "Verktøykoffert med hjul til avionikk",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/salgskoffert-til-lykter",
+  "navn": "Salgskoffert til lykter",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/verkt%C3%B8ykoffert-til-mekanisk-verksted",
+  "navn": "Verktøykoffert til mekanisk verksted",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykofferter/verkt%C3%B8ykoffert-til-generatorvedlikehold",
+  "navn": "Verktøykoffert til generatorvedlikehold",
+  "kat": "verktøykofferter",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykasser/verkt%C3%B8ykasse-levert-til-equinor",
+  "navn": "Verktøykasse levert til Equinor",
+  "kat": "verktøykasser",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykasser/verkt%C3%B8ykasse-til-avionikk",
+  "navn": "Verktøykasse til avionikk",
+  "kat": "verktøykasser",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykasser/verkt%C3%B8ykasse-med-skuffer",
+  "navn": "Verktøykasse med skuffer",
+  "kat": "verktøykasser",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykasser/verkt%C3%B8ykasse-til-ammunisjonsteknikk",
+  "navn": "Verktøykasse til ammunisjonsteknikk",
+  "kat": "verktøykasser",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%25C3%25B8ykasser/verkt%C3%B8ykasse-til-oppdrett",
+  "navn": "Verktøykasse til oppdrett",
+  "kat": "verktøykasser",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkt%C3%B8ykasser/verkt%C3%B8ykasse-til-helikoptervedlikehold",
+  "navn": "Verktøykasse til helikoptervedlikehold",
+  "kat": "verktøykasser",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/softcase/hydraulikksett-i-softcase",
+  "navn": "Hydraulikksett i softcase",
+  "kat": "softcase",
+  "h1": "HYDRAULIKKSETT I SOFTCASE",
+  "bilder": 6,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/softcase/verkt%C3%B8ysett-til-luftfart-i-softcase",
+  "navn": "Verktøysett til luftfart i softcase",
+  "kat": "softcase",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/softcase/kompakt-verkt%C3%B8ysett-til-luftfart",
+  "navn": "Kompakt verktøysett til luftfart",
+  "kat": "softcase",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/softcase/vedlikeholdssett-i-softcase",
+  "navn": "Vedlikeholdssett i softcase",
+  "kat": "softcase",
+  "h1": "VEDLIKEHOLDSSETT I SOFTCASE",
+  "bilder": 6,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/softcase/medisinsk-utstyr-i-softcase",
+  "navn": "Medisinsk utstyr i softcase",
+  "kat": "softcase",
+  "h1": "MEDISINSK UTSTYR I SOFTCASE",
+  "bilder": 5,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/v%25C3%25A5penlagring/koffert-til-luftgev%C3%A6r",
+  "navn": "Koffert til luftgevær",
+  "kat": "våpenlagring",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/v%25C3%25A5penlagring/riflekoffert",
+  "navn": "Riflekoffert med komplett sett",
+  "kat": "våpenlagring",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/v%25C3%25A5penlagring/v%C3%A5penkoffert",
+  "navn": "Våpenkoffert til politiet",
+  "kat": "våpenlagring",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/v%25C3%25A5penlagring/v%C3%A5penlager",
+  "navn": "Våpenlager med HDFI",
+  "kat": "våpenlagring",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/v%25C3%25A5penlagring/v%C3%A5penkasse",
+  "navn": "Våpenkasse til rifle",
+  "kat": "våpenlagring",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkstedinnredning/innredning-til-fabrikk",
+  "navn": "Innredning til fabrikk",
+  "kat": "verkstedinnredning",
+  "h1": "INNREDNING TIL FABRIKK",
+  "bilder": 18,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/verkstedinnredning/innredning-til-garasje",
+  "navn": "Innredning til garasje",
+  "kat": "verkstedinnredning",
+  "h1": "INNREDNING TIL GARASJE",
+  "bilder": 8,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/verkstedinnredning/hyllesystem-til-maskinverkt%C3%B8y",
+  "navn": "Hyllesystem til maskinverktøy",
+  "kat": "verkstedinnredning",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkstedinnredning/skr%C3%A5hyller-med-hdfi",
+  "navn": "Skråhyller med HDFI",
+  "kat": "verkstedinnredning",
+  "h1": "",
+  "bilder": 0,
+  "fakta": false,
+  "ld": 0,
+  "status": "mangler"
+ },
+ {
+  "url": "/referanser/verkstedinnredning/ft-systemvegg",
+  "navn": "FT Systemvegg",
+  "kat": "verkstedinnredning",
+  "h1": "FT SYSTEMVEGG",
+  "bilder": 15,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/verkstedinnredning/innredning-til-bilverksted",
+  "navn": "Innredning til bilverksted",
+  "kat": "verkstedinnredning",
+  "h1": "INNREDNING TIL BILVERKSTED",
+  "bilder": 22,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/lasermerking/merking-av-kniver",
+  "navn": "Merking av kniver",
+  "kat": "lasermerking",
+  "h1": "MERKING AV KNIVER FOR HAVBRUK",
+  "bilder": 2,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/lasermerking/sverre-pettersen-kniv",
+  "navn": "Sverre Pettersen – kniv",
+  "kat": "lasermerking",
+  "h1": "SVERRE PETTERSEN — GRAVERT KNIV",
+  "bilder": 1,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/lasermerking/merking-av-verktoy",
+  "navn": "Merking av verktøy",
+  "kat": "lasermerking",
+  "h1": "MERKING AV VERKTØY",
+  "bilder": 1,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/lasermerking/statoil-lykt",
+  "navn": "Statoil – lykt",
+  "kat": "lasermerking",
+  "h1": "STATOIL — GRAVERTE LOMMELYKTER",
+  "bilder": 3,
+  "fakta": true,
+  "ld": 2,
+  "status": "gammel"
+ },
+ {
+  "url": "/referanser/lasermerking/drikkesett",
+  "navn": "Drikkesett",
+  "kat": "lasermerking",
+  "h1": "GRAVERT DRIKKESETT I STÅL",
+  "bilder": 1,
+  "fakta": true,
+  "ld": 2,
+  "status": "gammel"
+ },
+ {
+  "url": "/referanser/lasermerking/hth-kjokken",
+  "navn": "HTH Kjøkken",
+  "kat": "lasermerking",
+  "h1": "HTH KJØKKEN — GRAVERT BESTIKK OG KNIVSETT",
+  "bilder": 4,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/lasermerking/gravert-v8-motiv",
+  "navn": "Gravert V8-motiv",
+  "kat": "lasermerking",
+  "h1": "GRAVERT V8-MOTIV",
+  "bilder": 1,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ },
+ {
+  "url": "/referanser/lasermerking/matbruket-bestikk",
+  "navn": "Matbruket – bestikk",
+  "kat": "lasermerking",
+  "h1": "MATBRUKET — GRAVERT BESTIKK",
+  "bilder": 1,
+  "fakta": true,
+  "ld": 2,
+  "status": "gammel"
+ },
+ {
+  "url": "/referanser/lasermerking/matbruket-kniv",
+  "navn": "Matbruket – kniv",
+  "kat": "lasermerking",
+  "h1": "MATBRUKET — GRAVERT KNIV",
+  "bilder": 1,
+  "fakta": true,
+  "ld": 2,
+  "status": "gammel"
+ },
+ {
+  "url": "/referanser/containere/container-lista",
+  "navn": "Container innredet som verksted",
+  "kat": "containere",
+  "h1": "CONTAINER INNREDET SOM VERKSTED",
+  "bilder": 11,
+  "fakta": true,
+  "ld": 2,
+  "status": "finnes"
+ }
+]

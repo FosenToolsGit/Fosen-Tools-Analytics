@@ -1,0 +1,652 @@
+[
+ {
+  "fra": "/referanser/workshops/bilverksted",
+  "til": "/referanser/verkstedinnredning/innredning-til-bilverksted",
+  "navn": "BILVERKSTED",
+  "kat": "verkstedinnredning",
+  "v": 317,
+  "k": 0,
+  "pos": 19.100946372239747,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/store-kasser-hdfi/våpenkoffert",
+  "til": "/referanser/våpenlagring",
+  "navn": "VÅPENKOFFERT",
+  "kat": "verktoykofferter",
+  "v": 177,
+  "k": 2,
+  "pos": 13.649717514124294,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/mobiloppbevaring",
+  "til": "/referanser/verktøykofferter/mobiloppbevaring",
+  "navn": "OPPBEVARINGSKOFFERT TIL MOBILTELEFON - OPTICASE TYPE 23",
+  "kat": "verktoykofferter",
+  "v": 111,
+  "k": 3,
+  "pos": 9.504504504504505,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/våpenlagring/våpenkasse",
+  "til": "/referanser/våpenlagring/våpenkasse-til-rifle",
+  "navn": "Våpenkasse",
+  "kat": "vapenlagring",
+  "v": 61,
+  "k": 2,
+  "pos": 4.60655737704918,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/våpenlagring/rifle-kit",
+  "til": "/referanser/våpenlagring/riflekoffert-med-komplett-sett",
+  "navn": "RIFLE KIT - PELI 1750",
+  "kat": "vapenlagring",
+  "v": 56,
+  "k": 0,
+  "pos": 12.232142857142858,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/våpenlagring/våpenlager",
+  "til": "/referanser/våpenlagring/våpenlager-med-hdfi",
+  "navn": "VÅPENLAGER",
+  "kat": "vapenlagring",
+  "v": 54,
+  "k": 0,
+  "pos": 8.592592592592592,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/akuttskrin",
+  "til": "/referanser/verktøykofferter/akuttskrin-med-hdfi",
+  "navn": "AKUTTSKRIN",
+  "kat": "verktoykofferter",
+  "v": 52,
+  "k": 1,
+  "pos": 3.1346153846153846,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/våpenlagring/våpensett",
+  "til": "/referanser/våpenlagring/våpenkoffert-til-politiet",
+  "navn": "VÅPENSETT",
+  "kat": "vapenlagring",
+  "v": 31,
+  "k": 1,
+  "pos": 9.64516129032258,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/verktøyvogn-syrefast",
+  "til": "/referanser/verktøyvogner/verktoyskap-syrefast",
+  "navn": "VERKTØYSKAP SYREFAST",
+  "kat": "verktoyvogner",
+  "v": 28,
+  "k": 0,
+  "pos": 13.142857142857142,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/kamerakoffert",
+  "til": "/referanser/verktøykofferter/kamerakoffert-med-hdfi",
+  "navn": "SKREDDERSYDD KAMERAKOFFERT - OPTI TYPE 23",
+  "kat": "verktoykofferter",
+  "v": 22,
+  "k": 0,
+  "pos": 3.6818181818181817,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/ft-mega-kit",
+  "til": "/referanser/verktøyvogner/ft-mega-kit-af-mm",
+  "navn": "FT MEGA KIT AF&MM",
+  "kat": "verktoyvogner",
+  "v": 21,
+  "k": 1,
+  "pos": 15,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/mobile-verktøykasser/snap-on-kasse",
+  "til": "/referanser/verktøykasser/verktøykasse-med-skuffer",
+  "navn": "ALL WEATHER SNAPON CASE - CUSTOM MADE",
+  "kat": "verktoykasser",
+  "v": 17,
+  "k": 0,
+  "pos": 19.11764705882353,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/våpenlagring/gamo-air-rifle",
+  "til": "/referanser/våpenlagring/koffert-til-luftgevær",
+  "navn": "GAMO AIR RIFLE KIT - OPTI 29E",
+  "kat": "vapenlagring",
+  "v": 16,
+  "k": 0,
+  "pos": 15.25,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/ordførerkjede",
+  "til": "/referanser/verktøykofferter/koffert-til-ordførerkjede",
+  "navn": "Ordførerkjede i koffert",
+  "kat": "verktoykofferter",
+  "v": 12,
+  "k": 2,
+  "pos": 8.583333333333332,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/workshops/skråhyller",
+  "til": "/referanser/verkstedinnredning/skråhyller-med-hdfi",
+  "navn": "SKRÅHYLLER",
+  "kat": "verkstedinnredning",
+  "v": 11,
+  "k": 0,
+  "pos": 1.2727272727272727,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/gopro",
+  "til": "/referanser/verktøykofferter/kamerakoffert-til-actionkamera",
+  "navn": "GOPRO - OPTICASE TYPE 12",
+  "kat": "verktoykofferter",
+  "v": 10,
+  "k": 0,
+  "pos": 9.8,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/måleutsyr",
+  "til": "/referanser/verktøykofferter/riflekoffert-med-hdfi",
+  "navn": "Måleutstyr i liten koffert",
+  "kat": "verktoykofferter",
+  "v": 10,
+  "k": 0,
+  "pos": 3.9,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/termometerkoffert",
+  "til": "/referanser/verktøykofferter/koffert-til-termometer",
+  "navn": "FLUKE TERMOMETER I KOFFERT - OPTICASE",
+  "kat": "verktoykofferter",
+  "v": 10,
+  "k": 0,
+  "pos": 1.3,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/inspeksjonssett",
+  "til": "/referanser/verktøykofferter/liten-koffert-til-inspeksjonsverktøy",
+  "navn": "INSPEKSJONSSETT",
+  "kat": "verktoykofferter",
+  "v": 6,
+  "k": 0,
+  "pos": 4,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/handi-ppe",
+  "til": "/referanser/verktøykofferter/salgskoffert-til-verneutstyr",
+  "navn": "HANDI PPE SALGSKOFFERT - OPTI 16",
+  "kat": "verktoykofferter",
+  "v": 5,
+  "k": 0,
+  "pos": 6,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/custom-forsvaret",
+  "til": "/referanser/verktøyvogner/verktøyvogn-til-forsvaret",
+  "navn": "FORSVARET - SKREDDERSYDD DESIGN",
+  "kat": "verktoyvogner",
+  "v": 5,
+  "k": 0,
+  "pos": 4.4,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/dragster-verktøyvogn",
+  "til": "/referanser/verktøyvogner/dragster-verktoyvogn-med-hjul",
+  "navn": "DRAGSTER- VERKTØYVOGN MED HJUL",
+  "kat": "verktoyvogner",
+  "v": 5,
+  "k": 0,
+  "pos": 9.6,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/gs-performance",
+  "til": "/referanser/verktøyvogner/verktøyvogn-til-gs-performance",
+  "navn": "GS PERFORMANCE - CUSTOM WHITE",
+  "kat": "verktoyvogner",
+  "v": 5,
+  "k": 0,
+  "pos": 6.6,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/rock-n-roll-custom",
+  "til": "/referanser/verktøyvogner/rock-n-roll-—-spesialbygget-verktøyvogn",
+  "navn": "ROCK N ROLL - CUSTOM WAGON",
+  "kat": "verktoyvogner",
+  "v": 4,
+  "k": 0,
+  "pos": 5.5,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/aviation-eor-kit",
+  "til": "/referanser/verktøykofferter/eor-kit-til-luftfart",
+  "navn": "AVIATION EOR KIT",
+  "kat": "verktoykofferter",
+  "v": 3,
+  "k": 0,
+  "pos": 22,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/grinder-kit",
+  "til": "/referanser/verktøykofferter/vinkelsliper-i-koffert",
+  "navn": "GRINDER KIT",
+  "kat": "verktoykofferter",
+  "v": 3,
+  "k": 0,
+  "pos": 6,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/inspeksjonssett",
+  "til": "/referanser/verktøykofferter/koffert-til-inspeksjonsutstyr",
+  "navn": "INSPEKSJONSSETT - PELI 1520",
+  "kat": "verktoykofferter",
+  "v": 3,
+  "k": 0,
+  "pos": 7,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/mobile-verktøykasser/ammo-kit",
+  "til": "/referanser/verktøykasser/verktøykasse-til-ammunisjonsteknikk",
+  "navn": "Ammo Kit",
+  "kat": "verktoykasser",
+  "v": 3,
+  "k": 0,
+  "pos": 68,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/mobile-verktøykasser/helikopter-kit",
+  "til": "/referanser/verktøykasser/verktøykasse-til-helikoptervedlikehold",
+  "navn": "HELIKOPTER SERVICE KIT - PELI 0450",
+  "kat": "verktoykasser",
+  "v": 3,
+  "k": 0,
+  "pos": 16,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/softcase-hdfi/hydraulikksett",
+  "til": "/referanser/softcase/hydraulikksett-i-softcase",
+  "navn": "HYDRAULIKKSETT - SOFT CASE",
+  "kat": "softcase",
+  "v": 3,
+  "k": 0,
+  "pos": 5.666666666666667,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/store-kasser-hdfi/offshore-kit",
+  "til": "/referanser/verktøykofferter/transportkasser-til-offshore",
+  "navn": "OFFSHORE EQUIPMENT - PELI 0550 / 1730",
+  "kat": "verktoykofferter",
+  "v": 3,
+  "k": 0,
+  "pos": 101,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/store-kasser-hdfi/rifle-kit",
+  "til": "/referanser/våpenlagring/riflekoffert-med-komplett-sett",
+  "navn": "RIFLE KIT - PELI 1750",
+  "kat": "verktoykofferter",
+  "v": 3,
+  "k": 0,
+  "pos": 9,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/ftl7-auto",
+  "til": "/referanser/verktøyvogner/ftl7-auto-verktoyvogn",
+  "navn": "FTL7 AUTO VERKTØYVOGN",
+  "kat": "verktoyvogner",
+  "v": 3,
+  "k": 0,
+  "pos": 7.666666666666667,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/kc-mega",
+  "til": "/referanser/verktøyvogner/kc-mega-roller-wagon",
+  "navn": "KC MEGA - ROLLER WAGON",
+  "kat": "verktoyvogner",
+  "v": 3,
+  "k": 1,
+  "pos": 3,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/sikorsky",
+  "til": "/referanser/verktøykofferter",
+  "navn": "SIKORSKY BLACKHAWK",
+  "kat": "verktoykofferter",
+  "v": 2,
+  "k": 0,
+  "pos": 7.5,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/generatorsett",
+  "til": "/referanser/verktøykofferter/verktøykoffert-til-generatorvedlikehold",
+  "navn": "HAITI GENERATORSETT - RAACO BOXXSER",
+  "kat": "verktoykofferter",
+  "v": 2,
+  "k": 0,
+  "pos": 2,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/hp-nozzle",
+  "til": "/referanser/verktøykofferter/liten-utstyrskoffert-med-hdfi",
+  "navn": "HP NOZZLE - PELI 1040 CLEAR",
+  "kat": "verktoykofferter",
+  "v": 2,
+  "k": 0,
+  "pos": 8,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/ftl10-mega",
+  "til": "/referanser/verktøyvogner/ftl10-mega-verktøyvogn",
+  "navn": "FTL10-MEGA VERKTØYVOGN",
+  "kat": "verktoyvogner",
+  "v": 2,
+  "k": 0,
+  "pos": 20,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/leopard-2-lista",
+  "til": "/referanser/verktøyvogner/verkstedinnredning-til-leopard-2",
+  "navn": "LEOPARD 2 – LISTA 18X36E & 54X36E",
+  "kat": "verktoyvogner",
+  "v": 2,
+  "k": 0,
+  "pos": 14.5,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/lvt-ftl7",
+  "til": "/referanser/verktøyvogner/verktøyvogner-til-forsvaret",
+  "navn": "LVT - FTL7",
+  "kat": "verktoyvogner",
+  "v": 2,
+  "k": 0,
+  "pos": 6.5,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/workshops/garasje",
+  "til": "/referanser/verkstedinnredning/innredning-til-garasje",
+  "navn": "GARASJE - PORSCHE",
+  "kat": "verkstedinnredning",
+  "v": 2,
+  "k": 0,
+  "pos": 30,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/bos-lyssats-1",
+  "til": "/referanser/verktøykofferter/transportkasser-til-lyssats",
+  "navn": "BOS LYSSATS 1",
+  "kat": "verktoykofferter",
+  "v": 1,
+  "k": 0,
+  "pos": 8,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/mobile-verktøykasser/fiskefarm-kit",
+  "til": "/referanser/verktøykasser/verktøykasse-til-oppdrett",
+  "navn": "FISH FARMING KIT - PELI 0450",
+  "kat": "verktoykasser",
+  "v": 1,
+  "k": 0,
+  "pos": 7,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/bosch-proffsett",
+  "til": "/referanser/verktøykofferter/verktøykoffert-til-håndverker",
+  "navn": "BOSCH PROFFSETT - LBOXX",
+  "kat": "verktoykofferter",
+  "v": 1,
+  "k": 0,
+  "pos": 6,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/motorromsett",
+  "til": "/referanser/verktøykofferter/verktøykoffert-med-smådeler",
+  "navn": "MOTORSETT",
+  "kat": "verktoykofferter",
+  "v": 1,
+  "k": 0,
+  "pos": 9,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/store-kasser-hdfi/ledlenser",
+  "til": "/referanser/verktøykofferter/salgskoffert-til-lykter",
+  "navn": "LED LENSER - SKB 3I-2918-14B",
+  "kat": "verktoykofferter",
+  "v": 1,
+  "k": 0,
+  "pos": 8,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/store-kasser-hdfi/motorsett",
+  "til": "/referanser/verktøykofferter/verktøykoffert-til-mekanisk-verksted",
+  "navn": "MOTORSETT - PELI STORM IM2720",
+  "kat": "verktoykofferter",
+  "v": 1,
+  "k": 0,
+  "pos": 199,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/custom-cola",
+  "til": "/referanser/verktøyvogner/skreddersydd-verktoyvogn-for-coca-cola",
+  "navn": "Skreddersydd verktøyvogn for Coca Cola",
+  "kat": "verktoyvogner",
+  "v": 1,
+  "k": 0,
+  "pos": 11,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/ftl7-custom-offshore",
+  "til": "/referanser/verktøyvogner/ftl7-custom-imperial-offshore",
+  "navn": "FTL7 CUSTOM IMPERIAL OFFSHORE",
+  "kat": "verktoyvogner",
+  "v": 1,
+  "k": 0,
+  "pos": 55,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/workshops/fabrikk",
+  "til": "/referanser/verkstedinnredning/innredning-til-fabrikk",
+  "navn": "FABRIKK - INNREDNING",
+  "kat": "verkstedinnredning",
+  "v": 1,
+  "k": 1,
+  "pos": 2,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/workshops/ft-systemvegg",
+  "til": "/referanser/verkstedinnredning/ft-systemvegg",
+  "navn": "FT Systemvegg",
+  "kat": "verkstedinnredning",
+  "v": 1,
+  "k": 0,
+  "pos": 75,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/workshops/hyllesystem",
+  "til": "/referanser/verkstedinnredning/hyllesystem-til-maskinverktøy",
+  "navn": "HYLLESYSTEM",
+  "kat": "verkstedinnredning",
+  "v": 1,
+  "k": 0,
+  "pos": 11,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/lasermerking/v8",
+  "til": "/referanser/lasermerking/gravert-v8-motiv",
+  "navn": "V8",
+  "kat": "lasermerking",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/avioniker-kit",
+  "til": "/referanser/verktøykofferter/verktøykoffert-med-hjul-til-avionikk",
+  "navn": "AVIONIKERSETT - PELI 1560",
+  "kat": "verktoykofferter",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/kalibrasjonssett",
+  "til": "/referanser/verktøykofferter/koffert-til-kalibreringsutstyr",
+  "navn": "KALIBRERINGSSETT",
+  "kat": "verktoykofferter",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/medium-kofferter-hdfi/tekniker-kit-f-16",
+  "til": "/referanser/verktøykofferter/verktøykoffert-til-flyvedlikehold",
+  "navn": "AMMO TEKNIKER KIT F-16 - PELI 1560",
+  "kat": "verktoykofferter",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/mobile-verktøykasser/avionikksett",
+  "til": "/referanser/verktøykasser/verktøykasse-til-avionikk",
+  "navn": "AVIONIKKSETT I VERKTØYKASSE",
+  "kat": "verktoykasser",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/små-kofferter-hdfi/avionikksett",
+  "til": "/referanser/verktøykofferter/verktøykoffert-til-avionikk",
+  "navn": "AVIONIKKSETT",
+  "kat": "verktoykofferter",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/softcase-hdfi/ftavi",
+  "til": "/referanser/softcase/verktøysett-til-luftfart-i-softcase",
+  "navn": "FTAVI203",
+  "kat": "softcase",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/softcase-hdfi/ftavi100",
+  "til": "/referanser/softcase/kompakt-verktøysett-til-luftfart",
+  "navn": "FTAVI100 - SOFT CASE",
+  "kat": "softcase",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/softcase-hdfi/medkit",
+  "til": "/referanser/softcase/medisinsk-utstyr-i-softcase",
+  "navn": "MEDICAL KIT - SOFT CASE",
+  "kat": "softcase",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/softcase-hdfi/vedlikeholdssett",
+  "til": "/referanser/softcase/vedlikeholdssett-i-softcase",
+  "navn": "VEDLIKEHOLDSSETT - SOFT CASE",
+  "kat": "softcase",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/aviation-custom-kit",
+  "til": "/referanser/verktøyvogner/aviation-custom-kit",
+  "navn": "AVIATION CUSTOM KIT",
+  "kat": "verktoyvogner",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/ftavi001",
+  "til": "/referanser/verktøyvogner/verktøyvogn-til-jagerflyvedlikehold",
+  "navn": "FTAVI001 - CUSTOM AVIATION VERKTØYVOGN",
+  "kat": "verktoyvogner",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ },
+ {
+  "fra": "/referanser/verktoyvogn_med_hjul/norsk-kylling",
+  "til": "/referanser/verktøyvogner/custom-verktoyvogner-norsk-kylling",
+  "navn": "CUSTOM VERKTØYVOGNER - NORSK KYLLING",
+  "kat": "verktoyvogner",
+  "v": 0,
+  "k": 0,
+  "pos": null,
+  "usikker": false
+ }
+]

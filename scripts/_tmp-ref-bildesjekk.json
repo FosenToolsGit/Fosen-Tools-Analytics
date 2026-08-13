@@ -1,0 +1,528 @@
+[
+ {
+  "navn": "AVIATION EOR KIT",
+  "kat": "verktoykofferter",
+  "iJson": 14,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "AVIONIKERSETT - PELI 1560",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 3,
+  "ekstra": []
+ },
+ {
+  "navn": "BOS LYSSATS 1",
+  "kat": "verktoykofferter",
+  "iJson": 9,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "GRINDER KIT",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "HANDI PPE SALGSKOFFERT - OPTI 16",
+  "kat": "verktoykofferter",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "INSPEKSJONSSETT - PELI 1520",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "KALIBRERINGSSETT",
+  "kat": "verktoykofferter",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "SKREDDERSYDD KAMERAKOFFERT - OPTI TYPE 23",
+  "kat": "verktoykofferter",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "OPPBEVARINGSKOFFERT TIL MOBILTELEFON - OPTICASE TYPE 23",
+  "kat": "verktoykofferter",
+  "iJson": 6,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "SIKORSKY BLACKHAWK",
+  "kat": "verktoykofferter",
+  "iJson": 9,
+  "orgsrc": 9,
+  "ekstra": []
+ },
+ {
+  "navn": "AMMO TEKNIKER KIT F-16 - PELI 1560",
+  "kat": "verktoykofferter",
+  "iJson": 11,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Ammo Kit",
+  "kat": "verktoykasser",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "AVIONIKKSETT I VERKTØYKASSE",
+  "kat": "verktoykasser",
+  "iJson": 7,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FISH FARMING KIT - PELI 0450",
+  "kat": "verktoykasser",
+  "iJson": 5,
+  "orgsrc": 5,
+  "ekstra": []
+ },
+ {
+  "navn": "HELIKOPTER SERVICE KIT - PELI 0450",
+  "kat": "verktoykasser",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "ALL WEATHER SNAPON CASE - CUSTOM MADE",
+  "kat": "verktoykasser",
+  "iJson": 24,
+  "orgsrc": 25,
+  "ekstra": [
+   "/userfiles/image/Referanser/Mobilekasser/All-weather Snapon/Ferdig(1).jpg",
+   "/userfiles/image/Referanser/Mobilekasser/All-weather Snapon/Ferdig(2).jpg",
+   "/userfiles/image/Referanser/Mobilekasser/All-weather Snapon/Ferdig(3).jpg",
+   "/userfiles/image/Referanser/Mobilekasser/All-weather Snapon/Ferdig(4).jpg",
+   "/userfiles/image/Referanser/Mobilekasser/All-weather Snapon/Ferdig(5).jpg",
+   "/userfiles/image/Referanser/Mobilekasser/All-weather Snapon/Ferdig(6).jpg",
+   "/userfiles/image/Referanser/Mobilekasser/All-weather Snapon/Ferdig(7).jpg"
+  ]
+ },
+ {
+  "navn": "AKUTTSKRIN",
+  "kat": "verktoykofferter",
+  "iJson": 2,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "AVIONIKKSETT",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "BOSCH PROFFSETT - LBOXX",
+  "kat": "verktoykofferter",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "HAITI GENERATORSETT - RAACO BOXXSER",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "GOPRO - OPTICASE TYPE 12",
+  "kat": "verktoykofferter",
+  "iJson": 6,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "HP NOZZLE - PELI 1040 CLEAR",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 4,
+  "ekstra": []
+ },
+ {
+  "navn": "INSPEKSJONSSETT",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 4,
+  "ekstra": []
+ },
+ {
+  "navn": "MOTORSETT",
+  "kat": "verktoykofferter",
+  "iJson": 4,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Måleutstyr i liten koffert",
+  "kat": "verktoykofferter",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Ordførerkjede i koffert",
+  "kat": "verktoykofferter",
+  "iJson": 7,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FLUKE TERMOMETER I KOFFERT - OPTICASE",
+  "kat": "verktoykofferter",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FTAVI203",
+  "kat": "softcase",
+  "iJson": 3,
+  "orgsrc": 3,
+  "ekstra": []
+ },
+ {
+  "navn": "FTAVI100 - SOFT CASE",
+  "kat": "softcase",
+  "iJson": 3,
+  "orgsrc": 3,
+  "ekstra": []
+ },
+ {
+  "navn": "HYDRAULIKKSETT - SOFT CASE",
+  "kat": "softcase",
+  "iJson": 6,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "MEDICAL KIT - SOFT CASE",
+  "kat": "softcase",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "VEDLIKEHOLDSSETT - SOFT CASE",
+  "kat": "softcase",
+  "iJson": 6,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "LED LENSER - SKB 3I-2918-14B",
+  "kat": "verktoykofferter",
+  "iJson": 6,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "MOTORSETT - PELI STORM IM2720",
+  "kat": "verktoykofferter",
+  "iJson": 4,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "OFFSHORE EQUIPMENT - PELI 0550 / 1730",
+  "kat": "verktoykofferter",
+  "iJson": 13,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "RIFLE KIT - PELI 1750",
+  "kat": "verktoykofferter",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "VÅPENKOFFERT",
+  "kat": "verktoykofferter",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "AVIATION CUSTOM KIT",
+  "kat": "verktoyvogner",
+  "iJson": 6,
+  "orgsrc": 6,
+  "ekstra": []
+ },
+ {
+  "navn": "Skreddersydd verktøyvogn for Coca Cola",
+  "kat": "verktoyvogner",
+  "iJson": 10,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FORSVARET - SKREDDERSYDD DESIGN",
+  "kat": "verktoyvogner",
+  "iJson": 5,
+  "orgsrc": 5,
+  "ekstra": []
+ },
+ {
+  "navn": "DRAGSTER- VERKTØYVOGN MED HJUL",
+  "kat": "verktoyvogner",
+  "iJson": 6,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FT MEGA KIT AF&MM",
+  "kat": "verktoyvogner",
+  "iJson": 20,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FTAVI001 - CUSTOM AVIATION VERKTØYVOGN",
+  "kat": "verktoyvogner",
+  "iJson": 9,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FTL10-MEGA VERKTØYVOGN",
+  "kat": "verktoyvogner",
+  "iJson": 6,
+  "orgsrc": 6,
+  "ekstra": []
+ },
+ {
+  "navn": "FTL7 AUTO VERKTØYVOGN",
+  "kat": "verktoyvogner",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FTL7 CUSTOM IMPERIAL OFFSHORE",
+  "kat": "verktoyvogner",
+  "iJson": 6,
+  "orgsrc": 6,
+  "ekstra": []
+ },
+ {
+  "navn": "GS PERFORMANCE - CUSTOM WHITE",
+  "kat": "verktoyvogner",
+  "iJson": 4,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "KC MEGA - ROLLER WAGON",
+  "kat": "verktoyvogner",
+  "iJson": 17,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "LEOPARD 2 – LISTA 18X36E & 54X36E",
+  "kat": "verktoyvogner",
+  "iJson": 3,
+  "orgsrc": 3,
+  "ekstra": []
+ },
+ {
+  "navn": "LVT - FTL7",
+  "kat": "verktoyvogner",
+  "iJson": 5,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "CUSTOM VERKTØYVOGNER - NORSK KYLLING",
+  "kat": "verktoyvogner",
+  "iJson": 7,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "ROCK N ROLL - CUSTOM WAGON",
+  "kat": "verktoyvogner",
+  "iJson": 9,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "VERKTØYSKAP SYREFAST",
+  "kat": "verktoyvogner",
+  "iJson": 8,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "GAMO AIR RIFLE KIT - OPTI 29E",
+  "kat": "vapenlagring",
+  "iJson": 12,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "RIFLE KIT - PELI 1750",
+  "kat": "vapenlagring",
+  "iJson": 10,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Våpenkasse",
+  "kat": "vapenlagring",
+  "iJson": 7,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "VÅPENLAGER",
+  "kat": "vapenlagring",
+  "iJson": 22,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "VÅPENSETT",
+  "kat": "vapenlagring",
+  "iJson": 8,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "BILVERKSTED",
+  "kat": "verkstedinnredning",
+  "iJson": 22,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FABRIKK - INNREDNING",
+  "kat": "verkstedinnredning",
+  "iJson": 18,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "FT Systemvegg",
+  "kat": "verkstedinnredning",
+  "iJson": 15,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "GARASJE - PORSCHE",
+  "kat": "verkstedinnredning",
+  "iJson": 8,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "HYLLESYSTEM",
+  "kat": "verkstedinnredning",
+  "iJson": 8,
+  "orgsrc": 8,
+  "ekstra": []
+ },
+ {
+  "navn": "SKRÅHYLLER",
+  "kat": "verkstedinnredning",
+  "iJson": 7,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "V8",
+  "kat": "lasermerking",
+  "iJson": 1,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Drikkesett",
+  "kat": "lasermerking",
+  "iJson": 1,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "HTH Kjøkken",
+  "kat": "lasermerking",
+  "iJson": 4,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Statoil – lykt",
+  "kat": "lasermerking",
+  "iJson": 3,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Sverre Pettersen – kniv",
+  "kat": "lasermerking",
+  "iJson": 1,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Merking av verktøy",
+  "kat": "lasermerking",
+  "iJson": 1,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Merking av kniver",
+  "kat": "lasermerking",
+  "iJson": 2,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Matbruket – bestikk",
+  "kat": "lasermerking",
+  "iJson": 1,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "Matbruket – kniv",
+  "kat": "lasermerking",
+  "iJson": 1,
+  "orgsrc": 0,
+  "ekstra": []
+ },
+ {
+  "navn": "CONTAINER WORKSHOP - LISTA",
+  "kat": "containere",
+  "iJson": 11,
+  "orgsrc": 0,
+  "ekstra": []
+ }
+]

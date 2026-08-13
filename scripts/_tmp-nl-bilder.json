@@ -1,0 +1,41 @@
+{
+ "produkter": [
+  {
+   "sku": "126660",
+   "url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/nyhetsbrev/2026-08-11-pipesett/126660.jpg",
+   "kilde": "jpeg",
+   "dim": "1000×952"
+  },
+  {
+   "sku": "F5354",
+   "url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/nyhetsbrev/2026-08-11-pipesett/f5354.jpg",
+   "kilde": "webp",
+   "dim": "900×900"
+  },
+  {
+   "sku": "F2514",
+   "url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/nyhetsbrev/2026-08-11-pipesett/f2514.jpg",
+   "kilde": "jpeg",
+   "dim": "460×460"
+  },
+  {
+   "sku": "126661",
+   "url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/nyhetsbrev/2026-08-11-pipesett/126661.jpg",
+   "kilde": "jpeg",
+   "dim": "1000×814"
+  },
+  {
+   "sku": "F5353",
+   "url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/nyhetsbrev/2026-08-11-pipesett/f5353.jpg",
+   "kilde": "webp",
+   "dim": "900×900"
+  },
+  {
+   "sku": "F2211",
+   "url": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/nyhetsbrev/2026-08-11-pipesett/f2211.jpg",
+   "kilde": "jpeg",
+   "dim": "460×460"
+  }
+ ],
+ "fredag": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/nyhetsbrev/2026-08-11-pipesett/fredag-fjord-helikopter.jpg"
+}
