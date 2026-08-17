@@ -44,10 +44,6 @@
   "/referanser/verktøyinnlegg/innlegg-til-modul-system"
  ],
  [
-  "Innleggssett til luftfart",
-  "/referanser/verktøyinnlegg/innleggssett-til-luftfart"
- ],
- [
   "Innlegg til verktøyskuff",
   "/referanser/verktøyinnlegg/innlegg-til-verktøyskuff"
  ],
@@ -66,5 +62,9 @@
  [
   "Verktøyinnlegg til dykkerservice",
   "/referanser/verktøyinnlegg/innlegg-til-dykkerservice"
+ ],
+ [
+  "Innlegg til måleinstrumenter",
+  "/referanser/verktøyinnlegg/innlegg-til-måleinstrumenter"
  ]
 ]
