@@ -262,12 +262,13 @@ export class MetaService implements PlatformService {
         let saves = 0;
         let videoViews = 0;
         try {
-          const metricList = isVideo
-            ? "reach,plays,saved"
-            : "reach,impressions,saved";
+          // v22: «impressions» og «plays» er fjernet for IG-media — begge er
+          // erstattet av «views» (gjelder både video og bilde/karusell). Én død
+          // metrikk i lista feller HELE kallet med #100, så listen må kun
+          // inneholde levende metrikker — det var slik reach sto på 0 i månedsvis.
           const insightsRes = await this.graphGet(
             `/${m.id}/insights`,
-            { metric: metricList }
+            { metric: "reach,views,saved" }
           );
           const insights = (insightsRes.data || []) as Array<{
             name: string;
@@ -276,9 +277,10 @@ export class MetaService implements PlatformService {
           for (const ins of insights) {
             const val = ins.values?.[0]?.value ?? 0;
             if (ins.name === "reach") reach = val;
-            else if (ins.name === "impressions") impressions = val;
-            else if (ins.name === "plays") videoViews = val;
-            else if (ins.name === "saved") saves = val;
+            else if (ins.name === "views") {
+              impressions = val;
+              if (isVideo) videoViews = val;
+            } else if (ins.name === "saved") saves = val;
           }
         } catch {
           // Noen insights kan feile for eldre content
