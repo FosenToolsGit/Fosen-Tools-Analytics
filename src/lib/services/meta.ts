@@ -13,6 +13,7 @@ export class MetaService implements PlatformService {
   private pageId: string;
   private igAccountIdEnv: string;
   private cachedIgAccountId: string | null = null;
+  private cachedPageToken: string | null = null;
 
   constructor() {
     this.accessToken = process.env.META_ACCESS_TOKEN!;
@@ -40,9 +41,31 @@ export class MetaService implements PlatformService {
     }
   }
 
+  /**
+   * Side-token utledet fra tokenet i env. Et systembruker-token er på bruker-nivå
+   * og gir «Invalid OAuth 2.0 Access Token» på side-endepunkter som /{page}/posts.
+   * Side-tokenet hentes derfor én gang og gjenbrukes. Er tokenet i env allerede et
+   * side-token, returnerer kallet det samme tokenet tilbake, så dette er trygt
+   * uansett hvilken type som ligger i META_ACCESS_TOKEN.
+   */
+  private async getPageToken(): Promise<string> {
+    if (this.cachedPageToken) return this.cachedPageToken;
+    try {
+      const url = new URL(`${GRAPH_API_BASE}/${this.pageId}`);
+      url.searchParams.set("fields", "access_token");
+      url.searchParams.set("access_token", this.accessToken);
+      const res = await fetch(url.toString());
+      const json = await res.json();
+      this.cachedPageToken = json?.access_token || this.accessToken;
+    } catch {
+      this.cachedPageToken = this.accessToken;
+    }
+    return this.cachedPageToken!;
+  }
+
   private async graphGet(path: string, params: Record<string, string> = {}) {
     const url = new URL(`${GRAPH_API_BASE}${path}`);
-    url.searchParams.set("access_token", this.accessToken);
+    url.searchParams.set("access_token", await this.getPageToken());
     for (const [k, v] of Object.entries(params)) {
       url.searchParams.set(k, v);
     }
@@ -79,7 +102,7 @@ export class MetaService implements PlatformService {
     try {
       const insights = await this.graphGet(`/${this.pageId}/insights`, {
         metric:
-          "page_post_engagements,page_views_total,page_impressions_unique",
+          "page_post_engagements,page_views_total",
         period: "day",
         since,
         until,
