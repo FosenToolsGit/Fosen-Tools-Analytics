@@ -1,11 +1,46 @@
 [
- ["Gravert V8-motiv", "/referanser/lasermerking/gravert-v8-motiv"],
- ["Gravert drikkesett i stål", "/referanser/lasermerking/drikkesett"],
- ["HTH Kjøkken — gravert bestikk og knivsett", "/referanser/lasermerking/hth-kjokken"],
- ["Statoil — graverte lommelykter", "/referanser/lasermerking/statoil-lykt"],
- ["Sverre Pettersen — gravert kniv", "/referanser/lasermerking/sverre-pettersen-kniv"],
- ["Merking av verktøy", "/referanser/lasermerking/merking-av-verktoy"],
- ["Merking av kniver for havbruk", "/referanser/lasermerking/merking-av-kniver"],
- ["Matbruket — gravert bestikk", "/referanser/lasermerking/matbruket-bestikk"],
- ["Matbruket — gravert kniv", "/referanser/lasermerking/matbruket-kniv"]
+ [
+  "Gravert krus til Stallvika Rorbu",
+  "/referanser/lasermerking/gravert-krus-til-stallvika-rorbu"
+ ],
+ [
+  "Lasermerkede kofferter til StreamHub",
+  "/referanser/lasermerking/lasermerkede-kofferter-til-streamhub"
+ ],
+ [
+  "Gravert V8-motiv",
+  "/referanser/lasermerking/gravert-v8-motiv"
+ ],
+ [
+  "Gravert drikkesett i stål",
+  "/referanser/lasermerking/drikkesett"
+ ],
+ [
+  "HTH Kjøkken — gravert bestikk og knivsett",
+  "/referanser/lasermerking/hth-kjokken"
+ ],
+ [
+  "Statoil — graverte lommelykter",
+  "/referanser/lasermerking/statoil-lykt"
+ ],
+ [
+  "Sverre Pettersen — gravert kniv",
+  "/referanser/lasermerking/sverre-pettersen-kniv"
+ ],
+ [
+  "Merking av verktøy",
+  "/referanser/lasermerking/merking-av-verktoy"
+ ],
+ [
+  "Merking av kniver for havbruk",
+  "/referanser/lasermerking/merking-av-kniver"
+ ],
+ [
+  "Matbruket — gravert bestikk",
+  "/referanser/lasermerking/matbruket-bestikk"
+ ],
+ [
+  "Matbruket — gravert kniv",
+  "/referanser/lasermerking/matbruket-kniv"
+ ]
 ]

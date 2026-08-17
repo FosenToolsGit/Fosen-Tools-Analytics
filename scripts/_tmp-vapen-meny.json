@@ -1,7 +1,34 @@
 [
- ["Koffert til luftgevær", "/referanser/våpenlagring/koffert-til-luftgevær"],
- ["Riflekoffert med komplett sett", "/referanser/våpenlagring/riflekoffert-med-komplett-sett"],
- ["Våpenkoffert til politiet", "/referanser/våpenlagring/våpenkoffert-til-politiet"],
- ["Våpenlager med HDFI", "/referanser/våpenlagring/våpenlager-med-hdfi"],
- ["Våpenkasse til rifle", "/referanser/våpenlagring/våpenkasse-til-rifle"]
+ [
+  "Uttrekkbart våpenlager",
+  "/referanser/våpenlagring/uttrekkbart-våpenlager"
+ ],
+ [
+  "Koffert til rifle med ekstra pipe",
+  "/referanser/våpenlagring/koffert-til-rifle-med-ekstra-pipe"
+ ],
+ [
+  "Koffert til pistol",
+  "/referanser/våpenlagring/koffert-til-pistol"
+ ],
+ [
+  "Koffert til luftgevær",
+  "/referanser/våpenlagring/koffert-til-luftgevær"
+ ],
+ [
+  "Riflekoffert med komplett sett",
+  "/referanser/våpenlagring/riflekoffert-med-komplett-sett"
+ ],
+ [
+  "Våpenkoffert til politiet",
+  "/referanser/våpenlagring/våpenkoffert-til-politiet"
+ ],
+ [
+  "Våpenlager med HDFI",
+  "/referanser/våpenlagring/våpenlager-med-hdfi"
+ ],
+ [
+  "Våpenkasse til rifle",
+  "/referanser/våpenlagring/våpenkasse-til-rifle"
+ ]
 ]

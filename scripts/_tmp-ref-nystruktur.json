@@ -1316,5 +1316,34 @@
    "/userfiles/image/Inspirasjon/Container/lista_hylleflaps2-1175x778.jpg"
   ],
   "nyUrl": "/referanser/containere/container-workshop-lista"
+ },
+ {
+  "navn": "Lasermerkede kofferter til StreamHub",
+  "gammelUrl": null,
+  "gammelKat": null,
+  "nyKat": "lasermerking",
+  "slug": "lasermerkede-kofferter-til-streamhub",
+  "aar": 2023,
+  "bilder": [
+   "/userfiles/image/Referanser/Lasermerking/lasermerkede-kofferter-til-streamhub/IMG1.jpg",
+   "/userfiles/image/Referanser/Lasermerking/lasermerkede-kofferter-til-streamhub/IMG2.jpg",
+   "/userfiles/image/Referanser/Lasermerking/lasermerkede-kofferter-til-streamhub/IMG3.jpg",
+   "/userfiles/image/Referanser/Lasermerking/lasermerkede-kofferter-til-streamhub/IMG4.jpg",
+   "/userfiles/image/Referanser/Lasermerking/lasermerkede-kofferter-til-streamhub/IMG5.jpg"
+  ],
+  "nyUrl": "/referanser/lasermerking/lasermerkede-kofferter-til-streamhub"
+ },
+ {
+  "navn": "Gravert krus til Stallvika Rorbu",
+  "gammelUrl": null,
+  "gammelKat": null,
+  "nyKat": "lasermerking",
+  "slug": "gravert-krus-til-stallvika-rorbu",
+  "aar": 2024,
+  "bilder": [
+   "/userfiles/image/Referanser/Lasermerking/gravert-krus-til-stallvika-rorbu/IMG1.jpg",
+   "/userfiles/image/Referanser/Lasermerking/gravert-krus-til-stallvika-rorbu/IMG2.jpg"
+  ],
+  "nyUrl": "/referanser/lasermerking/gravert-krus-til-stallvika-rorbu"
  }
 ]
