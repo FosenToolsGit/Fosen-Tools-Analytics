@@ -35,6 +35,36 @@ const COST_SPIKE_THRESHOLD = 1.8; // 80% økning regnes som spike
 const ROAS_DROP_THRESHOLD = 0.5; // ROAS ned til 50% av forrige
 const ROAS_HEALTHY_MIN = 2.0; // Før-perioden må ha vært minst 2x for å regnes som fall
 const CONVERSION_STOP_HOURS = 48;
+// Minst så mange konverteringer i forrige 5-dagers periode før 0 på 48t regnes
+// som stopp. Ved 8 på 5 dager er forventet ~3,2 på 48t og P(0) < 5 % — under
+// det er null konverteringer ren tilfeldighet, ikke et signal. Den gamle
+// terskelen på 3 ga daglige falske «ingen leads»-varsler for småkampanjer.
+const CONVERSION_STOP_MIN_PREV = 8;
+
+/**
+ * Supabase REST returnerer maks 1000 rader per kall. Sjekkene som leser
+ * search terms trenger langt flere — uten paginering blir «tidligere
+ * sett»-mengden stille avkortet, og gamle termer feilklassifiseres som nye
+ * (det ga daglige gjentaks-varsler for samme konkurrent-term).
+ */
+async function fetchAllRows<T>(
+  supabase: SupabaseClient,
+  table: string,
+  select: string,
+  applyFilters: (q: ReturnType<SupabaseClient["from"]>["select"] extends never ? never : any) => any
+): Promise<T[]> {
+  const PAGE = 1000;
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await applyFilters(
+      supabase.from(table).select(select)
+    ).range(from, from + PAGE - 1);
+    if (error || !data?.length) break;
+    out.push(...(data as T[]));
+    if (data.length < PAGE) break;
+  }
+  return out;
+}
 
 function dateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -359,8 +389,8 @@ async function detectConversionStops(
 
   const anomalies: AnomalyCandidate[] = [];
   for (const [key, p] of map) {
-    // Trenger minst 3 i forrige periode for å si at noe har stoppet
-    if (p.prev < 3) continue;
+    // Se CONVERSION_STOP_MIN_PREV — under denne er 0 på 48t statistisk ventet
+    if (p.prev < CONVERSION_STOP_MIN_PREV) continue;
     if (p.recent > 0) continue;
 
     const isPurchase = p.actionName.toLowerCase().includes("purchase");
@@ -398,17 +428,33 @@ async function detectNewCompetitorBrands(
   const prev30Start = subDays(today, 37);
   const prev30End = subDays(today, 7);
 
-  const { data: recent } = await supabase
-    .from("google_ads_search_terms")
-    .select("search_term, campaign_id, clicks, cost_nok")
-    .gte("metric_date", dateStr(last7Start))
-    .lte("metric_date", dateStr(today));
+  type TermRow = {
+    search_term: string;
+    campaign_id: string;
+    clicks: number;
+    cost_nok: number | string;
+    source: string | null;
+    metric_date: string;
+  };
+  const recent = await fetchAllRows<TermRow>(
+    supabase,
+    "google_ads_search_terms",
+    "search_term, campaign_id, clicks, cost_nok, source, metric_date",
+    (q) =>
+      q
+        .gte("metric_date", dateStr(last7Start))
+        .lte("metric_date", dateStr(today))
+  );
 
-  const { data: earlier } = await supabase
-    .from("google_ads_search_terms")
-    .select("search_term")
-    .gte("metric_date", dateStr(prev30Start))
-    .lt("metric_date", dateStr(prev30End));
+  const earlier = await fetchAllRows<{ search_term: string }>(
+    supabase,
+    "google_ads_search_terms",
+    "search_term",
+    (q) =>
+      q
+        .gte("metric_date", dateStr(prev30Start))
+        .lt("metric_date", dateStr(prev30End))
+  );
 
   const earlierTerms = new Set(
     (earlier ?? []).map((r) => (r.search_term as string).trim().toLowerCase())
@@ -419,9 +465,12 @@ async function detectNewCompetitorBrands(
 
   interface NewTerm {
     term: string;
-    clicks: number;
-    cost: number;
+    searchClicks: number;
+    searchCost: number;
+    pmaxClicks: number;
+    pmaxCost: number;
     campaign_id: string;
+    lastSnapshot: string;
   }
   const newTerms = new Map<string, NewTerm>();
   for (const r of recent ?? []) {
@@ -433,29 +482,45 @@ async function detectNewCompetitorBrands(
 
     const ex = newTerms.get(norm) ?? {
       term,
-      clicks: 0,
-      cost: 0,
+      searchClicks: 0,
+      searchCost: 0,
+      pmaxClicks: 0,
+      pmaxCost: 0,
       campaign_id: r.campaign_id as string,
+      lastSnapshot: "",
     };
-    ex.clicks += r.clicks || 0;
-    ex.cost += Number(r.cost_nok) || 0;
+    if (r.source === "pmax_insight") {
+      // pmax_insight er et rullende 90-dagers aggregat lagret per snapshot-dato.
+      // Å summere snapshots teller samme klikk mange ganger (1 klikk × 7 dager
+      // = «7 klikk») — bruk kun nyeste snapshot per term.
+      if (r.metric_date > ex.lastSnapshot) {
+        ex.lastSnapshot = r.metric_date;
+        ex.pmaxClicks = r.clicks || 0;
+        ex.pmaxCost = Number(r.cost_nok) || 0;
+      }
+    } else {
+      ex.searchClicks += r.clicks || 0;
+      ex.searchCost += Number(r.cost_nok) || 0;
+    }
     newTerms.set(norm, ex);
   }
 
   const anomalies: AnomalyCandidate[] = [];
   for (const [norm, t] of newTerms) {
+    const clicks = t.searchClicks + t.pmaxClicks;
+    const cost = t.searchCost + t.pmaxCost;
     // Bare varsle om terms med reell aktivitet
-    if (t.clicks < 2 && t.cost < 20) continue;
+    if (clicks < 2 && cost < 20) continue;
     anomalies.push({
       category: "new_competitor_brand",
       severity: "warning",
       title: `Nytt konkurrent-søk: "${t.term}"`,
-      description: `Søketermen "${t.term}" har dukket opp for første gang på 37 dager og matcher en konkurrent-regel. ${t.clicks} klikk, ${t.cost.toFixed(0)} NOK kostnad hittil.`,
+      description: `Søketermen "${t.term}" har dukket opp for første gang på 37 dager og matcher en konkurrent-regel. ${clicks} klikk, ${cost.toFixed(0)} NOK kostnad hittil.`,
       metric_context: {
         search_term: t.term,
         normalized: norm,
-        clicks: t.clicks,
-        cost: t.cost,
+        clicks,
+        cost,
         campaign_id: t.campaign_id,
       },
       suggested_action:
