@@ -45,10 +45,23 @@ async function statiske() {
     harTomGooglebot ? "TOMT Googlebot-blokk er tilbake!" : `${rob.tekst.length} tegn`);
   meld("robots.txt blokkerer /Search.aspx", /Search\.aspx/i.test(rob.tekst));
 
-  // sitemap-størrelse
+  // sitemap-størrelse. 4.26.05 kan splitte sitemap i en sitemapindex per
+  // språk/størrelse — da må vi summere barne-sitemapene, ikke telle <loc> i indexen.
   const sm = await hent("/sitemap.xml");
-  const antall = (sm.tekst.match(/<loc>/g) || []).length;
-  meld("sitemap.xml ~5000 URL-er", sm.status === 200 && antall > 4000, `${antall} URL-er`);
+  let antall = 0;
+  let smDetalj = "";
+  if (/<sitemapindex/i.test(sm.tekst)) {
+    const barn = [...sm.tekst.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/g)].map((m) => m[1]);
+    for (const url of barn) {
+      const b = await fetch(url, { headers: { "User-Agent": GBOT } });
+      antall += ((await b.text()).match(/<loc>/g) || []).length;
+    }
+    smDetalj = `sitemapindex m/ ${barn.length} barne-sitemaps, ${antall} URL-er totalt`;
+  } else {
+    antall = (sm.tekst.match(/<loc>/g) || []).length;
+    smDetalj = `${antall} URL-er`;
+  }
+  meld("sitemap.xml ~5000 URL-er", sm.status === 200 && antall > 4000, smDetalj);
 
   // MERK: publiserings-innhold (JSON-LD, hero, kontaktskjema-script) kan IKKE
   // sjekkes statisk — Multicase serverer en «slank» prerender-variant
