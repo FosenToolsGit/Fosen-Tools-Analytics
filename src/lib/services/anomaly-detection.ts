@@ -597,6 +597,11 @@ async function detectSeoPositionDrops(
     const lastPos = l.posVekt / l.imp;
     if (lastPos - prevPos < SEO_DROP_MIN_POSITIONS) continue;
     if (dempet.has(query)) continue;
+    // Sidebytte-støy: når Google bytter foretrukket side kan vektet posisjon
+    // «falle» mens klikkene ØKER (verktøykoffert-casen 18. aug 2026:
+    // 9,1→22,0 fordi en bedre intensjonsmatch på pos ~22 tok over — og fikk
+    // klikk hovedsiden aldri fikk). Flere klikk enn før = ikke et problem.
+    if (l.clicks > p.clicks) continue;
     fall.push({ query, fra: prevPos, til: lastPos, imp: p.imp, clicks: p.clicks });
   }
 
