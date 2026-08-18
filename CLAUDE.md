@@ -1053,7 +1053,7 @@ Når operatør avviser eller redigerer en draft → reason + before/after lagres
 ## Kjente quirks
 
 1. **Vercel Hobby-plan blokkerer multi-author commits** — bruker må selv pushe fra terminal
-2. **Supabase MCP har ikke skrivetilgang** — migreringer kjøres manuelt i SQL editor
+2. **Supabase MCP HAR skrivetilgang** (fra ~aug 2026) — `apply_migration`/`execute_sql` virker; migrasjon 025 ble kjørt via MCP 18. aug. Eldre notater om «kjøres manuelt i SQL editor» er utdatert
 3. **Meta API har deprecated mange Page Insights-metrics** — bruker `page_post_engagements`, `page_views_total`, `page_impressions_unique`
 4. **GA4 må ha `date` som dimensjon** for per-dag-data
 5. **Mailchimp returnerer duplikate URLer** i click-details — sync-koden dedupliserer
