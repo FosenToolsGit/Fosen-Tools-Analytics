@@ -1,0 +1,103 @@
+{
+ "base": "https://fosen-tools.no",
+ "kjørt": "2026-08-18T07:06:52.151Z",
+ "resultater": [
+  {
+   "navn": "robots.txt uten tomt Googlebot-hull",
+   "ok": true,
+   "detalj": "432 tegn"
+  },
+  {
+   "navn": "robots.txt blokkerer /Search.aspx",
+   "ok": true
+  },
+  {
+   "navn": "sitemap.xml ~5000 URL-er",
+   "ok": true,
+   "detalj": "5178 URL-er"
+  },
+  {
+   "navn": "produktside: FT-artikkelnr (prd-num-label)",
+   "ok": true
+  },
+  {
+   "navn": "produktside: Product JSON-LD",
+   "ok": true
+  },
+  {
+   "navn": "JSON-LD på / (rendret)",
+   "ok": true,
+   "detalj": "7 schemas"
+  },
+  {
+   "navn": "JSON-LD på /wera (rendret)",
+   "ok": true,
+   "detalj": "3 schemas"
+  },
+  {
+   "navn": "JSON-LD på /pelicase (rendret)",
+   "ok": true,
+   "detalj": "3 schemas"
+  },
+  {
+   "navn": "JSON-LD på /referanser (rendret)",
+   "ok": true,
+   "detalj": "3 schemas"
+  },
+  {
+   "navn": "/wera: hero + title-overstyring",
+   "ok": true,
+   "detalj": "hero=true, title=«Wera — skrutrekkere, bits og Joker-nøkle»"
+  },
+  {
+   "navn": "kontaktskjema: script + iframe + takke-boks",
+   "ok": true,
+   "detalj": "script=true, iframe=true, takk=true"
+  },
+  {
+   "navn": "catgrid på /produkter/momentverktøy",
+   "ok": true,
+   "detalj": "4 celler, 4 bilder"
+  },
+  {
+   "navn": "merkevegg på /produsent",
+   "ok": true,
+   "detalj": "56 merkekort"
+  },
+  {
+   "navn": "megameny MERKER/PRODUKTER-søk initialisert",
+   "ok": true,
+   "detalj": ""
+  },
+  {
+   "navn": "referanse-landingsside (177 caser)",
+   "ok": true,
+   "detalj": "186 caser"
+  },
+  {
+   "navn": "kofferter: rutenett + årsfilter",
+   "ok": true,
+   "detalj": "66 caser, chips: Alle (66) · 2023- (29) · 2020-2022 (15) · -2019 (22)"
+  },
+  {
+   "navn": "vogner: filterklikk filtrerer",
+   "ok": true,
+   "detalj": "chip lovet 29, viste 29"
+  },
+  {
+   "navn": "caseside: faktaboks rendres",
+   "ok": true,
+   "detalj": "4 felt"
+  },
+  {
+   "navn": "produktside: lagervisning per lokasjon",
+   "ok": true,
+   "detalj": "3 på lager Trondheim"
+  },
+  {
+   "navn": "søkeside: artikkel-sonen skjult",
+   "ok": true,
+   "detalj": "sonen finnes ikke (ok)"
+  }
+ ]
+}
