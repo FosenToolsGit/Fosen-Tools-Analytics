@@ -16,7 +16,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
-const MODEL = "gemini-2.5-flash";
+// Hovedmodell kan overstyres: node scripts/ai-synlighet.mjs --modell gemini-2.5-flash-lite
+// Gratis-nivået har 20 flash-kall/dag — uttrekket bruker derfor alltid lite-modellen.
+const argv = process.argv.slice(2);
+const argIdx = argv.indexOf("--modell");
+const MODEL = argIdx >= 0 ? argv[argIdx + 1] : "gemini-2.5-flash";
+const EXTRACT_MODEL = "gemini-2.5-flash-lite";
 
 // De 4 baseline-promptene (24. mai 2026) + de 3 kvartals-promptene.
 const PROMPTS = [
@@ -32,12 +37,19 @@ const PROMPTS = [
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-async function medRetry(fn, forsok = 3) {
+// Gratis-nivået på Gemini API tillater 5 kall/min for flash — hold ≥13 s
+// mellom hvert kall så hele kjøringen går gjennom uten 429.
+const PAUSE_MS = 13000;
+let sistKall = 0;
+async function medRetry(fn, forsok = 4) {
   for (let i = 1; ; i++) {
+    const vent = sistKall + PAUSE_MS - Date.now();
+    if (vent > 0) await new Promise((r) => setTimeout(r, vent));
+    sistKall = Date.now();
     try { return await fn(); } catch (e) {
       const status = e?.status ?? e?.error?.code;
       if (i >= forsok || ![429, 500, 503].includes(status)) throw e;
-      await new Promise((r) => setTimeout(r, 4000 * i));
+      await new Promise((r) => setTimeout(r, 15000 * i));
     }
   }
 }
@@ -61,7 +73,7 @@ async function sporGrounded(prompt) {
 // grounding kan ikke kombineres i samme request).
 async function trekkUtMerker(prompt, answer) {
   const res = await medRetry(() => ai.models.generateContent({
-    model: MODEL,
+    model: EXTRACT_MODEL,
     contents:
       `Under er et AI-svar på spørsmålet «${prompt}». List alle firma-/merkenavn ` +
       `som nevnes, i den rekkefølgen de først forekommer. Returner KUN JSON: ` +
@@ -91,6 +103,7 @@ const forrige = new Map(
 );
 
 const rader = [];
+let insertFeil = null;
 for (const prompt of PROMPTS) {
   const { answer, sources } = await sporGrounded(prompt);
   const brands = await trekkUtMerker(prompt, answer);
@@ -98,11 +111,15 @@ for (const prompt of PROMPTS) {
   const ftMentioned = ftIdx >= 0 || /fosen[\s-]?tools/i.test(answer);
   const ftRank = ftIdx >= 0 ? ftIdx + 1 : null;
 
-  rader.push({
+  const rad = {
     prompt, model: MODEL, grounded: true,
     ft_mentioned: ftMentioned, ft_rank: ftRank,
     brands_mentioned: brands, answer, sources,
-  });
+  };
+  rader.push(rad);
+  // Lagre umiddelbart — en kvotestopp senere skal ikke kaste bort dette svaret.
+  const { error: insErr } = await sb.from("ai_visibility_checks").insert(rad);
+  if (insErr) insertFeil = insErr;
 
   const status = ftMentioned ? `✅ nevnt${ftRank ? ` (#${ftRank} av ${brands.length})` : ""}` : "❌ ikke nevnt";
   const prev = forrige.get(prompt);
@@ -115,8 +132,7 @@ for (const prompt of PROMPTS) {
     console.log(`   kilder AI brukte (mention-gap-kandidater): ${sources.slice(0, 4).map((s) => s.title || s.uri).join(" · ")}`);
 }
 
-const { error } = await sb.from("ai_visibility_checks").insert(rader);
-if (error) { console.error("\nSupabase-insert feilet:", error.message); process.exit(1); }
+if (insertFeil) { console.error("\nSupabase-insert feilet:", insertFeil.message); process.exit(1); }
 
 const antallNevnt = rader.filter((r) => r.ft_mentioned).length;
 console.log(`\nFT nevnt i ${antallNevnt}/${PROMPTS.length} svar` +
