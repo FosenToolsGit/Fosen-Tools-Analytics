@@ -398,13 +398,14 @@ Note: Mandagsmøte-siden (`/mandagsmote`) henter data via SWR fra eksisterende `
 ## Anomali-deteksjon
 
 **Service:** `src/lib/services/anomaly-detection.ts`
-**5 sjekker kjøres etter hver sync:**
+**6 sjekker kjøres etter hver sync:**
 
 1. **Plattform-spikes/drops** — 7d vs forrige 7d, threshold ±40% (warning) / ±70% (critical). Min volum: 30
 2. **Google Ads kostnad-spike** — siste 3d vs 11d før, threshold 80%+ økning per kampanje. Min kostnad: 500 NOK
 3. **Google Ads ROAS-fall** — kampanje med ROAS ≥ 2x som faller under 1x
 4. **Konverterings-stopp** — 0 purchase/form_submit i 48 timer etter ≥ 3 i forrige 5 dager
 5. **Nye konkurrent-brands** — søketerm matcher konkurrent-regel og dukker opp for første gang på 37 dager
+6. **SEO-posisjonsfall** (ny 18. aug 2026) — impresjons-vektet posisjon per søkeord, 7d vs forrige 7d direkte fra GSC (3 dagers lag). Terskel: ≥20 visninger i før-perioden + fall ≥3 plasser. Maks 5 varsler per kjøring, samme søkeord dempes i 7 dager. Critical hvis side 1 mistes med ≥5 klikk. Automatiserer analysen som fanget Gedore-fallet manuelt 17. aug
 
 **Dedup:** Samme `(category, target_type, target_id)` innenfor 24 timer gir ikke ny rad
 **Auto-expire:** Aktive anomalier eldre enn 30 dager markeres automatisk som expired

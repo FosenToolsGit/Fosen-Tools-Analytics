@@ -112,7 +112,12 @@ export class GA4Service implements PlatformService {
 
   async fetchSearchKeywords(
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    // GSC tillater opptil 25 000 rader per kall. Default 5000 beholdes for
+    // sync-en; anomali-sjekken for posisjonsfall ber om mer for å unngå at
+    // lavklikk-søkeord kuttes (API-et sorterer på klikk, så avkorting rammer
+    // nettopp radene et posisjonsfall gjerne bor i).
+    rowLimit: number = 5000
   ): Promise<SearchKeywordRow[]> {
     try {
       // Use Google Search Console API directly
@@ -131,7 +136,7 @@ export class GA4Service implements PlatformService {
             startDate: format(startDate, "yyyy-MM-dd"),
             endDate: format(endDate, "yyyy-MM-dd"),
             dimensions: ["date", "query"],
-            rowLimit: 5000,
+            rowLimit,
             type: "web",
           }),
         }

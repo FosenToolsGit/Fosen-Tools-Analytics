@@ -5,6 +5,7 @@
  * 3. Google Ads ROAS-fall per kampanje
  * 4. Konverterings-stopp (48t uten tracket purchase/lead)
  * 5. Nye konkurrent-brands dukker opp i Pmax/search terms
+ * 6. SEO-posisjonsfall (GSC: 7d vs forrige 7d, med 3 dagers datalag)
  *
  * Resultater lagres i analytics_anomalies med dedup-logikk (samme kategori
  * + target innen 24 timer oppdaterer eksisterende aktive rad i stedet for
@@ -40,6 +41,16 @@ const CONVERSION_STOP_HOURS = 48;
 // det er null konverteringer ren tilfeldighet, ikke et signal. Den gamle
 // terskelen på 3 ga daglige falske «ingen leads»-varsler for småkampanjer.
 const CONVERSION_STOP_MIN_PREV = 8;
+
+// Sjekk 6 — SEO-posisjonsfall. GSC-data har ~3 dagers etterslep, så vinduene
+// forskyves. Terskler kalibrert mot Gedore-fallet 17. aug (pos 5,5 → 11,8 på
+// 21 visninger/uke): minst 20 visninger i før-perioden, fall på minst 3
+// plasser. Repeterte varsler for samme søkeord dempes i 7 dager.
+const SEO_DROP_MIN_IMPRESSIONS = 20;
+const SEO_DROP_MIN_POSITIONS = 3;
+const SEO_DROP_LAG_DAYS = 3;
+const SEO_DROP_MAX_ALERTS = 5;
+const SEO_DROP_MUTE_DAYS = 7;
 
 /**
  * Supabase REST returnerer maks 1000 rader per kall. Sjekkene som leser
@@ -534,6 +545,87 @@ async function detectNewCompetitorBrands(
 }
 
 /**
+ * Sjekk 6: SEO-posisjonsfall. Sammenligner impresjons-vektet posisjon per
+ * søkeord siste 7 dager mot de 7 før, direkte fra Search Console (tabellen
+ * search_keywords lagrer bare topp ~25/dag — for tynt til å fange fall som
+ * Gedore). Fanget manuelt 17. aug; dette er automatiseringen.
+ */
+async function detectSeoPositionDrops(
+  supabase: SupabaseClient
+): Promise<AnomalyCandidate[]> {
+  const { GA4Service } = await import("@/lib/services/ga4");
+  const ga4 = new GA4Service();
+
+  const today = new Date();
+  const lastEnd = subDays(today, SEO_DROP_LAG_DAYS);
+  const lastStart = subDays(lastEnd, 6);
+  const prevEnd = subDays(lastStart, 1);
+  const prevStart = subDays(prevEnd, 6);
+
+  const rows = await ga4.fetchSearchKeywords(prevStart, lastEnd, 25000);
+  if (!rows.length) return [];
+
+  const grenseDato = dateStr(lastStart);
+  interface Agg { imp: number; clicks: number; posVekt: number; }
+  const last = new Map<string, Agg>();
+  const prev = new Map<string, Agg>();
+  for (const r of rows) {
+    const bucket = r.metric_date >= grenseDato ? last : prev;
+    const ex = bucket.get(r.query) ?? { imp: 0, clicks: 0, posVekt: 0 };
+    ex.imp += r.impressions || 0;
+    ex.clicks += r.clicks || 0;
+    ex.posVekt += (r.position || 0) * (r.impressions || 0);
+    bucket.set(r.query, ex);
+  }
+
+  // Demp gjentak: søkeord som alt har fått dette varselet siste 7 dager
+  const muteFra = subDays(today, SEO_DROP_MUTE_DAYS).toISOString();
+  const { data: nylige } = await supabase
+    .from("analytics_anomalies")
+    .select("target_id")
+    .eq("category", "seo_position_drop")
+    .gte("detected_at", muteFra);
+  const dempet = new Set((nylige ?? []).map((r) => r.target_id as string));
+
+  interface Fall { query: string; fra: number; til: number; imp: number; clicks: number; }
+  const fall: Fall[] = [];
+  for (const [query, p] of prev) {
+    if (p.imp < SEO_DROP_MIN_IMPRESSIONS) continue;
+    const l = last.get(query);
+    if (!l || l.imp === 0) continue; // borte fra SERP håndteres ikke her — for støyete
+    const prevPos = p.posVekt / p.imp;
+    const lastPos = l.posVekt / l.imp;
+    if (lastPos - prevPos < SEO_DROP_MIN_POSITIONS) continue;
+    if (dempet.has(query)) continue;
+    fall.push({ query, fra: prevPos, til: lastPos, imp: p.imp, clicks: p.clicks });
+  }
+
+  fall.sort((a, b) => b.imp - a.imp);
+  const fmt = (n: number) => (Math.round(n * 10) / 10).toFixed(1).replace(".", ",");
+
+  return fall.slice(0, SEO_DROP_MAX_ALERTS).map((f) => {
+    const mistetSide1 = f.fra <= 10 && f.til > 10;
+    return {
+      category: "seo_position_drop",
+      severity: (mistetSide1 && f.clicks >= 5 ? "critical" : "warning") as AnomalySeverity,
+      title: `SEO-fall: «${f.query}» ${fmt(f.fra)} → ${fmt(f.til)}`,
+      description: `Søkeordet «${f.query}» falt fra posisjon ${fmt(f.fra)} til ${fmt(f.til)} (7d vs forrige 7d, ${f.imp} visninger i før-perioden${mistetSide1 ? " — ute av side 1" : ""}).`,
+      metric_context: {
+        query: f.query,
+        position_before: Math.round(f.fra * 10) / 10,
+        position_after: Math.round(f.til * 10) / 10,
+        impressions_before: f.imp,
+        clicks_before: f.clicks,
+      },
+      suggested_action:
+        "Sjekk siden i /innsikt/seo (kategori «declining») og verifiser at den fortsatt er indeksert med riktig innhold. Fall på 3+ plasser skyldes oftest innholds-/struktur-endring, kannibalisering eller en sterkere konkurrent.",
+      target_type: "search_term" as const,
+      target_id: f.query,
+    };
+  });
+}
+
+/**
  * Hoved-orkestrator. Kjører alle sjekkene, dedupliserer og persisterer.
  */
 export async function detectAnomalies(
@@ -564,6 +656,11 @@ export async function detectAnomalies(
     all.push(...(await detectNewCompetitorBrands(supabase)));
   } catch (e) {
     console.error("detectNewCompetitorBrands failed:", e);
+  }
+  try {
+    all.push(...(await detectSeoPositionDrops(supabase)));
+  } catch (e) {
+    console.error("detectSeoPositionDrops failed:", e);
   }
 
   // Dedup: sjekk om samme kategori+target finnes som "active" innenfor siste 24t
