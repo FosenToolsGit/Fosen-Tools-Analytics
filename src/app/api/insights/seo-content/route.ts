@@ -57,6 +57,7 @@ GENERELLE REGLER:
 2. I JSON-LD-skriptet bruk vanlig UTF-8 (ø, å, æ direkte)
 3. ALDRI inkluder produkt-antall eller kategori-tellinger i tekst (utdaterer)
 4. INTRO skal v&aelig;re 2 paragrafer maks, IKKE "Hos Fosen Tools f&oslash;rer vi..."-avslutning
+4b. F&Oslash;RSTE 100 ORD-REGELEN (AI-siteringer): Paragraf 1 i INTRO skal svare DIREKTE p&aring; hovedintensjonen bak s&oslash;keordet — hva dette er, hvem det er for, og hva Fosen Tools tilbyr — f&oslash;r historikk/bakgrunn. ~40 % av AI-siteringer hentes fra de f&oslash;rste 100 ordene, s&aring; ikke &aring;pne med "grunnlagt i 18xx" eller oppvarming. Historikk h&oslash;rer hjemme i paragraf 2.
 5. Arrow-span ▶ M&Aring; v&aelig;re med i hver <summary>
 6. Hver FAQ-svar bruker <p class="faq-answer">, ikke bare <p>
 7. CTA-blokk er IDENTISK som p&aring; produsent-sider — kopier eksakt struktur over (kun &aelig;ndre om n&oslash;dvendig)
