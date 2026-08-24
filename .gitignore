@@ -74,6 +74,8 @@ fosen-tools-analytics-*.json
 scripts/_tmp-*.mjs
 scripts/_tmp-*.ts
 scripts/_tmp-*.cjs
+scripts/_tmp-*.mts
+scripts/_tmp-*.json
 
 # Midlertidige media-arbeidsmapper (skal i Supabase Storage, ikke Git)
 /Jubileum-teaser/
