@@ -24,6 +24,7 @@
  * opplastinger per dag.
  */
 import fs from "node:fs";
+import { tagsFor } from "./yt-tags.mjs";
 
 const argv = process.argv.slice(2);
 const arg = (n) => { const i = argv.indexOf("--" + n); return i >= 0 ? argv[i + 1] : undefined; };
@@ -51,11 +52,16 @@ async function accessToken() {
   return j.access_token;
 }
 
-async function lastOpp(token, { fil, tittel, beskrivelse, publiser }) {
+async function lastOpp(token, { fil, tittel, beskrivelse, publiser, tags }) {
+  // FT-tags utledes av tittel + beskrivelse. FTA setter sine i planen, siden
+  // det innholdet er engelsk. Lagt til 2. sept 2026 — før det gikk alle
+  // FT-videoene ut uten tags i det hele tatt.
+  const emneord = tags ?? (KANAL === "fta" ? undefined : tagsFor({ tittel, beskrivelse }));
   const meta = {
     snippet: {
       title: tittel,
       description: beskrivelse,
+      ...(emneord?.length ? { tags: emneord } : {}),
       categoryId: "28", // Science & Technology
       // FTA-innhold er engelsk (NATO/eksportmarked), FT-innhold norsk
       defaultLanguage: KANAL === "fta" ? "en" : "no",
@@ -112,6 +118,7 @@ for (const jobb of jobber) {
   process.stdout.write(`▶ ${jobb.tittel} … `);
   const v = await lastOpp(token, jobb);
   console.log(`OK — https://youtube.com/shorts/${v.id}` +
+    ` · ${v.snippet?.tags?.length ?? 0} tags` +
     (jobb.publiser ? ` (publishAt ${jobb.publiser})` : " (privat)"));
 }
 console.log("\nHusk: før API-revisjonen er godkjent må Schedule bekreftes i Studio.");
