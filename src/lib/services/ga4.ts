@@ -7,6 +7,7 @@ import type {
   SearchKeywordRow,
   GeoDataRow,
   TrafficSourceRow,
+  CampaignTrafficRow,
   AdCampaignRow,
 } from "./types";
 
@@ -279,6 +280,58 @@ export class GA4Service implements PlatformService {
         metric_date: formattedDate,
       };
     });
+  }
+
+  // Sesjoner per UTM-kampanje per dag. Skiller innholdsserier (mandag-*,
+  // torsdag-*, nyhetsbrev) fra hverandre, noe traffic_sources ikke kan siden
+  // den mangler kampanjedimensjonen. GA4-plassholderne (not set)/(direct)/
+  // (organic)/(referral) filtreres bort — de er ikke kampanjer.
+  async fetchCampaignTraffic(
+    startDate: Date,
+    endDate: Date
+  ): Promise<CampaignTrafficRow[]> {
+    const [response] = await this.client.runReport({
+      property: this.propertyId,
+      dateRanges: [
+        {
+          startDate: format(startDate, "yyyy-MM-dd"),
+          endDate: format(endDate, "yyyy-MM-dd"),
+        },
+      ],
+      dimensions: [
+        { name: "date" },
+        { name: "sessionCampaignName" },
+        { name: "sessionSource" },
+        { name: "sessionMedium" },
+      ],
+      metrics: [
+        { name: "sessions" },
+        { name: "totalUsers" },
+        { name: "conversions" },
+      ],
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: 10000,
+    });
+
+    if (!response.rows) return [];
+
+    const plassholder = new Set([
+      "(not set)", "(direct)", "(organic)", "(referral)", "(none)", "(data not available)",
+    ]);
+    return response.rows
+      .filter((row) => !plassholder.has(row.dimensionValues?.[1]?.value || ""))
+      .map((row) => {
+        const dateStr = row.dimensionValues?.[0]?.value || "";
+        return {
+          campaign: row.dimensionValues?.[1]?.value || "",
+          source: row.dimensionValues?.[2]?.value || null,
+          medium: row.dimensionValues?.[3]?.value || null,
+          sessions: parseInt(row.metricValues?.[0]?.value || "0"),
+          total_users: parseInt(row.metricValues?.[1]?.value || "0"),
+          conversions: parseInt(row.metricValues?.[2]?.value || "0"),
+          metric_date: `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`,
+        };
+      });
   }
 
   async fetchAdCampaigns(

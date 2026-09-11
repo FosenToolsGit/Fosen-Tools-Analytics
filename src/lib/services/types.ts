@@ -72,6 +72,16 @@ export interface TrafficSourceRow {
   metric_date: string;
 }
 
+export interface CampaignTrafficRow {
+  campaign: string;
+  source: string | null;
+  medium: string | null;
+  sessions: number;
+  total_users: number;
+  conversions: number;
+  metric_date: string;
+}
+
 export interface AdCampaignRow {
   campaign_name: string;
   ad_group: string | null;

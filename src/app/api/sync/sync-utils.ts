@@ -196,6 +196,26 @@ export async function syncPlatform(
         recordsSynced += sourceRows.length;
       }
 
+      const rawCampaignTraffic = await ga4.fetchCampaignTraffic(startDate, endDate);
+      const campaignTrafficRows = dedupBy(
+        rawCampaignTraffic.filter(validDateRow).map((c) => ({
+          ...c,
+          source: c.source || "",
+          medium: c.medium || "",
+        })),
+        (r) => `${r.campaign}|${r.source}|${r.medium}|${r.metric_date}`,
+        (r) => Number(r.sessions) || 0
+      );
+      if (campaignTrafficRows.length > 0) {
+        const { error } = await admin
+          .from("campaign_traffic")
+          .upsert(campaignTrafficRows, {
+            onConflict: "campaign,source,medium,metric_date",
+          });
+        if (error) { console.error("campaign_traffic upsert error:", error); throw error; }
+        recordsSynced += campaignTrafficRows.length;
+      }
+
       const rawCampaigns = await ga4.fetchAdCampaigns(startDate, endDate);
       const campaignRows = dedupBy(
         rawCampaigns.filter(validDateRow).map((c) => ({
