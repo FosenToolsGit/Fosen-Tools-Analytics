@@ -32,7 +32,7 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 
 const PORT = 53682;
 const REDIRECT = `http://127.0.0.1:${PORT}/callback`;
-const SCOPES = "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube";
+const SCOPES = "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/yt-analytics.readonly";
 
 const authUrl =
   "https://accounts.google.com/o/oauth2/v2/auth" +

@@ -16,7 +16,12 @@
     "mandag": "tsx --env-file-if-exists=.env.local scripts/mandag-kategori.ts",
     "produktbilde": "tsx scripts/hent-produktbilde.ts",
     "thumbnail": "tsx scripts/render-thumbnail.ts",
-    "produsent-banner": "tsx scripts/render-produsent-banner.ts"
+    "produsent-banner": "tsx scripts/render-produsent-banner.ts",
+    "mandag:thumbs": "node scripts/mandag-thumbs.mjs",
+    "tirsdag:thumbs": "node scripts/tirsdag-thumbs.mjs",
+    "torsdag:thumbs": "node scripts/torsdag-thumbs.mjs",
+    "fta-rapport": "node --env-file=.env.local scripts/fta-ukesrapport.mjs",
+    "milwaukee-import": "tsx scripts/milwaukee-import.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.94.0",
