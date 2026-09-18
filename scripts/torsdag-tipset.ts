@@ -131,6 +131,26 @@ if (dataPath) {
 // ── main ────────────────────────────────────────────────────────────
 
 async function main() {
+/**
+ * Nøkkelord-filnavn for opplasting. Filnavnet er skjult metadata YouTube leser,
+ * så det skal bære leverandør og produkt i stedet for å hete «reel.mp4».
+ */
+function videoFilnavn(format: string): string {
+  const ascii = (t: string) =>
+    String(t ?? "").toLowerCase()
+      .replace(/æ/g, "ae").replace(/ø/g, "o").replace(/å/g, "a")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  const deler = [
+    ascii(data.supplierName as string),
+    ascii(data.productName as string),
+    ascii(config.modeLabel),
+    "fosen-tools",
+    format,
+  ].filter((d) => d && d.length > 1);
+  return [...new Set(deler)].join("-").slice(0, 90);
+}
+
   const outDir = join("out", "dagens", date, `torsdag-${mode}`);
   mkdirSync(outDir, { recursive: true });
   console.log(
@@ -156,7 +176,7 @@ async function main() {
         },
         () => {},
       );
-      const outPath = join(outDir, `${format}.mp4`);
+      const outPath = join(outDir, `${videoFilnavn(format)}.mp4`);
       writeFileSync(outPath, result.buffer);
       const mb = (result.buffer.byteLength / 1024 / 1024).toFixed(1);
       const dur = ((performance.now() - tStart) / 1000).toFixed(1);
@@ -169,18 +189,27 @@ async function main() {
 
   // Captions — narrativ tilpasset hver modus, 100% deterministisk (ingen AI).
   const blocks = buildTorsdagBlocks({ mode, data, utmCampaign, config });
-  const html = buildTorsdagHtml({ mode, blocks, utmCampaign, config, date });
+  const altText = buildTorsdagAltText({ mode, data, config });
+  // Alt-teksten legges i samme fil som captions, så alt som skal limes inn
+  // ved publisering står ett sted. Ingen egen .md-fil.
+  const html = buildTorsdagHtml({ mode, blocks, utmCampaign, config, date }).replace(
+    "<div class=\"footer\">",
+    `<div class="card">
+  <h2>Alt-tekst</h2>
+  <div class="meta">Settes ved publisering. På Instagram via mobilappen etter at posten er ute.</div>
+  <pre id="alt">${escHtmlT(altText.replace(/^#+ .*$/gm, "").replace(/^\s*\`\`\`.*$/gm, "").replace(/\n{3,}/g, "\n\n").trim())}</pre>
+  <button data-target="alt">Kopier alt-tekst</button>
+</div>
+
+<div class="footer">`,
+  );
   writeFileSync(join(outDir, "captions.html"), html);
-  console.log(`  ✓ captions.html`);
+  console.log(`  ✓ captions.html (captions + alt-tekst)`);
 
   // Plain-text-versjon kun for validering
-  const flat = `${blocks.fb}\n\n${blocks.ig}\n\n${blocks.li}`;
+  const flat = `${blocks.fb}\n\n${blocks.ig}`;
   console.log(`\n  Validerer captions mot brand-regler:`);
   logValidation("captions", validateCaption(flat));
-
-  const altText = buildTorsdagAltText({ mode, data, config });
-  writeFileSync(join(outDir, "alt-tekst.md"), altText);
-  console.log(`  ✓ alt-tekst.md`);
 
   const totalSec = ((performance.now() - t0) / 1000).toFixed(1);
   console.log(
@@ -439,13 +468,6 @@ function buildTorsdagHtml({
   <div class="meta">Hashtags på slutten · link i bio</div>
   <pre id="ig">${escHtmlT(igFull)}</pre>
   <button data-target="ig">Kopier Instagram</button>
-</div>
-
-<div class="card">
-  <h2>LinkedIn</h2>
-  <div class="meta">Fagspråk, fagstolthet, klikkbar URL med UTM</div>
-  <pre id="li">${escHtmlT(li)}</pre>
-  <button data-target="li">Kopier LinkedIn</button>
 </div>
 
 <div class="footer">

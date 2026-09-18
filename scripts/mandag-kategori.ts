@@ -17,6 +17,7 @@ import { join } from "node:path";
 import { renderVideo } from "../src/lib/services/video-render";
 import type { VideoFormat, KampanjeProdukt } from "../remotion/types";
 import { scrapeProductByUrl } from "../src/lib/services/scrape-product";
+import { chromium } from "playwright";
 import { validateCaption, logValidation } from "./caption-rules";
 import { pickMusicBed } from "../remotion/audio-registry";
 
@@ -30,6 +31,9 @@ function arg(name: string, def?: string): string | undefined {
 const date = arg("date", new Date().toISOString().slice(0, 10))!;
 const ukeOverride = arg("uke");
 const kategoriOverride = arg("kategori");
+// Varer som ikke hører hjemme i posten selv om de rangerer høyt, f.eks. en
+// skreddersydd gavekoffert i en generisk oppbevarings-kategori.
+const ekskluder = (arg("ekskluder", "") || "").split(",").map((t) => t.trim().toUpperCase()).filter(Boolean);
 const formats = (arg("formats", "reel") || "reel").split(",").map((s) => s.trim()).filter(Boolean);
 
 // ── les rotasjons-konfig ────────────────────────────────────────────
@@ -206,14 +210,75 @@ console.log(
 // ulike varianter (f.eks. FACOM- og AOK-utgaven av samme sett) framstår
 // identiske. Tre like kort i en «topp 3» sier ingenting til seeren —
 // vi beholder den best rangerte og går videre nedover lista.
+/**
+ * Lagerstedet ligger IKKE i rå HTML — det lastes via JS. JSON-LD sier bare
+ * «InStock», uten antall eller sted. Vi må derfor rendre siden.
+ *
+ * Regel: kun varer med beholdning på **Fosen** (Brekstad) kan brukes.
+ * Varer som kun står på Sør skal aldri i en post — kunden får ikke hentet
+ * dem her, og posten lover «på lager på Brekstad».
+ */
+async function fosenLager(pg: import("playwright").Page, url: string) {
+  await pg.goto(url, { waitUntil: "networkidle", timeout: 60000 });
+  await pg.waitForTimeout(1500);
+  return pg.evaluate(() => {
+    const hoved = document.querySelector(".product-stock")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    if (hoved) {
+      const m = /(\d+)(\+?)\s*på lager\s*([A-Za-zÆØÅæøå]+)?/i.exec(hoved);
+      return {
+        fosen: m && /fosen/i.test(m[3] ?? "") ? (m[2] ? 99 : +m[1]) : 0,
+        tekst: hoved,
+        variant: false,
+      };
+    }
+    // Variantprodukt: beholdning per variant, uten hovedtall.
+    const v = [...document.querySelectorAll(".InStock")]
+      .map((e) => parseInt((e.textContent ?? "").trim()))
+      .filter((n) => !isNaN(n));
+    const sum = v.reduce((a, c) => a + c, 0);
+    const nevnerFosen = /fosen/i.test(document.querySelector(".AddStockContainer")?.textContent ?? "");
+    return { fosen: sum >= 6 || nevnerFosen ? sum : 0, tekst: `variantprodukt, ${sum} stk`, variant: true };
+  });
+}
+
 const settNavn = new Set<string>();
+// I tillegg dedupliseres på produkttype, altså første ord i navnet. To
+// forlengersett eller tre verktøyvogner er ikke en «topp 3» seeren lærer
+// noe av — den skal vise bredden i kategorien.
+const settType = new Set<string>();
 const topp3: typeof rangert = [];
-for (const p of rangert) {
-  const nøkkel = p.navn.toLowerCase().replace(/[^a-z0-9æøå]+/g, " ").trim();
-  if (settNavn.has(nøkkel)) continue;
-  settNavn.add(nøkkel);
-  topp3.push(p);
-  if (topp3.length === 3) break;
+{
+  console.log("🏬 Verifiserer lagersted (kun Fosen/Brekstad teller)...");
+  const nettleser = await chromium.launch();
+  const pg = await nettleser.newPage({
+    userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+  });
+  let vraket = 0;
+  for (const p of rangert) {
+    if (topp3.length === 3) break;
+    const artnr = (p.url.match(/\/([0-9]{5,6}|[fF][0-9]{4})(?:\/|$)/)?.[1] ?? "").toUpperCase();
+    if (artnr && ekskluder.includes(artnr)) {
+      console.log(`   ⊘ ${p.navn.slice(0, 44).padEnd(44)} utelatt (--ekskluder)`);
+      continue;
+    }
+    const nøkkel = p.navn.toLowerCase().replace(/[^a-z0-9æøå]+/g, " ").trim();
+    if (settNavn.has(nøkkel)) continue;
+    const type = nøkkel.split(" ")[0];
+    if (type.length > 3 && settType.has(type)) continue;
+    const lager = await fosenLager(pg, p.url);
+    if (lager.fosen < 1) {
+      vraket++;
+      console.log(`   ✗ ${p.navn.slice(0, 44).padEnd(44)} ${lager.tekst.slice(0, 34)}`);
+      continue;
+    }
+    settNavn.add(nøkkel);
+    settType.add(type);
+    topp3.push(p);
+    console.log(`   ✓ ${p.navn.slice(0, 44).padEnd(44)} ${lager.tekst.slice(0, 34)}`);
+  }
+  await nettleser.close();
+  if (vraket) console.log(`   (${vraket} vraket — ikke lager på Fosen)`);
+  console.log("");
 }
 
 if (topp3.length < 3) {
@@ -242,6 +307,24 @@ function renseNavn(s: string): string {
     .replace(/[-–—\s]+$/g, "")   // trim slutt-bindestrek/mellomrom
     .replace(/^[-–—\s]+/g, "")   // trim start
     .trim();
+}
+
+/** Nøkkelord-filnavn for opplasting: «verktoysett-verktoyvogn-pipesett-nokkelsett-fosen-tools-reel». */
+function videoFilnavn(format: string): string {
+  const ascii = (t: string) =>
+    t.toLowerCase()
+      .replace(/æ/g, "ae").replace(/ø/g, "o").replace(/å/g, "a")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  const typer: string[] = [];
+  for (const p of topp3) {
+    const t = ascii(p.navn).split("-")[0];
+    if (t.length > 3 && !typer.includes(t)) typer.push(t);
+  }
+  return [ascii(aktiv.label), ...typer.slice(0, 3), "fosen-tools", format]
+    .filter(Boolean)
+    .join("-")
+    .slice(0, 90);
 }
 
 const kampanjeProdukter: KampanjeProdukt[] = topp3.map((p) => ({
@@ -281,7 +364,10 @@ for (const format of formats) {
         musicVariant,
       },
     });
-    const outPath = join(outDir, `${format}.mp4`);
+    // Filnavnet er skjult metadata YouTube leser ved opplasting, så det skal
+    // bære nøkkelord i stedet for å hete «reel.mp4». Kategori + produkttypene
+    // i posten + merkevare, ASCII og bindestreker.
+    const outPath = join(outDir, `${videoFilnavn(format)}.mp4`);
     writeFileSync(outPath, result.buffer);
     const sec = ((performance.now() - t0) / 1000).toFixed(1);
     console.log(`✓ ${(result.buffer.byteLength / 1024 / 1024).toFixed(1)} MB (${sec}s)`);
