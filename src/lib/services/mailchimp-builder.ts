@@ -152,6 +152,10 @@ export interface NewsletterInput {
    *  Hver entry rendres som en full-bredde rad. Hvis satt + variant matcher,
    *  rendres disse i stedet for produkt-griden. */
   suppliers?: NewsletterSupplier[];
+  /** Valgfri andre produktseksjon med egen overskrift, f.eks. «TILBEHØR PÅ LAGER».
+   *  Rendres som et eget grid rett under hovedgridet. Lagt til 24. aug 2026. */
+  secondaryTitle?: string;
+  secondaryProducts?: NewsletterProduct[];
   /** Vis «fredagsinnlegg»-seksjonen nederst (divider + footer-bilde + sosiale CTA-lenker
    *  + kundehistorie-tekst). Default true. Sett false når nyhetsbrevet ikke har en
    *  ekte ukentlig kundehistorie (typisk jubileum-utgaver). */
@@ -311,7 +315,9 @@ export class MailchimpBuilderService {
    */
   buildNewsletterHtml(input: NewsletterInput): string {
     const utm = (url: string, content?: string) => withUtm(url, input.themeSlug, content, input.utmTerm);
-    const products = input.products.slice(0, 6);
+    // Ingen øvre grense: renderProductGrid bygger så mange rader à 3 som trengs.
+    // (Var slice(0, 6) frem til 24. aug 2026 — containere-utgaven trengte 9.)
+    const products = input.products;
 
     const rootSections: string[] = [];
 
@@ -903,6 +909,23 @@ function renderContentSection(
     rows.push(renderSupplierRows(input.suppliers, utm));
   } else if (products.length > 0) {
     rows.push(`<tr><td style="padding-top:0;padding-bottom:0;padding-right:32px;padding-left:32px" valign="top" class="mceGutterContainer" id="gutterContainerId-17"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:24px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b17">${renderProductGrid(products, input.themeSlug)}</td></tr></tbody></table></td></tr>`);
+
+    // Valgfri andre seksjon (f.eks. tilbehør) med egen overskrift + eget grid,
+    // så to varegrupper ikke blandes midt i en rad.
+    const sec = input.secondaryProducts;
+    if (Array.isArray(sec) && sec.length > 0) {
+      if (input.secondaryTitle) {
+        rows.push(`<tr>${renderTextBlock(
+          "gutterContainerId-77",
+          "b77",
+          "d77",
+          "padding-left:24px;padding-right:24px;padding-top:8px;padding-bottom:4px",
+          "transparent",
+          `<h1 style="line-height: 1; mso-line-height-alt: 100%;" class="last-child"><span style="font-size: 17px">${esc(input.secondaryTitle)}</span></h1>`
+        )}</tr>`);
+      }
+      rows.push(`<tr><td style="padding-top:0;padding-bottom:0;padding-right:32px;padding-left:32px" valign="top" class="mceGutterContainer" id="gutterContainerId-78"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate" role="presentation"><tbody><tr><td style="padding-top:0;padding-bottom:24px;padding-right:0;padding-left:0;border:0;border-radius:0" valign="top" class="mceLayoutContainer" id="b78">${renderProductGrid(sec, input.themeSlug, 500)}</td></tr></tbody></table></td></tr>`);
+    }
   }
 
   // --- "SE ALLE PRODUKTENE VÅRE" button (skjules i leverandør-utgaver
@@ -993,55 +1016,61 @@ function renderColgroup(): string {
  * Product grid: 12-column system. Row 1 = up to 3 products (colspan 4 each),
  * Row 2 = up to 2 products (colspan 6 each).
  */
-function renderProductGrid(products: NewsletterProduct[], themeSlug: string): string {
-  const row1 = products.slice(0, 3);
-  const row2 = products.slice(3, 6);
+function renderProductGrid(products: NewsletterProduct[], themeSlug: string, idOffset = 0): string {
+  // Generalisert 25. aug 2026: vilkårlig antall produkter i rader à 3.
+  // Rad 1 og 2 beholder de opprinnelige block-ID-ene (b7/b10/b13 og b207/b210/b213)
+  // så mobil-CSS-en og eldre utgaver er uendret; rad 3+ følger samme mønster
+  // (b307..., b407...). Siste rad med 2 produkter rendres 50/50 som før.
+  // Radmønster: fyll med treere, men aldri la det bli igjen en rad med ett kort.
+  // Er resten 4, deles den 2+2. 7 blir dermed 3-2-2, 4 blir 2-2, 10 blir 3-3-2-2.
+  const pattern: number[] = [];
+  let left = products.length;
+  while (left > 0) {
+    if (left === 4) { pattern.push(2, 2); left = 0; }
+    else if (left <= 3) { pattern.push(left); left = 0; }
+    else { pattern.push(3); left -= 3; }
+  }
+  const chunks: NewsletterProduct[][] = [];
+  let cursor = 0;
+  for (const n of pattern) { chunks.push(products.slice(cursor, cursor + n)); cursor += n; }
 
-  // Block IDs for product images/text
-  const imgIds1 = ["b7", "b10", "b13"];
-  const txtIds1 = ["b8", "b11", "b14"];
-  const gutterIds1 = ["gutterContainerId-8", "gutterContainerId-11", "gutterContainerId-14"];
-  const imgIds2 = ["b207", "b210", "b213"];
-  const txtIds2 = ["b208", "b211", "b214"];
-  const gutterIds2 = ["gutterContainerId-208", "gutterContainerId-211", "gutterContainerId-214"];
-
-  // Build row 1 columns
-  const row1Cols = row1.map((p, i) => {
-    const productUtm = withUtm(p.url, themeSlug, slugFromUrl(p.url));
-    return renderProductColumn(
-      p,
-      productUtm,
-      4,
-      "33.33333333333333%",
-      imgIds1[i],
-      txtIds1[i],
-      gutterIds1[i],
-      i === 0 ? "padding-left:0;padding-right:0;padding-top:12px;padding-bottom:12px" : "padding-left:8px;padding-right:8px;padding-top:12px;padding-bottom:12px"
-    );
+  const rowsHtml = chunks.map((row, r) => {
+    const prefix = idOffset + (r === 0 ? 0 : (r + 1) * 100);
+    const imgIds = [`b${prefix + 7}`, `b${prefix + 10}`, `b${prefix + 13}`];
+    const txtIds = [`b${prefix + 8}`, `b${prefix + 11}`, `b${prefix + 14}`];
+    const gutterIds = [
+      `gutterContainerId-${prefix + 8}`,
+      `gutterContainerId-${prefix + 11}`,
+      `gutterContainerId-${prefix + 14}`,
+    ];
+    // Alle kort er 33% brede uansett radlengde, så bildene blir like store i hele
+    // gridet. Korte rader sentreres med tomme spacer-kolonner (12-kolonners grid:
+    // 2 kort = 2+4+4+2, 1 kort = 4+4+4).
+    const three = row.length >= 3;
+    const cols = row.map((p, i) => {
+      const productUtm = withUtm(p.url, themeSlug, slugFromUrl(p.url));
+      return renderProductColumn(
+        p,
+        productUtm,
+        4,
+        "33.33333333333333%",
+        imgIds[i],
+        txtIds[i],
+        gutterIds[i],
+        three && i === 0
+          ? "padding-left:0;padding-right:0;padding-top:12px;padding-bottom:12px"
+          : "padding-left:8px;padding-right:8px;padding-top:12px;padding-bottom:12px"
+      );
+    }).join("");
+    const spacer = (n: number) =>
+      `<td valign="top" class="mceColumn" colspan="${n}" width="${((n / 12) * 100).toFixed(6)}%"></td>`;
+    let inner = cols;
+    if (row.length === 2) inner = `${spacer(2)}${cols}${spacer(2)}`;
+    else if (row.length === 1) inner = `${spacer(4)}${cols}${spacer(4)}`;
+    return `<tr class="mceKeepColumns">${inner}</tr>`;
   }).join("");
 
-  // Build row 2 columns: 3 produkter à 33% (3+3-grid), ellers 2 à 50% (3+2-grid)
-  const r2three = row2.length >= 3;
-  const row2Cols = row2.map((p, i) => {
-    const productUtm = withUtm(p.url, themeSlug, slugFromUrl(p.url));
-    return renderProductColumn(
-      p,
-      productUtm,
-      r2three ? 4 : 6,
-      r2three ? "33.33333333333333%" : "50%",
-      imgIds2[i],
-      txtIds2[i],
-      gutterIds2[i],
-      r2three && i === 0
-        ? "padding-left:0;padding-right:0;padding-top:12px;padding-bottom:12px"
-        : "padding-left:8px;padding-right:8px;padding-top:12px;padding-bottom:12px"
-    );
-  }).join("");
-
-  const row1Html = row1Cols ? `<tr class="mceKeepColumns">${row1Cols}</tr>` : "";
-  const row2Html = row2Cols ? `<tr class="mceKeepColumns">${row2Cols}</tr>` : "";
-
-  return `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="17" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="16"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody>${row1Html}${row2Html}</tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
+  return `<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="17" class="mceLayout"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top" align="center"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover" valign="top"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td valign="top" class="mceColumn" colspan="12" width="100%"><table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation"><tbody><tr><td style="border:0;border-radius:0" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" data-block-id="16"><tbody><tr class="mceRow"><td style="background-position:center;background-repeat:no-repeat;background-size:cover;padding-top:0px;padding-bottom:0px" valign="top"><table border="0" cellpadding="0" cellspacing="24" width="100%" style="table-layout:fixed" role="presentation"><colgroup>${renderColgroup()}</colgroup><tbody>${rowsHtml}</tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>`;
 }
 
 /**
