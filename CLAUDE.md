@@ -88,7 +88,7 @@ Fast publiseringskalender som styrer hvordan vi planlegger innhold:
 | Kanal | Dag | Tid | Innholdstype |
 |---|---|---|---|
 | **Mailchimp (FTNett)** | Tirsdag | 11:00 | Nyhetsbrev — produkter, kampanjer, midtseksjon |
-| **Meta (FB + IG)** | Fredag | — | Produksjons-/leveranse-poster (Pelicase 1535-Forsvaret 1. mai er et eksempel) |
+| **Meta (FB + IG)** | Fredag | — | Produksjons-/leveranse-poster. **Adrian styrer dette sporet selv — Claude skal ikke lage, foreslå eller lete etter materiale til fredagsposter.** |
 | **Meta (FB + IG)** | Ad-hoc | — | Tematiske/edukative poster (HDFI vs generisk skum 3. mai er et eksempel) |
 | **LinkedIn** | Ad-hoc | — | Speiles ofte fra Meta — ikke fast plan |
 
@@ -184,6 +184,7 @@ Fast publiseringskalender som styrer hvordan vi planlegger innhold:
 - `016_social_corpus_seed.sql` — ~30 seed-entries for FT-korpus (voice, archetypes, regler)
 - `017_share_token.sql` — `share_token` UUID-kolonne på `pricetag_playlists` for kiosk-URL-er
 - `019_pricetag_team_access.sql` — Åpner SELECT + UPDATE RLS på `pricetag_playlists` til alle authenticated (team-bred tilgang)
+- `026_campaign_traffic.sql` — `campaign_traffic`: sesjoner per UTM-kampanje per dag fra GA4 `sessionCampaignName`. Gjør innholdsserier målbare uten manuelle GA4-oppslag. Kjørt via MCP 11. sept 2026, backfyllt for hele 2026.
 
 ### Storage
 - **Bucket `weekly-reports`** (privat) — lagrer genererte Excel-rapporter
@@ -485,7 +486,7 @@ Intelligens (4 ark): Skaler opp, Negativ-kandidater, Nye muligheter (DB), Keywor
 
 **⚠️ Lead-tall før 17. aug 2026 er oppblåst** — se dagsfordelingen, ikke ukesummen. Reelt nivå ~1–3/uke. Første rene uke-mot-uke-sammenligning ~1. september.
 
-**FT Aviation (søsterselskap)** har tilsvarende oppsett med `fta_support_form_success`-event i sin GTM-container.
+**FT Aviation** har tilsvarende oppsett med `fta_support_form_success`-event i sin GTM-container.
 
 ---
 
@@ -529,7 +530,9 @@ SYNC_SECRET_KEY=<sett-tilfeldig-secret>        (ALDRI commit den ekte verdien �
 SYNC_DAYS=90                   (konfigurerbart sync-vindu, default 90)
 
 # Gemini (Innholdsmotor)
-GEMINI_API_KEY=...             (Google AI Studio API-key med paid plan / $900-kreditt)
+GEMINI_API_KEY=...             (Google AI Studio — GRATISNIVÅ per 8. sept 2026, ikke betalt plan.
+                               Kvote per døgn, gir 429 når den er brukt opp. $900-kreditten
+                               fra mai er ikke aktiv på denne nøkkelen.)
 ```
 
 Alle er også lagt inn i Vercel som Environment Variables.
@@ -1027,7 +1030,14 @@ Testet `imagen-4.0-fast-generate-001`, `imagen-4.0-generate-001`, `gemini-2.5-fl
 
 Hver archetype har eksplisitte forbud i prompten: ingen AI-HDFI, ingen AI-mennesker, ingen cartoon, kun FT-palett (#ED1C24/#0F1115/#FFFFFF), kun Manrope. Basert på Native sine 11 avvisninger 12. mai.
 
-### Kost-budsjett ($900 over 3 mnd)
+### Kost-budsjett
+
+⚠️ **Nøkkelen står på gratisnivå per 8. september 2026**, ikke betalt plan. Avsnittet
+under beskriver planen fra mai og stemmer ikke med dagens oppsett. Gratisnivået har
+døgnkvote og gir `429 You exceeded your current quota` når den er oppbrukt — det
+stoppet Wera-metajobben 8. sept.
+
+### Opprinnelig budsjett fra mai ($900 over 3 mnd)
 - Caption-gen (`gemini-2.5-flash`): ~$0.075 input + $0.30 output per 1M tokens → marginal kost per draft
 - Bilde-gen (`gemini-2.5-flash-image`): pay-as-you-go per bilde
 - Estimert månedlig forbruk for FT: $10-30 — godt under $300/mnd-budsjett
@@ -1051,6 +1061,39 @@ Når operatør avviser eller redigerer en draft → reason + before/after lagres
 
 ---
 
+## Arkiv på ekstern disk (Samsung T7)
+
+**Store filer er flyttet av maskinen. Les `docs/arkiv-paa-t7.md` før du leter etter noe
+som ikke finnes lokalt.** Samme liste ligger på disken som
+`Fosen Tools - arkiv/HVOR-LIGGER-TINGENE.md`, med rådata i `.tsv` ved siden av.
+
+Ryddet 18. september 2026: `~/Downloads` gikk fra 91 til 43 GB, arbeidsmappa fra 38 til 1,4 GB.
+
+| Flyttet til T7 | Str. |
+|---|---:|
+| `Fosen Tools/` som lå inne i repoet (Bilder, Ferdig, FTAviation, Maler) | 21 G |
+| `Bilder 2001-2004` × 5, privat | 8,5 G |
+| `Analytics/out` — 883 foto + 76 reels | 2,8 G |
+| `Trucket-Hat V1` | 2,3 G |
+| Kundeprosjekter: Fjord Helikopter, Kunder Q3, Polypus, Arctic Aviation, Helge Olden | 2,0 G |
+| `FTA Studio/out` — 62 videoer | 803 M |
+
+**Slettet i stedet for flyttet**, fordi det gjenskapes: `.next` (8,2 G), `node_modules`
+(3,0 G, alle har `package-lock.json`), to merget worktrees (1,6 G).
+**Husk `npm install` før neste `npm run dev`.**
+
+**Regel som nesten kostet data:** `out/` er aldri bare byggecache. Både `FTA Studio/out`
+og `Analytics/out` inneholdt publiserte videoer som ikke fantes andre steder.
+Sjekk innholdet før noe slettes, og er du i tvil, flytt i stedet.
+
+**Flytting gjøres med verifikasjon:** kopier, tell filer, md5 på de tolv største, og
+**først da** slett kilden. `scripts/lag-arkivliste.sh` bygger lista på nytt fra TSV-en.
+
+Fire `_tmp-`-scripts peker inn i den gamle bildestien og brekker uten T7 tilkoblet.
+`Logoer/` og `Fosen Tools Nettside Utsende/` ble bevisst liggende lokalt.
+
+---
+
 ## Kjente quirks
 
 1. **Vercel Hobby-plan blokkerer multi-author commits** — bruker må selv pushe fra terminal
@@ -1068,10 +1111,12 @@ Når operatør avviser eller redigerer en draft → reason + before/after lagres
 13. **Attribusjon-verdi er kun sporbar for Paid Search/Cross-network** — organiske kanaler (Direct, Organic Search, Email, Social) viser sesjoner + konverteringer men ingen verdi, fordi GA4 "conversions" inkluderer alle events (ikke bare kjøp)
 14. **Multicase content-cloaking via User-Agent** — fosen-tools.no serverer JSON-LD KUN til crawlers (Googlebot UA), ikke til vanlige browsere. `curl -A "Mozilla/5.0"` returnerer 0 `application/ld+json` på alle sider, mens `curl -A "Googlebot/2.1"` returnerer 3-15 schemas. Dette er en feature, ikke en bug — vanlige brukere får slankere DOM, søkemotorer får full SEO-data. **Implikasjon for verifikasjon:** alle JSON-LD-verifikasjons-scripts MÅ bruke Googlebot User-Agent, ellers får man falske negative resultater. Bekreftet 30. april 2026 etter at en Mozilla-basert verifikasjon viste 0/47 sider og en Googlebot-basert verifikasjon viste 47/47 sider med korrekt schema.
 
+15. **Bildegenerering: rendre i 2x, komprimer etter bruk** — alle Playwright-scripts skal ha `deviceScaleFactor: 2` og skaleres ned med Lanczos etterpå. `deviceScaleFactor: 1` rastrerer i nøyaktig utgangsstørrelse uten oversampling, og typografi og kanter blir bløte. Komprimering velges etter formål: OG-bilder 1200×630 JPEG q82 under ~250 kB (scrapere henter dem, de vises smått), YouTube-thumbnails 1280×720 PNG, kildebilder til video **tapsfri PNG maks 2560 px**. Remotion `renderMedia` uten innstillinger fanger hver frame som JPEG kvalitet 80 og koder med crf 18 — sett `imageFormat: "png"` og `crf: 16`. **«EncodingError: The source image cannot be decoded» skal aldri løses ved å gjøre om til JPEG** — feilen handler om minne, ikke filformat; reduser pikselantall og behold PNG.
 ---
 
 ## Fosen Tools — selskapskontekst (lest fra PDFer i `docs/produktinfo/`)
 
+- **Slagord:** «Din komplette leverandør av driftseffektive og bruker-tilrettelagte løsninger!» — brukes ordrett, aldri omskrevet eller forkortet
 - **25 år i 2026** (etablert 2001), del av **familiekonsern siden 1926 = 100 år med verdiskaping**
 - 4. generasjon aktiv, Gaselle-bedrift
 - Adresse: Industrigata 1, **7130 Brekstad i Ørland kommune** (ikke Rissa)
@@ -1249,10 +1294,491 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 11.–12. aug | **Referansebanken bygget ut: 14 nye caser, ny kategori og et bildeverktøy.** `/referanser` ferdigstilt (74 caser, 9 kategorier, landingsside), redirects bevisst droppet og `/referansergammel` slettet etter at tallene viste 14 klikk på 90 dager. **Ny kategori `/referanser/verktøyinnlegg`** for innlegg levert alene, til skuffer og kofferter kunden allerede har. **15 nye caser** fra bildearkivet: Alvøen, Arctic Aviation, Bardufoss VGS, CHC Helikopter Service, Dakota Norway, Dalebakken Maskin, Elektro Fosen, Elma, Equinor Troll B, Fossum Jernvare, Gigant, Heli Tek, Hystar, Kongsberg, Polypus Scuba Service. **To nye verktøy:** `scripts/ref-bilder.mjs` gjør en mappe klar for opplasting (EXIF-rotasjon, maks 1600 px, IMG1.jpg og oppover, mappe navngitt som Multicase-stien, ferdig `bilder`-linje til datafila), og `scripts/ref-blur.mjs` legger gradert uskarphet fra topp- eller bunnkant for å fjerne verkstedrot uten maskering. **Faktaboks-bug funnet og fikset:** markupen brukte `<div>` inne i `<dl>`, som er ugyldig etter HTML4, og Multicase strippet dem. Byttet til `<div>`/`<span>` i alle åtte generatorene, SCSS støtter begge. **Onsdagsposter** for 12. og 19. august (vinkelsliper, bor/skrutrekker) og **fredagspost** for Polypus Scuba Service. Milwaukee-registeret ryddet, `build.mjs` hadde gammel skrivebordssti hardkodet. |
 | 17. aug | **Mandagsøkt: ukesrapport, tirsdagsnyhetsbrev og referansene ferdigstilt.** Uke 33-brief (leads doblet 7→14 uten økt kostnad, nyhetsbrevet 11. aug ga 1,8 % klikkrate mot 0,3–0,4 % normalt, Meta nede i støynivå, SEO +10 % klikk drevet av Snap-on på posisjon 1,0) levert som HTML på skrivebordet. **Nyhetsbrev 18. aug** «Unbrako og bitsskrutrekkere» — tema valgt på data (pipesett-formatet «én kategori, flere merker» vant, og sekskant/torx/bits har 1030 visninger mot 18 klikk siste 4 uker). Seks produkter med lager **og lokasjon** verifisert på Fosen/Brekstad via Playwright (`.main-warehouse`), Snap-on forkastet fordi eneste eksemplar sto på Sør. To produkter kastet ut: Wera Torx-sett manglet eget bilde og lånte unbrako-settets foto, PB 207 fantes bare i 120 px. Alle bilder konvertert fra WebP til JPG på hvit bunn. **Ny regel: ikke push til Mailchimp via API** (nettsidekapasitet) — byggescriptet sperrer nå `--push`/`--update`. **Referansene:** fire nye 2025-caser flyttet til «Allerede ute» i filene, årsfilter lagt på fem kategorisider som manglet det (samme `a:fra:til`-mekanisme som vogner), containere-rutenettet hadde en død lenke (`container-workshop-lista` → `container-lista`), luftfart-caset flyttet fra verktøyinnlegg til verkstedinnredning under nytt navn `hyllesystem-til-luftfart`, meny-fasiten oppdatert og **landingssiden bygget med 177 caser**. **Ettermiddag — datarevisjon + infrastruktur:** Meta-token byttet til permanent System User-token (side-token utledes nå i `MetaService`); **to døde Graph v22-metrikker funnet** (`page_impressions_unique` på siden, `impressions`/`plays` på IG-media → `views`) — én død metrikk feller hele kallet stille, derfor sto Meta-rekkevidde på 0; IG-historikk backfillet (kumulative insights). **Anomali-støy fikset:** manglende Supabase-paginering avkortet «tidligere sett» ved 1000 rader (bosch-termen «ny» hver dag), pmax-snapshots ble summert (1 klikk → «7 klikk»), stopp-terskel hevet 3→8. **Kontaktskjema-sporingen avslørt:** iframe-reload-heuristikken telte phantom-reloads som leads (29 på én dag 29. juli — bekreftet null tickets i Freshdesk); interaksjonskrav (blur + polling) publisert på kontaktsiden — styrer både event og takke-boks. «Leads doblet 7→14» i uke 33-briefen var bot-støy; reelt nivå 1–3/uke. **Keyword Planner Basic Access er godkjent** — `/innsikt/vekst` leverer ekte volum (verktøyvogn 3600/mnd). Nyhetsbrev-popupen avpublisert (0,21 % opt-in, 357 visninger per påmelding). FTA-videoene omorganisert per produkt + NCAGE N6940 i FT Aviation-footeren. **Kveld:** kontaktskjema-scriptet med interaksjonskrav publisert i Multicase og verifisert (7 markør-sjekker + ekte testhenvendelse sporet i GA4 Realtime); Google Ads ryddet — form_submit-telling «Alle»→«Én», død AW-tag «Kontaktoss skjema» fjernet (rollene var snudd fra april-dokumentasjonen: GA4 form_submit er primær), «forespørsler» under Sidevisning står igjen; kofferter-filteret byttet fra størrelse (32/66 udekket pga. mellom/stor-vs-medium/store) til årstall (2023– · 2020–2022 · –2019, alle 66 dekket); nyhetsbrev-popup exit-intent-versjon arkivert, skjemaet avpublisert; 11 av 15 GSC-innsendinger gjort (kvote-stopp, 4 casesider gjenstår). |
 | 18.–21. aug | **FT Aviation-lansering på fire flater + picturebook gjenoppbygd.** YouTube API-opplasting for begge kanaler (commit `6bbffe9`, `--kanal fta`, OAuth External/In production pga. brand-konto). **FTA YouTube + Facebook + Instagram (@ft.aviation) opprettet og utfylt**; publiseringsrytme fra ledelsen: **mandag + torsdag kl. 12**. 5 produkter × 3 format: **10 videoer på YouTube** (Shorts + 16:9, publishAt virker uten Studio-bekreftelse — ingen API-lås på FTA-kanalen), reels til IG/FB, squares til LinkedIn i `~/Desktop/FTA-lansering/`. **FTA Studio-videoene er stumme** (−91 dB) — alle 15 filer fikk intro-whoosh; YouTube kan ikke bytte videofil → 4 upubliserte slettet og re-lastet. Captions-pakke (30 blokker) fra verifiserte produktdata; produktlenker med UTM på FB/LI (ft-aviation.no stripper UTM i 301 → bruk full slug-URL; YT = ren tekst, klikkbare lenker krever ID-verifisering). **Thumbnails** (3 maler: full-bleed/split/before-after) lastet opp via API på alle wide. **C-130-merket nydesignet** — ledelsens AI-merke hadde feil propeller og leste som sertifisering («MILITARY STANDARD» + hake); nytt: Gemini-komposisjon → Adrians Illustrator-vektor → omfarget til FTAs offisielle gullgradient m/ Korolev-tekst som baner (`FTA-C130-merke/` + FTA Studio-assets). 8 produkter har merket (inkl. PowerCube i nyeste revisjon). **Meta-kontobegrensning 19. aug** sperrer annonsering OG samarbeidsfunksjonen (invitasjoner droppes stille) — klage må sendes fra IG-appen; fallback: Fosen Tools poster egen versjon («datterselskapet vårt»). **Picturebooken gjenoppbygd i FTA-stil**: tekst/bilder/lenker ekstrahert programmatisk (pdftotext/pdfimages/pikepdf), bilder koblet visuelt via kontaktark, 30 sider A4, 62 produkter, 64 klikkbare lenker + TOC-hopp, copyrights (FINAF/Lockheed) bevart; PPTX-kopi + **overleveringspakke til Arne Frode** (`FTA-Picturebook-pakke/` m/ selvstendig generator, LES-MEG.html + OPPSKRIFT-FOR-CLAUDE.md — redigering via hans egen Claude). **Fredagsposter:** 22/8 VDE-innlegg + 29/8 gaveartikkel (jerrykanne-koffert, Dråben Montasje → Bratsberg Gård; alkohol utelatt, etiketter fjernet) med UTM-CTA til kontaktsiden. Nytt verktøy `scripts/objekt-blur.py` (roterbar myktkantet blur). |
-
+| 27. aug | **Forbruksportal, hjulskift-siden bygget om, Milwaukee-sammenligning.** Serviceappen: uttak fra skapet m/ AO-nummer per LINJE, pakke/enkeltvis/begge (`pack_mode`, migrasjon 018), produktsider med FT-tekst, Bravida-testinnlogging (8/8 steg verifisert), migrasjoner 013–018. **Git-lærdom: service-repoet har egen bruker** (adrian@fosen-tools.no) — 10 commits med gmail + Co-Authored-By ga deploy på UNKNOWN/0ms, rettet med filter-branch. **Hjulskift-siden** (`/aktuelt/inspirasjon-og-tips/riktig-verktøy-til-hjulskift`) bygget helt om: 1912 ord, 30 produktkort, 6 FAQ, 4 JSON-LD, egen SCSS på artikkeltema 2. Metode låst som [[project_sideoverhaling_oppskrift]]. **SystemHeadContent** viste seg å inneholde et strukturert OpenGraph-element (ikke rå HTML). **Milwaukee Q3:** Multicase-eksport mot fire prislister. |
+| 28. aug | **Kampanjemøte-agenda, Milwaukee-rabatter validert, gavebrosjyre og to FTA-dokumenter.** Erik svarte på hjulskift-planen → kampanjemøte-agenda (8 punkter, PDF + docx) med skreddersydd hjulbytte-sett som eget punkt; møtet må holdes senest uke 38. **Milwaukee Q3-analyse** med priskolonner: 136 prisendringer, Eriks 30/50-rabatter BEKREFTET mot Multicase, 141 avvik til Lasse, 315 utgått-kandidater. **Gaveartikler «Edle dråper»** — 18 alkoholrelaterte gaveprosjekter fra bildearkivet, stående A4 i off-white/gull med Adrians frilagte bilder. Alkoholreklame avklart: kundedialog, ikke publisering. **FTA MH-60R** bygget i picturebook-stil, deretter erstattet av **MH-60R Seahawk Line & Base** (8 sider, mørk bakgrunn bak alle bilder, original + web-versjon). **Usage-lærdom:** to PDF-leveranser brente to 5-timers grenser — se [[feedback_bildelesing_koster_ekstremt]]. | **Kveld:** tre Multicase-saker gjennomgått og besvart (samlet svar-utkast klart, holdes til mandag) — 215952 undersider (`/milwaukee/packout` lar seg gjøre, bryter ikke utvikling), 213758 ytelse (kritisk CSS bekreftet ikke aktivert; WebP-problemet vårt er opplasting, ikke levering), 217127 oppgradering (tilbud allerede godtatt, venter på testmiljø + dato).
+| 1.–2. sept | **FT Aviation: full SEO-gjennomgang av alle 17 sider + egen ukesrapport.** Search Console-tilgang på plass (`sc-domain:ft-aviation.no`), og **sitemapen var aldri innmeldt** — det forklarte at 9 av 17 sider var «unknown to Google». Meldt inn (17 URL-er, 0 feil), `Sitemap:`-linje og `Disallow: /Search.aspx` lagt i robots.txt på **begge** nettsteder. Hver side fikk tittel, meta under 150 tegn, fire OG-felter, JSON-LD og eget delingsbilde 1200×630. **Forsidens JSON-LD rettet:** `hasOfferCatalog` ga 12 Product-feil i Search Console → byttet til `ItemList`, `areaServed` = Worldwide. **Banneret slått sammen** fra to publiseringer til én (begge hadde `media`-queries alt; fjernet en video som gir 301 og en på 9 MB). **Slideren fikset** — Multicase spiser tomme `<label>`, løst med script som injiserer dem etter lasting. **Kontaktskjemaet:** FTA hadde fortsatt reload-heuristikken som fosen-tools.no fikk fikset 17. aug → erstattet med interaksjonskrav. **Ny `npm run fta-rapport`** (GA4 502811501 + GSC + Facebook + YouTube → A4-PDF), satt som **steg 1 i `/mandagsokt`**. Lærdom som kostet mest: **ikke verifiser Multicase-sider med curl** — fire gale konklusjoner på to dager, alle fanget av Adrian. |
+| 4. sept | **SEO-dag: meta og OpenGraph på 16 sider, pluss butikkskjermer og jubileumsvideo.** Skjermene: egne kampanje-spillelister (Milwaukee −20 %, Solid Gear −30 %) i stedet for slides limt inn i drift-listene, og jubileumsvideoen på Wera-skjermen. **Jubileumsvideo** bygget av 21 klipp fra 26. juni, 41 sek 16:9 uten lyd. **Story-grafikk** til begge rabattene. **Nullpris-gjennomgang** av hele databasen: 920 nullpriser, ingen viser 0 kr for kunden, men fem Wera-varer med pris ligger bak Forespør. **Multicase-sak meldt** om manglende og feil lagerlokasjon i plukkrapporten. **Screw Grab-siden bygget om**: banner etter produsent-malen, roterende produktbilde i HTML, ny tekst uten «gravert». **Global head-blokk ryddet** — sidespesifikk OG fjernet, den overstyrte hver sides egen tittel ved deling. **Meta og OG levert** for forsiden, /produkter, /arbeidsklær, ti toppsider og fire kundesenter-undersider. Nytt verktøy `scripts/og-bilde.mjs`. **ATEX-undersøkelse** kjørt som eget spor. Fire feil rettet underveis: slagordet oppfunnet, «40 merker» som salgsargument, «gravert» om HDFI, og H1-er målt i rå HTML der de settes klientside. |
+| 16. sept | **FTA-video for uken lastet opp + YouTube i FTA-ukesrapporten.** F-35 Maintenance Docking System (122631) på @ft-aviation via `yt-last-opp.mjs --kanal fta --plan`: Short `EeUQc0Z1v3w` + 16:9 `kLy_t75h8WU`, publishAt onsdag 16. sept kl. 12:00, 13 tags, thumbnails på begge. **Thumbnailen bygget om** på Adrians ønske: 05.jpg (hele systemet ovenfra, 5760 px) i stedet for lavoppløste 01.png, tekst auto-krympet til tekstfeltet etter at Korolev er lastet (`scripts/_tmp-fta-thumb-docking.mjs`, 16:9 + 9:16). **`fta-ukesrapport.mjs` fikk egen YouTube-seksjon** (uke mot uke, topp videoer, publisert denne uka) med Analytics API som primærkilde og lokalt øyeblikksbilde (`scripts/data/fta-yt-snapshot.json`) som fallback; Analytics krever at Adrian slår på API-et i Google Cloud og re-auther FTA-tokenet (scope lagt til i `yt-auth.mjs`). Bug: `import.meta.url`-pathname ga `%20` i stien og skrev aldri fila. **Caps i Blender:** gummi-patch «Fosen Tools» under hverandre lagt på mesh-sida av trucker-capsen (`Trucket-Hat V1/Trucket-Hat-FosenTools.blend`), seks forsøk før det satt; patchen flyttet til høyre side, mindre og lavere; F-en på fronten fjernet fra teksturen; prøvd som brodering (displace-puff, deretter ekte .pes-stingfil via pyembroidery + Adrians «Embroidery Importer»-addon) men endte som hvitt plast-relieff etter Adrians vurdering; egen HDFI-versjon (`Trucket-Hat-HDFI.blend`) med rund gummipatch på fronten; 17 renders i `Previews/Render-2026-09-16*/`. Se `memory/project_caps_gummipatch_blender.md`. |
+| 14.–16. sept | **Kategorisider med produktbilder, aviation-analyse for Erik, FTA docking-video og Packout-demodag.** OG-bildene på 374 av 494 kategorisider viser nå mest besøkte produkt (GA4 6 mnd) frilagt fra Multicase-foto, valgt på kategoriord med tier-regler + manuelle avvisninger; 67 generiske OG-tekster skrevet om, fire feiltitler rettet. `sjekk-kategori.py` godtar nå august-malen (BreadcrumbList+FAQPage) og leverer kun JSON-LD der resten ligger ute; Adrian er kommet til Piper og skraller (171 riktige, 48 å rette, 97 ikke påbegynt). **Aviation:** graf til Erik, 27 referral-sesjoner på 6 mnd (mest oss selv), /aviation lenker ikke til ft-aviation.no; møtedeck med tre alternativer (behold/bygg om, videresend, slett) + notat om hvorfor produktene bør ligge på begge; Multicase redirect-modul **godtar eksternt mål** (verifisert på f-18, siden må slettes først; lista har ingen søk og tilfeldig rekkefølge, hent via `GetRedirectRules`-API). FT og FTA deler backend. **FTA:** 122631-videoen bygget om til «F-35 Maintenance Docking System» med Adrians tekst (3 format + captions + thumbs), publiseres onsdag 16. sept, ingen torsdagspost denne uken. **Packout-demodag 24. sept** (Milwaukee, 25 % kun i proff-butikken): post A/B + story + captions + nyhetsbrevavsnitt + skjerm-spilleliste, sendt Brit for vurdering. |
+| 18. sept (kveld) | **Domeneporteføljen ryddet: 12 verter videresender riktig.** Seks lå på ProISP-webhotell med `.htaccess` (irega.no og hullsag.no gikk til et subdomene som svarte **404**; hdfi.no serverte «Under construction»). Fem hadde **ikke webhotell** — de ligger nå på et eget Vercel-prosjekt `fosen-tools-domener` (gratis, automatisk sertifikat, som også løste kctools.no sitt ugyldige sertifikat): kctools.no→/kc-tools, stoltbedrift.no→/om-oss, toolrebel.no og toolrebels.no→/wera, fosen.tools→forsiden. **Funn:** videresending ligger ikke på domenesiden i ProISP-panelet, men i webhotellets `.htaccess` — derfor slo Adrians egne endringer aldri inn. **fosen-tools.no ligger ikke hos ProISP**, men hos Visolit/TeleComputing. fosen-tools.net og .org er «pending validation» hos Realtime Register; Adrian besluttet at det går fint. Leveranse: `~/Desktop/FT-analyse-18sept/domener.html`. |
+| 18. sept (ettermiddag) | **SEO-analyse: merkesøket brakk i oktober 2025.** Klikkraten på «fosen tools» falt 76 %→19 % i okt–nov 2025 på uendret posisjon og uendret søkevolum, og hele nedgangen mot i fjor (−706 klikk) ligger i det ene ordet. **Bing klikker 25,6 % på «fosentools» mot Googles 6,4 %** — forskjellen er kunnskapspanelet Google legger over treffet. Brand Search-annonsen henter det tilbake: 450 betalte merkeklikk i august mot 64 organiske, til 1,01 kr stykket. Strukturfunn: **6× høyere klikkrate når merkenavnet står i søket**, og 43,6 % av alt vi viser på side 1 gir null klikk — vi rangerer, men blir ikke valgt, så metaarbeid alene kan ikke lukke gapet mellom kategorisider (0,75 %) og produsentsider (3,01 %). Nye Multicase-saker: **hullsag.no og irega.no 301-er til et subdomene som svarer 404**, og 180 produkter ligger publisert under `/merke-ukjent` (151 av dem i Google). Gode nyheter: kjøpssporingen virker igjen (18 kjøp / 92 647 kr i sept), robots.txt er frisk, og www er riktig satt opp. Leveranse: `~/Desktop/FT-analyse-18sept/`. |
+| 18. sept | **/referanser-landingssiden bygget av datafilene, og minneindeksen reparert.** Landingssiden (179 caser) genereres nå av `scripts/_tmp-ref-landing3.mjs`, som leser de ni datafilene kategorisidene selv bygges fra og slår hver lenke opp i meny-fasiten — ingen rendring av nettstedet. Fant at Heli Tek-settet lå i innlegg-datafila selv om siden ble flyttet til verkstedinnredning 17. aug; rettet i generatoren, ikke i datafila, siden kategorisidene står riktig ute. To lenker peker på sider som ennå ikke er opprettet (Norrønafly, montørvogn), og scriptet sier selv fra når de er inne. **MEMORY.md var 35 kB mot 24,4 kB i grense, så 56 minner ble aldri lastet** — hooks trimmet til klausulgrense, to uindekserte filer lagt inn, nå 202/202 på 22,3 kB. |
+| 7. sept | **FTA-videoer, /aktuelt ryddet og to rapportfeil funnet.** To FT Aviation-videoer bygget (wash kit + ny `FTANations`-komposisjon for 15 liveries), begge lastet opp med thumbnails og captions. `/aktuelt/referanseprosjekter` slettet med 13 omdirigeringer etter at alt innhold var berget. **Halvårsrapportens to hovedtall er feil:** metarunden på kategorisidene er verdt ~175 klikk, ikke 1 500, og produktsidenes «fall» er sesong. Erik ba om oversikt over lagervarer uten nettside: 3 109 funnet. |
+| 31. aug | **Mandagsøkt + dyp SEO-gjennomgang.** Ukesrapport uke 35. Nyhetsbrev 1. sept (Milwaukee momentnøkler, lager + 20 % verifisert live). Multicase-svaret sendt i **215952** (217127 er registrert på Erik). To hjulpipesett lagt på hjulskift-siden. **Kjøpssporingen brakk 21. aug** — kvitteringssiden er `/kvittering` (ikke `/bekreftelse`), GTM frikjent, nettbutikken sender ikke lenger `purchase`; venter til 7. sept. **Bing Webmaster API koblet opp** (`scripts/bing-stats.mjs`). **AI-synlighet 5/7, opp fra 2/7** — 12-månedersmålet nådd etter tre. **Kategorisider målt:** 410 av 494 mangler H1, 226 har meta under 120 tegn, CTR 0,76 % mot 3,06 % på produsent-sider. **Produsent-meta settes med JS og når aldri Bing.** Referanse-redirects droppet: ~14 000 rader over 164 sider gjør manuell rydding uaktuelt. |
 ---
 
 ---
+
+## Siste sesjons-sammendrag (14.–16. september 2026 — kategorisider, aviation, FTA og Packout)
+
+### Kategorisider: produktbilder på OG-bildene
+Adrian spurte om OG-bildene kunne vise de mest populære produktene. Pipeline i
+`~/Desktop/FT-kategorisider/`: `velg-produkter.py` (kandidater per side: tier 0 =
+produktnavnet inneholder kategoriordet, tier 1 = tilbehør/stativ/«for …», tier 2 = resten;
+mest besøkt innenfor tier; `OVERRIDE` for manuelle valg) → `scripts/_tmp-og-produktbilder.mjs`
+(produktside med crawler-UA → JSON-LD-bilde → original uten `.wNNN` → frilegging med
+hvit-bunn-, rektangel- og dis-regler + `AVVIS`-sett) → `koble-produktbilder.py` (`TEKST`-sett
+for sider som skal ha tekstbilde) → `regen-og-alle.py` (`KUN=urls.json` rendrer bare de).
+374 av 494 sider har produktbilde. `_tmp-og-flatsjekk.mjs` fant åtte feil reglene ikke tok
+(mørk bakgrunnsblokk, emballasjekort, plantegning, produkt med feil bilde). Se
+`memory/project_kategorisider_og_produktbilder.md`.
+
+**Tekstbildene:** 67 hadde plassholdertekst «X – Y fra Fosen Tools.», fire sider hadde feil
+tittel (årskontroll het «Brekkjern og maskinspett», elbil-sidene var forskjøvet), én side fantes
+ikke. Alt rettet via `overrides.json`. Kombinasjonsnøkler-metaen var ødelagt («…,,,,.»).
+
+**Sjekkeren:** Innredning og Fallsikring ble bygget i august med BreadcrumbList + FAQPage uten
+CollectionPage; `sjekk-kategori.py` krevde CollectionPage og ba Adrian bytte ferdig innhold.
+Rettet: godtar eldre mal, leverer kun JSON-LD-script bygget av live tittel/meta/FAQ der intro,
+FAQ og CTA ligger ute (`kun_ld`), og filnavn kappes ved mange kategorier. Status 15. sept for
+Arbeidsklær–Piper og skraller: 171 riktige, 48 å rette, 97 ikke påbegynt (82 er Piper-undersider).
+Adrian sletter tomme sider selv (`/momentverktøy/moment`, `/nøkler/skiftenøkler` borte).
+
+### Aviation: Eriks spørsmål og møtet 17. sept
+Erik ville se trafikk fra fosen-tools.no/aviation til ft-aviation.no. Svar: 27 referral-sesjoner
+på 6 mnd, 23 av dem fra Ørland/Stjørdal/Trondheim i uke 34–36 (oss selv). /aviation-sidene
+lenker til `/ft-aviation` (produsentsiden på FT), ikke til FTA. /aviation: 583 besøk/6 mnd, 90 %
+menyklikk, 8–9 Google-klikk/mnd. Leveranser: `~/Desktop/FTA-trafikk-6mnd/` (graf),
+`~/Desktop/FTA-begge-sider/` (notat: hvorfor produktene bør ligge på begge),
+`~/Desktop/FTA-mote-onsdag/` (8 lysbilder: tre alternativer, 1 behold og bygg om, 2 videresend,
+3 bare slett; ingen anbefaling, produsentside ute som alternativ etter Adrians ønske),
+`~/Desktop/FT-aviation-redirects/` (35 rader med FTA-mål, holdes til møtet).
+
+**Multicase-funn:** redirect-modulen godtar eksterne mål (301 fra `/aviation/aircrafts/f-18`
+verifisert), men siden må slettes først. Admin-lista (166 sider) har verken søk eller
+sortering, og serveren gir radene i tilfeldig rekkefølge; hent alt via
+`vm.service.GetAction("GetRedirectRules",{page,displayLimit:1000})` fra innlogget fane og
+dedupliser. Test-raden 16545 slettet på Adrians ja. **FT og FTA deler Multicase-backend**, så
+produkttekster er felles; lenker/språk må ligge i menyer, landingssider og produsentsider.
+
+### FT Aviation
+122631-videoen bygget om etter Adrians tekst: eyebrow «GROUND SUPPORT EQUIPMENT», navn
+«F-35 MAINTENANCE DOCKING SYSTEM», chip «9 MODULES»; bullets og fem tekstslides fra teksten
+(modulært, kjøp separat, F-35-geometri, sikker klaring, 40+ år). Filer i
+`~/Desktop/FTA-videoer-sept/` (`f-35-maintenance-docking-system-9-modules-{REEL,SQUARE,WIDE}.mp4`,
+54 s, whoosh), thumbs, `captions-f-35-maintenance-docking-system.html`. Gamle i `_gammel/`.
+**Publiseres onsdag 16. sept som ukens post; ingen torsdagspost denne uken** (godkjenningen
+tok for lang tid). Ikke lastet opp til YouTube ennå. MH-60R-videoen står på vent (anbud).
+
+### Packout-demodag torsdag 24. september
+Milwaukee kommer (Fredrik, Packout + håndverktøy), 25 % på Packout kun i proff-butikken.
+Pakke i `~/Desktop/FT-packout-demodag/`: post A (overskrift «Milwaukee kommer til
+proff-butikken», 25 % som rødt merke) og B (25 % som overskrift), 4:5/1:1/9:16, foto fra
+Packout-artikkelen, store Factory Store- og Milwaukee-logoer, `captions.html` (FB/IG/LI/story/
+ALT/nyhetsbrev 22. sept). Spilleliste «24. sept kampanje — Milwaukee Packout» opprettet
+(rabatt_hero −25 %). Sendt Brit for vurdering. Klokkeslett og navn ikke med.
+Regel lagret: leverandørbesøk promoteres som jubileet, prosent skrives «25 % på X», aldri «−25 %».
+
+### Feil jeg gjorde
+Rapporterte Fallsikring som «ingen har publiseringsblokka» på grunn av CollectionPage-kravet;
+foreslo lenker på produktsider og språk-skille som ikke går med felles backend; slettet feil
+OG-fil med for bredt `find`-mønster (regenerert); regex som fjernet en tabellkolonne i
+møtedecken (satt tilbake); ga rekkefølgen «redirect før sletting», som er motsatt.
+
+## Siste sesjons-sammendrag (7. september 2026 — FTA-videoer, /aktuelt og to rapportfeil)
+
+Lang mandag. Tre spor: to FT Aviation-videoer bygget fra bunnen, `/aktuelt` ryddet, og
+en SEO-analyse som endte med å rette to av hovedtallene i halvårsrapporten.
+
+### FT Aviation: to videoer, seks filer
+
+**Ny Remotion-komposisjon `FTANations`** i FTA Studio for produkter som finnes i mange
+varianter. Ikke bildekarusell, men rytme: hook, produktet, en bro, femten liveries i
+kaskade med teller, rutenett, og skvadronmerke til slutt. Bygget for F-35 intake- og
+exhaust-pluggene, som finnes i tretten nasjonsmerkinger pluss svart og rød.
+
+Begge videoene er lastet opp og planlagt: wash kit publisert 7. sept kl. 15
+(`uj4npA2jmO0` wide, `zsTismQ4qJA` Short), nasjonsvideoen torsdag 10. sept kl. 12
+(`D1hQqOsjTN4`, `eG6KZC9WENo`). Thumbnails i både 16:9 og 9:16, captions splittet per
+flate. Instagram, Facebook og LinkedIn legges ut manuelt.
+
+**Tre faktafeil på wash kit, alle fanget av Adrian:** Peli mot Opticase, én koffert mot
+to, og begge med hjul mot bare den nederste. Fellesnevneren var at jeg utledet tellbare
+detaljer av produktteksten i stedet for å telle i bildet. Regel lagret.
+
+**Fire kvalitetsregler låst inn:** lesetid regnes per slide før varighet settes, men
+Adrians verdier gjelder over modellen. Alt rendres i `deviceScaleFactor: 2`. Komprimering
+velges etter bruk. En dekodefeil løses aldri ved å gjøre om til JPEG.
+
+### /aktuelt
+
+`/aktuelt/referanseprosjekter` er slettet med tolv undersider, og 13 omdirigeringer er
+lagt inn og verifisert: alle 301, ett hopp, riktig mål. Seksjonen duplisert `/referanser`
+med sine 177 caser.
+
+**Alt innhold ble berget først.** To caser jeg trodde manglet viste seg å ligge ute fra
+før — funnet ved å sammenligne bilder og EXIF-datoer, ikke navn. Nyhetssaken om
+Forsvarsbygg og F-35-deployeringsbyggene er bevart og omdirigert til `/aviation/deployment`,
+siden den er FT Aviation-stoff.
+
+**Oppbygningen er kartlagt:** artiklene bruker et blogg-element med tittel, ingress og
+bilde, og kortene på `/aktuelt` genereres av de feltene. Det forklarer hvorfor hjulskift
+forsvant fra oversikten da den ble bygget om til rå HTML, og hvorfor H1 ikke kan limes
+inn per side.
+
+**Funn som gjenstår:** 77 av 177 referansecaser har gammel `<dl>`-markup i faktaboksen og
+knekker ved neste lagring. Seks er allerede ødelagt.
+
+### To feil i halvårsrapporten
+
+**Metarunden på kategorisidene er verdt ~175 klikk per 90 dager, ikke 1 500.** Jeg
+tilskrev produsentsidenes høye klikkrate metateksten, men den kommer av at de rangerer
+på plass 1–5 på merkenavn. Kategorisidene har allerede gode metatekster. Generiske
+verktøyord eies av Biltema og Jula, og vi er ikke i topp 20 på «rørtang» eller
+«arbeidsbukker».
+
+**Produktsidenes fall er sesong, ikke forfall.** På sammenlignbar sesong mistet de 43 %
+av visningene, men bare 8 % av klikkene, og klikkraten steg 60 %. Vi kvittet oss med
+visninger som aldri ga klikk, etter robots.txt-fiksen og de 107 redirectene. Nettstedet
+rangerer 5,7 plasser bedre enn i fjor.
+
+Adrian valgte å ikke rette rapporten før mandagsmøtet.
+
+### Åpent til 8. september
+
+`/aktuelt` videre (rekkefølge i admin, H1 og innledning, de to sonene som viser
+inspirasjonsartikler under en referanse-knapp). Produktoversikten til Erik. Og torsdagens
+FTA-publisering på IG, Facebook og LinkedIn kl. 12.
+
+---
+
+## Siste sesjons-sammendrag (4. september 2026 — SEO, skjermer og fire rettelser)
+
+Lang dag med to spor: butikkskjermer og innhold om morgenen, meta og OpenGraph
+på seksten sider resten av dagen.
+
+### Butikkskjermene, og en tabbe som ble et mønster
+Milwaukee kom på besøk, og skjermene skulle vise dagens rabatter. Jeg la først
+slidene rett inn i drift-spillelistene. Adrian: *«det du gjorde nå var å legge en
+slide inn på et annet slideshow»*. Riktig framgangsmåte er **egen spilleliste per
+kampanje**, døpt etter dato og merke, og så peke skjermen dit. Da er dagen over
+ved å bytte tilbake, uten å slette noe.
+
+Kampanjedagen skal listene inneholde **kun rabattsliden**. Ingen produkter, ingen
+video. Lagret i [[feedback_butikkskjermer_to_tokens]] sammen med et funn:
+`rabatt_hero` viser ikke `subtitle` når merkelogoen er hovedmotiv, så
+presiseringer må inn i `pills` eller `extra_text`.
+
+### Jubileumsvideoen
+21 klipp fra 26. juni ble til 41 sekunder. Kontaktark først, så 17 klipp der det
+faktisk er folk. Kort overtoning og lange hold, ellers leses det som
+gjennomsiktighet i stedet for klipp. Uten lyd, 16:9 med vilje — poenget er å vise
+bredden, og den forsvinner i 9:16.
+
+### Nullpriser: spørsmålet var feil stilt
+920 av 26 924 varer har 0 i utsalgspris. 679 er variantmødre. Av de 24 som
+faktisk ligger ute på nett viser **alle Forespør**, ingen viser 0 kr.
+
+Sidefunnet er større: **Forespør styres ikke av prisen**. Fem Wera-varer med
+priser fra 1 373 til 5 214 kr ligger også bak Forespør, altså kan kunden ikke
+kjøpe dem. Fem av 196 er 2,5 %. Holder andelen på tvers av merkene, stoppes salg
+uten grunn. Ikke undersøkt videre.
+
+### Screw Grab
+Erik ba om en søkeordskampanje. Tallene sa nei: «screw grab» har **20 søk i
+måneden**, og vi står allerede på plass 4. «Skrueutdrager» har 880, men det er
+produktet du bruker etterpå, og vi har to slike, begge skaffevare.
+
+Det som derimot var galt: siden hadde **ingen innhold**. Ingen H1, ingen tekst,
+ingen FAQ, ingen schema. Nå har den banner etter produsent-malen, roterende
+produktbilde bygget i HTML, fem FAQ og JSON-LD.
+
+### Den globale head-blokka
+`og:title` og `og:description` lå globalt og **overstyrte hver enkelt sides egen
+tittel ved deling**. Alle sider ble delt som «Fosen Tools | Skreddersydde verktøy
+og industriløsninger». Fjernet. `twitter:card`, `og:site_name` og `og:locale` er
+beholdt, de er like på alle sider. Samtykket utvidet med to felter FTA hadde og
+vi manglet. GTM-lasteren fra FTA ble bevisst ikke kopiert, den ville gitt dobbel
+telling.
+
+### Seksten sider fikk meta og OG
+Forsiden, /produkter, /arbeidsklær, ti toppsider og fire kundesenter-undersider.
+Nytt verktøy: `scripts/og-bilde.mjs`, som nekter filnavn som ikke slutter på
+`-og.jpg` så navnet alltid stemmer med `og:image`.
+
+Funn underveis: `/aktuelt/baerekraft` hadde **to skrivefeil i tittelen** live,
+`/kundesenter/startside` hadde ingen metabeskrivelse, `/aviation` het «The future
+in aviation» uten merkenavn, `/produsent` hevdet «Over 150 verktøymerker» der
+veggen viser 56, og tre metabeskrivelser ble kuttet midt i ordet på 153-grensen.
+
+**Og en feil hos Multicase:** enhver ukjent sti under `/kundesenter/` 301-er til
+en tilfeldig sirkelsag. Testet med og uten økt. Menyen der bruker postbacks som
+Google ikke kan følge, Vilkår har ingen fungerende adresse, og ingen
+kundesenter-sider ligger i sitemap.
+
+### Fire feil jeg gjorde
+1. **Fant opp slagordet.** Skrev «Verktøy for folk som lever av dem» på forsidens
+   delingsbilde. Det ekte er «Din komplette leverandør av driftseffektive og
+   bruker-tilrettelagte løsninger!», nå lagret i [[feedback_ft_slagord]].
+2. **«Verktøy fra 40 merker»** som meta-tittel. Antall som salgsargument bryter
+   Eriks doktrine, og gjør FT om til en forhandler i den ene setningen som er
+   mest synlig i Google.
+3. **«Gravert silhuett»** om HDFI. Gravert er lasergravering på verktøyet, det i
+   innlegget er maskinert inn. Formuleringen står fortsatt live på `/hdfi`.
+4. **Målte H1 i rå HTML.** Konkluderte med at ni av ti sider manglet H1. De
+   settes klientside. Rakk å be Adrian endre en `h2` til `h1` før det ble
+   oppdaget. Tallet «410 av 494 kategorisider mangler H1» fra 31. august er målt
+   på samme måte og må etterprøves.
+
+### Ellers
+YouTube-committen fra 3. september pushet, jeg kunne gjøre det selv hele tiden.
+Trakk.ai besvart og lukket. ATEX-undersøkelse kjørt som eget spor.
+
+---
+
+## Siste sesjons-sammendrag (1.–2. september 2026 — FT Aviation)
+
+To dager på ft-aviation.no. Nettstedet hadde aldri vært gjennom en SEO-runde, og
+det viste seg at det manglet noe mer grunnleggende enn metatekst.
+
+### Sitemapen var aldri meldt inn
+Det forklarte alt. **9 av 17 sider var «URL is unknown to Google»** — hele Who We
+Are-grenen, News, eventkalenderen og Contact Us. Google hadde bare funnet de fem
+sidene den kom til via lenker fra forsiden. Who We Are ligger ikke i menyen, så
+den hadde ingen vei inn i det hele tatt.
+
+Meldt inn 2. september: 17 URL-er, 0 feil, lest av Google ett sekund etter
+innsending. `Sitemap:`-linja og `Disallow: /Search.aspx` er nå på plass i
+robots.txt på **begge** nettsteder. FTA bruker www i sitemap-adressen,
+fosen-tools.no bruker uten.
+
+### Alle 17 sidene gjennomgått
+Hver fikk tittel, metabeskrivelse, fire OG-felter, JSON-LD og eget delingsbilde.
+Leveransene ligger på skrivebordet som `FTA-{side}.html` med kopi-knapper.
+
+**Multicase kutter metabeskrivelsen ved 153 tegn** og setter på «...», midt i ord.
+Forsiden endte på «…precision, and efficie…». Alle er nå under 150.
+
+**Delingskortene var tomme.** `og:image` pekte på et SVG-favikon, som verken
+LinkedIn eller Facebook viser. Lå i den globale head-blokken og rammet alle 17.
+
+### Tre feil som ikke var SEO
+**Forsidens JSON-LD ga 12 Product-feil** i Search Console. `hasOfferCatalog`
+pakket fire produkter som `Product`, og Google krevde da pris eller anmeldelse,
+som FTA ikke har. Ganget med tre fordi banneret lå i to publiseringer. Byttet til
+`ItemList`.
+
+**Banneret trengte aldri to publiseringer.** Begge hadde `media="(max-width: 768px)"`
+alt. Slått sammen til én, og på veien fjernet en videokilde som gir 301 og en på
+9 MB der en 3 MB-versjon finnes.
+
+**Slideren mistet slide 2 og 3 ved hver lagring.** Multicase-editoren fjerner tomme
+`<label>`, som CSS-slideren styres av. Løst med script som setter dem inn etter
+lasting, samme mønster som catgrid-en på fosen-tools.no.
+
+### Kontaktskjemaet var fortsatt ødelagt
+FTA hadde reload-heuristikken som fosen-tools.no fikk fikset 17. august: takkemelding
+og `fta_support_form_success` hver gang Freshdesk-iframen lastet, uten å sjekke om
+noen hadde rørt skjemaet. Verst er at **en ekte kunde kunne få takkemeldingen uten
+at henvendelsen ble sendt.** Erstattet med interaksjonskrav.
+
+Første GA4-tall viste **28 som begynte å fylle ut, 1 som sendte inn.**
+
+### Ny ukesrapport for FT Aviation
+`npm run fta-rapport` bygger en A4-PDF i navy og gull med GA4 (property 502811501),
+Search Console, Facebook og YouTube. **Satt som steg 1 i `/mandagsokt`**, ikke siste,
+fordi den er selvstendig og ikke skal kunne glemmes.
+
+Uke 36: 23 sesjoner (−26 %), 155 sidevisninger (+67 %). Who We Are er nest mest lest
+med 22 visninger, selv om den ikke er i menyen.
+
+### Lærdommen som kostet mest
+**Ikke verifiser Multicase-sider med curl.** Prerender-cachen gir 0 ord på sider som
+har alt, oppvarming virker av og til, og under publisering svarer serveren HTML på
+robots.txt. Jeg trakk fire gale konklusjoner på to dager — «14 av 17 mangler H1»,
+«alt lastes med JavaScript», «nyhetssiden leverer ingenting», «ni sider er tomme» —
+og Adrian fanget hver eneste. Til slutt med *«du kan jo ikke crawle multicase sider,
+lær deg det nå»*.
+
+Riktig verktøy: **URL Inspection API** for hva Google har, og **spørre Adrian** for
+hva som står på siden. Lagret som [[feedback_ikke_crawl_multicase]].
+
+### Åpent
+- **Nettstedsnavnet** er «Aviation», ikke «FT Aviation». Melding til Multicase klar
+  på skrivebordet.
+- **Indeksering:** 10 av 12 forespørsler sendt. Sjekk status om en uke.
+- **Snagger:** fire skrivefeil, artikkel 114253 med to navn, norsk produktnavn på
+  engelsk side, manglende banner på Energy Solutions, død lenke i nyhetslista.
+  Alt i [[project_fta_seo_snagger]].
+
+---
+
+## Siste sesjons-sammendrag (31. august 2026 — mandagsøkt + dyp SEO-gjennomgang)
+
+Lang dag. Tre leveranser, to feil jeg måtte rette, og ett funn som endrer hvordan
+vi måler alt annet.
+
+### Kjøpssporingen brakk 21. august
+`purchase` i GA4 har ikke fyrt siden 20. august. Kvitteringssiden nås fortsatt —
+21., 23. og 26. august — uten at en eneste ordre registreres.
+
+GTM er kontrollert og frikjent: utløseren er en egendefinert hendelse på `purchase`
+uten sidebetingelse, taggen *GA4 - Ecommerce* er aktiv, og siste publisering før
+bruddet var 18. august. **Nettbutikken har sluttet å sende hendelsen.** Adrian
+besluttet å vente til **7. september** før saken meldes Multicase, forsvarlig fordi
+Brand Search er eneste aktive kampanje og budgir mot klikk.
+
+**To feil jeg gjorde underveis:** jeg brukte `/bekreftelse` som mål på ordrer — feil
+side, den er nåbar uten kjøp og har 2–8 brukere daglig uansett. Kvitteringen heter
+`/kvittering`. Og da Adrian sa det bare fantes to webordrer, konkluderte jeg for
+raskt med at GA4s tolv kjøp måtte være oppblåste og ROAS-grunnlaget feil. Galt:
+ordrene har fortløpende ordrenumre 1014728–1014912 og ekte varelinjer. Sjekk
+transaksjons-ID før du påstår at en konvertering er falsk.
+
+### Dyp SEO-gjennomgang — første siden 1. juli
+Juni–august mot mars–mai: visninger **+23 %**, klikk **+6,5 %**, men CTR ned fra
+2,10 % til 1,82 % og posisjon fra 13,2 til 14,1. Vi blir sett mye mer og klikket
+relativt mindre.
+
+| Sidetype | Sider | Visninger | Klikk | CTR |
+|---|---|---|---|---|
+| Produktsider | 7 219 | 188 892 | 3 553 | 1,88 % |
+| **Kategorisider** | 520 | 127 066 | 964 | **0,76 %** |
+| Produsent/landing | 157 | 48 128 | 1 471 | **3,06 %** |
+| Artikler | 32 | 16 939 | 124 | 0,73 % |
+
+Kategorisidene er lekkasjen, og vi vet hvorfor: **410 av 494 mangler H1**, 226 har
+meta under 120 tegn. Produsent-sidene, der meta er skrevet ordentlig, har fire
+ganger klikkraten. Rundt **1 500 klikk per kvartal** ligger i å lukke gapet.
+Adrian parkerte det som del av den systematiske kategorigjennomgangen, ikke en
+egen meta-runde.
+
+### Produsent-meta når aldri Bing
+Tittel og meta settes med JavaScript. Bing kjører ikke JS, så Bing ser «Snapon»
+og «Gedore» som hele beskrivelsen. Sidene autogenereres på `/{produsent}` og kan
+ikke få serverside-meta — won't-fix. Rammer ChatGPT og Copilot, som leser Bings
+indeks. Se [[feedback_meta_via_js_usynlig_for_bing]].
+
+### AI-synlighet: målet nådd etter tre måneder
+FT nevnes i **5 av 7** AI-svar mot 2 av 7 den 18. august, med **førsteplass på
+fire**. Suksessmålet var 4/7 i topp 3 innen tolv måneder. Gjenstår «Hva er HDFI?»,
+der vår egen side leses som kilde uten at vi krediteres, og «industri-verktøy i
+Trøndelag», der vi mangler i katalogene AI henter fra.
+
+### Bing koblet til API
+`scripts/bing-stats.mjs` henter trafikk, søkeord og sider automatisk. Baseline
+18.–29. aug: 73 klikk, 3 927 visninger, CTR 1,86 %. «fosentools» alene står for 21
+av 73 klikk. **Bing dubler rader per segment** — må aggregeres, ellers underrapporteres alt.
+
+### Referanse-omdirigeringene: droppet
+Ombyggingen virker (539 visninger på 17 dager mot 246, indekserte sider 41 → 119),
+men de gamle adressene lever fordi Multicase aldri gir 404. Roten svarer **302**,
+og flere undersider faller gjennom til den noindex-e søkesiden. Rydding ble avblåst:
+redirect-modulen har **~14 000 rader over 164 sider** på grunn av land-prefikser,
+og hele premien er 138 visninger og 2 klikk. Hører hjemme hos Multicase som
+bulk-operasjon, ikke som manuell klikking.
+
+### Ellers levert
+Ukesrapport uke 35. Nyhetsbrev 1. september (Milwaukee momentnøkler, lager og 20 %
+verifisert live samme morgen). Multicase-svaret sendt i **215952**, fordi 217127 er
+registrert på Erik og Adrian ikke får svart der. To hjulpipesett lagt inn på
+hjulskift-siden — Wera-bildet lå kun på wera.de og ble bakt til vårt eget lager.
+Forbruksportalens 26 varer kartlagt med priser, og forsideblokk bygget.
+
+**Regler låst:** badgen i nyhetsbrev skal alltid stå «NYHETSBREV», salgsvinkelen
+hører hjemme i emnelinja. Arbeidstiden er 07–15. Alkohol i bilder flagges, men
+Adrian avgjør — jeg skal ikke bytte bildet på egen hånd.
+
+---
+
+## Siste sesjons-sammendrag (27.–28. august 2026)
+
+To dager: forbruksportal og hjulskift-side (27.), deretter kampanjeplanlegging,
+Milwaukee-priser og tre PDF-leveranser (28.).
+
+### Hjulskift-siden — og metoden som ble låst
+`/aktuelt/inspirasjon-og-tips/riktig-verktøy-til-hjulskift` bygget helt om:
+1912 ord, 30 produktkort (29 unike artikler), 6 FAQ, 4 JSON-LD-blokker, egen
+SCSS scopet under `#ft-hjulskift` på artikkeltema 2. Alle produktbilder
+verifisert visuelt mot royalSlider (JSON-LD-bildet kan tilhøre et søskenprodukt).
+
+Fremgangsmåten er nå fasit for sideoverhalinger, lagret som
+`project_sideoverhaling_oppskrift`: mål rendret DOM (aldri curl), behold
+originalteksten, HDFI-struktur i egen SCSS-scope, hvert nevnte produkt får kort
+med verifisert bilde, schema utledes AV den ferdige HTML-en, sjekk
+SystemHeadContent, ingen påstander som råtner.
+
+**SystemHeadContent-funn:** OG-taggene ligger der som et *strukturert
+OpenGraph-element* med egne felter, ikke som rå HTML. Tom beskrivelse arver
+meta description. `og:locale` står feilaktig til en_US.
+
+### Kampanjemøtet (hjulkampanje)
+Erik ba om møte før 28. september. Agenda levert som PDF og .docx (for Google
+Docs): 8 punkter, inkludert **skreddersydd hjulbytte-sett fra CADLAB** som eget
+beslutningspunkt. Datoene bygger på GSC-tall fra i fjor: søk stiger fra siste
+uke i september, klikk topper 27. okt–8. nov. Plan: annonser 28/9, lansering
+6/10, utstilling uke 41, kampanjen til ~15/11. Prisene må være låst 24/9.
+
+### Milwaukee Q3 — rabattene bekreftet
+Ny Multicase-eksport (`AlleProdukter.xls`) MED kostpris og listepris gjorde ekte
+sammenligning mulig. `~/Desktop/FT-milwaukee-Q3-analyse.xlsx`, 7 ark:
+136 prisendringer, 70 erstattede artikkelnumre, 315 reelle utgått-kandidater
+(303 sto allerede som utgått), 6332 nyheter. **Eriks 30/50-rabatter stemmer**
+(701 av 740 maskiner på eksakt 30 %), men 141 avvik må til Lasse — særlig
+5 maskiner som ligger BEDRE enn 30 % (rillemaskin 124854 på 40 %) og som må
+unntas fra flat import.
+
+### Gaveartikler «Edle dråper»
+18 alkoholrelaterte gaveprosjekter funnet i bildearkivet (av 645 mapper),
+stående A4 i off-white/gull med Adrians egne frilagte bilder. Alkoholreklame
+avklart: pris er irrelevant, det er *eksponering i massekommunikasjon* som
+rammes — brosjyren er derfor til kundedialog, ikke publisering. Full doc:
+`project_gaveartikler_edle_draper`.
+
+### FTA MH-60R Seahawk
+Første forsøk (Line Maintenance Docking Modules) traff ikke; Adrian ba om
+picturebook-DNA-et, og da satt det. Ny revisjon fra ledelsen ble bygget som
+**MH-60R Seahawk — Line & Base Maintenance Docking Systems**, 8 sider, mørk
+bakgrunn bak alle bilder, FTAs egne bildetekster, original (4,7 MB) + web
+(1,6 MB). Kilde i `~/Desktop/FTA-Seahawk-kilde/`.
+
+**Feil verdt å huske:** jeg skrev først egne bildetekster på galleribildene —
+Adrian spurte «er du 100 % sikker eller finner du på?», og de ble fjernet. I
+Seahawk-versjonen kom tekstene fra dokumentet selv. Windshield-siden brukte
+samme bildefil som forrige side i kilden (originalen croppet den), og
+base-sidene hadde feil rekkefølge — begge fanget ved å se på bildene.
+
+### Multicase, tre saker avklart (kveld 28. aug)
+
+Kjetil svarte på begge de gamle sakene. Kjernefunnet: **`/milwaukee/packout` lar seg gjøre,
+og det er en innstilling, ikke utvikling.** Menypunkt kan få URL-navn med skråstrek når en
+avslått innstilling slås på; sidene lager vi selv i menybyggeren etterpå. Det gjør hele
+byggelisten i gap-registeret realistisk, siden kostnaden er engangs.
+
+**Landminen:** oppretter noen et menypunkt som heter bare `milwaukee`, flyttes samtlige
+produsentsider på hele butikken til en annen adresse. Kun `/{merke}` er reservert,
+undersider er trygge.
+
+To ting Kjetil må bekrefte før vi bygger: at merke ligger som **attributt** (ellers blir
+alt utenom Packout manuelt vedlikehold), og at malen skriver ut **H1** fra sidetittelen
+(ellers får vi to H1-er når vi limer inn HERO). Forsøkte å verifisere attributt-spørsmålet
+selv, men filterkolonnen ligger ikke i rå HTML og krever rendret DOM; avblåst siden Kjetil
+uansett skal sjekke det.
+
+**Ytelse, målt i dag:** null `<style>` i `<head>` (kritisk CSS er bekreftet ikke aktivert),
+null `font-display` og null `@font-face` i HTML og alle tre stilark (fontene kommer fra
+JS-lasteren), stilark 285 + 258 + 28 kB ukomprimert. **Kritisk CSS er leveringssted, ikke
+innhold** — SCSS kompileres inn i nettopp den render-blokkerende fila, så det kan ikke
+løses i stilarket. **WebP: Kjetil svarer på levering, vårt problem er opplasting** —
+filhåndteringen avviser `.webp`, så bannerne på 10000×2500 (LCP-elementet) kan ikke
+konverteres. Riktig spørsmål er om filtypen kan tillates.
+
+**Oppgraderingen:** tilbudet er allerede godtatt, så vi venter kun på testmiljø-URL og
+dato. Adrians «👍» 18. aug gikk til Erik, ikke til Multicase, så saken kan ha ligget stille
+hos oss. Svaret holdes til mandagsmøtet for å avklare med Erik først.
+
+Utkast: `~/Desktop/Multicase-svar/svar-kjetil.html`. Detaljer i
+`project_multicase_ytelse_svar`, `project_multicase_oppgradering`,
+`feedback_merke_kategori_undersider`.
+
+### Usage — den dyre lærdommen
+**De to PDF-leveransene brente to fulle 5-timers grenser.** Årsak: bildelesing
+blir liggende i konteksten og re-sendes ved hvert verktøykall, så kostnaden er
+(antall bilder × gjenstående arbeid). Gavebrosjyren brukte 60–70 bildelesinger
+der ~10 holder. Harde regler lagret i `feedback_bildelesing_koster_ekstremt`:
+én side godkjent før resten bygges, Adrian ser / jeg leser kun ved mistanke,
+maks én side per iterasjon, arbeidsbilder i 800px, avbryt etter 2 mislykkede
+forsøk, `/clear` mellom store oppgaver.
 
 ## Siste sesjons-sammendrag (18.–21. august 2026 — FT Aviation-lanseringen)
 
@@ -1262,7 +1788,7 @@ Fire dager som tok FT Aviation fra null tilstedeværelse til full lansering, plu
 - **YouTube @ft-aviation:** API-pipeline i drift. 10 videoer (5 Shorts + 5 wide) med engelsk metadata, tags, publishAt man/tor kl. 12 t.o.m. 3. sep. Thumbnails via API på alle wide. VIKTIG: publishAt publiserer av seg selv — ingen manuell Schedule-bekreftelse nødvendig på FTA-kanalen.
 - **Lyd:** FTA Studio rendrer stumme videoer. Sjekk alltid `volumedetect` før publisering. Standard: kun intro-whoosh (`public/sfx/whoosh-cinematic.wav`, 0–3.6 s, vol 0.50), ingen sveip/outro (Adrians valg).
 - **Format-fasit:** IG+FB = reel 9:16 · LinkedIn = square 1:1 · YouTube = begge. Lansering + captions i `~/Desktop/FTA-lansering/` + `FTA-captions.html`.
-- **Meta-begrensningen (19. aug):** sperrer annonsering og samarbeidspartner-funksjonen (invitasjoner droppes stille — verifisert i samarbeids-dashbordet). Klage kun via IG-appen → Kontostatus. Fallback: FT poster egen versjon; FTA er **datterselskap** (aldri «søsterselskap»).
+- **Meta-begrensningen (19. aug):** sperrer annonsering og samarbeidspartner-funksjonen (invitasjoner droppes stille — verifisert i samarbeids-dashbordet). Klage kun via IG-appen → Kontostatus. Fallback: FT poster egen versjon; FTA omtales som **fellesforetak** med Aircontact Group, aldri «søsterselskap». Selskapets egen om-side sier «joint venture between Fosen Tools and Aircontact Group» (bekreftet 10. sept 2026); «datterselskap» her var feil, eierandelene er ikke offentlige.
 
 ### C-130-merket
 Ledelsens AI-genererte merke byttet ut: feil propeller + «AIRLIFT READY / MILITARY STANDARD» + hake = leste som sertifisering FTA ikke har (kun kompatibilitet). Nytt merke: Gemini-komposisjon → Adrian vektoriserte → jeg farget om til FTAs offisielle `goldGradient` fra `brand/tokens.mjs` og satte «C-130 COMPATIBLE» i Korolev som baner. Master + PNG-er i `~/Desktop/FTA-C130-merke/` (+ `bygg-merke.py`), kopi i FTA Studio-assets. 8 produkter bærer merket — fasit i picturebooken, PowerCube kom TIL i nyeste revisjon.
