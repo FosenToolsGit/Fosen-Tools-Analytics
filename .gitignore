@@ -76,6 +76,7 @@ scripts/_tmp-*.ts
 scripts/_tmp-*.cjs
 scripts/_tmp-*.mts
 scripts/_tmp-*.json
+scripts/_tmp-*.py
 
 # Midlertidige media-arbeidsmapper (skal i Supabase Storage, ikke Git)
 /Jubileum-teaser/
@@ -84,3 +85,6 @@ scripts/_tmp-*.json
 /Wera-logo/
 /public/sfx/*.wav
 /public/sfx/*.mp3
+
+# arbeidskopier
+*.bak

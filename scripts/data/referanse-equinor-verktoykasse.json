@@ -1,0 +1,23 @@
+{
+  "format": "reel",
+  "eyebrow": "Skreddersydd verktøykasse",
+  "headline": "EQUINOR",
+  "bannerHeadline": "EQUINOR",
+  "bannerSubline": "Fire skuffer, HDFI i hver",
+  "tagline": "Skreddersydd på Brekstad",
+  "customerLogoUrl": null,
+  "hook": "eyebrow-slam",
+  "tags": [
+    "HDFI",
+    "Offshore",
+    "CADLAB"
+  ],
+  "imageUrls": [
+    "https://fosen-tools.no/userfiles/image/Referanser/Mobilekasser/All-weather%20Snapon/Ferdig(1).jpg",
+    "https://fosen-tools.no/userfiles/image/Referanser/Mobilekasser/All-weather%20Snapon/Ferdig(2).jpg",
+    "https://fosen-tools.no/userfiles/image/Referanser/Mobilekasser/All-weather%20Snapon/Ferdig(3).jpg",
+    "https://fosen-tools.no/userfiles/image/Referanser/Mobilekasser/All-weather%20Snapon/Ferdig(4).jpg",
+    "https://fosen-tools.no/userfiles/image/Referanser/Mobilekasser/All-weather%20Snapon/Ferdig(5).jpg",
+    "https://fosen-tools.no/userfiles/image/Referanser/Mobilekasser/All-weather%20Snapon/Ferdig(6).jpg"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "format": "reel",
+  "eyebrow": "Skreddersydd verkstedinnredning",
+  "headline": "BILVERKSTED",
+  "bannerHeadline": "BILVERKSTED",
+  "bannerSubline": "Samme oppsett i hver vogn",
+  "tagline": "Skreddersydd på Brekstad",
+  "customerLogoUrl": null,
+  "hook": "eyebrow-slam",
+  "tags": [
+    "HDFI",
+    "Verksted",
+    "CADLAB"
+  ],
+  "imageUrls": [
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Bilverksted%201.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Bilverksted%202.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Bilverksted%203.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Bilverksted%204.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Bilverksted%205.jpeg",
+    "https://fosen-tools.no/userfiles/image/Inspirasjon/Workshop/Bilverksted%206.jpeg"
+  ]
+}

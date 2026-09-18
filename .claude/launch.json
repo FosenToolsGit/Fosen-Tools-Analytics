@@ -14,6 +14,14 @@
       "runtimeArgs": ["run", "start"],
       "port": 3020,
       "autoPort": true
+    },
+    {
+      "name": "service",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "service",
+      "port": 3100,
+      "autoPort": true
     }
   ]
 }
