@@ -300,32 +300,33 @@ function extractBullets(html: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
 
-  // Lete etter <ul> innenfor description-container
-  const targets = [
-    /class=["'][^"']*(?:product-description|product-features|feature-list|description|product-detail)[^"']*["'][\s\S]*?<ul[^>]*>([\s\S]*?)<\/ul>/gi,
-    /id=["']description["'][\s\S]*?<ul[^>]*>([\s\S]*?)<\/ul>/gi,
+  // Finn beskrivelses-/feature-containeren og les ALLE <li> i et vindu etter den.
+  // (Milwaukee/TTI-portalen har en tom <ul></ul> først, så «første <ul>» treffer ikke.)
+  const containers = [
+    /class=["'][^"']*(?:product-description|product-features|feature-list|keyfeatures|description|product-detail)[^"']*["']/gi,
+    /id=["']description["']/gi,
   ];
 
-  for (const re of targets) {
-    const matches = [...html.matchAll(re)];
-    for (const m of matches) {
-      const lis = [...m[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
-      for (const li of lis) {
+  for (const re of containers) {
+    for (const m of html.matchAll(re)) {
+      const start = m.index ?? 0;
+      const vindu = html.slice(start, start + 8000);
+      for (const li of vindu.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)) {
+        // hopp over meny-/nedlastings-punkter (de har lenker)
+        if (/<a[\s>]|href=/i.test(li[1])) continue;
         const t = stripTags(li[1]);
-        if (t.length >= 10 && t.length <= 200) {
+        if (t.length >= 10 && t.length <= 300) {
           const key = t.toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
-            out.push(t);
-          }
+          if (!seen.has(key)) { seen.add(key); out.push(t); }
         }
+        if (out.length >= 12) break;
       }
-      if (out.length >= 8) break;
+      if (out.length >= 12) break;
     }
-    if (out.length >= 8) break;
+    if (out.length >= 12) break;
   }
 
-  return out.slice(0, 10);
+  return out.slice(0, 12);
 }
 
 /** Henter lengre beskrivelses-tekst fra intro-paragrafer */
@@ -352,6 +353,16 @@ function extractLongDescription(html: string): string {
     if (all.length >= 80) return all.slice(0, 1500);
   }
   return "";
+}
+
+/** Produsent gjettet fra selve innholdet — brukes når HTML er limt inn uten URL
+ *  (B2B-portaler bak innlogging). */
+function guessManufacturerFromContent(html: string): string | null {
+  const h = html.toLowerCase();
+  if (h.includes("milwaukeetool") || h.includes("milwaukee\u00ae") || h.includes("tti_weco") || /\bmilwaukee\b/.test(h)) return "Milwaukee";
+  if (h.includes("snickersworkwear")) return "Snickers Workwear";
+  if (h.includes("hultafors")) return "Hultafors";
+  return null;
 }
 
 /** Domain-basert produsent-deteksjon hvis JSON-LD ikke har brand */
@@ -384,7 +395,7 @@ function guessManufacturerFromHost(host: string): string | null {
 function extractB2BPrices(html: string): { kostpris: number | null; listepris: number | null } {
   // Norske patterns: "Kostpris", "Innkjøpspris", "Nettopris" → kostpris
   //                  "Listepris", "Veil. pris", "Veiledende pris", "UVP" → listepris
-  const text = stripTags(html).toLowerCase();
+  const text = decode(stripTags(html)).replace(/\u00a0/g, " ").toLowerCase();
 
   function findPriceNear(...patterns: RegExp[]): number | null {
     for (const pat of patterns) {
@@ -404,11 +415,11 @@ function extractB2BPrices(html: string): { kostpris: number | null; listepris: n
   // Tabell-baserte priser i HTML (selv om vi ser på stripped text, finner vi tall etter etikett)
   const kostpris = findPriceNear(
     /(?:kostpris|innkj[øo]pspris|netto[\s-]?pris|nettopris|innpris|kost\s+nok)[^a-z\d]{0,30}([\d.,\s]+)/i,
-    /(?:cost\s+price|net\s+price|buying\s+price)[^a-z\d]{0,30}([\d.,\s]+)/i,
+    /(?:cost\s*price|net\s*price|buying\s*price|nettoprice)[^a-z\d]{0,30}([\d.,\s]+)/i,
   );
   const listepris = findPriceNear(
     /(?:listepris|veil(?:edende)?\.?\s*pris|veil\.?\s*utsalg|uvp|brutto[\s-]?pris)[^a-z\d]{0,30}([\d.,\s]+)/i,
-    /(?:list\s+price|retail\s+price|msrp|rrp)[^a-z\d]{0,30}([\d.,\s]+)/i,
+    /(?:list\s*price|retail\s*price|msrp|rrp)[^a-z\d]{0,30}([\d.,\s]+)/i,
   );
 
   return { kostpris, listepris };
@@ -515,6 +526,12 @@ function parseHtml(html: string, url: string, opts: { scrape_b2b_prices?: boolea
     ? extractB2BPrices(html)
     : { kostpris: null, listepris: null };
 
+  // B2B-portaler har sjelden JSON-LD — hent varenummer/EAN/produsent fra spec-tabellen
+  const specVal = (re: RegExp) => specs.find((sp) => re.test(sp.key))?.value?.trim() || null;
+  const mpn2 = mpn || specVal(/^(?:article\s*no|art\.?\s*nr|item\s*no|varenummer|produktnummer)/i);
+  const ean2 = ean || specVal(/^ean|^gtin/i);
+  const manufacturer2 = manufacturer || guessManufacturerFromContent(html);
+
   let domain = "";
   try {
     domain = url ? new URL(url).hostname : "";
@@ -525,9 +542,9 @@ function parseHtml(html: string, url: string, opts: { scrape_b2b_prices?: boolea
   return {
     source_url: url,
     title,
-    manufacturer,
-    ean: ean ? String(ean) : null,
-    mpn: mpn ? String(mpn) : null,
+    manufacturer: manufacturer2,
+    ean: ean2 ? String(ean2) : null,
+    mpn: mpn2 ? String(mpn2) : null,
     description_short,
     description_long,
     bullets,

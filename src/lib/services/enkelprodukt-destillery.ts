@@ -11,6 +11,7 @@
 
 import { classify } from "./produktgruppe-classifier";
 import { buildEnkelproduktSeoHtml } from "./enkelprodukt-seo-html";
+import { tilNorskeTermer, landFraSpecs } from "./en-no-produkttermer";
 import type { ScrapedRaw } from "./enkelprodukt-scraper";
 
 export interface DestilledProduct {
@@ -66,6 +67,27 @@ const MAX_BESKR = 40;
  * variant-spesifikke og ikke ligger i fellesdatabladet.
  */
 const PRODUCT_TYPES: Array<[RegExp, string]> = [
+  // Maskiner og maskintilbehør (Milwaukee/TTI o.l.) — engelske navn dekkes også
+  [/\bmeiselhammer|demolition hammer/i, "MEISELHAMMER"],
+  [/\bspissmeisel|point(?:ed)? chisel/i, "SPISSMEISEL"],
+  [/\bskrapemeisel|scaling chisel/i, "SKRAPEMEISEL"],
+  [/\bmeisel\b|\bchisel\b/i, "MEISEL"],
+  [/\bkj[øo]rner|cent(?:er|re) punch/i, "KJØRNER"],
+  [/\bborhammer|rotary hammer|hammer drill\b/i, "BORHAMMER"],
+  [/\bhammerbor|hammer (?:drill )?bit/i, "HAMMERBOR"],
+  [/\bkjernebor|core bit/i, "KJERNEBOR"],
+  [/\bhullsag|hole saw/i, "HULLSAG"],
+  [/\bavstandsm[åa]ler|distance meter/i, "AVSTANDSMÅLER"],
+  [/\bm[åa]leb[åa]nd|tape measure/i, "MÅLEBÅND"],
+  [/\blaser\b/i, "LASER"],
+  [/\bmuttertrekker|impact wrench/i, "MUTTERTREKKER"],
+  [/\bslagskrutrekker|impact driver/i, "SLAGSKRUTREKKER"],
+  [/\bvinkelsliper|angle grinder/i, "VINKELSLIPER"],
+  [/\bsirkelsag|circular saw/i, "SIRKELSAG"],
+  [/\bbajonettsag|reciprocating saw|sawzall/i, "BAJONETTSAG"],
+  [/\bstikksag|jigsaw/i, "STIKKSAG"],
+  [/\bverkt[øo]ykasse|tool ?box/i, "VERKTØYKASSE"],
+
   // Klær / verneutstyr — spesifikke typer FØR generiske (rekkefølge avgjør)
   [/\barbeidsbukse|trouser/i, "BUKSE"],
   [/\bbukse(?!sele)/i, "BUKSE"],
@@ -84,6 +106,8 @@ const PRODUCT_TYPES: Array<[RegExp, string]> = [
   [/\bvernesko|safety boot|safety shoe/i, "VERNESKO"],
   [/\bhansker|gloves/i, "HANSKER"],
   [/\bhjelm|helmet/i, "HJELM"],
+  [/\bcaps\b|baseball ?cap/i, "CAPS"],
+  [/\blue\b|\bbeanie\b/i, "LUE"],
   [/\bvernebriller|safety glasses/i, "BRILLER"],
   [/\bhørselvern|hearing protect/i, "HØRSELVERN"],
   // Verktøy — håndholdt
@@ -119,7 +143,24 @@ const PRODUCT_TYPES: Array<[RegExp, string]> = [
   [/\bsett\b|\bset\b|\bkit\b/i, "SETT"],
 ];
 
-const SPEC_ABBREV: Array<[RegExp, string]> = [
+// [mønster, kode, kunTittel?] — kunTittel brukes der beskrivelsen lister ALLE varianter
+// («available in red, black or grey»), slik at navnet ellers får med alle fargene.
+const SPEC_ABBREV: Array<[RegExp, string, boolean?]> = [
+  // Farge (klær og hodeplagg) — norsk i navnet
+  [/\brød\b|\bred\b/i, "RØD", true],
+  [/\bsort\b|\bsvart\b|\bblack\b/i, "SORT", true],
+  [/\bgrå\b|\bgrey\b|\bgray\b/i, "GRÅ", true],
+  [/\bblå\b|\bblue\b/i, "BLÅ", true],
+  [/\bgrønn\b|\bgreen\b/i, "GRØNN", true],
+  [/\bgul\b|\byellow\b/i, "GUL", true],
+  [/\bhvit\b|\bwhite\b/i, "HVIT", true],
+  [/\boransje\b|\borange\b/i, "ORANSJE", true],
+  // Størrelse
+  [/\bs\/m\b/i, "S/M", true],
+  [/\bl\/xl\b/i, "L/XL", true],
+  [/\bsds\s*-?\s*max\b/i, "SDS-MAX"],
+  [/\bsds\s*\+|\bsds\s*plus\b|\bsds\b/i, "SDS+"],
+
   // Verneklasse
   [/klasse\s*1\b|class\s*1\b|\bkl\.?\s*1\b/i, "KL1"],
   [/klasse\s*2\b|class\s*2\b|\bkl\.?\s*2\b/i, "KL2"],
@@ -163,19 +204,30 @@ export function buildBeskrivelse1Compact(
     if (re.test(haystack)) { typeCode = code; break; }
   }
 
-  // 2) Kode-token: foretrekk mpn (leverandørproduktnummer), fallback model_code
-  const codeToken = ((mpn ?? "") || (modelCode ?? "")).trim();
+  // 2) Kode-token. Leverandørnummer på 8+ sifre (Milwaukee «4932493609») sier kunden
+  //    ingenting og spiser navnet — da foretrekkes en modellkode fra tittelen
+  //    (bokstaver + tall, f.eks. «M123PLKIT-401P»).
+  let codeToken = ((modelCode ?? "") || (mpn ?? "")).trim();
+  if (/^\d{8,}$/.test(codeToken)) {
+    const modell = (rawTitle || "").match(/\b(?=[A-Z0-9-]*\d)(?=[A-Z0-9-]*[A-Z])[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*\b/);
+    codeToken = modell && modell[0].length >= 4 ? modell[0] : "";
+  }
 
   // 3) Spec-forkortelser (i prioritert rekkefølge, uten duplikater)
   const specsAdded: string[] = [];
-  for (const [re, code] of SPEC_ABBREV) {
-    if (re.test(haystack) && !specsAdded.includes(code)) specsAdded.push(code);
+  const tittelLower = (rawTitle || "").toLowerCase();
+  for (const [re, code, kunTittel] of SPEC_ABBREV) {
+    const felt = kunTittel ? tittelLower : haystack;
+    if (re.test(felt) && !specsAdded.includes(code)) specsAdded.push(code);
     if (specsAdded.length >= 6) break;
   }
 
-  // 4) Dimensjon (mm-treff i tittel/beskrivelse)
+  // 4) Dimensjon. «250x20mm» skal bli 250X20MM — et enkelt mm-søk tar bare «20mm».
+  const kryss = haystack.match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*mm\b/);
   const dimMatch = haystack.match(/(\d+(?:[.,]\d+)?)\s*mm\b/);
-  const dimToken = dimMatch ? `${dimMatch[1].replace(",", ".")}MM` : "";
+  const dimToken = kryss
+    ? `${kryss[1].replace(",", ".")}X${kryss[2].replace(",", ".")}MM`
+    : dimMatch ? `${dimMatch[1].replace(",", ".")}MM` : "";
 
   // 5) Bygg ved å legge tokens i prioritert rekkefølge inntil 40 tegn
   const tokens: string[] = [];
@@ -226,8 +278,12 @@ export function buildBeskrivelse2(
  *   etterligner Gemini-stilen med H2 + H3 + bruksområder + brand-positioning)
  */
 export async function destillProduct(raw: ScrapedRaw): Promise<DestilledProduct> {
+  // Engelske leverandørportaler (Milwaukee/TTI, Snickers): oversett produkttermene
+  // først, ellers treffer verken klassifiseringen eller navne-kompaktoren.
+  const tittelNo = tilNorskeTermer(raw.title || "");
+  const kontekstNo = tilNorskeTermer(raw.description_long || raw.description_short || "");
   // Regel-basert klassifisering (autoritativ — ingen Gemini-overstyring)
-  const cls = classify(raw.title, raw.description_long || raw.description_short);
+  const cls = classify(tittelNo, kontekstNo);
   const produsent = raw.manufacturer || "";
   // Beskrivelse 1: Wera-stil compact-kode (TYPE + KODE + SPESIFIKASJONER)
   const beskr1Context = [
@@ -235,7 +291,7 @@ export async function destillProduct(raw: ScrapedRaw): Promise<DestilledProduct>
     raw.description_long,
     raw.bullets.join(" "),
   ].filter(Boolean).join(" ");
-  const beskr1 = buildBeskrivelse1Compact(raw.title || "", raw.model_code, raw.mpn, beskr1Context);
+  const beskr1 = buildBeskrivelse1Compact(tittelNo, raw.model_code, raw.mpn, tilNorskeTermer(beskr1Context));
   const beskr2 = buildBeskrivelse2(raw.mpn, produsent);
 
   return {
@@ -267,7 +323,7 @@ export async function destillProduct(raw: ScrapedRaw): Promise<DestilledProduct>
     currency: raw.currency,
     kostpris: raw.kostpris,
     listepris: raw.listepris,
-    opprinnelsesland: "Vet ikke",
+    opprinnelsesland: landFraSpecs(raw.specs || []),
   };
 }
 

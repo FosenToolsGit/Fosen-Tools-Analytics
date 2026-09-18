@@ -100,10 +100,13 @@ function emphasizeKeyword(bullet: string): string {
   const trimmed = bullet.trim();
   // Hvis bullet allerede inneholder <strong>, returner som-er
   if (/<strong>/i.test(trimmed)) return esc(trimmed);
-  // Splitt på første «—», «-» eller første komma — vanlig mønster i Wera-beskrivelser
-  const m = trimmed.match(/^([^—\-,:]{3,40})\s*[—\-,:]\s*(.+)$/);
+  // Splitt på tankestrek/kolon som SKILLETEGN, altså med mellomrom rundt.
+  // Uten mellomromskravet ble sammensatte ord delt: «360-graders» → «360 — graders»,
+  // «M12 B4-batteri» → «M12 B4 — batteri». Skilletegnet beholdes som det står,
+  // komma skal ikke skrives om til tankestrek.
+  const m = trimmed.match(/^(.{3,40}?)(\s+[—–-]\s+|:\s+)(.+)$/);
   if (m) {
-    return `<strong>${esc(m[1])}</strong> — ${esc(m[2])}`;
+    return `<strong>${esc(m[1])}</strong>${esc(m[2])}${esc(m[3])}`;
   }
   // Hvis ingen separator, fett-merk første 1-3 ord hvis de virker som nøkkelord
   const words = trimmed.split(/\s+/);
@@ -121,6 +124,18 @@ function emphasizeKeyword(bullet: string): string {
  */
 function buildBruksomrader(g1: string | null, g2: string | null, g3: string | null, produsent: string): string {
   const cat = `${g1 ?? ""}/${g2 ?? ""}/${g3 ?? ""}`.toLowerCase();
+  if (/maskintilbeh[øo]r\/meisel/.test(cat)) {
+    return `Brukes i borhammer med SDS-feste til meisling, riving og fjerning av puss, fliser og gammel betong. Egnet for bygg, anlegg og rehabilitering.`;
+  }
+  if (/maskintilbeh[øo]r\/bor/.test(cat)) {
+    return `Brukes i borhammer med SDS-feste til boring i betong, mur og naturstein, typisk ved montering av festemidler på bygg og anlegg.`;
+  }
+  if (/dor og meisel/.test(cat)) {
+    return `Brukes sammen med hammer til meisling, oppmerking og demontering i metall og stein, innen verksted, mekanisk arbeid og vedlikehold.`;
+  }
+  if (/m[åa]leverkt[øo]y\/laser/.test(cat) || /\/laser$/.test(cat)) {
+    return `Brukes til oppmerking og nivellering på bygg og i montering — himling, vegger, kjøkken og innredning — og til å overføre høyder, vinkler og loddlinjer i rom.`;
+  }
   if (/skrutrekkere\/presisjon/.test(cat)) {
     return `Brukes typisk innen elektroniker-arbeid, finmekanikk, optikk, ur- og smykkereparasjon, samt service på elektronikk-komponenter. Egnet for ESD-følsomme miljøer.`;
   }
@@ -215,6 +230,12 @@ function buildWhyBrand(produsent: string): string {
   return "";
 }
 
+/** Felt som hører til innkjøps-/logistikksiden og aldri skal ut på produktsiden.
+ *  B2B-portalene (Milwaukee/TTI o.l.) blander dem inn i samme spec-tabell. */
+function ERINNKJOPSFELT(key: string): boolean {
+  return /hs.?code|tariff|toll|customs|master carton|kolli|inner box|pallet|moq|minimum order|lead.?time|leveringstid|kostpris|innkj[øo]p|netprice|listprice|availability|lagerstatus|article no|art\.?\s*nr|varenummer|^ean|^gtin|name:\s*model|model variant|country of origin|opprinnelse/i.test(key);
+}
+
 export function buildEnkelproduktSeoHtml(input: SeoHtmlInput): string {
   const { raw, produsent, g1, g2, g3 } = input;
   const parts: string[] = [];
@@ -241,7 +262,7 @@ export function buildEnkelproduktSeoHtml(input: SeoHtmlInput): string {
     parts.push(`<table>`);
     parts.push(`<tbody>`);
     const seen = new Set<string>();
-    for (const s of raw.specs.slice(0, 25)) {
+    for (const s of raw.specs.filter((sp) => !ERINNKJOPSFELT(sp.key)).slice(0, 25)) {
       const key = s.key.toLowerCase().trim();
       if (!key || seen.has(key)) continue;
       // Hopp over generic noise

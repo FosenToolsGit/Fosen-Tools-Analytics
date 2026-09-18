@@ -18,6 +18,13 @@ export interface CompactNameResult {
 
 /** Norske produkttype-keywords i prioritetsrekkefølge (mer spesifikke først) */
 const TYPE_KEYWORDS: string[] = [
+  // Maskiner og maskintilbehør (Milwaukee o.l.) — spesifikke først
+  "Meiselhammer", "Spissmeisel", "Skrapemeisel", "Meisel", "Kjørner",
+  "Borhammer", "Hammerbor", "Kjernebor", "Hullsag",
+  "Avstandsmåler", "Målebånd", "Laser",
+  "Muttertrekker", "Slagskrutrekker", "Vinkelsliper", "Sirkelsag",
+  "Bajonettsag", "Stikksag", "Verktøykasse",
+
   // Klinger (utskiftbare) — VIKTIG: må sjekkes FØR skrutrekker fordi navnet ofte
   // ikke har «klinge», men marketing description har det
   "Utskiftbar klinge",

@@ -29,6 +29,17 @@ interface Rule {
 
 // Mer spesifikke regler først (matches stoppes ved første treff)
 const RULES: Rule[] = [
+  // ── Maskintilbehør og måling (Milwaukee/TTI o.l.) — lagt til 17. sept 2026.
+  //    Ligger ØVERST fordi Wera-reglene under er navngitt for håndverktøy og
+  //    ellers stjeler treff (f.eks. «sett» → skrutrekkersett).
+  { pattern: /(?=.*\bmeisel\b)(?=.*\bsds\b|.*sds\s*[-+]?\s*(?:plus|max)?)/, g1: "Maskintilbehør", g2: "Meisel", g3: "Meisel" },
+  { pattern: /(?=.*\b(?:hammerbor|bor)\b)(?=.*sds\s*-?\s*max)/, g1: "Maskintilbehør", g2: "Bor", g3: "Hammerbor SDS-MAX" },
+  { pattern: /(?=.*\b(?:hammerbor|bor)\b)(?=.*\bsds\b|.*sds\s*\+)/, g1: "Maskintilbehør", g2: "Bor", g3: "Hammerbor SDS+" },
+  { pattern: /\bmeisel\b/, nameOnly: true, g1: "Dor og meisel", g2: "Meisel", g3: "Meisel" },
+  { pattern: /\bkj[øo]rner\b/, nameOnly: true, g1: "Dor og meisel", g2: "Kjørner", g3: "Kjørner" },
+  { pattern: /\blaser\b/, nameOnly: true, g1: "Batteriverktøy", g2: "Måleverktøy", g3: "Laser" },
+  { pattern: /\bcaps\b|baseball ?cap/, nameOnly: true, g1: "Arbeidsklær", g2: "Caps", g3: "Caps" },
+  { pattern: /\blue\b|\bbeanie\b/, nameOnly: true, g1: "Arbeidsklær", g2: "Arbeidsklær", g3: "Lue" },
   // ── Syl (Wera 1427-serien — verktøy for pilot-hull) — FØR klinge-reglene
   //   siden Wera 1427 har «klinge» i navn men er egentlig en syl.
   { pattern: /\bsyl\b|skruehullstans/, g1: "Skrutrekkere", g2: "Skruehullstanser", g3: "Skruehullstanse" },
