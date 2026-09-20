@@ -21,6 +21,7 @@
     "tirsdag:thumbs": "node scripts/tirsdag-thumbs.mjs",
     "torsdag:thumbs": "node scripts/torsdag-thumbs.mjs",
     "fta-rapport": "node --env-file=.env.local scripts/fta-ukesrapport.mjs",
+    "aar-mot-aar": "node --env-file=.env.local scripts/aar-mot-aar.mjs",
     "milwaukee-import": "tsx scripts/milwaukee-import.ts"
   },
   "dependencies": {

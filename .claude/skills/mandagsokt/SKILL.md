@@ -32,15 +32,28 @@ utsettes til slutt der den kan bli glemt fordi tallene tok tid.
    `LAST` = forrige uke man–søn, `PREV` = uka før, pluss gte/lte-grensene.
    Kjør scriptet — det gir GA4, Google Ads per kampanje, konverteringsverdi
    og trafikkilder.
-4. **Suppler med:** Meta-engasjement (platform_posts, IG bruker `views`),
+4. **Sammenligner du mot i fjor? Kjør bot-korreksjonen først:**
+
+   ```
+   npm run aar-mot-aar -- --fra 2026-10-01 --til 2026-10-31
+   ```
+
+   GA4 hadde en bot-flom på fosen-tools.no **1. sept – 30. nov 2025** — september
+   var 60 % «Unassigned» med 0 % engasjement, oktober 46 %, november 44 %. Vår egen
+   database hjelper ikke, for `analytics_metrics` starter i januar 2026. Scriptet
+   henter begge år fra GA4, trekker fra Unassigned og viser rått mot korrigert.
+   Eksempel fra 19. sept: **rått −68,5 %, korrigert +3,1 %.** Bruk alltid det
+   korrigerte tallet, og si i briefen at det er korrigert.
+
+5. **Suppler med:** Meta-engasjement (platform_posts, IG bruker `views`),
    siste Mailchimp-kampanje vs snitt, SEO-bevegelser fra GSC (husk ~3 dagers
    lag — sammenlign hele uker med 3 dagers buffer), åpne anomalier i
    `analytics_anomalies`.
-5. **Bygg HTML-brief** i dark FT-stil (FT-rød accent, Manrope) →
+6. **Bygg HTML-brief** i dark FT-stil (FT-rød accent, Manrope) →
    `~/Desktop/FT-mandagsrapport-{dato}.html`. Aldri Markdown-leveranse.
-6. **Ukas FT Aviation-publisering — ALLTID med i briefen.** Se eget avsnitt
+7. **Ukas FT Aviation-publisering — ALLTID med i briefen.** Se eget avsnitt
    under. Dette er ikke valgfritt og skal ikke droppes fordi tallene tok tid.
-7. **Åpne begge:** `open -a "Google Chrome" ~/Desktop/FT-mandagsrapport-*.html`
+8. **Åpne begge:** `open -a "Google Chrome" ~/Desktop/FT-mandagsrapport-*.html`
    og `open ~/Desktop/FTA-ukesrapport-*.pdf`
 
 ## Regler som IKKE kan brytes
