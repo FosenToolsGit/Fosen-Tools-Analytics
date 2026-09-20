@@ -58,6 +58,42 @@ const sisteData = sDag.length ? sDag[sDag.length - 1].keys[0] : null;
 const nyeDager = sDag.filter((r) => r.keys[0] >= d0(14));
 const ord = await gs(cs, [d0(30), d0(1)], { dimensions: ["query"], rowLimit: 10 });
 
+// --- Synlighetsvarsel -------------------------------------------------------
+// FT Aviation var borte fra Google fra 20. juli til 30. august 2026 uten at
+// noen oppdaget det. Nettstedet var oppe hele tiden, så GA4 ga ingen advarsel.
+// Denne sjekken ser på Search Console-visninger alene.
+const visnMellom = (fra, til) => sDag
+  .filter((r) => r.keys[0] >= fra && r.keys[0] <= til)
+  .reduce((s, r) => s + r.impressions, 0);
+const sisteUke = visnMellom(d0(7), d0(1));
+const forrigeUke = visnMellom(d0(14), d0(8));
+const snitt30 = visnMellom(d0(37), d0(8)) / 30;
+// dager på rad uten en eneste visning, regnet bakover fra siste dag med data
+const medVisning = new Set(sDag.filter((r) => r.impressions > 0).map((r) => r.keys[0]));
+let nullDager = 0;
+for (let i = 1; i <= 45; i++) { if (medVisning.has(d0(i))) break; nullDager++; }
+
+const TERSKEL = 50;          // visninger på sju dager
+const FALL_PST = 70;         // prosent fall mot forrige uke
+const fallPst = forrigeUke > 0 ? Math.round(((forrigeUke - sisteUke) / forrigeUke) * 100) : null;
+
+let varsel = null;
+if (nullDager >= 5)
+  varsel = { grad: "kritisk", tittel: `Ingen visninger på ${nullDager} dager`,
+    tekst: `Search Console har ikke registrert en eneste visning siden ${sisteData || "ukjent dato"}. Sjekk at nettstedet svarer, at robots.txt er uendret, og kjør URL-inspeksjon på forsiden.` };
+else if (sisteUke < TERSKEL && snitt30 * 7 >= TERSKEL)
+  varsel = { grad: "kritisk", tittel: `Bare ${NO(Math.round(sisteUke))} visninger denne uka`,
+    tekst: `Under terskelen på ${TERSKEL}, mens snittet de foregående fire ukene tilsvarer ${NO(Math.round(snitt30 * 7))} i uka. Dette er mønsteret fra juli–august 2026, da nettstedet var usynlig i seks uker uten at det ble oppdaget.` };
+else if (fallPst !== null && fallPst >= FALL_PST && forrigeUke >= TERSKEL)
+  varsel = { grad: "advarsel", tittel: `Visningene falt ${fallPst} % på en uke`,
+    tekst: `Fra ${NO(Math.round(forrigeUke))} til ${NO(Math.round(sisteUke))}. Et fall i denne størrelsen er som regel teknisk, ikke sesong. Sjekk indeksering før du leter etter innholdsårsaker.` };
+else if (sisteUke < TERSKEL)
+  varsel = { grad: "lav", tittel: `${NO(Math.round(sisteUke))} visninger denne uka`,
+    tekst: `Under terskelen på ${TERSKEL}, men nivået har vært lavt en stund, så dette er trolig normalen og ikke et brudd.` };
+
+console.log(varsel ? `  Synlighet: ${varsel.grad.toUpperCase()} — ${varsel.tittel}`
+                   : `  Synlighet: ok (${Math.round(sisteUke)} visninger siste uke)`);
+
 let fb = null;
 try {
   const t = process.env.META_ACCESS_TOKEN;
@@ -187,10 +223,19 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pk{font-size:9pt;color:#41506b;margin:4px 0}
 footer{margin-top:22px;padding-top:9px;border-top:1px solid #dfe4ec;font-size:8pt;color:#8a93a6;
   display:flex;justify-content:space-between}
+.varsel{border-radius:6px;padding:10px 13px;margin:0 0 14px;font-size:9.5pt;line-height:1.5}
+.varsel b{display:inline}
+.varsel.kritisk{background:#3a1216;border-left:4px solid #c62828;color:#ffd9dc}
+.varsel.advarsel{background:#3a2e12;border-left:4px solid #d6a127;color:#ffeec2}
+.varsel.lav{background:#1e2430;border-left:4px solid #5c6b85;color:#cfd8e6}
+.varsel.ok{background:#152616;border-left:4px solid #3f9e4d;color:#d6f0d9}
 </style></head><body>
 <div class="top"><h1>FT Aviation<br>Ukesrapport</h1>
 <div class="sub">${G.na[0]} til ${G.na[1]} · sammenlignet med uka før</div>
 <div class="gull"></div></div>
+
+${varsel ? `<div class="varsel ${varsel.grad}"><b>${varsel.grad === "kritisk" ? "Varsel" : varsel.grad === "advarsel" ? "Se på dette" : "Merk"}: ${varsel.tittel}</b><br>${varsel.tekst}</div>`
+  : `<div class="varsel ok"><b>Synlighet i Google er normal.</b> ${NO(Math.round(sisteUke))} visninger siste sju dager, mot ${NO(Math.round(forrigeUke))} uka før.</div>`}
 
 <h2>Trafikk på nettsiden</h2>
 <div class="kpi">${kpi.map(([n, a, b]) =>
