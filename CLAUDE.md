@@ -1317,12 +1317,128 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 4. sept | **SEO-dag: meta og OpenGraph på 16 sider, pluss butikkskjermer og jubileumsvideo.** Skjermene: egne kampanje-spillelister (Milwaukee −20 %, Solid Gear −30 %) i stedet for slides limt inn i drift-listene, og jubileumsvideoen på Wera-skjermen. **Jubileumsvideo** bygget av 21 klipp fra 26. juni, 41 sek 16:9 uten lyd. **Story-grafikk** til begge rabattene. **Nullpris-gjennomgang** av hele databasen: 920 nullpriser, ingen viser 0 kr for kunden, men fem Wera-varer med pris ligger bak Forespør. **Multicase-sak meldt** om manglende og feil lagerlokasjon i plukkrapporten. **Screw Grab-siden bygget om**: banner etter produsent-malen, roterende produktbilde i HTML, ny tekst uten «gravert». **Global head-blokk ryddet** — sidespesifikk OG fjernet, den overstyrte hver sides egen tittel ved deling. **Meta og OG levert** for forsiden, /produkter, /arbeidsklær, ti toppsider og fire kundesenter-undersider. Nytt verktøy `scripts/og-bilde.mjs`. **ATEX-undersøkelse** kjørt som eget spor. Fire feil rettet underveis: slagordet oppfunnet, «40 merker» som salgsargument, «gravert» om HDFI, og H1-er målt i rå HTML der de settes klientside. |
 | 16. sept | **FTA-video for uken lastet opp + YouTube i FTA-ukesrapporten.** F-35 Maintenance Docking System (122631) på @ft-aviation via `yt-last-opp.mjs --kanal fta --plan`: Short `EeUQc0Z1v3w` + 16:9 `kLy_t75h8WU`, publishAt onsdag 16. sept kl. 12:00, 13 tags, thumbnails på begge. **Thumbnailen bygget om** på Adrians ønske: 05.jpg (hele systemet ovenfra, 5760 px) i stedet for lavoppløste 01.png, tekst auto-krympet til tekstfeltet etter at Korolev er lastet (`scripts/_tmp-fta-thumb-docking.mjs`, 16:9 + 9:16). **`fta-ukesrapport.mjs` fikk egen YouTube-seksjon** (uke mot uke, topp videoer, publisert denne uka) med Analytics API som primærkilde og lokalt øyeblikksbilde (`scripts/data/fta-yt-snapshot.json`) som fallback; Analytics krever at Adrian slår på API-et i Google Cloud og re-auther FTA-tokenet (scope lagt til i `yt-auth.mjs`). Bug: `import.meta.url`-pathname ga `%20` i stien og skrev aldri fila. **Caps i Blender:** gummi-patch «Fosen Tools» under hverandre lagt på mesh-sida av trucker-capsen (`Trucket-Hat V1/Trucket-Hat-FosenTools.blend`), seks forsøk før det satt; patchen flyttet til høyre side, mindre og lavere; F-en på fronten fjernet fra teksturen; prøvd som brodering (displace-puff, deretter ekte .pes-stingfil via pyembroidery + Adrians «Embroidery Importer»-addon) men endte som hvitt plast-relieff etter Adrians vurdering; egen HDFI-versjon (`Trucket-Hat-HDFI.blend`) med rund gummipatch på fronten; 17 renders i `Previews/Render-2026-09-16*/`. Se `memory/project_caps_gummipatch_blender.md`. |
 | 14.–16. sept | **Kategorisider med produktbilder, aviation-analyse for Erik, FTA docking-video og Packout-demodag.** OG-bildene på 374 av 494 kategorisider viser nå mest besøkte produkt (GA4 6 mnd) frilagt fra Multicase-foto, valgt på kategoriord med tier-regler + manuelle avvisninger; 67 generiske OG-tekster skrevet om, fire feiltitler rettet. `sjekk-kategori.py` godtar nå august-malen (BreadcrumbList+FAQPage) og leverer kun JSON-LD der resten ligger ute; Adrian er kommet til Piper og skraller (171 riktige, 48 å rette, 97 ikke påbegynt). **Aviation:** graf til Erik, 27 referral-sesjoner på 6 mnd (mest oss selv), /aviation lenker ikke til ft-aviation.no; møtedeck med tre alternativer (behold/bygg om, videresend, slett) + notat om hvorfor produktene bør ligge på begge; Multicase redirect-modul **godtar eksternt mål** (verifisert på f-18, siden må slettes først; lista har ingen søk og tilfeldig rekkefølge, hent via `GetRedirectRules`-API). FT og FTA deler backend. **FTA:** 122631-videoen bygget om til «F-35 Maintenance Docking System» med Adrians tekst (3 format + captions + thumbs), publiseres onsdag 16. sept, ingen torsdagspost denne uken. **Packout-demodag 24. sept** (Milwaukee, 25 % kun i proff-butikken): post A/B + story + captions + nyhetsbrevavsnitt + skjerm-spilleliste, sendt Brit for vurdering. |
+| 20.–21. sept | **Verktøyvognvisningen ute, og lead-målingen viste seg å måle noe helt annet.** Eriks Claude-artefakt portert til Multicase: en 3D-scene av CSS-plan der kameraet går fra skrått forfra til fugleperspektiv og åpner skuff for skuff. Kilden hentet ved å duplisere artefakten, ikke gjenskape den. **Tre Multicase-funn:** validatoren avviser hele innlimingen hvis ordet `<header>` står i en JS-kommentar; `div.WebPubElement` har `overflow: hidden` som dreper `position: sticky`; og nettstedet har **to** faste bånd øverst (header 0–120, menylinje 120–180 med z-index 120), så komponentens topplinje lå oppå menyen og fanene var uklikkbare. Offset måles nå ved å sondere nedover til første udekkede punkt. FT-logoen fjernet fra komponenten (nettstedets egen står rett over) og historien kortet fra 12,4 til 7,75 skjermhøyder. Ligger på `/produkter/verktøyvogner`. Åpent: komponenten er ~80 % av sida, og alt innholdet bygges av JS — Google rendrer det, Bing ikke. **Mandagsøkt:** GA4-synken feilet 19. sept og dagens cron hadde ikke gått, så søndag sto med 5 sesjoner mot normalt 80; trigget manuelt før rapportering. Uke 38: 1 076 sesjoner (+7 %), 887 brukere (+11 %). **Lead-målingen — dagens hovedfunn, etter tre korreksjoner fra meg:** `form_submit` i GA4 er ikke skjemainnsendinger i det hele tatt. Multicase pakker **hver side** i ett ASP.NET-skjema (`<form id="form1">` med mva-bryteren som felt), og GA4s automatiske måling teller hver postback — filtrering, paginering, innlogging. Ingen av 33 `form_submit` forrige uke var en utfylt henvendelse. Kontaktskjemaet ligger i en **kryss-domene** Freshdesk-iframe som GA4 ikke kan se inn i. Sporet i GTM-containeren: `ft_help_widget_success` (Send melding-widgeten) → GA4 `generate_lead` ✔; `ft_contact_form_success` (kontaktsida) → **kun** en Google Ads-konvertering som står som **FJERNET** (label `O-DiCJWfvpwcEJ7A9cUD`, siste registrering juni, 3 konverteringer på 9 mnd); `ft_contact_form_error` → **ingen tagg**; `click_send_en_melding` → fyrer null. **Kontaktskjemaet har altså vært umålt siden 17. august, og `form_submit` står som primær lead-konvertering i Google Ads — budgivningen går mot postbacks.** GTM-oppskrift levert: `~/Desktop/FT-lead-maaling/GTM-oppskrift.html`. **Fallsikring-dypdykk:** etterspørselen tredoblet på 13 mnd (763 → 2 773 visn/mnd), sju klikk til sammen. Årsaken er sidetypen: der en artikkel eller spesifikk produktside svarer ligger vi på plass 1–22, der kategorisida svarer på 46–77. Vi er **nr. 1,1 på «fallsikring forsvar»** og **3,5 på «fallsikring offentlige bygg»** — men null klikk, fordi det er kunnskapssøk der svaret står i utdraget. Hovedordet er tapt: side 1 er Byggmakker, tools.no, Jula, 3M, Certex, Würth, Ahlsell, Standard Norge, Monter — **seks av ni er generelle kjeder**, som retter notatet fra 19. sept om spesialister. **Nyhetsbrev 22. sept** (tenger, fire merker, Cobra ES først) avdekket to feil i oppskriften, begge rettet i skillen: `utm_source` skal være `FTNett`, ikke `mailchimp`, ellers splittes én utsendelse i to kilder; og entitets-versjonen må konvertere **alt** over ASCII, ikke bare æøå, ellers blir `·` til `¬∑`. **Packout-demodagen 24. sept:** ingenting publisert eller planlagt tre dager før, selv om materialet har ligget klart siden 16. sept. |
 | 18. sept (kveld) | **Domeneporteføljen ryddet: 12 verter videresender riktig.** Seks lå på ProISP-webhotell med `.htaccess` (irega.no og hullsag.no gikk til et subdomene som svarte **404**; hdfi.no serverte «Under construction»). Fem hadde **ikke webhotell** — de ligger nå på et eget Vercel-prosjekt `fosen-tools-domener` (gratis, automatisk sertifikat, som også løste kctools.no sitt ugyldige sertifikat): kctools.no→/kc-tools, stoltbedrift.no→/om-oss, toolrebel.no og toolrebels.no→/wera, fosen.tools→forsiden. **Funn:** videresending ligger ikke på domenesiden i ProISP-panelet, men i webhotellets `.htaccess` — derfor slo Adrians egne endringer aldri inn. **fosen-tools.no ligger ikke hos ProISP**, men hos Visolit/TeleComputing. fosen-tools.net og .org er «pending validation» hos Realtime Register; Adrian besluttet at det går fint. Leveranse: `~/Desktop/FT-analyse-18sept/domener.html`. |
 | 18. sept (ettermiddag) | **SEO-analyse: merkesøket brakk i oktober 2025.** Klikkraten på «fosen tools» falt 76 %→19 % i okt–nov 2025 på uendret posisjon og uendret søkevolum, og hele nedgangen mot i fjor (−706 klikk) ligger i det ene ordet. **Bing klikker 25,6 % på «fosentools» mot Googles 6,4 %** — forskjellen er kunnskapspanelet Google legger over treffet. Brand Search-annonsen henter det tilbake: 450 betalte merkeklikk i august mot 64 organiske, til 1,01 kr stykket. Strukturfunn: **6× høyere klikkrate når merkenavnet står i søket**, og 43,6 % av alt vi viser på side 1 gir null klikk — vi rangerer, men blir ikke valgt, så metaarbeid alene kan ikke lukke gapet mellom kategorisider (0,75 %) og produsentsider (3,01 %). Nye Multicase-saker: **hullsag.no og irega.no 301-er til et subdomene som svarer 404**, og 180 produkter ligger publisert under `/merke-ukjent` (151 av dem i Google). Gode nyheter: kjøpssporingen virker igjen (18 kjøp / 92 647 kr i sept), robots.txt er frisk, og www er riktig satt opp. Leveranse: `~/Desktop/FT-analyse-18sept/`. |
 | 18. sept | **/referanser-landingssiden bygget av datafilene, og minneindeksen reparert.** Landingssiden (179 caser) genereres nå av `scripts/_tmp-ref-landing3.mjs`, som leser de ni datafilene kategorisidene selv bygges fra og slår hver lenke opp i meny-fasiten — ingen rendring av nettstedet. Fant at Heli Tek-settet lå i innlegg-datafila selv om siden ble flyttet til verkstedinnredning 17. aug; rettet i generatoren, ikke i datafila, siden kategorisidene står riktig ute. To lenker peker på sider som ennå ikke er opprettet (Norrønafly, montørvogn), og scriptet sier selv fra når de er inne. **MEMORY.md var 35 kB mot 24,4 kB i grense, så 56 minner ble aldri lastet** — hooks trimmet til klausulgrense, to uindekserte filer lagt inn, nå 202/202 på 22,3 kB. |
 | 7. sept | **FTA-videoer, /aktuelt ryddet og to rapportfeil funnet.** To FT Aviation-videoer bygget (wash kit + ny `FTANations`-komposisjon for 15 liveries), begge lastet opp med thumbnails og captions. `/aktuelt/referanseprosjekter` slettet med 13 omdirigeringer etter at alt innhold var berget. **Halvårsrapportens to hovedtall er feil:** metarunden på kategorisidene er verdt ~175 klikk, ikke 1 500, og produktsidenes «fall» er sesong. Erik ba om oversikt over lagervarer uten nettside: 3 109 funnet. |
 | 31. aug | **Mandagsøkt + dyp SEO-gjennomgang.** Ukesrapport uke 35. Nyhetsbrev 1. sept (Milwaukee momentnøkler, lager + 20 % verifisert live). Multicase-svaret sendt i **215952** (217127 er registrert på Erik). To hjulpipesett lagt på hjulskift-siden. **Kjøpssporingen brakk 21. aug** — kvitteringssiden er `/kvittering` (ikke `/bekreftelse`), GTM frikjent, nettbutikken sender ikke lenger `purchase`; venter til 7. sept. **Bing Webmaster API koblet opp** (`scripts/bing-stats.mjs`). **AI-synlighet 5/7, opp fra 2/7** — 12-månedersmålet nådd etter tre. **Kategorisider målt:** 410 av 494 mangler H1, 226 har meta under 120 tegn, CTR 0,76 % mot 3,06 % på produsent-sider. **Produsent-meta settes med JS og når aldri Bing.** Referanse-redirects droppet: ~14 000 rader over 164 sider gjør manuell rydding uaktuelt. |
 ---
+
+---
+
+## Siste sesjons-sammendrag (20.–21. september 2026)
+
+### Verktøyvognvisningen — levert og live
+
+Erik hadde drodlet fram en 3D-visning av FTAUTO6, FTINDU2 og FTMEGA9 i en Claude-artefakt.
+Den er nå portert til Multicase og ligger på `/produkter/verktøyvogner`.
+
+**Det er ikke bilder — det er en 3D-scene.** Vogna er bygget av CSS-plan i rommet (front, sider,
+topplate, håndtak, hjul), og kameraet beveger seg fra skrått forfra, opp over vogna og ned i hver
+skuff mens den trekkes ut. Bare skuffinnleggene er foto. Mitt første forsøk var en etterlikning med
+flate bilder, og Adrian avviste den med rette. **Riktig grep var å duplisere artefakten** (via
+menyen i claude.ai) og lese den ekte kilden, ikke gjenskape den.
+
+**Filer:** `~/Desktop/FT-vognvisning/` — `PUBLISERINGER.html` (kopi-knapper),
+`MULTICASE-ALT-I-ETT.html` (én innliming, stilarket injiseres av scriptet),
+`bilder-til-multicase/` (17 JPG til `/userfiles/image/Verktoyvogner/`).
+
+**Tre Multicase-funn, alle lagret i `feedback_multicase_publisering`:**
+- Validatoren avviser hele innlimingen hvis `<html`, `<body`, `<head`, `<!doctype`, `async`
+  eller `defer` står i teksten — **også inne i en JS-kommentar**. Ordet `<header>` felte den.
+  Skann alltid: `grep -c -i -E '<html|<body|<head|<!doctype|async|defer' blokk.html`
+- `div.WebPubElement` har `overflow: hidden`, som gjør `position: sticky` ubrukelig.
+  Nøytraliser kun egne forfedre, aldri globalt.
+- **Nettstedet har to faste bånd øverst**, ikke ett: `header.headroom` 0–120 og
+  `div.menu-container` 120–180 med z-index 120. Mål ved å sondere nedover til første punkt som
+  ikke er dekket av noe `position: fixed` bredere enn halve vinduet. Gir 182 px.
+
+**Åpent:** komponenten er ~80 % av sida, så produktlista ligger langt nede. Og alt innholdet
+bygges av JS — Google rendrer det, Bing og dermed ChatGPT gjør det ikke. Skal sida bære SEO-vekt,
+trenger den en INTRO- og FAQ-blokk i ren HTML i tillegg.
+
+### Lead-målingen — det viktigste funnet i dag
+
+Adrian spurte om jeg også målte kontaktskjemaet. Det gjorde jeg ikke, og da vi gravde viste det
+seg at **`form_submit` i GA4 ikke måler skjemainnsendinger i det hele tatt.**
+
+Multicase pakker hver side i ett ASP.NET-skjema, `<form id="form1">`, med mva-bryteren og
+prisvisning som felter. GA4s automatiske skjemamåling teller hver postback fra den: filtrering,
+paginering, innlogging, klikk på en knapp. Verifisert på både `/kundesenter/kontakt-oss` og
+`/snapon` — samme form, 97 felter. **Ingen av de 33 `form_submit` forrige uke var en utfylt
+henvendelse.** Kontaktskjemaet ligger dessuten i en kryss-domene Freshdesk-iframe som GA4
+prinsipielt ikke kan se inn i.
+
+Sporet i GTM-containeren (`gtm.js?id=GTM-5TNB52X`, parse `resource`, finn predikatet på
+hendelsesnavnet, følg regelen til taggen):
+
+| dataLayer-hendelse | Hva GTM gjør |
+|---|---|
+| `ft_help_widget_success` (Send melding-widgeten) | GA4 `generate_lead` → G-4G655KWDRP ✔ |
+| `ft_contact_form_success` (kontaktsida) | Kun Google Ads-konv. `O-DiCJWfvpwcEJ7A9cUD` — **FJERNET** |
+| `ft_contact_form_error` | **Ingen tagg** |
+| `click_send_en_melding` | Finnes, fyrer **null** |
+
+«Kontaktoss skjema» registrerte 3 konverteringer på 9 måneder og ingenting siden juni.
+**Kontaktskjemaet har vært umålt siden 17. august**, og tallet kan ikke stykkes sammen fra Ads.
+
+🔴 **`form_submit` står som primær lead-konvertering i Google Ads og er aktiv.** Budgivningen
+optimaliseres mot postbacks. Oppskrift for å rette det: `~/Desktop/FT-lead-maaling/GTM-oppskrift.html`
+— ny GA4-tagg på `ft_contact_form_success` med `eventName = generate_lead`, deretter importer
+`generate_lead` til Ads som primær og sett `form_submit` sekundær.
+
+**Jeg tok feil tre ganger underveis** før dette satt: rapporterte først Google Ads' 1, «rettet»
+det til 4 som var postbacks, og påsto så at widgeten ikke måles fordi jeg lette etter utslaget i
+dataLayer på en side der ingen sendte melding — i stedet for å lete etter lytteren.
+
+### Fallsikring — dypdykk
+
+Etterspørselen er tredoblet på 13 måneder (763 → 2 773 visn/mnd), posisjonen 61,7 → 44,0,
+og **sju klikk til sammen**. Rapport: `~/Desktop/FT-fallsikring/dypdykk.html`.
+
+🔑 **Sidetypen avgjør.** Der en artikkel eller spesifikk produktside svarer, ligger vi på plass
+1–22. Der kategorisida svarer, på 46–77. Vi er **nr. 1,1 på «fallsikring forsvar»** og **3,5 på
+«fallsikring offentlige bygg»** — men null klikk, fordi det er kunnskapssøk der Google viser
+svaret i utdraget. Hovedordet er tapt: side 1 er Byggmakker, tools.no, Jula, 3M, Certex, Würth,
+Ahlsell, Standard Norge, Monter. **Seks av ni er generelle kjeder**, ikke spesialister — det
+retter notatet fra 19. sept.
+
+Anbefaling: ikke rør hovedordet, skriv to artikler til (industri, næringsbygg) etter samme mal
+som «offentlige bygg», og gi kategorisida jobben å lenke videre i stedet for å konkurrere med
+sine egne undersider. 14 av våre sider slåss om klyngen i dag.
+
+### Mandagsøkt uke 38
+
+**Datagrunnlaget måtte repareres først:** GA4-synken feilet 19. sept, og dagens cron hadde ikke
+gått da jeg startet kl. 07, så søndag sto med 5 sesjoner mot normalt 80. Trigget `POST /api/sync`
+manuelt. Uten det ville overskriften blitt «uendret» i stedet for «+7 %».
+
+Uke 38: 1 076 sesjoner (+7 %), 887 brukere (+11 %), 3 318 sidevisninger (−1 %). Ett kjøp
+(1 247 kr), ett lead tilskrevet Ads, fire meldinger via widgeten. Google Ads: 133 kr på
+Brand Search alene. Rapport: `~/Desktop/FT-mandagsrapport-2026-09-21.html`.
+FTA-rapporten sendt — synligheten tilbake med 439 visninger mot 26 i august.
+
+### Nyhetsbrev 22. september — «Riktig tang til jobben»
+
+Tenger fra fire merker, Cobra ES først (F2568, 20+ på lager). Bahco ble tatt ut på Adrians
+ønske, Milwaukee-vannpumpetanga byttet mot Cobra ES, Knipex Super Knips fylte plassen.
+Av 14 kandidater jeg testet var 8 bestillingsvare eller kun på Sør-lageret.
+
+**To feil i oppskriften ble funnet og rettet i skillen:**
+- `utm_source` skal være **`FTNett`**, ikke `mailchimp`. Byggeren hardkoder `FTNett` på lenkene
+  den lager selv (linje 371 og 483), så én utsendelse ble splittet i to kilder i GA4 — 28 mot 8.
+  `FTNett` har mest historikk: 236 sesjoner mot 94.
+- Entitets-versjonen må konvertere **alt** over ASCII, ikke bare æøå. Ellers blir `·` til `¬∑`.
+  Malen har også `•` og 240 usynlige fylltegn i forhåndsteksten.
+
+### Packout-demodag 24. september — ligger etter
+
+Ingenting publisert, **ingenting planlagt** på Meta tre dager før. Materialet har ligget ferdig
+i `~/Desktop/FT-packout-demodag/` siden 16. sept, og skjerm-spillelista er opprettet.
+Forrige Milwaukee-besøk 4. sept er fasiten: teaser T-2 (IG, 114 reach), dagen selv (IG 245),
+takk etterpå (FB 272, engasjement 13 — bedre enn noe innlegg forrige uke). Skal mønsteret
+følges, må teaseren ut 22. sept.
 
 ---
 

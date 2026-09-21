@@ -36,9 +36,23 @@ Byggescriptet sperrer dette. Lever HTML, Adrian limer inn selv.
 4. **Bygg med `MailchimpBuilderService.buildNewsletterHtml`** (dummy
    MAILCHIMP_API_KEY i env unngår constructor-throw). Kjør med
    `npx tsx` fra prosjektroten.
-5. **Lever:** preview-HTML + entities-versjon (æøå → `&#248;` osv. for
-   Mailchimp) til `~/Desktop/nyhetsbrev-{dato}/`, og åpne preview i Chrome:
-   `open -a "Google Chrome" …/preview.html`
+5. **Lever:** preview-HTML + entities-versjon til `~/Desktop/nyhetsbrev-{dato}/`,
+   og åpne preview i Chrome: `open -a "Google Chrome" …/preview.html`.
+
+   **Entities-versjonen må gjøre om ALT over ASCII, ikke bare æøå:**
+
+   ```ts
+   const ent = [...html].map(c => c.codePointAt(0)! > 127 ? `&#${c.codePointAt(0)};` : c).join("");
+   ```
+
+   Gjør du bare æøå, blir `·` til `¬∑` i Mailchimp — UTF-8 lest som Latin-1.
+   Malen inneholder også `•` og 240 usynlige fylltegn i forhåndsteksten
+   (U+034F, U+200C, U+00AD) som alle må konverteres. Ren ASCII kan ikke
+   mistolkes uansett hvem som leser bytene. Oppdaget 21. sept 2026.
+
+6. **Legg HTML-en på utklippstavla** når den er godkjent: `pbcopy < preview-entities.html`.
+   Kontroller at den er ren: `pbpaste | python3 -c "import sys;print(len([c for c in sys.stdin.read() if ord(c)>127]))"`
+   skal gi 0.
 
 ## Innholdsregler
 
@@ -50,6 +64,12 @@ Byggescriptet sperrer dette. Lever HTML, Adrian limer inn selv.
 - Topp-badge «NYHETSBREV» (salgs-badge kun ved ekte kampanje).
 - Komma, ikke tankestrek. «Proff-butikken», ikke «butikken». CNC-maskinert.
 - Produktgrid 6 (3+3) eller 5 (3+2), `mceColumn` for mobil-stacking.
-- **UTM:** `utm_source=mailchimp&utm_medium=email&utm_campaign={dato-tema}`
-  + `utm_content` per produkt. **Slå av Mailchimp-malens arvede
-  GA-kampanjekode** (`EMAIL_CAMPAIGN_…`) — den kolliderer med våre UTM-er.
+- **UTM:** `utm_source=FTNett&utm_medium=email&utm_campaign={dato-tema}`
+  + `utm_content` per produkt. **Det MÅ være `FTNett`**, ikke `mailchimp`:
+  `mailchimp-builder.ts` hardkoder `FTNett` på lenkene den lager selv (header,
+  footer, sosial-CTA, linje 371 og 483). Bruker du `mailchimp` i dine egne
+  lenker, splittes én utsendelse i to kilder i GA4. Oppdaget 21. sept 2026 —
+  28 lenker sto som `mailchimp` og 8 som `FTNett` i samme e-post.
+  `FTNett` har mest historikk: 236 sesjoner mot 94 siste 90 dager.
+  **Slå av Mailchimp-malens arvede GA-kampanjekode** (`EMAIL_CAMPAIGN_…`) —
+  den kolliderer med våre UTM-er.
