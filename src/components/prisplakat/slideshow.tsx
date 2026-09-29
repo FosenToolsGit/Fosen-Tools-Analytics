@@ -232,7 +232,7 @@ function ProductSlideContent({
                     letterSpacing: "0.08em", textTransform: "uppercase",
                   }}>SPAR {formatNOK(savings)}</span>
                 )}
-                {settings.show_burst && <span style={{ opacity: 0.6 }}>· Mens lageret rekker</span>}
+                {settings.show_burst && (product.stock_note ?? "Mens lageret rekker") && <span style={{ opacity: 0.6 }}>· {product.stock_note ?? "Mens lageret rekker"}</span>}
               </div>
             </div>
           </div>

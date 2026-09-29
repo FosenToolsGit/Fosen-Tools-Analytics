@@ -17,6 +17,8 @@ export interface PricetagProduct {
   hide_qr?: boolean;
   /** Override-produktnavn */
   name_override?: string;
+  /** Lagertekst ved prisen på skjerm. Mangler = «Mens lageret rekker», tom streng = skjult. */
+  stock_note?: string;
   /** Modus — "new"=NYHET-burst, "feature"=VÅRT VALG, "stock"=PÅ LAGER, ellers SPAR-burst fra discount */
   mode?: ProductMode;
   // Resten hentes ved scraping (cached i UI-state)
