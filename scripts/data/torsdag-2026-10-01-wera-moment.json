@@ -1,0 +1,17 @@
+{
+  "format": "reel",
+  "supplierSlug": "wera",
+  "supplierName": "WERA",
+  "supplierLogoUrl": "https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/leverandor-logoer/wera-with-slogan.png",
+  "productName": "MOMENTSKRUTREKKER 7440",
+  "productTagline": "Justerbar 0,3–1,2 Nm med numerisk visning",
+  "bullets": [
+    "Nøyaktighet ±6 % etter DIN EN ISO 6789",
+    "Rapidaptor hurtigchuck — bitsbytte med én hånd",
+    "For bits med 1/4\" utvendig sekskantdrev"
+  ],
+  "productImageUrl": "https://mc10256fosentools.blob.core.windows.net/mc10256no-multicaseteststaging-public/mc10256nomulticaseteststaging/47037/image/6971563c-2722-4c78-8167-0f44c6b47b1d/05074700001.jpg",
+  "eyebrowOverride": "Torsdagstipset",
+  "badgeLabel": "TIPS",
+  "ctaUrl": "fosen-tools.no/wera/F5422"
+}

@@ -23,7 +23,10 @@ const POSTER = [
   { dato: "2026-09-01", data: "referanse-innredning-bilverksted", kicker: "BILVERKSTED" },
   { dato: "2026-09-08", data: "referanse-mobilt-verksted-flyfag", kicker: "LUFTFART" },
   { dato: "2026-09-15", data: "referanse-brann-redning-innlegg",  kicker: "BRANN OG REDNING" },
+  { dato: "2026-10-01", data: "referanse-sintef-betonglab",       kicker: "FORSKNING" },
 ];
+// Valgfritt: bare én dato, f.eks. `npm run tirsdag:thumbs -- 2026-10-01`
+const KUN = process.argv[2];
 
 async function somDataUri(url) {
   const r = await fetch(url);
@@ -83,7 +86,7 @@ h1{font-size:104px;margin-top:26px}
 </body></html>`;
 
 const nettleser = await chromium.launch();
-for (const p of POSTER) {
+for (const p of POSTER.filter((p) => !KUN || p.dato === KUN)) {
   const d = JSON.parse(fs.readFileSync(`scripts/data/${p.data}.json`, "utf8"));
   p.headline = d.headline;
   // Unngå at kicker og overskrift sier det samme — da faller kickeren tilbake

@@ -33,6 +33,8 @@ const ukeOverride = arg("uke");
 const kategoriOverride = arg("kategori");
 // Varer som ikke hører hjemme i posten selv om de rangerer høyt, f.eks. en
 // skreddersydd gavekoffert i en generisk oppbevarings-kategori.
+const labelOverride = arg("label");
+const eyebrowOverride = arg("eyebrow");
 const ekskluder = (arg("ekskluder", "") || "").split(",").map((t) => t.trim().toUpperCase()).filter(Boolean);
 const formats = (arg("formats", "reel") || "reel").split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -59,7 +61,14 @@ const uke = ukeOverride ? parseInt(ukeOverride) : ukeNummer(date);
 // Uke 23 = offset 0, uke 24 = offset 1 osv. (vi starter rotasjonen på uke 23 2026)
 const slot = rotasjon[(uke - 23 + rotasjon.length * 10) % rotasjon.length];
 const kategoriSlug = kategoriOverride ?? slot.kategori;
-const aktiv = rotasjon.find((r) => r.kategori === kategoriSlug) ?? slot;
+const funnet = rotasjon.find((r) => r.kategori === kategoriSlug) ?? slot;
+// --label / --eyebrow lar oss kalle posten det den faktisk er når kategorisiden
+// inneholder noe annet enn slug-en tilsier (skrutrekkere rommer f.eks. L-nøkler).
+const aktiv = {
+  ...funnet,
+  label: labelOverride ?? funnet.label,
+  eyebrow: eyebrowOverride ?? (labelOverride ? `Ukens topp 3 · ${labelOverride}` : funnet.eyebrow),
+};
 
 const UA = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
@@ -254,8 +263,13 @@ const topp3: typeof rangert = [];
     userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
   });
   let vraket = 0;
+  // Samle en pulje på inntil 8 som består lager-sjekken, og velg de tre med
+  // størst kvantum på Brekstad blant dem. GA4-rekkefølgen bestemmer hvem som
+  // havner i puljen; kvantum bestemmer hvem av dem som kommer med i posten.
+  const POOL = 8;
+  const pulje: Array<typeof rangert[number] & { antall: number; lagertekst: string }> = [];
   for (const p of rangert) {
-    if (topp3.length === 3) break;
+    if (pulje.length === POOL) break;
     const artnr = (p.url.match(/\/([0-9]{5,6}|[fF][0-9]{4})(?:\/|$)/)?.[1] ?? "").toUpperCase();
     if (artnr && ekskluder.includes(artnr)) {
       console.log(`   ⊘ ${p.navn.slice(0, 44).padEnd(44)} utelatt (--ekskluder)`);
@@ -273,11 +287,22 @@ const topp3: typeof rangert = [];
     }
     settNavn.add(nøkkel);
     settType.add(type);
-    topp3.push(p);
+    pulje.push({ ...p, antall: lager.fosen, lagertekst: lager.tekst });
     console.log(`   ✓ ${p.navn.slice(0, 44).padEnd(44)} ${lager.tekst.slice(0, 34)}`);
   }
   await nettleser.close();
   if (vraket) console.log(`   (${vraket} vraket — ikke lager på Fosen)`);
+
+  // Størst kvantum først — vi løfter helst fram varer vi har mange av.
+  pulje.sort((a, b) => b.antall - a.antall || b.pris - a.pris);
+  topp3.push(...pulje.slice(0, 3));
+  if (pulje.length > 3) {
+    console.log("\n📦 Valgt på kvantum på Brekstad:");
+    for (const p of pulje) {
+      const med = topp3.includes(p) ? "✓" : " ";
+      console.log(`   ${med} ${String(p.antall === 99 ? "20+" : p.antall).padStart(3)} stk  ${p.navn.slice(0, 44)}`);
+    }
+  }
   console.log("");
 }
 

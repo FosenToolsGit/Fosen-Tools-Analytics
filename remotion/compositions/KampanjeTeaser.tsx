@@ -206,7 +206,8 @@ const ProductSlide: React.FC<{
         </div>
       </div>
 
-      {/* pris */}
+      {/* pris — eller detaljlinje når varen ikke har nettpris (priceNow 0) */}
+      {p.priceNow > 0 ? (
       <div
         style={{
           marginTop: 24,
@@ -258,6 +259,21 @@ const ProductSlide: React.FC<{
           eks. mva
         </div>
       </div>
+      ) : p.detail ? (
+        <div
+          style={{
+            marginTop: 28,
+            fontFamily: SANS_FONT,
+            fontWeight: 800,
+            fontSize: 64,
+            lineHeight: 1.1,
+            letterSpacing: -1,
+            color: FT.red,
+          }}
+        >
+          {p.detail}
+        </div>
+      ) : null}
     </AbsoluteFill>
   );
 };

@@ -158,6 +158,8 @@ export type KampanjeProdukt = {
   priceBefore: number | null;
   priceNow: number;
   discountPct: number | null;
+  /** Vises i stedet for prisen når priceNow er 0 (varer uten nettpris, f.eks. containere). */
+  detail?: string;
 };
 
 export type KampanjeTeaserProps = {
