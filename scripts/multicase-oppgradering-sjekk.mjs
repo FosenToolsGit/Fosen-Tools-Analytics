@@ -77,7 +77,7 @@ async function statiske() {
 // ───────────────────────── rendrede sjekker (Playwright) ────────────────────
 async function rendrede() {
   const b = await chromium.launch();
-  const ctx = await b.newContext();
+  const ctx = await b.newContext({ ignoreHTTPSErrors: true }); // staging har selvsignert sertifikat
 
   const sjekk = async (path, navn, fn, ventPå) => {
     const p = await ctx.newPage();
