@@ -88,6 +88,11 @@ const PRODUCT_TYPES: Array<[RegExp, string]> = [
   [/\bstikksag|jigsaw/i, "STIKKSAG"],
   [/\bverkt[øo]ykasse|tool ?box/i, "VERKTØYKASSE"],
 
+  // Lading og strømforsyning (CTEK o.l.) — kjøretøybatterier, ikke elektroverktøy-batterier
+  [/\bbatterilader|battery charger/i, "BATTERILADER"],
+  [/\bstartbooster|jumpstarter|jump ?start|booster\b/i, "STARTBOOSTER"],
+  [/\bladeaggregat|str[øo]mforsyning|power supply\b/i, "LADEAGGREGAT"],
+
   // Klær / verneutstyr — spesifikke typer FØR generiske (rekkefølge avgjør)
   [/\barbeidsbukse|trouser/i, "BUKSE"],
   [/\bbukse(?!sele)/i, "BUKSE"],
@@ -158,6 +163,9 @@ const SPEC_ABBREV: Array<[RegExp, string, boolean?]> = [
   // Størrelse
   [/\bs\/m\b/i, "S/M", true],
   [/\bl\/xl\b/i, "L/XL", true],
+  // Spenning (ladere, batterier) — kun fra tittelen, beskrivelsen nevner ofte flere
+  [/\b24\s*v\b/i, "24V", true],
+  [/\b12\s*v\b/i, "12V", true],
   [/\bsds\s*-?\s*max\b/i, "SDS-MAX"],
   [/\bsds\s*\+|\bsds\s*plus\b|\bsds\b/i, "SDS+"],
 
@@ -229,12 +237,18 @@ export function buildBeskrivelse1Compact(
     ? `${kryss[1].replace(",", ".")}X${kryss[2].replace(",", ".")}MM`
     : dimMatch ? `${dimMatch[1].replace(",", ".")}MM` : "";
 
+  // 4b) Ampere — bærende spec for ladere og startboostere. Kun fra tittelen, og
+  //     `\ba\b` krever ordgrense så «100 Ah» (kapasitet) ikke fanges som strøm.
+  const ampMatch = tittelLower.match(/\b(\d{1,3}(?:[.,]\d)?)\s*a\b/);
+  const ampToken = ampMatch ? `${ampMatch[1].replace(",", ".")}A` : "";
+
   // 5) Bygg ved å legge tokens i prioritert rekkefølge inntil 40 tegn
   const tokens: string[] = [];
   if (typeCode) tokens.push(typeCode);
   if (codeToken) tokens.push(codeToken.toUpperCase());
   for (const s of specsAdded) tokens.push(s);
   if (dimToken && !tokens.includes(dimToken)) tokens.push(dimToken);
+  if (ampToken && !tokens.includes(ampToken)) tokens.push(ampToken);
 
   let result = "";
   for (const t of tokens) {

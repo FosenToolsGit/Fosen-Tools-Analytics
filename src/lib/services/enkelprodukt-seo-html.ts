@@ -122,8 +122,17 @@ function emphasizeKeyword(bullet: string): string {
 /**
  * Auto-bruksområde-tekst per G1/G2/G3 — søkeordrik for Google.
  */
-function buildBruksomrader(g1: string | null, g2: string | null, g3: string | null, produsent: string): string {
+function buildBruksomrader(g1: string | null, g2: string | null, g3: string | null, produsent: string, tittel = ""): string {
   const cat = `${g1 ?? ""}/${g2 ?? ""}/${g3 ?? ""}`.toLowerCase();
+  // Produkter som ennå ikke har en Multicase-gruppe faller ellers rett til den
+  // generiske «verktøy for verksted»-teksten. Tittelen fanger dem opp.
+  const t = tittel.toLowerCase();
+  if (/batterilader|battery charger|ladeaggregat/.test(cat) || /batterilader|battery charger/.test(t)) {
+    return `Brukes i verksted og på anlegg til lading, vedlikeholdslading og spenningsstøtte av kjøretøybatterier — buss, lastebil, anleggsmaskin, landbruk og marine. Holder spenningen stabil under diagnose og feilsøking, og hindrer at batterier står og sulfaterer i stillstand.`;
+  }
+  if (/startbooster|jumpstarter|jump ?start/.test(cat) || /startbooster|jumpstarter/.test(t)) {
+    return `Brukes til nødstart av kjøretøy med utladet batteri — verksted, veihjelp, anlegg og beredskap. Egnet der kjøretøy står lenge mellom hver kjøring.`;
+  }
   if (/maskintilbeh[øo]r\/meisel/.test(cat)) {
     return `Brukes i borhammer med SDS-feste til meisling, riving og fjerning av puss, fliser og gammel betong. Egnet for bygg, anlegg og rehabilitering.`;
   }
@@ -221,6 +230,8 @@ function buildWhyBrand(produsent: string): string {
   if (p === "sumake") return "Sumake er taiwansk presisjon for trykkluft og industri — Make Jobs Better Than Ever. Brukes innen lakk, blåseluft og finarbeid.";
   if (p.includes("kc tools")) return "KC Tools (KC Suntech) leverer robust trykkluft-verktøy for verksted og industri — bredt sortiment med god verdi for fagfolk.";
   // Husqvarna
+  // CTEK — fakta fra CTEKs eget produktdatablad, ingen årstall uten kilde
+  if (p === "ctek") return "CTEK er svensk ladeteknologi — leverer batteriladere til over 70 land og er OEM-leverandør til flere av verdens ledende bil- og motorsykkelprodusenter. PRO-serien er utviklet for profesjonelle verksteder.";
   if (p === "husqvarna") return "Husqvarna har levert utstyr siden 1689 — kraftkrevende verktøy for bygg, anlegg, skog og bærekraftig hageskjøtsel.";
   // Pelicase
   if (p === "pelicase" || p.includes("pelican")) return "Pelican Products har laget vanntette beskyttelseskasser siden 1976 — IP67-sertifiserte cases brukt av forsvar, aviation, foto og industri verden over.";
@@ -285,7 +296,7 @@ export function buildEnkelproduktSeoHtml(input: SeoHtmlInput): string {
 
   // Bruksområder — auto-template basert på klassifisering
   parts.push(`<h3>Bruksområder</h3>`);
-  parts.push(`<p>${esc(buildBruksomrader(g1, g2, g3, produsent))}</p>`);
+  parts.push(`<p>${esc(buildBruksomrader(g1, g2, g3, produsent, raw.title))}</p>`);
 
   // Hvorfor {Produsent}? — brand-positioning hvis kjent merke
   const whyBrand = buildWhyBrand(produsent);
