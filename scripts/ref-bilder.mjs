@@ -3,7 +3,7 @@
 //   node scripts/ref-bilder.mjs --kat verktøyvogner --slug min-case --fra "~/Downloads/Mappe"
 //
 // Skalerer til maks 1600 px på lengste side, roterer etter EXIF, navngir
-// IMG1.jpg og oppover, og legger dem i en mappe som heter det samme som stien
+// IMG1.webp og oppover (--jpg for JPG), og legger dem i en mappe som heter det samme som stien
 // i Multicase. Da er opplastingen ren dra-og-slipp.
 //
 // Rekkefølgen styrer slideren. Filene sorteres på navn, så velg rekkefølgen i
@@ -38,6 +38,10 @@ const fra = arg("fra");
 const maks = Number(arg("maks", "1600"));
 const rekke = arg("rekke");
 const kun = process.argv.includes("--kun");   // bruk bare bildene i --rekke, dropp resten
+// WebP er standard fra 25. sept 2026: ~40 % mindre enn JPG ved samme kvalitet, og
+// kategorisidene laster første bilde i hvert case som miniatyr. --jpg gir gammel oppførsel.
+const jpg = process.argv.includes("--jpg");
+const EXT = jpg ? ".jpg" : ".webp";
 // Verkstedrot ligger nesten alltid øverst i bildet: reoler, esker, tak. En
 // gradert blur ovenfra fjerner det uten å røre motivet, og uten maskering som
 // kan gå galt langs kanten.
@@ -45,7 +49,7 @@ const blurTopp = arg("blur", null);          // f.eks. --blur 0.34
 const blurStyrke = Number(arg("blurstyrke", "22"));
 
 if (!kat || !slug || !fra) {
-  console.log("bruk: node scripts/ref-bilder.mjs --kat <kategori> --slug <case-slug> --fra <mappe> [--maks 1600] [--rekke \"a,b,c\"] [--kun]");
+  console.log("bruk: node scripts/ref-bilder.mjs --kat <kategori> --slug <case-slug> --fra <mappe> [--maks 1600] [--rekke \"a,b,c\"] [--kun] [--jpg]");
   console.log("--kun: ta med bare bildene i --rekke, i den rekkefølgen");
   console.log("--blur 0.34: gradert blur over øverste 34 % av høyden, mot rotete bakgrunn");
   console.log("kategorier: " + Object.keys(KATALOG).join(", "));
@@ -88,7 +92,7 @@ console.log("\n  " + kilde + "\n  " + filer.length + " bilder\n");
 let før = 0, etter = 0;
 for (let i = 0; i < filer.length; i++) {
   const inn = path.join(kilde, filer[i]);
-  const navn = "IMG" + (i + 1) + ".jpg";
+  const navn = "IMG" + (i + 1) + EXT;
   før += fs.statSync(inn).size;
   let bilde = sharp(inn).rotate();             // rotate() retter opp etter EXIF
   if (blurTopp) {
@@ -109,7 +113,7 @@ for (let i = 0; i < filer.length; i++) {
   }
   await bilde
     .resize({ width: maks, height: maks, fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 86, mozjpeg: true })
+    [jpg ? "jpeg" : "webp"](jpg ? { quality: 86, mozjpeg: true } : { quality: 82, effort: 6 })
     .toFile(path.join(ut, navn));
   const m = await sharp(path.join(ut, navn)).metadata();
   const st = fs.statSync(path.join(ut, navn));
@@ -127,5 +131,5 @@ const encKat = encodeURIComponent(katalog);
 const encSlug = encodeURIComponent(slug);
 console.log("\n  bilder-feltet til datafila:\n" +
   "    bilder: [" + filer.map((_, i) => i + 1).join(", ") + "].map(\n" +
-  "      (n) => \"/userfiles/image/Referanser/" + encKat + "/" + encSlug + "/IMG\" + n + \".jpg\"\n" +
+  "      (n) => \"/userfiles/image/Referanser/" + encKat + "/" + encSlug + "/IMG\" + n + \"" + EXT + "\"\n" +
   "    ),\n");
