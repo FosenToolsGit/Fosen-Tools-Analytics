@@ -117,6 +117,9 @@ function brandLogoUrlFromTicker(slug: string): string | null {
 
 export interface NewsletterInput {
   themeSlug: string;
+  /** Knappen under produktgridet. Standard: «SE ALLE PRODUKTENE VÅRE» → /produkter */
+  seeAllText?: string;
+  seeAllUrl?: string;
   subjectLine: string;
   previewText: string;
   title?: string;
@@ -931,7 +934,7 @@ function renderContentSection(
   // --- "SE ALLE PRODUKTENE VÅRE" button (skjules i leverandør-utgaver
   //     og i info-utgaver uten produkter, f.eks. ferie-meldinger) ---
   if (!useSupplierLayout && products.length > 0) {
-    rows.push(`<tr><td style="background-color:transparent;padding-top:10px;padding-bottom:20px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b40">${renderButton("40", "SE ALLE PRODUKTENE VÅRE", utm("https://fosen-tools.no/produkter", "alle-produkter"))}</td></tr>`);
+    rows.push(`<tr><td style="background-color:transparent;padding-top:10px;padding-bottom:20px;padding-right:24px;padding-left:24px;border:0;border-radius:0" valign="top" class="mceButtonBlockContainer" align="center" id="b40">${renderButton("40", input.seeAllText || "SE ALLE PRODUKTENE VÅRE", utm(input.seeAllUrl || "https://fosen-tools.no/produkter", "alle-produkter"))}</td></tr>`);
   }
 
   // --- Divider (hoppes over i bilde-øverst-utgaver) ---
