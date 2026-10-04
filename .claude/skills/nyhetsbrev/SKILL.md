@@ -36,7 +36,7 @@ Byggescriptet sperrer dette. Lever HTML, Adrian limer inn selv.
 4. **Bygg med `MailchimpBuilderService.buildNewsletterHtml`** (dummy
    MAILCHIMP_API_KEY i env unngår constructor-throw). Kjør med
    `npx tsx` fra prosjektroten.
-5. **Lever:** preview-HTML + entities-versjon til `~/Desktop/nyhetsbrev-{dato}/`,
+5. **Lever:** preview-HTML + entities-versjon til `~/Desktop/Fosen Tools/Nyhetsbrev/nyhetsbrev-{dato}/`,
    og åpne preview i Chrome: `open -a "Google Chrome" …/preview.html`.
 
    **Entities-versjonen må gjøre om ALT over ASCII, ikke bare æøå:**

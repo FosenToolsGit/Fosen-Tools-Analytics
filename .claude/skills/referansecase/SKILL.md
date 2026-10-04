@@ -32,7 +32,7 @@ så Adrian kan plukke hvilke bilder som hører til hvilket prosjekt.
    som mangler i fasiten.
 7. **Bygg landingssiden:** `node scripts/_tmp-ref-landing2.mjs` og verifiser
    at case-antallet stemmer (177 per 17. aug 2026 — skal øke).
-8. **Lever** som `~/Desktop/FT-{kategori}-KOMPLETT.html` med kopi-knapper
+8. **Lever** som `~/Desktop/Fosen Tools/Referanser/FT-{kategori}-KOMPLETT.html` med kopi-knapper
    (dark FT-stil), og åpne i Chrome: `open -a "Google Chrome" …`
 
 ## Regler som IKKE kan brytes

@@ -118,7 +118,7 @@ Førsteutkast. Teksten under er Adrians egen, gjengitt ordrett så ingenting gå
 - `scripts/rou-til-json.py` i customizer-repoet gjør .rou → JSON. Formatet er dokumentert i memory
   (`feature_enroute_rou_format`). Neste .rou-fil er en kommando, ikke en jobb.
 - 3D viser nå ekte tofarget topplate med utskjæringer + skum med lommer for Milwaukee-innleggene.
-- Åpent: plate→innlegg-mapping (Adrian bekrefter mot `~/Desktop/FT-milwaukee-cnc-plater.png`),
+- Åpent: plate→innlegg-mapping (Adrian bekrefter mot `~/Desktop/Fosen Tools/Verktøyvogn-customizer/FT-milwaukee-cnc-plater.png`),
   lagtykkelser, plate 7 = to innlegg?
 - Tykkelser og lommedybder står i .rou-fila og leses nå: plast 1,7 mm, gravering 0,6, skum 18/28 mm,
   dybde per lomme. Plate 7 = 120649 bekreftet; 3/4/5 er kopier av pipesettet.

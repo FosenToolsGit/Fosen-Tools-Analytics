@@ -50,11 +50,11 @@ utsettes til slutt der den kan bli glemt fordi tallene tok tid.
    lag — sammenlign hele uker med 3 dagers buffer), åpne anomalier i
    `analytics_anomalies`.
 6. **Bygg HTML-brief** i dark FT-stil (FT-rød accent, Manrope) →
-   `~/Desktop/FT-mandagsrapport-{dato}.html`. Aldri Markdown-leveranse.
+   `~/Desktop/Fosen\ Tools/Rapporter\ og\ analyser/FT-mandagsrapport-{dato}.html`. Aldri Markdown-leveranse.
 7. **Ukas FT Aviation-publisering — ALLTID med i briefen.** Se eget avsnitt
    under. Dette er ikke valgfritt og skal ikke droppes fordi tallene tok tid.
-8. **Åpne begge:** `open -a "Google Chrome" ~/Desktop/FT-mandagsrapport-*.html`
-   og `open ~/Desktop/FTA-ukesrapport-*.pdf`
+8. **Åpne begge:** `open -a "Google Chrome" ~/Desktop/Fosen\ Tools/Rapporter\ og\ analyser/FT-mandagsrapport-*.html`
+   og `open ~/Desktop/Fosen\ Tools/FT\ Aviation/Ukesrapporter/FTA-ukesrapport-*.pdf`
 
 ## Regler som IKKE kan brytes
 
@@ -104,7 +104,7 @@ manuelt.** At videoen ligger på YouTube betyr altså IKKE at uka er i boks.
 Gjør dette hver mandag, og skriv det inn i briefen som egen seksjon:
 
 1. **Navngi ukas to poster** — hvilket produkt går mandag, hvilket går torsdag,
-   med filnavn og art.nr. Kilde: `~/Desktop/FTA-lansering/PUBLISERINGSPLAN.html`
+   med filnavn og art.nr. Kilde: `~/Desktop/Fosen Tools/FT Aviation/Kanaler og lansering/FTA-lansering/PUBLISERINGSPLAN.html`
    (eller planen for gjeldende pulje).
 2. **Kontroller forrige uke mot Facebook-API-et**, ikke mot avkryssingene i
    planen — de ligger i localStorage og er ikke fasit:

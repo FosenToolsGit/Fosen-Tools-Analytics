@@ -306,7 +306,9 @@ ${yt.kilde === "snapshot" ? `<div class="note" style="margin-top:8px">${yt.uke
 <span>Generert ${new Date().toISOString().slice(0, 10)}</span></footer>
 </body></html>`;
 
-const ut = `${os.homedir()}/Desktop/FTA-ukesrapport-${G.na[1]}.pdf`;
+const utDir = `${os.homedir()}/Desktop/Fosen Tools/FT Aviation/Ukesrapporter`;
+fs.mkdirSync(utDir, { recursive: true });
+const ut = `${utDir}/FTA-ukesrapport-${G.na[1]}.pdf`;
 const b = await chromium.launch();
 const p = await b.newPage();
 await p.setContent(html, { waitUntil: "networkidle" });
