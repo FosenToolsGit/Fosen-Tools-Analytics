@@ -185,6 +185,10 @@ export interface NewsletterProduct {
   name: string;
   brandSku: string;
   priceText: string;
+  /** Valgfri farge på prislinja, f.eks. «#ED1C24» for kampanjepriser. Gir også litt større skrift. */
+  priceColor?: string;
+  /** Valgfri liten etikett over prisen, f.eks. «Kampanjepris». */
+  priceLabel?: string;
   imageUrl: string;
   ctaText?: string;
 }
@@ -1188,7 +1192,7 @@ function renderProductColumn(
   // Pris-linja rendres KUN når det finnes en pris (typisk ved rabatt). Tom pris
   // → ingen linje, så det ikke blir en tom luft-glipe over «Gå til produkt».
   const priceHtml = product.priceText
-    ? `<p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 36px; margin: 4px 0 0 0;"><a href="${esc(href)}" target="_blank"><strong><span style="font-size:13px">${esc(product.priceText)}</span></strong></a></p>`
+    ? `<p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 36px; margin: 4px 0 0 0;"><a href="${esc(href)}" target="_blank">${product.priceLabel ? `<span style="display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:bold;${product.priceColor ? `color:${esc(product.priceColor)}` : ""}">${esc(product.priceLabel)}</span>` : ""}<strong><span style="font-size:${product.priceColor ? "16px" : "13px"};white-space:nowrap${product.priceColor ? `;color:${esc(product.priceColor)}` : ""}">${esc(product.priceText)}</span></strong></a></p>`
     : "";
   const productTextHtml = `<h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 54px;"><a href="${esc(href)}" target="_blank">${esc(nameUpper)}</a></h4><p style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; min-height: 16px; margin: 4px 0 0 0;"><a href="${esc(href)}" target="_blank" style="color:#666"><span style="font-size:11px">${esc(product.brandSku)}</span></a></p>${priceHtml}<h4 style="line-height: 1.25; mso-line-height-alt: 125%; text-align: center; margin-top: 8px;" class="last-child"><a href="${esc(href)}" target="_blank"><strong><span style="text-decoration:underline;">${esc(ctaText)}</span></strong></a></h4>`;
 
