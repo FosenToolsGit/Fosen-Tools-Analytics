@@ -71,5 +71,6 @@ Byggescriptet sperrer dette. Lever HTML, Adrian limer inn selv.
   lenker, splittes én utsendelse i to kilder i GA4. Oppdaget 21. sept 2026 —
   28 lenker sto som `mailchimp` og 8 som `FTNett` i samme e-post.
   `FTNett` har mest historikk: 236 sesjoner mot 94 siste 90 dager.
-  **Slå av Mailchimp-malens arvede GA-kampanjekode** (`EMAIL_CAMPAIGN_…`) —
-  den kolliderer med våre UTM-er.
+  **Mailchimps GA-sporing (`EMAIL_CAMPAIGN_…`) skal stå på** — Adrians
+  beslutning 5. okt 2026. Den overskriver våre UTM-er, så mål utsendelsen på
+  Mailchimps kampanjekode i GA4, ikke på vår `utm_campaign`.
