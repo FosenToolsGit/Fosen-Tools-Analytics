@@ -1246,7 +1246,7 @@ Python-script `/tmp/scrape_products.py` (ikke committet) plukker fra fosen-tools
 
 ---
 
-## Prosjekt-tidslinje (10. april → 2. juli 2026)
+## Prosjekt-tidslinje (10. april → 6. oktober 2026)
 
 Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag for de største dagene følger under denne tabellen.
 
@@ -1294,6 +1294,8 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 2. juli | **Stor SEO/indeksering-dag + kiosk-fikser + Wera-varsling + Supabase-egress-fiks.** Detaljert sammendrag nedenfor. Hovedpunkter: **Indekserings-gjennomgang** — robots.txt Googlebot-hullet bekreftet FIKSET live (parameter-URLer i GSC nå 0), sitemap 4970 URLer 100% sunn, /manufacturers/+/categories/-kannibalisering=0, site-total klikk +4.5%/visn +5.6%, Facom recovered (pos 16.7→8.9), video-hero-sjekk lukket. Funn: **alle 30+ produsent-landingssider mangler i sitemap** (indeksert via intern-lenking, bekreftet /wera PASS) + 60 begravde kategorisider (fallsikring 1798v@pos60). Deliverable: `~/Desktop/FT-indeksering-gjennomgang-2026-07-01.html`. **Merke-vegg på `/produsent`** — auto-generert fra `.ProductMenu` (55 merker), logo-match på navn (`/userfiles/image/Logo/{Navn}.svg`) + tekst-fallback, søk via delegering, stiler i `FosenTools.scss`. Full produsent-side-SEO: title/meta + inline BreadcrumbList + FAQPage + JS CollectionPage/ItemList + FAQ-seksjon + kontakt-CTA (verifisert live). **Produktbeskrivelse-rydder** (`~/Desktop/FT-beskrivelse-rydder.html`) — fjerner Multicase WYSIWYG-cruft (tomme div-er/`style=""`/`&nbsp;`) som nøstet Teknisk info + Lignende produkter inn i Beskrivelse-fanen. **Kiosk-musepeker fikset** — `pointer-events:none` på YouTube/iframe-slides + transparent 1×1 cursor-bilde-fallback på `/skjerm/[token]` (Wera ✅; Milwaukee = infoskjermen.no sin OS-peker → deres innstilling). **Skrivebord ryddet** 205→2 mapper («Fosen Tools» + «Andre prosjekter»). **Wera-IG-varsling bygget** — IG Business Discovery mot `weratoolrebelsnorway` + ntfy-push + GitHub Actions-cron hvert 30. min + innebygd token-utløp-varsel (migrasjon 024 `social_watch`, `/api/social-watch`, `src/lib/services/social-watch.ts`). Meta-token oppdatert (var utløpt siden 25. juni → fikset også Meta-synken). **Supabase Cached Egress-fiks** — var 155%/7.7GB (99MB filer servert tusenvis av ganger av butikk-skjermer); reload 5min→daglig 07:30 + poll 30s→5min. Memory: `feature_social_watch`, `feedback_supabase_egress_kiosk`, `feature_merkevegg_produsent`, `feedback_multicase_produkttab_cruft`. |
 | 21. sept (kveld) | **Verktøyvogn-customizer bygget og deployet på én kveld.** Adrians idé (ordrett i `docs/vogn-customizer/ideen.md`): velg vogn, legg innlegg i hver skuffe, notat per skuffe, send forespørsel — ingen priser på siden, sortert billigst først, presets. Eget repo `FosenToolsGit/fosen-tools-custom` + Vercel-prosjekt, live på https://fosen-tools-custom.vercel.app. 7 vogner (skuffeoppsett fra produktsidene), 19 innlegg fra `/produkter/verktøysett/skuffer` med foto rett ovenfra som skuffebunn, 3D-scene av CSS-plan etter vognvisningens konvensjon, Resend-rute med tørrkjøring. Beslutninger: eget repo, Resend via fosen.tools, CSS-tegnet vogn, alle DE-innlegg passer alle skuffer, bred toppskuff tar to. **Gjenstår:** `RESEND_API_KEY` + domeneverifisering, presets gjennomgås av Erik. Samme kveld: CTEK MXT 14 lagt inn via Enkelprodukt-destilleriet (Batterier > Batteri, ikke på nett), og fire hull i destilleriet tettet (BATTERILADER-type, ampere-token, lader-bruksområde, CTEK-merketekst). |
 | 29. sept–1. okt | **Hjulskiftkampanjen ferdig, Milwaukee Q4-priser importert, Packout-landingsside, Endre-video.** Hjulskift: jekk-tekst nøytral (stykkgods/hentes på Brekstad, aldri «høy frakt»), OG-bilde + OG-beskrivelse live, reel kun intro-whoosh, alt i delt mappe/Google Disk — produksjon ferdig, venter på Eriks godkjenning. Milwaukee Q4: listepris via «Listepris endre»-xlsx (prisgruppe **Veilpris**, Lås DG True + **tom listepris**), 857 varer verifisert lik Milwaukees liste. Packout: gjennomgang av 28 fokusvarer + landingsside for `/produkter/oppbevaring/packout` bygget; menypunktet vises ikke for besøkende (Multicase-sak). Endre-video: intro (Factory Store), outro (med PS om capsen), captions, cover. Detaljer i sesjons-sammendraget under. |
+| 5.–6. okt | **Hjulskiftkampanjen lansert, Milwaukee-gaven fikk landingsside, og kampanjene på nettstedet styrer seg selv.** Mandagsrapport uke 40 + FTA-rapport (FTA tail stand 122692 rendret i tre format og publisert på YouTube 5. okt, Short `yCZhvBIo69c` / 16:9 `oruw_DUzJvk`). Hjulskift-nyhetsbrevet planlagt 6. okt kl. 11 (`e277dfcca1`) med Maritime Robotics nederst og røde «KAMPANJEPRIS»-priser uten veil. pris (nye felt `priceLabel`/`priceColor` i `mailchimp-builder.ts`). Butikkskjermene: Milwaukee-, Wera- og HDFI-skjermen viser hjulskift med alle 20 varer, forskjøvet og med ulik tid per slide så de ikke går i takt. Nettsiden (alt i `FosenTools.scss`): førpris-tooltip «Tidligere laveste pris siste 30 dager» (13b), **generelt kampanjebånd på forsiden** (53) og **generell kampanjefane** som erstatter temaets KONTAKT-fane (54) — begge leser KAMPANJER-menyen selv. Ny side `/kampanjer/milwaukee-gave` i karusellens Milwaukee-stil med gavekort og snarveiknapper inn i `/milwaukee`. Mailchimps GA-sporing skal stå på (Adrians beslutning). PC-en gikk tom for minne (last ~380, 12 GB swap) — Hundo Hunter-pipelinen i cron hver 3. time er største synder. **6. okt:** ny vogn-slider på forsiden erstatter `families-gallery` — frilagte bilder i Supabase, «Se inni» som delt visning med skuffbilder og tekst fra 3D-visningen; footer-, mva- og glippe-fikser; Sass i Multicase tåler ikke `min()` med blandede enheter. Detaljer i sesjons-sammendraget under. |
+| 6. okt (musikk) | **Musikkbibliotek bygget med Mureka.** Testet `/brag-slim` (latent-spaces/brag) på `/kampanjer/milwaukee-gave`: skillen er bare en oppskrift uten kode, og gir ingen ny evne mot Remotion-pipelinen. Lånt: krok først, stillbilder per scene før render, plakatbilde bakt inn som frame 0. Milwaukee-gave-reelen ble laget (24 s, 9:16) i to versjoner: kun effekter, og med AI-musikk der dropet treffer sluttskjermen. **60 prompts** (20 FT Aviation, 40 Fosen Tools) skrevet med bruk i selve prompten; Adrian lagde **119 låter** på betalt Premier-prøve (FT eier dem, kommersiell bruk uten kreditering). `scripts/musikk-register.py` bygger `register.html`/`.json` med nivåkurve, drop, pusterom og avspiller. Mureka-abonnementet sagt opp før $199-trekket 12. okt (sjekk e-post/bank). Hjulskift-reelen beholdt kun whoosh; musikkversjonene var en test. |
 | 1.–4. okt | **Milwaukee-kampanje, Maritime Robotics og stor opprydding.** Milwaukee «Work Hard Play Hard» (1. okt–30. nov, gave ved kjøp, fem nivåer 5 750–19 500 kr eks. mva — kontrollert mot vilkårenes vedlegg 1): karusell som turnéplakat bygget fra grunnen (`scripts/_tmp-milwaukee-whph.mjs`, Milwaukees egen kampanjefilm som stemning, frilagte produktbilder) + påminnelse onsdag 14. okt med vinkelen «én i oktober, én i november» (vilkår pkt. 7). Vilkårene sier noe kampanjesiden ikke gjør: så langt beholdningen rekker, Milwaukee My Account, én registrering per måned. Fredag 2. okt: Maritime Robotics-leveranse (Opticase-koffert, stablede HDFI-innlegg med fire gripehull) publisert. **Facebook-lenkekvoten er brukt opp** — FB-captions uten URL. **Opprydding:** skrivebord 181 → 2 mapper (alt i `~/Desktop/Fosen Tools/{tema}/`, 162 stier i scripts/skills/CLAUDE.md/minne skrevet om, faste leveranser lagres rett i temamappe), Nedlastinger 1 210 → 155 poster, ~70 GB til T7 med md5 på alle filer, Mac fra 13 til 82 GB ledig. T7 har nå tre områder (Fosen Tools - arkiv / Privat og andre prosjekter / Usortert) og en søkbar `OVERSIKT.html` på roten (`scripts/lag-t7-oversikt.py`). |
 | 28. sept | **Verktøyvogn-customizeren gjort ferdig for kunder, og to nye FT-innlegg.** Menyen over innlegget ligger i 3D-scenen, vinklet mot kameraet, med farger, Flytt, Fjern, Bytt innlegg og «Se hele vognen». Prinsippet: *ting kommer opp foran deg, ikke på siden*. «Prøv en annen vogn» beholder oppsettet. **Egen logo:** SVG der det svarte freses bort, ellers «vi vektoriserer» i tilbudet. **DXF:** forespørselen legger ved en endrings-DXF per tilpasset skuff, laget av de forskjøvne dataene. Den eksakte DXF-en finnes bare lokalt, og `data/cnc` skal aldri til Vercel. **Resend** sender fra `foresporsel@fosen.tools` (DNS hos ProISP, nøkkel i Vercel), og e-posten er tilpasset Freshdesk. **FT INDU 2:** 125501 (pipesett, 67 deler) og 125502 (tang og skrutrekkere) fra .rou, gravert front, alle verktøy i 3D og kontrollert mot foto, Meshy-modeller for skrallene, tengene, saksa og målebåndet. «Ta ut verktøy» og Milwaukee i grå vogn er parkert. Detaljer: memory `project_vogn_customizer`. |
 | 21. sept | **Semrush-kryssgang, markedsrapport med gjøreliste, to ukers innhold og to FTA-videoer.** Fire spor på én dag. **(1) Semrush mot alt vi har analysert:** det finnes *tre* leveranser, ikke én — uttaket, dypdykket og en **ferdig markedsplan 2026/27** med arbeidsliste på 94 titler, skrevet 17. sept og aldri krysset mot GSC-analysen. Planen setter metarunden til **+670 klikk/kvartal**; tre egne målinger sier 160–175. Avgjort av hovedrapportens 19 420 søkeord–side-par: på plass 1 får vi **23,65 % på merkesøk mot 1,98 % på generisk**, og planens egen tabell viser at underskuddet *vokser* oppover (40 % av normalen på plass 3–10, men 128 % på 20–30 og 180 % på 30+) — signaturen til at noe tar toppen av skjermen, ikke til dårlig tekst. **Funn ingen av kildene har:** «hørselvern er største mulighet» og «verneutstyr er tydeligste feilinvestering» er samme sak — **66 % av familiens synlighet ligger på ødelagte adresser**, og siden som svarer på «hørselvern» er `/produkter/verneutstyr1/hørselvern/hørselvern` på **plass 94**. **Semrush prioriterer etter CPC, og det gjelder ikke oss:** 385 søketermer kjøpt i 2026, to konverterte, begge eget navn. Rapport: `~/Desktop/Fosen Tools/SEO og sidearbeid/FT-semrush-mot-egne/`. **(2) Markedsrapport + gjøreliste** med 16 oppgaver, `~/Desktop/Fosen Tools/Rapporter og analyser/FT-markedsrapport-sept/`. **(3) Innhold uke 39–40:** Milwaukee-teaser (tir) og «er her i dag» (tor) + tidlig-torsdag-variant, PB Swiss Coin-Driver med foto av Endre (ons), vinkelnøkler (man 28.), Knipex BiX (tir 29.), Wera momentskrutrekker (tor 1/10). 🔴 **Mandagsrotasjonen bommet to uker på rad** — verktøyvogner 1 av 12 postbare, skrutrekkere 1 av 19. Adrians regel er nå i skriptet: **rangér på kvantum på Brekstad**, ikke pris. **(4) FT Aviation:** F-35 EOR Kit og Line Maintenance Support Stand, seks videoer, thumbnails og captions. |
@@ -1329,6 +1331,121 @@ Kronologisk oversikt over hva som ble bygget når. Detaljerte sesjons-sammendrag
 | 7. sept | **FTA-videoer, /aktuelt ryddet og to rapportfeil funnet.** To FT Aviation-videoer bygget (wash kit + ny `FTANations`-komposisjon for 15 liveries), begge lastet opp med thumbnails og captions. `/aktuelt/referanseprosjekter` slettet med 13 omdirigeringer etter at alt innhold var berget. **Halvårsrapportens to hovedtall er feil:** metarunden på kategorisidene er verdt ~175 klikk, ikke 1 500, og produktsidenes «fall» er sesong. Erik ba om oversikt over lagervarer uten nettside: 3 109 funnet. |
 | 31. aug | **Mandagsøkt + dyp SEO-gjennomgang.** Ukesrapport uke 35. Nyhetsbrev 1. sept (Milwaukee momentnøkler, lager + 20 % verifisert live). Multicase-svaret sendt i **215952** (217127 er registrert på Erik). To hjulpipesett lagt på hjulskift-siden. **Kjøpssporingen brakk 21. aug** — kvitteringssiden er `/kvittering` (ikke `/bekreftelse`), GTM frikjent, nettbutikken sender ikke lenger `purchase`; venter til 7. sept. **Bing Webmaster API koblet opp** (`scripts/bing-stats.mjs`). **AI-synlighet 5/7, opp fra 2/7** — 12-månedersmålet nådd etter tre. **Kategorisider målt:** 410 av 494 mangler H1, 226 har meta under 120 tegn, CTR 0,76 % mot 3,06 % på produsent-sider. **Produsent-meta settes med JS og når aldri Bing.** Referanse-redirects droppet: ~14 000 rader over 164 sider gjør manuell rydding uaktuelt. |
 ---
+
+---
+
+## Musikkbibliotek (6. oktober 2026)
+
+**Hvor:** `~/Desktop/Fosen Tools/Bilder og media/Musikk/` — `FT Aviation/` (fta-01…20, 1–3 versjoner) og `Fosen Tools/` (ft-01…40, 2 versjoner), 119 låter, navn `{nr}-{slug}-v{n}.mp3`.
+**Register:** `register.html` (avspiller, nivåkurve, drop, pusterom, bruk) og `register.json`, bygget av `scripts/musikk-register.py`. Bruk-tekster i `bruk.json`, prompts i `musikk-prompts.html`.
+**Rettigheter:** laget på Mureka Premier (betalt prøve) → FT eier låtene og kan bruke dem kommersielt uten kreditering (vilkår 13. mai 2026 pkt. 2(e), kopi `Mureka-vilkaar-2026-05-13.pdf` i mappa). Abonnementet er sagt opp.
+**Slik legges musikk under en video:** velg låt fra `register.json`, finn utsnitt der et drop/slag treffer et nøkkelbilde (finjuster med onset-analyse), musikk ~0,75–0,85 + whoosh 0,35–0,45, fade ut 1,4–1,6 s, `loudnorm` til −14 LUFS. Lever alltid en effekt-only-versjon ved siden av. Kampanje · tung (ft-01) og Vinter / hjulskift (ft-30) er for harde til vanlige produktreels — start med ft-33 eller ft-31.
+**Kjente begrensninger:** alle låter er 2–4 min selv når prompten ba om 8/15 s; BPM-anslaget kan være halvt/dobbelt; vokal kan ikke sjekkes automatisk — Adrian lytter før bruk.
+
+---
+
+## Siste sesjons-sammendrag (5.–6. oktober 2026)
+
+Lanseringsdagen for hjulskiftkampanjen. Det viktigste som kom ut av økta er at
+**kampanjer på nettstedet nå styrer seg selv fra KAMPANJER-menyen**. Detaljer i
+memory: `project_hjulskiftkampanje_2026`, `project_milwaukee_work_hard_play_hard`,
+`feedback_kampanjepriser_ikke_rabattfokus`, `feedback_multicase_publisering`.
+
+### 1. Kampanjer på nettstedet — ett menypunkt styrer alt
+Tre flater leser samme kilde, `/api/Menu/GetHtmlMenu?nodeId=2001104…`, og finner
+punktene under `a.dropdown-toggle[href="/kampanjer"]`:
+
+| Flate | Hvor | Hva den gjør |
+|---|---|---|
+| Kampanjeoversikten | `/kampanjer` (`FT-sidebygger/sider/kampanjer.py`) | Ett kort per kampanje |
+| **Forsidebåndet** | Publisering under heroen, seksjon 53 i `FosenTools.scss` | Én slide per kampanje, bytter hvert 7. s, prikker + «Alle kampanjer (N)». Tittel/tekst fra hver sides `og:title` (før komma) og `og:description` |
+| **Kampanjefanen** | Bunnpublisering (vises på alle sider), seksjon 54 | «KAMPANJER» på høyre kant, rødt tall = antall, navnene ruller, går til `/kampanjer` |
+
+- **Ny kampanje** = synlig menypunkt under Kampanjer + bilde i `/userfiles/image/Kampanje/{slug}.jpg`
+  (fallback `.png`, så Supabase `social_assets/brand-assets/kampanjer/{slug}.jpg`). Ingenting annet.
+- **Kampanje slutt** = ta menypunktet ut av menyen. **CSS-skjuling holder ikke** — punktet ligger da
+  fortsatt i menydataene og telles med.
+- Ingen kampanjer → verken bånd eller fane.
+- Fanen erstatter temaets røde **`.shop-tab`** («KONTAKT», lenket til `/kundesenter/startside`).
+  Den skrives ut av temaets sidemal og kan bare skjules, ikke pekes om (`.shop-tab{display:none!important}`).
+- Bunnsonene `Field_FooterContent129/138/139/140` finnes på alle sidetyper — der legges ting som skal vises overalt.
+- `WebPubElement` er `display:flex` → en seksjon inni trenger `width:100%`.
+- Kildefiler + innlimingsside med kopiknapper: `~/Desktop/Fosen Tools/Kampanjer/FT-hjulskift-kampanje/`
+  (`forside-baand/`, `kampanjefane/`, `LIM-INN-nettsted.html`). Hjulskift-spesifikke v1 ligger i `v1-hjulskift/`.
+- **Test mot live:** det gamle stilarket lastes etter en injisert teststil og vinner — prefiks teststilen med `html body`.
+
+### 2. Milwaukee «Work Hard Play Hard» — landingsside
+Erik ba om det etter å ha sett Staypros `/milwaukee-redemption`. Bygget `/kampanjer/milwaukee-gave`
+med sidebyggeren (`sider/milwaukee-gave.py`), i karusellens uttrykk: nettbanner 1600×640
+(`scripts/_tmp-mwgave-banner.mjs`), nedtelling til 30. nov, fem gavekort (konturtall, sokkel,
+GRATIS-merke), tre steg-fliser, «To gaver mulig», og **snarveiknapper** gruppert i maskiner,
+håndverktøy, tilbehør, verneutstyr og oppbevaring.
+- Gavene, kontrollert mot Milwaukees side: **M12 SPEJSG2 = jobsite-høyttaler** (ikke pipesett), M18 SPEJSG2
+  høyttaler, L4 RLEPB øretelefoner, M18 RADDAB+G2 arbeidsradio, M18 PRCDAB+ Packout-radio.
+- **Bilder i `section.ftseo` strekkes av temaet** (full bredde med `!important`). Inline `!important` vinner:
+  `width:100%!important; height:{fast}px!important; object-fit:contain!important`.
+- **Raw-HTML-feltene i sidebyggeren konverteres ikke til entiteter** — gjør det selv (`ent()` i sidefila).
+- **Filterlenker:** `/milwaukee?Filter=24%C2%A41:24%C2%A41_{verdi}` er identisk med det Multicase lager.
+  «¤» i adressefeltet er Multicases eget skilletegn. **Fellen:** de fire første kortene på `/milwaukee` er
+  alltid bestselgerne, og et filter uten treff viser bare dem — tell treff *under* bestselgerne. Null treff
+  5. okt: hansker, vernebriller, spiralbor, kappeskiver, skrutrekkersett, platesaks, rørkutter, hodelykt.
+  SDS+ heter `Hammerbor_SDS43`, «/» er `-47`.
+- Kortbildet i oversikten og båndet er en tekstfri versjon (`_tmp-mwgave-kort.mjs`), så tittelen ikke står dobbelt.
+
+### 3. Priser og 30-dagersregelen
+- **Førpris-tooltip** på produktsiden (seksjon 13b): i-ikon bak førprisen, boble «Tidligere laveste pris
+  siste 30 dager» under tallet. Ren CSS på `.OldPriceLabel`.
+- **Prisopplysningsforskriften § 9a:** førprisen må være laveste pris siste 30 dager. Milwaukee Q4-importen
+  1. okt løftet listeprisen på 122301, 109991, 120353, 125584 og 125821, så nettsiden viste for høy førpris
+  under kampanjen. Sjekk alltid dette når en prisimport faller sammen med en kampanje.
+- **Nyhetsbrev:** Adrian vil ha bare kampanjeprisen, rød, uten veil. pris. `mailchimp-builder.ts` har nye
+  valgfrie felt `priceLabel` og `priceColor` (prisen får `white-space:nowrap`, ellers brekker «,-»).
+
+### 4. Butikkskjermene
+Hjulskift går på Milwaukee- (`333495a2`), Wera- (`90b40625`, varene forskjøvet 10, 9 s/slide) og
+HDFI-skjermen (`4cc5ce51`, forskjøvet 5, 10 s/slide, HDFI-presentasjonen sist i løkka). Alle viser alle 20
+varene, men ikke i takt. **Etter 20. nov:** pek tilbake til drift-listene (`665680cd`, `ecd6013d`, `63320f27`).
+Endres en vare i kampanjen, må det gjøres i alle tre listene. Kasseskjermen var frakoblet i butikken.
+
+### 5. Andre beslutninger og funn
+- **Mailchimps GA-sporing skal stå på** — mål utsendelsen på Mailchimps kampanjekode i GA4. Nyhetsbrev-skillen er oppdatert.
+- **Mandagsøkta:** cron-syncen hadde ikke kjørt kl. 07:10, trigget manuelt.
+- **PC-en gikk tom for minne** (last ~380 på 8 kjerner, 12 av 13 GB swap). Største synder er Hundo Hunter-pipelinen
+  i crontab (`0 */3 * * *`, rendrer videoer på flere språk i 2+ timer), så Chrome, Claude-appen og en iPhone-simulator
+  som hadde stått i tre dager. Next-serveren for vogn-customizeren og simulatoren ble stoppet. Anbefalt: flytt
+  pipelinen til natta.
+- FTA: neste i lista er stabilizer support strut (126236), deretter combined servicing & inspection kit (124947).
+
+### 6. Vogn-slider på forsiden (6. okt)
+Erstatter den gamle `families-gallery`-slideren på forsiden. Ligger også på `/produkter/verktøyvogner`
+(sone `CenterContentSingletonMiddle4778`). Kilde: `~/Desktop/Fosen Tools/SEO og sidearbeid/FT-vognvelger/`
+— `bygg.py` (familier og varianter), `bygg-slider.py` → `publisering-slider.html`, `vognslider.scss`
+(= seksjon 55 i `FosenTools.scss`), innliming via `LIM-INN-slider.html`. Memory: `project_vognvelger_forside`.
+- **Fire faner** (Standard, Milwaukee Custom, Premium, Spesialvogner), stor vogn i midten med nabovognene i kantene,
+  variantknapper, piler, sveip og piltaster. Søkescriptene fra den gamle publiseringen er tatt med.
+- **Bildene er frilagt** og ligger som WebP i Supabase `social_assets/brand-assets/vogner/` (3,7 MB → 388 kB).
+  Multicase godtar ikke `.webp`. Supabase-nøkkelen er nytt format (`sb_secret_`) og krever `apikey`-header
+  i tillegg til Bearer ved opplasting.
+- **«Se inni» er en delt visning:** vogna glir til venstre, og ett innlegg om gangen vises til høyre med
+  «Skuff N», tittel, spesifikasjon, tekst, bilde, forrige/neste og knappene Tilbake / Alle verktøyvogner /
+  Se {vogn}. For FTAUTO6, FTINDU2 og FTMEGA9 brukes skuffbildene og tekstene fra 3D-visningen
+  (`/userfiles/image/Verktoyvogner/`, data i `SKUFFER`). Andre vogner viser produktgalleriet.
+  Adrian avviste først en bildestripe med etiketter.
+- **Knappen styres per variant** (femte felt i variant-tuppelen): Aviation og Milwaukee «Design selv» viser
+  «Du velger innholdet selv», Høydesikret og Forsvaret har ingen knapp (ingen innsidebilder).
+- **Åpent:** FTLAUTO og FTLMEGA mangler innleggsbilder på nett — Adrian har dem lokalt. 3D-visningen
+  (`#ft-vogn`) var ikke å finne på `/produkter/verktøyvogner` 6. okt; lenke dit fra «Se inni» venter på den.
+
+### 7. Nettsidefikser samme dag (alt i `FosenTools.scss`)
+- **Footeren hadde fast høyde** (575 px + `content-visibility`) og klippet bort publiseringer → `height: auto`.
+- **«eks/inkl mva» dukket opp** på kurven til Forsvaret-vogna (127280) → `.AdPriceSuffix` skjult når prisen er «Forespør».
+- **Glippe under menyen:** hver publisering i hodesonen blir en `body > .d4-article` på 20 px. Kampanjefanen
+  flytter seg ut av boksen sin, så `:has(.ft-kampanjefane)` traff ikke → regelen er nå `:has(.ft-fane-holder)`.
+  Merkeskript-boksen (`d4-article-21194`) er regnet med i oppsettet og skal stå.
+- **Sass-feil «Incompatible units: '%' and 'px'»:** Multicase kompilerer med en eldre motor som regner ut
+  `min()`/`max()` selv. Skriv `width: 74%; max-width: 560px;`, aldri `min(560px, 74%)`. `clamp()` og `calc()` er trygge.
+- **Artikkeltema 2 venstrestiller h1–h4 og p** med høyere prioritet enn komponentklasser — sentrering trenger `!important`.
+- Slideren har hvit bakgrunn (var lys grå).
 
 ---
 
