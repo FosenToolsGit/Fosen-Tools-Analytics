@@ -40,6 +40,12 @@ const RULES: Rule[] = [
   { pattern: /\blaser\b/, nameOnly: true, g1: "Batteriverktøy", g2: "Måleverktøy", g3: "Laser" },
   { pattern: /\bcaps\b|baseball ?cap/, nameOnly: true, g1: "Arbeidsklær", g2: "Caps", g3: "Caps" },
   { pattern: /\blue\b|\bbeanie\b/, nameOnly: true, g1: "Arbeidsklær", g2: "Arbeidsklær", g3: "Lue" },
+  // Kniver (Milwaukee Fastback o.l.) — lagt til 6. okt 2026. Knivblad før kniv.
+  { pattern: /knivsliper|knife sharpener|sharpener/, nameOnly: true, g1: "Skjære- og stanseverktøy", g2: "Kniv", g3: "Tilbehør - kniv" },
+  { pattern: /\bknivblad\b|\bblades?\b/, nameOnly: true, g1: "Skjære- og stanseverktøy", g2: "Kniv", g3: "Knivblad" },
+  { pattern: /(?=.*\bkniv\b)(?=.*\b(?:flip|folding|fold|fastback|foldekniv)\b)/, nameOnly: true, g1: "Skjære- og stanseverktøy", g2: "Kniv", g3: "Foldekniv" },
+  { pattern: /(?=.*\bkniv\b)(?=.*\b(?:kabel|cable)\b)/, nameOnly: true, g1: "Skjære- og stanseverktøy", g2: "Kniv", g3: "Kabelkniv" },
+  { pattern: /\bkniv\b/, nameOnly: true, g1: "Skjære- og stanseverktøy", g2: "Kniv", g3: "Bladkniv" },
   // ── Syl (Wera 1427-serien — verktøy for pilot-hull) — FØR klinge-reglene
   //   siden Wera 1427 har «klinge» i navn men er egentlig en syl.
   { pattern: /\bsyl\b|skruehullstans/, g1: "Skrutrekkere", g2: "Skruehullstanser", g3: "Skruehullstanse" },

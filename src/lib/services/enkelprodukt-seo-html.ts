@@ -79,6 +79,8 @@ function capitalize(s: string): string {
 function inferProductType(title: string, g1: string | null, g2: string | null): string {
   // Foretrekk G3-mer-spesifikk-navn fra title
   const t = title.toLowerCase();
+  if (/knivsliper/i.test(t)) return "knivsliper";
+  if (/foldekniv/i.test(t)) return "foldekniv";
   if (/skrutrekker/i.test(t)) return "skrutrekker";
   if (/pipe/i.test(t)) return "pipe";
   if (/n[øo]kkel/i.test(t)) return "nøkkel";
@@ -132,6 +134,15 @@ function buildBruksomrader(g1: string | null, g2: string | null, g3: string | nu
   }
   if (/startbooster|jumpstarter|jump ?start/.test(cat) || /startbooster|jumpstarter/.test(t)) {
     return `Brukes til nødstart av kjøretøy med utladet batteri — verksted, veihjelp, anlegg og beredskap. Egnet der kjøretøy står lenge mellom hver kjøring.`;
+  }
+  if (/knivsliper|sharpener/.test(t)) {
+    return `Brukes til å holde kniver og sakser skarpe i det daglige, på lager, bygg, anlegg og i verksted. Liten nok til å ligge i lomma eller verktøykassa.`;
+  }
+  if (/\/kniv\/knivblad/.test(cat)) {
+    return `Reserveblad til bladkniver og foldekniver. Brukes til kapping av papp, plast, tape, isolasjon og gips på lager, bygg og i verksted.`;
+  }
+  if (/\/kniv\//.test(cat)) {
+    return `Brukes til kapping av papp, plast, tape, strips, isolasjon og gips, på lager, bygg, anlegg og i verksted.`;
   }
   if (/maskintilbeh[øo]r\/meisel/.test(cat)) {
     return `Brukes i borhammer med SDS-feste til meisling, riving og fjerning av puss, fliser og gammel betong. Egnet for bygg, anlegg og rehabilitering.`;
@@ -244,7 +255,7 @@ function buildWhyBrand(produsent: string): string {
 /** Felt som hører til innkjøps-/logistikksiden og aldri skal ut på produktsiden.
  *  B2B-portalene (Milwaukee/TTI o.l.) blander dem inn i samme spec-tabell. */
 function ERINNKJOPSFELT(key: string): boolean {
-  return /hs.?code|tariff|toll|customs|master carton|kolli|inner box|pallet|moq|minimum order|lead.?time|leveringstid|kostpris|innkj[øo]p|netprice|listprice|availability|lagerstatus|article no|art\.?\s*nr|varenummer|^ean|^gtin|name:\s*model|model variant|country of origin|opprinnelse/i.test(key);
+  return /hs.?code|tariff|packed content|min\.?\s*order|order qty|toll|customs|master carton|kolli|inner box|pallet|moq|minimum order|lead.?time|leveringstid|kostpris|innkj[øo]p|netprice|listprice|availability|lagerstatus|article no|art\.?\s*nr|varenummer|^ean|^gtin|name:\s*model|model variant|country of origin|opprinnelse/i.test(key);
 }
 
 export function buildEnkelproduktSeoHtml(input: SeoHtmlInput): string {

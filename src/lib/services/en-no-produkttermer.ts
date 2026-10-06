@@ -38,6 +38,7 @@ const TERMER: Array<[RegExp, string]> = [
   [/\bscrewdriver\b/gi, "skrutrekker"],
   [/\bwrench\b|\bspanner\b/gi, "nøkkel"],
   [/\bhammer\b/gi, "hammer"],
+  [/\bknife sharpener\b|\bsharpener\b/gi, "knivsliper"],
   [/\bknife\b/gi, "kniv"],
   [/\btape\b(?=\s|$)/gi, "tape"],
   // oppbevaring / annet
