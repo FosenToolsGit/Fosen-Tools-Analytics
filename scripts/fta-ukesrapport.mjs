@@ -27,6 +27,7 @@ const d0 = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.t
 // uansett hvilken dag rapporten kjøres.
 const sønAvstand = ((new Date().getDay() + 6) % 7) + 1; // dager tilbake til sist søndag
 const G = { na: [d0(sønAvstand + 6), d0(sønAvstand)], før: [d0(sønAvstand + 13), d0(sønAvstand + 7)] };
+function dag(iso, n) { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); }
 const NO = (n) => Number(n).toLocaleString("nb-NO");
 
 const kli = async (s) => await new GoogleAuth({ credentials: creds, scopes: [s] }).getClient();
@@ -101,7 +102,8 @@ const hend = rows(await ga(ca, G.na, { dimensions: [{ name: "eventName" }],
 const sDag = await gs(cs, [d0(60), d0(1)], { dimensions: ["date"], rowLimit: 200 });
 const sisteData = sDag.length ? sDag[sDag.length - 1].keys[0] : null;
 const nyeDager = sDag.filter((r) => r.keys[0] >= d0(14));
-const ord = await gs(cs, [d0(30), d0(1)], { dimensions: ["query"], rowLimit: 10 });
+const ord = (await gs(cs, [d0(30), d0(1)], { dimensions: ["query"], rowLimit: 500 }))
+  .filter((r) => r.clicks > 0).sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0, 10);
 
 // --- Synlighetsvarsel -------------------------------------------------------
 // FT Aviation var borte fra Google fra 20. juli til 30. august 2026 uten at
@@ -110,9 +112,16 @@ const ord = await gs(cs, [d0(30), d0(1)], { dimensions: ["query"], rowLimit: 10 
 const visnMellom = (fra, til) => sDag
   .filter((r) => r.keys[0] >= fra && r.keys[0] <= til)
   .reduce((s, r) => s + r.impressions, 0);
-const sisteUke = visnMellom(d0(7), d0(1));
-const forrigeUke = visnMellom(d0(14), d0(8));
-const snitt30 = visnMellom(d0(37), d0(8)) / 30;
+// Search Console ligger to–tre dager etter. Regnes uka som «siste sju dager»,
+// mangler de siste dagene og uka ser ut som et fall (352 mot 809, uke 40).
+// Derfor: de sju siste dagene som HAR data, mot de sju før.
+const slutt = sisteData || d0(3);
+const gscUke = [dag(slutt, 6), slutt];
+const sisteUke = visnMellom(dag(slutt, 6), slutt);
+const forrigeUke = visnMellom(dag(slutt, 13), dag(slutt, 7));
+const snitt30 = visnMellom(dag(slutt, 36), dag(slutt, 7)) / 30;
+const snitt4uker = visnMellom(dag(slutt, 34), dag(slutt, 7)) / 4;   // sju-dagers snitt, fire uker før
+const ukerFør = [1, 2, 3, 4, 5, 6].map((u) => visnMellom(dag(slutt, 7 * u + 6), dag(slutt, 7 * u)));
 // dager på rad uten en eneste visning, regnet bakover fra siste dag med data
 const medVisning = new Set(sDag.filter((r) => r.impressions > 0).map((r) => r.keys[0]));
 let nullDager = 0;
@@ -147,7 +156,7 @@ try {
   if (p) {
     const since = Math.floor(new Date(G.na[0]).getTime() / 1000);
     const po = await (await fetch(`https://graph.facebook.com/v22.0/${p.id}/posts?fields=created_time,message,permalink_url&since=${since}&limit=10&access_token=${p.access_token}`)).json();
-    fb = (po.data || []).map((x) => ({ dato: x.created_time.slice(0, 10),
+    fb = (po.data || []).filter((x) => x.created_time.slice(0, 10) <= G.na[1]).map((x) => ({ dato: x.created_time.slice(0, 10),
       tekst: (x.message || "").split("\n")[0].slice(0, 90), url: x.permalink_url }));
     const pi = await (await fetch(`https://graph.facebook.com/v22.0/${p.id}?fields=instagram_business_account&access_token=${p.access_token}`)).json();
     const igId = pi.instagram_business_account?.id;
@@ -175,7 +184,7 @@ try {
       refresh_token: process.env.YT_REFRESH_TOKEN_FTA, grant_type: "refresh_token" }) })).json();
   if (r.access_token) {
     const H = { Authorization: `Bearer ${r.access_token}` };
-    const yj = async (u) => { const x = await fetch(u, { headers: H }); if (!x.ok) throw new Error(`${x.status} ${u.split("?")[0]}`); return x.json(); };
+    const yj = async (u, forsøk = 2) => { const x = await fetch(u, { headers: H }); if (!x.ok && x.status === 401 && forsøk > 1) return yj(u, forsøk - 1); if (!x.ok) throw new Error(`${x.status} ${u.split("?")[0]}`); return x.json(); };
     const ch = await yj("https://www.googleapis.com/youtube/v3/channels?part=statistics,contentDetails&mine=true");
     const st = ch.items?.[0]?.statistics ?? {};
     const uploads = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
@@ -215,15 +224,21 @@ try {
       for (const d of datoer.slice(0, -12)) delete snap[d]; // behold ~12 uker
       fs.mkdirSync(YT_SNAP.replace(/\/[^/]+$/, ""), { recursive: true });
       fs.writeFileSync(YT_SNAP, JSON.stringify(snap, null, 1));
-      const nærmest = (mål) => datoer.filter((d) => d < iDag && d <= mål).slice(-1)[0] ?? datoer.filter((d) => d < iDag)[0];
-      const s7 = nærmest(G.na[0]), s14 = s7 ? datoer.filter((d) => d < s7 && d <= G.før[0]).slice(-1)[0] : undefined;
+      // Uka avgrenses av øyeblikksbildene nærmest ukas grenser: siste bilde på
+      // eller før mandag (start) og første bilde etter søndag (slutt). Uten det
+      // ble alt fram til kjøredagen talt med — uke 40 viste 153 avspillinger,
+      // der 105 kom mandag–onsdag uka etter.
+      const mandagEtter = dag(G.na[1], -1);
+      const før = (d) => datoer.filter((x) => x <= d).slice(-1)[0];
+      const sSlutt = datoer.find((x) => x >= mandagEtter) ?? iDag;
+      const s7 = før(G.na[0]), s14 = før(G.før[0]);
       const sum = (o) => Object.values(o ?? {}).reduce((a, b) => a + b, 0);
       const diff = (id, fra, til) => (til?.[id] ?? 0) - (fra?.[id] ?? 0);
-      if (s7) {
-        yt.uke = { visninger: sum(snap[iDag]) - sum(snap[s7]), fra: s7 };
-        if (s14) yt.forrige = { visninger: sum(snap[s7]) - sum(snap[s14]) };
+      if (s7 && s7 < sSlutt) {
+        yt.uke = { visninger: sum(snap[sSlutt]) - sum(snap[s7]), fra: s7 };
+        if (s14 && s14 < s7) yt.forrige = { visninger: sum(snap[s7]) - sum(snap[s14]) };
         yt.topp = Object.entries(vids).map(([id, v]) => ({ id, tittel: v.tittel, format: v.format,
-          uke: diff(id, snap[s7], snap[iDag]), totalt: v.visninger }))
+          uke: diff(id, snap[s7], snap[sSlutt]), totalt: v.visninger }))
           .filter((x) => x.uke > 0).sort((a, b) => b.uke - a.uke).slice(0, 8);
       }
       yt.kilde = "snapshot";
@@ -248,6 +263,18 @@ const formStart = (hend.find((h) => h[0] === "form_start") || [, 0])[1];
 const formSub = (hend.find((h) => /submit/.test(h[0])) || [, 0])[1];
 const nedlast = (hend.find((h) => h[0] === "file_download") || [, 0])[1];
 
+// Tekst til Google-boksen. Uka før kan ha vært en topp; da er fallet ikke et
+// tegn på noe galt, og det må stå hvorfor.
+const fmtD = (iso) => `${+iso.slice(8)}. ${["jan", "feb", "mar", "apr", "mai", "jun", "jul", "aug", "sep", "okt", "nov", "des"][+iso.slice(5, 7) - 1]}`;
+const googleTekst = (() => {
+  const base = `Nettsiden ble vist ${NO(Math.round(sisteUke))} ganger i Google-søk ${fmtD(gscUke[0])}–${fmtD(gscUke[1])}, mot ${NO(Math.round(forrigeUke))} uka før.`;
+  const nedPst = forrigeUke > 0 ? Math.round((1 - sisteUke / forrigeUke) * 100) : 0;
+  if (nedPst < 25) return base + ` Snittet de fire ukene før var ${NO(Math.round(snitt4uker))}.`;
+  const rekord = forrigeUke >= Math.max(...ukerFør.slice(1));
+  const forklaring = rekord ? "Uka før var den høyeste vi har målt" : "Uka før lå uvanlig høyt";
+  return base + ` ${forklaring}, så nedgangen er en retur til vanlig nivå: snittet de fire ukene før var ${NO(Math.round(snitt4uker))}, og denne uka ligger ${sisteUke >= snitt4uker ? "over" : "rett under"} det.`;
+})();
+
 // --- Forsiden: kort fortalt + årsgraf ---------------------------------------
 const tall = (n) => ["null", "ett", "to", "tre", "fire", "fem", "seks", "sju", "åtte", "ni", "ti"][n] ?? NO(n);
 const liste = (xs) => xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " og " + xs.slice(-1);
@@ -265,6 +292,8 @@ const kort = [
   ...NOTAT.map((t) => t.trim().replace(/([^.!?])$/, "$1.")),
   `Nettsiden hadde ${NO(ukaNå)} besøk i uke ${sisteNr}${snittFør !== null ? `, mot ${NO(snittFør)} i snitt de fire ukene før` : ""}.`
     + (s4 !== null && s4fjor !== null ? ` De siste fire ukene ga ${NO(s4)} besøk, mot ${NO(s4fjor)} i de samme ukene i fjor.` : ""),
+  yt?.uke && yt.forrige ? `YouTube-videoene ble spilt av ${NO(yt.uke.visninger)} ganger, mot ${NO(yt.forrige.visninger)} uka før.`
+    + (yt.topp?.[0]?.uke > 0 ? ` Mest sett var «${yt.topp[0].tittel}»${yt.topp[0].format ? ` (${yt.topp[0].format})` : ""} med ${NO(yt.topp[0].uke)}.` : "") : "",
   formSub > 0 ? `${tall(formSub)[0].toUpperCase() + tall(formSub).slice(1)} sendte inn kontaktskjemaet.` : "",
 ].filter(Boolean);
 
@@ -357,7 +386,7 @@ ${graf}
 <div class="note" style="margin-top:12px">Tallene er små, så én uke kan svinge mye uten at noe har endret seg. Følg den mørke linja, snittet over fire uker, for å se retningen.</div>
 
 ${varsel ? `<div class="varsel ${varsel.grad}"><b>${varsel.grad === "kritisk" ? "Varsel" : varsel.grad === "advarsel" ? "Se på dette" : "Merk"}: ${varsel.tittel}</b><br>${varsel.tekst}</div>`
-  : `<div class="varsel ok"><b>Synligheten i Google er normal.</b> Nettsiden ble vist ${NO(Math.round(sisteUke))} ganger i Google-søk de siste sju dagene, mot ${NO(Math.round(forrigeUke))} uka før.</div>`}
+  : `<div class="varsel ok"><b>Synligheten i Google er normal.</b> ${googleTekst}</div>`}
 </div>
 
 <div class="top" style="padding:14px 24px;margin-bottom:6px"><h1 style="font-size:14pt">Detaljer for uka</h1></div>
@@ -400,7 +429,7 @@ ${formStart > 0 && formSub / Math.max(formStart, 1) < 0.15
 ${nyeDager.length < 3
   ? `<div class="note"><b>Search Console samler data igjen.</b> Eiendommen hadde et opphold fra 16. juli til ${sisteData || "slutten av august"}, og har foreløpig ${nyeDager.length} ${nyeDager.length === 1 ? "dag" : "dager"} med tall. Sitemapen ble meldt inn 2. september, og alle sytten sidene er nå kjent for Google. Reell uke-mot-uke-sammenligning kommer om et par uker.</div>`
   : ""}
-${ord.length ? `<div class="pk" style="margin-bottom:6px">Hva folk søkte på da nettsiden dukket opp i Google, siste 30 dager.</div>
+${ord.length ? `<div class="pk" style="margin-bottom:6px">Søk i Google som ga klikk inn til nettsiden, siste 30 dager.</div>
 <table><tr><th>Søkte på</th><th class="n">Klikket</th><th class="n">Vist i Google</th><th class="n">Plass i snitt</th></tr>
 ${ord.map((r) => `<tr><td>${r.keys[0]}</td><td class="n">${r.clicks}</td><td class="n">${r.impressions}</td><td class="n">${r.position.toFixed(1)}</td></tr>`).join("")}</table>` : ""}
 
@@ -425,9 +454,6 @@ ${yt.kilde === "analytics" ? `<div><b>${NO(Math.round(yt.uke.minutter))}</b><spa
 </div>
 ${yt.topp?.length ? `<table><tr><th>Video</th><th>Format</th><th class="n">Denne uka</th>${yt.kilde === "analytics" ? `<th class="n">Minutter sett</th>` : ""}<th class="n">Totalt</th></tr>
 ${yt.topp.map((t) => `<tr><td>${t.tittel.slice(0, 58)}</td><td>${t.format}</td><td class="n">${NO(t.uke)}</td>${yt.kilde === "analytics" ? `<td class="n">${NO(Math.round(t.minutter))}</td>` : ""}<td class="n">${t.totalt === null ? "" : NO(t.totalt)}</td></tr>`).join("")}</table>` : ""}
-${yt.kilde === "snapshot" ? `<div class="note" style="margin-top:8px">${yt.uke
-  ? `Ukestallene er regnet fra forrige øyeblikksbilde av kanalen (${yt.uke.fra}), ikke fra YouTube Analytics.`
-  : `<b>Første kjøring med YouTube-tall.</b> Øyeblikksbildet av kanalen er lagret, så neste ukes rapport får uke-mot-uke-visninger per video.`} Ekte ukestall med sett-tid kommer når YouTube Analytics API er slått på i Google Cloud og FTA-tokenet er fornyet med analytics-scope (<code>node scripts/yt-auth.mjs --kanal fta</code>).</div>` : ""}
 </div>` : ""}
 
 <footer><span>FT Aviation AS · Industrigata 1, N-7130 Brekstad</span>
