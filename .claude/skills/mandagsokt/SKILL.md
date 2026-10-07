@@ -19,7 +19,11 @@ utsettes til slutt der den kan bli glemt fordi tallene tok tid.
    npm run fta-rapport
    ```
 
-   Den henter GA4, Search Console, Facebook og YouTube på egen hånd og legger
+   **LinkedIn har ikke API.** Spør Adrian hva som ble postet der denne uka, og
+   kjør med `-- --notat "Postet tail stand-videoen på LinkedIn."` (kan gjentas).
+   Notatet havner i «Kort fortalt» øverst på forsiden.
+
+   Den henter GA4, Search Console, Facebook, Instagram og YouTube på egen hånd og legger
    `FTA-ukesrapport-{dato}.pdf` på skrivebordet. Ingen avhengighet til Supabase-
    syncen, så den virker selv om nattens sync er rød. **Send PDF-en til Adrian
    med SendUserFile når den er ferdig**, så han kan videresende til FTA-ledelsen.
@@ -85,7 +89,14 @@ skrivebordet som `FTA-ukesrapport-{dato}.pdf`. Den henter alt selv:
 | Facebook via `META_ACCESS_TOKEN` | ukas publiseringer på FT Aviation-siden |
 | YouTube via `YT_REFRESH_TOKEN_FTA` | visninger, videoer, abonnenter |
 
-**Egne seksjoner:** trafikk med uke-mot-uke, hvor besøkende kommer fra, mest leste
+**Forsiden er for ledelsen** (Eriks ønske 7. okt 2026): «Kort fortalt» med to–tre
+setninger om hva som ble publisert og hvordan uka gikk, årsgraf over besøk uke for
+uke (søyler, fire ukers snitt, samme uke i fjor) og nøkkeltall mot snitt og fjoråret.
+**Aldri prosent mot én uke** — tallene er så små at det gir feil bilde. Vanlige ord
+overalt: «besøk», ikke sesjoner; «fra Google-søk», ikke Organic Search. Uka er alltid
+siste hele uke mandag–søndag.
+
+**Detaljsidene bak:** besøk mot uka før, hvor besøkende kommer fra, mest leste
 sider, kontaktskjemaet (`form_start` mot innsendte), Google-søk, og sosiale medier.
 
 **To forbehold rapporten håndterer selv:**
