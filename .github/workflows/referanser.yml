@@ -1,0 +1,38 @@
+name: referanser
+
+# Holder rutenettene på fosen-tools.no/referanser oppdatert av seg selv.
+# Leser sitemapen, rendrer nye case-sider og legger referanser.json + miniatyrer
+# i Supabase Storage. Publiseringen på /referanser og kategorisidene leser den fila.
+# Hver time: bare nye caser. Én gang i døgnet: alle casene på nytt (fanger endrede titler/bilder).
+
+on:
+  schedule:
+    - cron: "17 * * * *" # hver time (UTC). GitHub kan forsinke litt under last.
+  workflow_dispatch: {}  # kjør manuelt fra Actions-fanen
+
+concurrency:
+  group: referanser
+  cancel-in-progress: false
+
+jobs:
+  oppdater:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Egen mappe, så vi bare installerer de to pakkene scriptet trenger, ikke hele appen
+      - name: Installer playwright og sharp
+        run: |
+          mkdir -p "$RUNNER_TEMP/ref" && cp scripts/referanser-oppdater.mjs "$RUNNER_TEMP/ref/"
+          cd "$RUNNER_TEMP/ref" && npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright@1.60.0 sharp@0.34.5
+          npx playwright install --with-deps chromium
+      - name: Oppdater referanser.json
+        working-directory: ${{ runner.temp }}/ref
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://evfbfiqruxzaraksetok.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node referanser-oppdater.mjs
