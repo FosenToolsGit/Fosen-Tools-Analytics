@@ -109,6 +109,16 @@ async function lagTommel(c) {
 }
 
 const start = Date.now();
+
+// 0. Rutenett-scriptet som publiseringen laster. Lastes opp når fila i repoet er endret.
+{
+  const kode = fs.readFileSync(new URL("./referanser-rutenett.js", import.meta.url), "utf8");
+  const ute = await fetch(`${PUBLIC}/${MAPPE}/referanser-rutenett.js?t=${Date.now()}`).then((r) => (r.ok ? r.text() : "")).catch(() => "");
+  if (ute !== kode) {
+    if (!TORR) await lastOpp(`${MAPPE}/referanser-rutenett.js`, kode, "application/javascript; charset=utf-8", "300");
+    console.log(TORR ? "Rutenett-scriptet er endret (tørrkjøring, ikke lastet opp)." : "Lastet opp ny versjon av referanser-rutenett.js");
+  }
+}
 const { kat: katSitemap, caser } = await lesSitemap();
 if (caser.length < 50) { console.error(`Sitemapen ga bare ${caser.length} caser — avbryter uten å skrive noe.`); process.exit(1); }
 

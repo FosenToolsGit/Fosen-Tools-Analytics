@@ -31,7 +31,7 @@ jobs:
       # Egen mappe, så vi bare installerer de to pakkene scriptet trenger, ikke hele appen
       - name: Installer playwright og sharp
         run: |
-          mkdir -p "$RUNNER_TEMP/ref" && cp scripts/referanser-oppdater.mjs "$RUNNER_TEMP/ref/"
+          mkdir -p "$RUNNER_TEMP/ref" && cp scripts/referanser-oppdater.mjs scripts/referanser-rutenett.js "$RUNNER_TEMP/ref/"
           cd "$RUNNER_TEMP/ref" && npm init -y > /dev/null
           npm install --no-audit --no-fund playwright@1.60.0 sharp@0.34.5
           npx playwright install --with-deps chromium
