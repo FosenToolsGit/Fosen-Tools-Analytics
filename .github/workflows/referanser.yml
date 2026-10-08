@@ -8,7 +8,12 @@ name: referanser
 on:
   schedule:
     - cron: "17 * * * *" # hver time (UTC). GitHub kan forsinke litt under last.
-  workflow_dispatch: {}  # kjør manuelt fra Actions-fanen
+  workflow_dispatch:      # kjør manuelt fra Actions-fanen
+    inputs:
+      alle:
+        description: "Rendre alle casene på nytt"
+        type: boolean
+        default: false
 
 concurrency:
   group: referanser
@@ -35,4 +40,4 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://evfbfiqruxzaraksetok.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node referanser-oppdater.mjs
+        run: node referanser-oppdater.mjs ${{ inputs.alle && '--alle' || '' }}
