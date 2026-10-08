@@ -8,7 +8,17 @@
   var KILDE = 'https://evfbfiqruxzaraksetok.supabase.co/storage/v1/object/public/social_assets/brand-assets/referanser/referanser.json';
   // Multicase-editoren legger inn et tomt avsnitt (&nbsp;) under H1 i introen. Fjern det.
   // Introen kan lastes etter dette scriptet, så det gjøres et par ganger til.
-  function fjernTomme() { [].forEach.call(document.querySelectorAll('.ftseo-inner > p'), function (p) { if (!p.textContent.trim() && !p.querySelector('img')) p.parentNode.removeChild(p); }); }
+  // Den røde streken under H1 (.ftseo-heading::after) står 16 px under overskriften og trenger luft,
+  // som før kom fra det tomme avsnittet. Gi overskriften avstanden selv.
+  function fjernTomme() {
+    [].forEach.call(document.querySelectorAll('.ftseo-inner > p'), function (p) {
+      if (p.textContent.trim() || p.querySelector('img')) return;
+      p.parentNode.removeChild(p);
+    });
+    [].forEach.call(document.querySelectorAll('.ftseo-inner > .ftseo-heading'), function (h) {
+      if (parseFloat(getComputedStyle(h).marginBottom) < 30) h.style.marginBottom = '34px';
+    });
+  }
   fjernTomme(); setTimeout(fjernTomme, 1500); setTimeout(fjernTomme, 4000);
   var deler = decodeURIComponent(location.pathname).split('/').filter(Boolean);
   var katSlug = deler[0] === 'referanser' && deler.length === 2 ? deler[1] : '';
